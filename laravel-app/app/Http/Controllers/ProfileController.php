@@ -1,0 +1,191 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\Nutrition;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\View\View;
+
+class ProfileController extends Controller
+{
+    public function show(Request $request): View
+    {
+        $user = $request->user();
+        $uid = (int) $user->id;
+        $isPremium = $user->isPremiumActive();
+
+        $u = DB::table('users as u')
+            ->leftJoin('user_profiles as p', 'p.user_id', '=', 'u.id')
+            ->where('u.id', $uid)
+            ->select([
+                'u.name', 'u.email', 'p.birth_date', 'p.sex', 'p.height_cm', 'p.activity_level', 'p.goal',
+                'p.daily_calorie_target', 'p.protein_target_g', 'p.carbs_target_g', 'p.fat_target_g', 'p.water_target_ml',
+            ])
+            ->first();
+
+        abort_if(! $u, 404);
+
+        $latestWeightRow = DB::table('weight_entries')
+            ->where('user_id', $uid)
+            ->orderByDesc('weighed_at')
+            ->first();
+
+        $calPreview = null;
+        if ($latestWeightRow && ! empty($u->birth_date) && $u->height_cm !== null) {
+            $est = Nutrition::estimateTarget(
+                (string) $u->birth_date,
+                (int) $u->height_cm,
+                (string) ($u->sex ?? ''),
+                (string) ($u->activity_level ?? 'moderate'),
+                (string) ($u->goal ?? 'maintain'),
+                (float) $latestWeightRow->weight_kg
+            );
+            if ($est['ok']) {
+                $calPreview = array_merge($est, ['weighed_at' => $latestWeightRow->weighed_at]);
+            }
+        }
+
+        $freeMacroPrev = null;
+        if (! $isPremium && $u->daily_calorie_target !== null && (int) $u->daily_calorie_target > 0) {
+            $freeMacroPrev = Nutrition::defaultMacroTargetsFromKcal((int) $u->daily_calorie_target);
+        }
+
+        return view('profile', [
+            'u' => $u,
+            'isPremium' => $isPremium,
+            'calPreview' => $calPreview,
+            'freeMacroPrev' => $freeMacroPrev,
+            'notice' => session('notice'),
+            'error' => session('error'),
+        ]);
+    }
+
+    public function update(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $uid = (int) $user->id;
+        $isPremium = $user->isPremiumActive();
+
+        if ($request->input('profile_action') === 'password') {
+            $request->validate([
+                'current_password' => ['required'],
+                'new_password' => ['required', 'min:8'],
+                'new_password_confirm' => ['required', 'same:new_password'],
+            ]);
+
+            if (! Hash::check($request->input('current_password'), $user->password_hash)) {
+                return back()->with('error', 'Senha atual incorreta.')->withInput();
+            }
+
+            $user->password_hash = Hash::make($request->input('new_password'));
+            $user->save();
+
+            return back()->with('notice', 'Senha alterada com sucesso.');
+        }
+
+        $name = trim((string) $request->input('name'));
+        $birth = (string) $request->input('birth_date');
+        $birthSql = $birth === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth) ? null : $birth;
+        $sex = (string) $request->input('sex');
+        if (! in_array($sex, ['', 'M', 'F', 'O'], true)) {
+            $sex = '';
+        }
+        $height = $request->input('height_cm');
+        $heightSql = $height === '' || $height === null ? null : (int) $height;
+        if ($heightSql !== null && ($heightSql < 50 || $heightSql > 260)) {
+            return back()->with('error', 'Altura inválida.')->withInput();
+        }
+
+        $activity = (string) $request->input('activity_level', 'moderate');
+        $actAllowed = ['sedentary', 'light', 'moderate', 'active', 'very_active'];
+        if (! in_array($activity, $actAllowed, true)) {
+            $activity = 'moderate';
+        }
+        $goal = (string) $request->input('goal', 'maintain');
+        if (! in_array($goal, ['lose', 'gain', 'maintain'], true)) {
+            $goal = 'maintain';
+        }
+        $autoCalorie = $request->boolean('auto_calorie');
+        $target = $request->input('daily_calorie_target');
+        $targetSql = $target === '' || $target === null ? null : (int) $target;
+        $est = null;
+        $error = '';
+
+        if ($autoCalorie) {
+            $lw = DB::table('weight_entries')->where('user_id', $uid)->orderByDesc('weighed_at')->first();
+            $lwKg = $lw ? (float) $lw->weight_kg : null;
+            $est = Nutrition::estimateTarget($birthSql, $heightSql, $sex, $activity, $goal, $lwKg);
+            if (! $est['ok']) {
+                $error = $est['message'];
+            } else {
+                $targetSql = $est['target'];
+            }
+        }
+
+        if ($error === '' && $targetSql !== null && ($targetSql < 500 || $targetSql > 20000)) {
+            $error = 'Meta calórica fora do intervalo (500–20000).';
+        }
+
+        $proteinT = null;
+        $carbsT = null;
+        $fatT = null;
+        if ($isPremium) {
+            $pt = (string) $request->input('protein_target_g', '');
+            $ct = (string) $request->input('carbs_target_g', '');
+            $ft = (string) $request->input('fat_target_g', '');
+            $proteinT = $pt === '' ? null : (float) str_replace(',', '.', $pt);
+            $carbsT = $ct === '' ? null : (float) str_replace(',', '.', $ct);
+            $fatT = $ft === '' ? null : (float) str_replace(',', '.', $ft);
+        }
+        $wt = (string) $request->input('water_target_ml', '');
+        $waterT = $wt === '' ? null : (int) $wt;
+
+        foreach (['Proteína' => $proteinT, 'Carboidrato' => $carbsT, 'Gordura' => $fatT] as $lab => $v) {
+            if ($v !== null && ($v < 0 || $v > 600)) {
+                $error = "Meta de {$lab} inválida (0–600 g).";
+                break;
+            }
+        }
+        if ($error === '' && $waterT !== null && ($waterT < 500 || $waterT > 10000)) {
+            $error = 'Meta de água inválida (500–10000 ml).';
+        }
+        if ($error === '' && $name === '') {
+            $error = 'Nome obrigatório.';
+        }
+        if ($error !== '') {
+            return back()->with('error', $error)->withInput();
+        }
+
+        DB::transaction(function () use ($uid, $name, $birthSql, $sex, $heightSql, $activity, $goal, $targetSql, $proteinT, $carbsT, $fatT, $waterT) {
+            DB::table('users')->where('id', $uid)->update(['name' => $name]);
+            $exists = DB::table('user_profiles')->where('user_id', $uid)->exists();
+            if (! $exists) {
+                DB::table('user_profiles')->insert(['user_id' => $uid]);
+            }
+            DB::table('user_profiles')->where('user_id', $uid)->update([
+                'birth_date' => $birthSql,
+                'sex' => $sex,
+                'height_cm' => $heightSql,
+                'activity_level' => $activity,
+                'goal' => $goal,
+                'daily_calorie_target' => $targetSql,
+                'protein_target_g' => $proteinT,
+                'carbs_target_g' => $carbsT,
+                'fat_target_g' => $fatT,
+                'water_target_ml' => $waterT,
+            ]);
+        });
+
+        $notice = 'Perfil atualizado.';
+        if ($autoCalorie && is_array($est) && ($est['ok'] ?? false)) {
+            $bmrR = (int) round($est['bmr']);
+            $tdeeR = (int) round($est['tdee']);
+            $notice .= " Meta estimada: {$est['target']} kcal (TMB ≈ {$bmrR}, gasto estimado ≈ {$tdeeR} kcal/dia).";
+        }
+
+        return back()->with('notice', $notice);
+    }
+}
