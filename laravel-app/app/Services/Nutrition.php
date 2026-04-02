@@ -155,4 +155,55 @@ class Nutrition
 
         return ['p' => $d['p'], 'c' => $d['c'], 'f' => $d['f']];
     }
+
+    public static function calculateWaterTarget(
+        float $weightKg,
+        ?string $birthDate,
+        string $sex,
+        string $activityLevel,
+        string $climate
+    ): int {
+        // Base: 35ml per kg is the standard for adults
+        $mlPerKg = 35;
+
+        $age = $birthDate ? self::ageYears($birthDate) : null;
+
+        if ($age !== null) {
+            if ($age < 30) {
+                $mlPerKg = 40;
+            } elseif ($age <= 55) {
+                $mlPerKg = 35;
+            } elseif ($age <= 65) {
+                $mlPerKg = 30;
+            } else {
+                $mlPerKg = 25;
+            }
+        }
+
+        $base = $weightKg * $mlPerKg;
+
+        // Activity adjustment: moderate (+500ml), active/very active (+1000ml)
+        $activityBonus = match ($activityLevel) {
+            'moderate' => 500,
+            'active', 'very_active' => 1000,
+            default => 0
+        };
+
+        // Climate adjustment: hot (+500ml), moderate (+250ml)
+        $climateBonus = match ($climate) {
+            'hot' => 500,
+            'moderate' => 250,
+            default => 0
+        };
+
+        // Sex adjustment (minor difference in baseline metabolism)
+        $sexBonus = ($sex === 'M') ? 200 : 0;
+
+        $total = $base + $activityBonus + $climateBonus + $sexBonus;
+
+        // Round to nearest 50ml and keep within safe bounds (500ml to 10L)
+        $rounded = (int) (round($total / 50) * 50);
+
+        return max(500, min(10000, $rounded));
+    }
 }

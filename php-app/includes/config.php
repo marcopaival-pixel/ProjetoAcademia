@@ -28,7 +28,7 @@ return [
     ],
     'app' => [
         'base_path' => rtrim((string) (getenv('APP_BASE_PATH') ?: ''), '/'),
-        'session_name' => 'projetoacademia_sid',
+        'session_name' => 'paem_sid',  // Simplificado: sem underscores problemáticos
         /** URL pública do site até a pasta public (ex.: https://dominio.com ou https://dominio.com/php-app/public) — obrigatório para MP. */
         'public_url' => rtrim((string) (getenv('APP_PUBLIC_URL') ?: ''), '/'),
     ],

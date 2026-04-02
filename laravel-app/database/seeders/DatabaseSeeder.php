@@ -13,11 +13,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(MasterUserSeeder::class);
+
         // User::factory(10)->create();
 
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        $adminEmail = strtolower(trim((string) env('ADMIN_EMAIL', '')));
+        if ($adminEmail !== '') {
+            User::query()->whereRaw('LOWER(email) = ?', [$adminEmail])->update(['is_admin' => true]);
+        }
     }
 }

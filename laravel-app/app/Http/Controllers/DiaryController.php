@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MealTemplate;
 use App\Services\Nutrition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class DiaryController extends Controller
     {
         $user = $request->user();
         $uid = (int) $user->id;
-        $isPremium = $user->isPremiumActive();
+        $isPremium = $user->hasPremiumAccess();
 
         $dateRaw = (string) $request->query('date', '');
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) {
@@ -30,6 +31,11 @@ class DiaryController extends Controller
             'copied' => $request->query('n', 0) > 0
                 ? 'Copiado(s) '.(int) $request->query('n').' item(ns) de outro dia.'
                 : 'Registros copiados.',
+            'template_saved' => 'Modelo de refeição guardado.',
+            'template_applied' => (int) $request->query('n', 0) > 0
+                ? 'Adicionado(s) '.(int) $request->query('n').' item(ns) do modelo ao dia.'
+                : 'Itens do modelo adicionados ao dia.',
+            'template_deleted' => 'Modelo removido.',
             default => '',
         };
 
@@ -86,6 +92,12 @@ class DiaryController extends Controller
             $formMeal = 'other';
         }
 
+        $mealTemplates = $isPremium
+            ? MealTemplate::query()->where('user_id', $uid)->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        $calorieTarget = isset($macroProf['daily_calorie_target']) ? (int) $macroProf['daily_calorie_target'] : null;
+
         return view('diary', [
             'date' => $date,
             'rows' => $rows,
@@ -94,12 +106,15 @@ class DiaryController extends Controller
             'sumC' => $sumC,
             'sumF' => $sumF,
             'macroTargets' => $macroTargets,
+            'calorieTarget' => $calorieTarget,
             'hasMacroTargets' => $hasMacroTargets,
             'mealLabels' => $mealLabels,
             'editRow' => $editRow,
             'notice' => $notice,
             'error' => session('error'),
             'formMeal' => $formMeal,
+            'isPremium' => $isPremium,
+            'mealTemplates' => $mealTemplates,
         ]);
     }
 
@@ -139,6 +154,110 @@ class DiaryController extends Controller
             return redirect()->route('diary', ['date' => $targetDate, 'flash' => 'copied', 'n' => $items->count()]);
         }
 
+        if ($action === 'save_meal_template') {
+            if (! $request->user()->hasPremiumAccess()) {
+                return back()->with('error', 'Modelos de refeição são um recurso Premium.');
+            }
+            $name = trim((string) $request->input('template_name'));
+            if ($name === '' || mb_strlen($name) > 120) {
+                return back()->with('error', 'Indique um nome válido para o modelo (até 120 caracteres).');
+            }
+            $srcDate = (string) $request->input('template_source_date');
+            if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $srcDate)) {
+                return back()->with('error', 'Data do modelo inválida.');
+            }
+            $srcItems = DB::table('food_entries')
+                ->where('user_id', $uid)
+                ->where('entry_date', $srcDate)
+                ->orderBy('id')
+                ->get();
+            if ($srcItems->isEmpty()) {
+                return back()->with('error', 'Não há itens neste dia para guardar como modelo.');
+            }
+            DB::beginTransaction();
+            try {
+                $tpl = MealTemplate::create([
+                    'user_id' => $uid,
+                    'name' => $name,
+                ]);
+                $pos = 0;
+                foreach ($srcItems as $it) {
+                    $tpl->items()->create([
+                        'meal_type' => $it->meal_type,
+                        'food_name' => $it->food_name,
+                        'calories' => (int) $it->calories,
+                        'protein_g' => (float) $it->protein_g,
+                        'carbs_g' => (float) $it->carbs_g,
+                        'fat_g' => (float) $it->fat_g,
+                        'position' => $pos++,
+                    ]);
+                }
+                DB::commit();
+            } catch (\Throwable) {
+                DB::rollBack();
+
+                return back()->with('error', 'Não foi possível guardar o modelo.');
+            }
+
+            return redirect()->route('diary', ['date' => $srcDate, 'flash' => 'template_saved']);
+        }
+
+        if ($action === 'apply_meal_template') {
+            if (! $request->user()->hasPremiumAccess()) {
+                return back()->with('error', 'Modelos de refeição são um recurso Premium.');
+            }
+            $tid = (int) $request->input('meal_template_id');
+            $targetDate = (string) $request->input('target_date');
+            if ($tid <= 0 || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $targetDate)) {
+                return back()->with('error', 'Dados inválidos para aplicar o modelo.');
+            }
+            $tpl = MealTemplate::with('items')
+                ->where('user_id', $uid)
+                ->where('id', $tid)
+                ->first();
+            if ($tpl === null) {
+                return back()->with('error', 'Modelo não encontrado.');
+            }
+            if ($tpl->items->isEmpty()) {
+                return back()->with('error', 'Este modelo não tem itens.');
+            }
+            foreach ($tpl->items as $it) {
+                DB::table('food_entries')->insert([
+                    'user_id' => $uid,
+                    'entry_date' => $targetDate,
+                    'meal_type' => $it->meal_type,
+                    'food_name' => $it->food_name,
+                    'calories' => $it->calories,
+                    'protein_g' => $it->protein_g,
+                    'carbs_g' => $it->carbs_g,
+                    'fat_g' => $it->fat_g,
+                ]);
+            }
+
+            return redirect()->route('diary', [
+                'date' => $targetDate,
+                'flash' => 'template_applied',
+                'n' => $tpl->items->count(),
+            ]);
+        }
+
+        if ($action === 'delete_meal_template') {
+            if (! $request->user()->hasPremiumAccess()) {
+                return back()->with('error', 'Modelos de refeição são um recurso Premium.');
+            }
+            $tid = (int) $request->input('meal_template_id');
+            $redirDate = (string) $request->input('redirect_date');
+            if ($tid <= 0 || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $redirDate)) {
+                return back()->with('error', 'Dados inválidos para remover o modelo.');
+            }
+            $n = MealTemplate::query()->where('user_id', $uid)->where('id', $tid)->delete();
+            if ($n === 0) {
+                return back()->with('error', 'Modelo não encontrado.');
+            }
+
+            return redirect()->route('diary', ['date' => $redirDate, 'flash' => 'template_deleted']);
+        }
+
         if ($action === 'delete_food') {
             $delDate = (string) $request->input('entry_date');
             $fid = (int) $request->input('food_id');
@@ -167,6 +286,9 @@ class DiaryController extends Controller
             $meal = 'other';
         }
         $name = trim((string) $request->input('food_name'));
+        $amountRaw = (string) $request->input('amount');
+        $amount = (float) str_replace(',', '.', $amountRaw);
+        $unit = (string) $request->input('unit', 'g');
         $calories = (int) $request->input('calories');
         $p = (float) $request->input('protein_g', 0);
         $c = (float) $request->input('carbs_g', 0);
@@ -194,6 +316,8 @@ class DiaryController extends Controller
                 ->update([
                     'meal_type' => $meal,
                     'food_name' => $name,
+                    'amount' => $amount,
+                    'unit' => $unit,
                     'calories' => $calories,
                     'protein_g' => $p,
                     'carbs_g' => $c,
@@ -208,6 +332,8 @@ class DiaryController extends Controller
             'entry_date' => $date,
             'meal_type' => $meal,
             'food_name' => $name,
+            'amount' => $amount,
+            'unit' => $unit,
             'calories' => $calories,
             'protein_g' => $p,
             'carbs_g' => $c,

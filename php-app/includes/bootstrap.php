@@ -3,6 +3,13 @@ declare(strict_types=1);
 
 $config = require __DIR__ . '/config.php';
 
+// Configurar sessões em diretório seguro
+$sessionPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'projetoacademia_sessions';
+if (!is_dir($sessionPath)) {
+    @mkdir($sessionPath, 0700, true);
+}
+@ini_set('session.save_path', $sessionPath);
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_name($config['app']['session_name']);
     session_start();

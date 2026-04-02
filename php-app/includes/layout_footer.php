@@ -20,6 +20,6 @@
             </div>
         </div>
     </footer>
-    <script src="<?= h(base_path($config)) ?>/js/app.js" defer></script>
+    <script src="<?= h(url('js/app.js', $config)) ?>" defer></script>
 </body>
 </html>

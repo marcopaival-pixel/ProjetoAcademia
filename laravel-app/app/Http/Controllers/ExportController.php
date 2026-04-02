@@ -16,7 +16,7 @@ class ExportController extends Controller
     {
         $user = $request->user();
         $uid = (int) $user->id;
-        $isPremium = $user->isPremiumActive();
+        $isPremium = $user->hasPremiumAccess();
         $kind = (string) $request->query('kind', '');
 
         if ($kind !== '') {

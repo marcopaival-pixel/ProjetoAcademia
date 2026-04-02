@@ -6,22 +6,25 @@
         <h1>Hoje</h1>
         <p class="lead">{{ \Carbon\Carbon::parse($today)->translatedFormat('d/m/Y') }} — resumo rápido do dia.</p>
 
-        <section class="stats" aria-label="Resumo calórico">
-            <div class="stat">
-                <p class="stat-label">Meta (kcal)</p>
-                <p class="stat-value">{{ $calorieTarget !== null ? $calorieTarget : '—' }}</p>
+        <section class="summary-card glass animate-fade-up" aria-label="Resumo calórico">
+            <div class="calorie-balance">
+                <span class="calorie-balance__value">{{ $remaining !== null ? $remaining : '—' }}</span>
+                <span class="calorie-balance__label">Kcal Restantes</span>
             </div>
-            <div class="stat">
-                <p class="stat-label">Consumidas</p>
-                <p class="stat-value">{{ $consumed }}</p>
-            </div>
-            <div class="stat">
-                <p class="stat-label">Gastas (est.)</p>
-                <p class="stat-value">{{ $burned }}</p>
-            </div>
-            <div class="stat">
-                <p class="stat-label">Saldo (meta − consumo + gasto)</p>
-                <p class="stat-value">{{ $remaining !== null ? $remaining : '—' }}</p>
+            
+            <div class="calorie-split">
+                <div class="calorie-split__item">
+                    <span class="calorie-split__val">{{ $calorieTarget !== null ? $calorieTarget : '—' }}</span>
+                    <span class="calorie-split__lab">Meta</span>
+                </div>
+                <div class="calorie-split__item">
+                    <span class="calorie-split__val">{{ $consumed }}</span>
+                    <span class="calorie-split__lab">Consumidas</span>
+                </div>
+                <div class="calorie-split__item">
+                    <span class="calorie-split__val">{{ $burned }}</span>
+                    <span class="calorie-split__lab">Gastas</span>
+                </div>
             </div>
         </section>
 
@@ -32,7 +35,7 @@
         @endif
 
         @if ($hasMacroTargets)
-            <section class="card macro-section" aria-label="Macronutrientes hoje">
+            <section class="card macro-section animate-fade-up delay-1" aria-label="Macronutrientes hoje">
                 <h2 style="margin-top:0;">Macros hoje</h2>
                 <div class="macro-grid">
                     @foreach ([['P','Proteína',$sumProt,$macroTargets['p'] ?? null,'#3d9cf5'],['C','Carboidrato',$sumCarb,$macroTargets['c'] ?? null,'#34c759'],['G','Gordura',$sumFat,$macroTargets['f'] ?? null,'#ff9f0a']] as $row)
@@ -78,11 +81,36 @@
             <div class="water-bar-container" style="background: rgba(0,0,0,0.05); height: 16px; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; border: 1px solid rgba(0,0,0,0.1);">
                 <div class="water-bar-fill" style="width: {{ $waterPct }}%; background: #007aff; height: 100%; transition: width 0.3s ease;"></div>
             </div>
-            <form method="post" action="{{ route('dashboard') }}" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <form method="post" action="{{ route('dashboard') }}" style="display: flex; flex-direction: column; gap: 0.75rem;">
                 @csrf
-                <button type="submit" name="water_add" value="250" class="btn btn-ghost" style="flex: 1; padding: 0.5rem; text-align: center;">💧 +250ml</button>
-                <button type="submit" name="water_add" value="500" class="btn btn-ghost" style="flex: 1; padding: 0.5rem; text-align: center;">🍼 +500ml</button>
+                <div style="display: flex; gap: 0.35rem; margin-bottom: 0.25rem;">
+                    <button type="submit" name="water_add" value="200" class="btn btn-ghost" style="flex: 1; padding: 0.4rem; font-size: 0.8125rem; text-align: center;">💧 200ml</button>
+                    <button type="submit" name="water_add" value="300" class="btn btn-ghost" style="flex: 1; padding: 0.4rem; font-size: 0.8125rem; text-align: center;">💧 300ml</button>
+                    <button type="submit" name="water_add" value="500" class="btn btn-ghost" style="flex: 1; padding: 0.4rem; font-size: 0.8125rem; text-align: center;">💧 500ml</button>
+                    <button type="submit" name="water_add" value="1000" class="btn btn-ghost" style="flex: 1; padding: 0.4rem; font-size: 0.8125rem; text-align: center;">💧 1L</button>
+                </div>
+                <div style="display: flex; gap: 0.4rem; align-items: center; justify-content: flex-end;">
+                    <input type="number" name="water_add_custom" min="10" max="1000" step="10" placeholder="ml" style="width: 5.5rem; border: 1px solid rgba(0,0,0,0.1); padding: 0.4rem 0.5rem; border-radius: 6px; font-size: 0.8125rem;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 36px; padding: 0 0.75rem; font-weight: bold;">(+)</button>
+                </div>
             </form>
+
+            @if (count($waterToday) > 0)
+                <div style="margin-top: 1rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.75rem;">
+                    <h3 class="muted" style="margin: 0 0 0.5rem; font-size: 0.8125rem; font-weight: 600;">Registros de hoje:</h3>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                        @foreach ($waterToday as $w)
+                            <li style="background: rgba(0,0,0,0.03); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8125rem; display: flex; align-items: center; gap: 0.4rem; border: 1px solid rgba(0,0,0,0.05);">
+                                <strong>{{ $w->amount_ml }}ml</strong>
+                                <form method="post" action="{{ route('dashboard') }}" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" name="water_delete" value="{{ $w->id }}" title="Excluir" style="color: #ff3b30; border: none; background: none; cursor: pointer; padding: 0; font-size: 1.1rem; line-height: 1; vertical-align: middle;">&times;</button>
+                                </form>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </section>
 
         <div class="actions-inline" style="margin-top: 1.25rem;">
