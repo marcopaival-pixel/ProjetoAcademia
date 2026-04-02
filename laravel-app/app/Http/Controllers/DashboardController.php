@@ -14,18 +14,34 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $uid = (int) $user->id;
-        $isPremium = $user->isPremiumActive();
+        $isPremium = $user->hasPremiumAccess();
         $today = now()->format('Y-m-d');
 
-        if ($request->isMethod('post') && $request->has('water_add')) {
-            $request->validate(['water_add' => ['required', 'integer', 'min:1']]);
-            DB::table('water_entries')->insert([
-                'user_id' => $uid,
-                'entry_date' => $today,
-                'amount_ml' => (int) $request->input('water_add'),
-            ]);
+        if ($request->isMethod('post')) {
+            // Prioridade para o valor manual, se vazio usa o botão rápido clicado
+            $valQuick = $request->input('water_add');
+            $valCustom = $request->input('water_add_custom');
+            $amount = (int) ($valCustom ?: $valQuick);
 
-            return redirect()->route('dashboard');
+            if ($amount > 0) {
+                DB::table('water_entries')->insert([
+                    'user_id' => $uid,
+                    'entry_date' => $today,
+                    'amount_ml' => $amount,
+                ]);
+
+                return redirect()->route('dashboard');
+            }
+            
+            if ($request->has('water_delete')) {
+                $id = (int) $request->input('water_delete');
+                DB::table('water_entries')
+                    ->where('id', $id)
+                    ->where('user_id', $uid)
+                    ->delete();
+
+                return redirect()->route('dashboard');
+            }
         }
 
         $prof = DB::table('user_profiles')->where('user_id', $uid)->first();
@@ -62,10 +78,12 @@ class DashboardController extends Controller
             ->orderByDesc('weighed_at')
             ->first();
 
-        $waterConsumed = (int) DB::table('water_entries')
+        $waterToday = DB::table('water_entries')
             ->where('user_id', $uid)
             ->where('entry_date', $today)
-            ->sum('amount_ml');
+            ->get();
+
+        $waterConsumed = $waterToday->sum('amount_ml');
 
         return view('dashboard', compact(
             'today',
@@ -81,6 +99,7 @@ class DashboardController extends Controller
             'remaining',
             'lastWeight',
             'waterConsumed',
+            'waterToday',
             'isPremium',
         ));
     }

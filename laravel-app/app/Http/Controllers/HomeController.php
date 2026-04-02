@@ -9,10 +9,9 @@ class HomeController extends Controller
 {
     public function __invoke(): View|\Illuminate\Http\RedirectResponse
     {
-        if (auth()->check()) {
-            return redirect()->route('dashboard');
-        }
-
+        // Removido o redirecionamento automático para permitir que administradores 
+        // e utilizadores logados vejam a página inicial institucional se assim desejarem.
+        
         return view('home');
     }
 }

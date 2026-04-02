@@ -251,9 +251,23 @@ require dirname(__DIR__) . '/includes/layout_header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="form-group" style="border: 1px solid #e0e0e0; padding: 1rem; border-radius: 0.25rem; background: #fafafa; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 0.75rem; font-size: 0.9375rem; font-weight: 600;">🔍 Buscar Alimento</h3>
+                        <div style="display: grid; gap: 0.5rem;">
+                            <div>
+                                <label for="food_barcode" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Código de Barras (EAN)</label>
+                                <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                                    <input id="food_barcode" type="text" placeholder="Escanear ou digitar código" style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                    <button type="button" id="food_barcode_btn" class="btn btn-ghost" style="padding: 0.5rem 1rem;">Escanear</button>
+                                </div>
+                            </div>
+                            <div id="food-lookup-notification"></div>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="food_name">Alimento</label>
-                        <input id="food_name" name="food_name" type="text" required maxlength="200" placeholder="Ex.: Arroz integral" value="<?= h($editRow['food_name'] ?? '') ?>">
+                        <input id="food_name" name="food_name" type="text" required maxlength="200" placeholder="Ex.: Arroz integral (ou busca automática acima)" value="<?= h($editRow['food_name'] ?? '') ?>">
+                        <p style="font-size: 0.8125rem; color: #666; margin: 0.25rem 0 0; margin-top: 0.5rem;">💡 Digite para autocomplete (mín. 2 caracteres)</p>
                     </div>
                     <div class="form-group">
                         <label for="calories">Calorias (kcal)</label>
@@ -359,5 +373,6 @@ require dirname(__DIR__) . '/includes/layout_header.php';
                 <?php endif; ?>
             </div>
         </div>
+<script src="<?= h(url('js/food-lookup.js', $config)) ?>"></script>
 <?php
 require dirname(__DIR__) . '/includes/layout_footer.php';

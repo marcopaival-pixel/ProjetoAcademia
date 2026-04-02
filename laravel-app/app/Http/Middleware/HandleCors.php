@@ -15,20 +15,35 @@ class HandleCors
     {
         $origin = $request->header('Origin');
 
-        // Permitir requisições do React local
-        if (in_array($origin, [
+        $allowedOrigins = [
             'http://localhost:5173',
             'http://127.0.0.1:5173',
-        ])) {
+            'http://localhost:8080',
+            'http://127.0.0.1:8080',
+        ];
+
+        if ($origin !== null && in_array($origin, $allowedOrigins, true)) {
+            $corsHeaders = [
+                'Access-Control-Allow-Origin' => $origin,
+                'Access-Control-Allow-Credentials' => 'true',
+                'Access-Control-Allow-Methods' => 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+                'Access-Control-Allow-Headers' => 'Content-Type, X-CSRF-TOKEN, Authorization, Accept',
+                'Access-Control-Max-Age' => '86400',
+            ];
+
+            if ($request->isMethod('OPTIONS')) {
+                return response('', 204)->withHeaders($corsHeaders);
+            }
+
             $response = $next($request);
-            $response->header('Access-Control-Allow-Origin', $origin);
-            $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-            $response->header('Access-Control-Allow-Headers', 'Content-Type, X-CSRF-TOKEN, Authorization');
-            $response->header('Access-Control-Max-Age', '86400');
+
+            foreach ($corsHeaders as $name => $value) {
+                $response->headers->set($name, $value);
+            }
+
             return $response;
         }
 
         return $next($request);
     }
 }
-

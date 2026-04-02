@@ -1,152 +1,264 @@
 @extends('layouts.app', ['navCurrent' => 'profile'])
 
-@section('title', 'Perfil')
+@section('title', 'Meu Perfil')
 
 @section('content')
-        <h1>Perfil</h1>
-        <p class="lead">Altura, idade e peso recente permitem estimar TMB e gasto (TDEE); você pode fixar a meta manualmente ou calcular ao salvar.</p>
+<div class="profile-header animate-fade-up" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1.5rem; flex-wrap: wrap;">
+    <div class="header-left">
+        <h1 style="margin: 0; font-size: 2.5rem; letter-spacing: -0.02em;">Meu Perfil</h1>
+        <p class="muted" style="margin-top: 0.5rem; font-size: 1.125rem;">Gerencie seus dados físicos, metas e configurações de saúde em um só lugar.</p>
+    </div>
+    <div class="header-right" style="background: var(--surface-glass); padding: 1.5rem 2rem; border-radius: 24px; border: 1px solid var(--border); display: flex; gap: 2rem; align-items: center; box-shadow: var(--shadow-sm); backdrop-filter: blur(8px);">
+        <div class="stat-item" style="text-align: center;">
+            <span class="muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Meta Atual</span>
+            <strong style="font-size: 1.5rem; color: var(--primary);">{!! $u->daily_calorie_target ? $u->daily_calorie_target . ' <small style="font-size: 0.75rem;">kcal</small>' : '—' !!}</strong>
+        </div>
+        <div style="width: 1px; height: 30px; background: var(--border);"></div>
+        <div class="stat-item" style="text-align: center;">
+            <span class="muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Sua Idade</span>
+            <strong style="font-size: 1.5rem;">{!! $age ? $age . ' <small style="font-size: 0.75rem;">anos</small>' : '—' !!}</strong>
+        </div>
+    </div>
+</div>
 
-        @if (!empty($notice))
-            <div class="alert alert-success">{{ $notice }}</div>
-        @endif
-        @if (!empty($error))
-            <div class="alert alert-error">{{ $error }}</div>
-        @endif
+@if (!empty($notice))
+    <div class="alert alert-success animate-fade-up" style="margin-bottom: 2rem; border-radius: 16px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.25rem;">✅</span> {{ $notice }}
+    </div>
+@endif
 
-        @if ($calPreview !== null)
-            <div class="card" style="max-width: 32rem; margin-bottom: 1rem;">
-                <h2 style="margin-top:0;">Prévia da estimativa</h2>
-                <p class="muted" style="margin:0 0 0.75rem; font-size:0.9rem;">
-                    Com base no peso de <strong>{{ number_format($calPreview['weight_kg'], 1, ',', '.') }} kg</strong>
-                    ({{ \Carbon\Carbon::parse($calPreview['weighed_at'])->translatedFormat('d/m/Y') }}),
-                    idade {{ $calPreview['age'] }} anos e dados abaixo:
-                </p>
-                <ul class="muted" style="margin:0; padding-left:1.25rem; font-size:0.9rem;">
-                    <li>TMB (Mifflin–St Jeor): ≈ {{ (int) round($calPreview['bmr']) }} kcal/dia</li>
-                    <li>Gasto estimado (TDEE): ≈ {{ (int) round($calPreview['tdee']) }} kcal/dia</li>
-                    <li>Meta sugerida para o objetivo atual: <strong>{{ $calPreview['target'] }} kcal/dia</strong></li>
-                </ul>
-                <p class="muted" style="margin:0.75rem 0 0; font-size:0.8rem;">Referência geral; não substitui orientação de nutricionista ou médico.</p>
+@if (!empty($error))
+    <div class="alert alert-error animate-fade-up" style="margin-bottom: 2rem; border-radius: 16px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.25rem;">⚠️</span> {{ $error }}
+    </div>
+@endif
+
+@if ($calPreview !== null)
+    <div class="card animate-fade-up" style="margin-bottom: 2rem; border-radius: 24px; padding: 2rem; border-left: 4px solid var(--primary); background: color-mix(in oklab, var(--primary) 5%, var(--surface));">
+        <h2 style="margin-top:0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            📊 Prévia da Estimativa
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+            <div class="preview-item">
+                <span class="muted" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Taxa Metabólica Basal (TMB)</span>
+                <strong style="font-size: 1.125rem;">{{ (int) round($calPreview['bmr']) }} kcal/dia</strong>
             </div>
-        @endif
+            <div class="preview-item">
+                <span class="muted" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Gasto Total Estimado (TDEE)</span>
+                <strong style="font-size: 1.125rem;">{{ (int) round($calPreview['tdee']) }} kcal/dia</strong>
+            </div>
+            <div class="preview-item">
+                <span class="muted" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Meta Sugerida</span>
+                <strong style="font-size: 1.125rem; color: var(--primary);">{{ $calPreview['target'] }} kcal/dia</strong>
+            </div>
+        </div>
+        <p class="muted" style="margin-top: 1.25rem; font-size: 0.8rem; font-style: italic;">Valores baseados no seu peso de {{ number_format($latestWeight, 1, ',', '.') }} kg em {{ \Carbon\Carbon::parse($calPreview['weighed_at'])->translatedFormat('d/m/Y') }}.</p>
+    </div>
+@endif
 
-        <div class="card" style="max-width: 32rem;">
-            <form method="post" action="{{ route('profile') }}" novalidate>
-                @csrf
+<form method="post" action="{{ route('profile') }}" novalidate class="animate-fade-up">
+    @csrf
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); gap: 2rem;">
+        
+        <!-- CARD: DADOS PESSOAIS -->
+        <div class="card" style="padding: 2.5rem; border-radius: 24px;">
+            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">👤 Dados Pessoais</div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="name" style="font-weight: 600; font-size: 0.9rem;">Nome Completo</label>
+                <input id="name" name="name" type="text" required maxlength="120" value="{{ old('name', $u->name) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
+                <span class="muted" style="font-size: 0.8rem; margin-top: 0.5rem; display: block;">Email: {{ $u->email }}</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="form-group">
-                    <label for="name">Nome</label>
-                    <input id="name" name="name" type="text" required maxlength="120" value="{{ old('name', $u->name) }}">
+                    <label for="birth_date" style="font-weight: 600; font-size: 0.9rem;">Nascimento</label>
+                    <input id="birth_date" name="birth_date" type="date" required value="{{ old('birth_date', $u->birth_date) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
                 </div>
-                <p class="muted" style="margin: 0 0 1rem; font-size: 0.875rem;">Email: <strong>{{ $u->email }}</strong> (alteração em breve)</p>
                 <div class="form-group">
-                    <label for="birth_date">Nascimento</label>
-                    <input id="birth_date" name="birth_date" type="date" value="{{ old('birth_date', $u->birth_date) }}">
-                </div>
-                <div class="form-group">
-                    <label for="sex">Sexo (opcional)</label>
-                    <select id="sex" name="sex">
-                        <option value="" @selected(old('sex', $u->sex) === '')>—</option>
+                    <label for="sex" style="font-weight: 600; font-size: 0.9rem;">Sexo</label>
+                    <select id="sex" name="sex" required style="padding: 0.75rem 1rem; border-radius: 12px;">
+                        <option value="" @selected(old('sex', $u->sex) === '')>Selecione...</option>
                         <option value="M" @selected(old('sex', $u->sex) === 'M')>Masculino</option>
                         <option value="F" @selected(old('sex', $u->sex) === 'F')>Feminino</option>
-                        <option value="O" @selected(old('sex', $u->sex) === 'O')>Outro / prefiro não informar</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="height_cm">Altura (cm)</label>
-                    <input id="height_cm" name="height_cm" type="number" min="50" max="260" placeholder="ex.: 170" value="{{ old('height_cm', $u->height_cm) }}">
-                </div>
-                <div class="form-group">
-                    <label for="activity_level">Nível de atividade</label>
-                    <select id="activity_level" name="activity_level">
-                        @foreach ([
-                            'sedentary' => 'Sedentário', 'light' => 'Leve', 'moderate' => 'Moderado',
-                            'active' => 'Ativo', 'very_active' => 'Muito ativo',
-                        ] as $val => $lab)
-                            <option value="{{ $val }}" @selected(old('activity_level', $u->activity_level ?? 'moderate') === $val)>{{ $lab }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="goal">Objetivo</label>
-                    <select id="goal" name="goal">
-                        @foreach (['lose' => 'Perder peso', 'gain' => 'Ganhar peso', 'maintain' => 'Manter peso'] as $val => $lab)
-                            <option value="{{ $val }}" @selected(old('goal', $u->goal ?? 'maintain') === $val)>{{ $lab }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="daily_calorie_target">Meta calórica diária (kcal)</label>
-                    <input id="daily_calorie_target" name="daily_calorie_target" type="number" min="500" max="20000" placeholder="ex.: 2000" value="{{ old('daily_calorie_target', $u->daily_calorie_target) }}">
-                </div>
-                @if ($isPremium)
-                <p class="muted" style="margin: -0.5rem 0 0.75rem; font-size:0.875rem;">Metas de macros (opcional) — usadas no painel <strong>Hoje</strong> e nos totais do diário.</p>
-                <div class="form-group">
-                    <label for="protein_target_g">Meta proteína (g/dia)</label>
-                    <input id="protein_target_g" name="protein_target_g" type="number" min="0" max="600" step="0.1" placeholder="ex.: 120" value="{{ old('protein_target_g', $u->protein_target_g) }}">
-                </div>
-                <div class="form-group">
-                    <label for="carbs_target_g">Meta carboidrato (g/dia)</label>
-                    <input id="carbs_target_g" name="carbs_target_g" type="number" min="0" max="600" step="0.1" placeholder="ex.: 200" value="{{ old('carbs_target_g', $u->carbs_target_g) }}">
-                </div>
-                <div class="form-group">
-                    <label for="fat_target_g">Meta gordura (g/dia)</label>
-                    <input id="fat_target_g" name="fat_target_g" type="number" min="0" max="600" step="0.1" placeholder="ex.: 60" value="{{ old('fat_target_g', $u->fat_target_g) }}">
-                </div>
-                @else
-                <div class="premium-gate" style="margin-top: 1rem; min-height: 13.5rem;">
-                    <div class="premium-gate__inner">
-                        <p class="muted" style="margin:0 0 0.75rem; font-size:0.875rem;">Metas de macros no plano grátis seguem uma repartição padrão (25% proteína / 45% carboidrato / 30% gordura das suas kcal). <strong>Assine Premium</strong> para definir gramas manualmente (ideal para musculação e acompanhamento fino).</p>
-                        @if ($freeMacroPrev !== null)
-                            <div class="form-group" style="margin-bottom:0.5rem;"><span class="muted">Proteína (calculada)</span><br><strong class="tabular-nums">{{ $freeMacroPrev['p'] }} g/dia</strong></div>
-                            <div class="form-group" style="margin-bottom:0.5rem;"><span class="muted">Carboidrato (calculado)</span><br><strong class="tabular-nums">{{ $freeMacroPrev['c'] }} g/dia</strong></div>
-                            <div class="form-group" style="margin-bottom:0;"><span class="muted">Gordura (calculada)</span><br><strong class="tabular-nums">{{ $freeMacroPrev['f'] }} g/dia</strong></div>
-                        @else
-                            <p class="muted" style="margin:0;">Defina uma meta calórica acima para ver as metas de macro automáticas.</p>
-                        @endif
-                    </div>
-                    <div class="premium-gate__overlay">
-                        <span class="premium-gate__crown" aria-hidden="true">👑</span>
-                        <p class="premium-gate__head">Recurso Premium</p>
-                        <p class="premium-gate__sub">Edite proteína, carbo e gorda como quiser.</p>
-                        <a class="btn btn-primary" href="{{ route('plano') }}">Assinar</a>
-                    </div>
-                </div>
-                @endif
-                <div class="form-group">
-                    <label for="water_target_ml">Meta de Água (ml/dia)</label>
-                    <input id="water_target_ml" name="water_target_ml" type="number" min="500" max="10000" step="100" placeholder="ex.: 2000" value="{{ old('water_target_ml', $u->water_target_ml) }}">
-                </div>
-                <div class="form-group">
-                    <label style="display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer; max-width:100%;">
-                        <input type="checkbox" name="auto_calorie" value="1" style="width:auto; margin-top:0.2rem;" @checked(old('auto_calorie'))>
-                        <span>Ao salvar, <strong>calcular meta automaticamente</strong> (TMB + TDEE + objetivo), usando o peso mais recente.</span>
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-primary">Salvar</button>
-            </form>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="height_cm" style="font-weight: 600; font-size: 0.9rem;">Altura (cm)</label>
+                <input id="height_cm" name="height_cm" type="number" min="50" max="260" placeholder="ex.: 175" value="{{ old('height_cm', $u->height_cm) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
+            </div>
         </div>
 
-        <div class="card" style="max-width: 32rem; margin-top: 1.25rem;">
-            <h2 style="margin-top:0;">Alterar senha</h2>
-            <form method="post" action="{{ route('profile') }}" novalidate autocomplete="off">
-                @csrf
-                <input type="hidden" name="profile_action" value="password">
+        <!-- CARD: COMPOSIÇÃO E DINÂMICA -->
+        <div class="card" style="padding: 2.5rem; border-radius: 24px;">
+            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚖️ Composição e Atividade</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
-                    <label for="current_password">Senha atual</label>
-                    <input id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+                    <label for="current_weight_kg" style="font-weight: 600; font-size: 0.9rem;">Peso Atual (kg)</label>
+                    <input id="current_weight_kg" name="current_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('current_weight_kg', $latestWeight) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.1rem; color: var(--primary);">
                 </div>
                 <div class="form-group">
-                    <label for="new_password">Nova senha (mín. 8 caracteres)</label>
-                    <input id="new_password" name="new_password" type="password" autocomplete="new-password" required minlength="8">
+                    <label for="target_weight_kg" style="font-weight: 600; font-size: 0.9rem;">Peso Objetivo (kg)</label>
+                    <input id="target_weight_kg" name="target_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('target_weight_kg', $u->target_weight_kg) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.1rem;">
                 </div>
-                <div class="form-group">
-                    <label for="new_password_confirm">Confirmar nova senha</label>
-                    <input id="new_password_confirm" name="new_password_confirm" type="password" autocomplete="new-password" required minlength="8">
-                </div>
-                @if ($errors->has('current_password') || $errors->has('new_password'))
-                    <div class="alert alert-error">{{ $errors->first() }}</div>
-                @endif
-                <button type="submit" class="btn btn-primary">Atualizar senha</button>
-            </form>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="training_days_per_week" style="font-weight: 600; font-size: 0.9rem;">Frequência de Treino</label>
+                <select id="training_days_per_week" name="training_days_per_week" style="padding: 0.75rem 1rem; border-radius: 12px;">
+                    <option value="" @selected(old('training_days_per_week', $u->training_days_per_week) === '')>Quantos dias por semana?</option>
+                    <option value="1-2" @selected(old('training_days_per_week', $u->training_days_per_week) === '1-2')>1-2 dias na semana</option>
+                    <option value="3-4" @selected(old('training_days_per_week', $u->training_days_per_week) === '3-4')>3-4 dias na semana</option>
+                    <option value="5-6" @selected(old('training_days_per_week', $u->training_days_per_week) === '5-6')>5-6 dias na semana</option>
+                    <option value="all" @selected(old('training_days_per_week', $u->training_days_per_week) === 'all')>Treino todos os dias</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="activity_level" style="font-weight: 600; font-size: 0.9rem;">Nível de Atividade Diário</label>
+                <select id="activity_level" name="activity_level" style="padding: 0.75rem 1rem; border-radius: 12px;">
+                    @foreach ([
+                        'sedentary' => 'Sedentário (Pouco movimento)',
+                        'light' => 'Leve (Exercício ocasional)',
+                        'moderate' => 'Moderado (Ativo regularmente)',
+                        'active' => 'Ativo (Treino intenso diário)',
+                        'very_active' => 'Muito Ativo (Atleta/Trabalho pesado)',
+                    ] as $val => $lab)
+                        <option value="{{ $val }}" @selected(old('activity_level', $u->activity_level ?? 'moderate') === $val)>{{ $lab }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
+
+        <!-- CARD: METAS E ESTILO DE VIDA -->
+        <div class="card" style="padding: 2.5rem; border-radius: 24px;">
+            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🎯 Metas de Saúde</div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="goal" style="font-weight: 600; font-size: 0.9rem;">Objetivo Principal</label>
+                <select id="goal" name="goal" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 600;">
+                    <option value="lose" @selected(old('goal', $u->goal) === 'lose')>🔥 Perder Peso / Emagrecer</option>
+                    <option value="maintain" @selected(old('goal', $u->goal) === 'maintain')>⚖️ Manter Peso Atual</option>
+                    <option value="gain" @selected(old('goal', $u->goal) === 'gain')>💪 Ganhar Massa Muscular</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: start;">
+                <div class="form-group">
+                    <label for="daily_calorie_target" style="font-weight: 600; font-size: 0.9rem;">Meta Calórica Diária (kcal)</label>
+                    <input id="daily_calorie_target" name="daily_calorie_target" type="number" min="500" max="20000" placeholder="ex.: 2200" value="{{ old('daily_calorie_target', $u->daily_calorie_target) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.25rem;">
+                </div>
+                <div class="form-group">
+                    <label for="water_target_ml" style="font-weight: 600; font-size: 0.9rem;">Meta Água (ml)</label>
+                    <input id="water_target_ml" name="water_target_ml" type="number" min="500" max="10000" step="100" placeholder="2500" value="{{ old('water_target_ml', $u->water_target_ml) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="climate" style="font-weight: 600; font-size: 0.9rem;">Clima Local</label>
+                <select id="climate" name="climate" style="padding: 0.75rem 1rem; border-radius: 12px;">
+                    <option value="cold" @selected(old('climate', $u->climate) === 'cold')>❄️ Clima Frio</option>
+                    <option value="moderate" @selected(old('climate', $u->climate ?? 'moderate') === 'moderate')>☁️ Clima Agradável</option>
+                    <option value="hot" @selected(old('climate', $u->climate) === 'hot')>☀️ Clima Quente</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- CARD: AUTOMAÇÃO E SEGURANÇA -->
+        <div class="card" style="padding: 2.5rem; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚙️ Automação do Cálculo</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <label style="display:flex; align-items:flex-start; gap:1rem; cursor:pointer; padding: 1rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border);">
+                        <input type="checkbox" name="auto_calorie" value="1" style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);" @checked(old('auto_calorie'))>
+                        <span style="font-size: 0.9rem;"><strong>Calcular calorias automaticamente</strong><br><span class="muted" style="font-size: 0.8rem;">Usa peso atual, TMB e nível de atividade.</span></span>
+                    </label>
+                    
+                    <label style="display:flex; align-items:flex-start; gap:1rem; cursor:pointer; padding: 1rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border);">
+                        <input type="checkbox" name="auto_water" value="1" style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);" @checked(old('auto_water', $u->is_water_target_auto))>
+                        <span style="font-size: 0.9rem;"><strong>Calcular água automaticamente</strong><br><span class="muted" style="font-size: 0.8rem;">Usa peso atual, idade e clima.</span></span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 16px; font-weight: 700; font-size: 1.1rem; box-shadow: var(--shadow-md);">Salvar Alterações</button>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<div class="profile-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); gap: 2rem; margin-top: 2rem; margin-bottom: 4rem;">
+    
+    <!-- CARD: MACROS (PREMIUM GATE) -->
+    <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; position: relative; overflow: hidden;">
+        <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🧪 Macros Personalizados</div>
+        
+        @if ($isPremium)
+            <form method="post" action="{{ route('profile') }}" novalidate>
+                @csrf
+                <input type="hidden" name="profile_action" value="macros">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label for="protein_target_g" style="font-size: 0.8rem;">Proteína (g)</label>
+                        <input id="protein_target_g" name="protein_target_g" type="number" step="0.1" value="{{ old('protein_target_g', $u->protein_target_g) }}" style="padding: 0.5rem; border-radius: 8px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="carbs_target_g" style="font-size: 0.8rem;">Carbo (g)</label>
+                        <input id="carbs_target_g" name="carbs_target_g" type="number" step="0.1" value="{{ old('carbs_target_g', $u->carbs_target_g) }}" style="padding: 0.5rem; border-radius: 8px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="fat_target_g" style="font-size: 0.8rem;">Gordura (g)</label>
+                        <input id="fat_target_g" name="fat_target_g" type="number" step="0.1" value="{{ old('fat_target_g', $u->fat_target_g) }}" style="padding: 0.5rem; border-radius: 8px;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">Salvar Macros</button>
+            </form>
+        @else
+            <div style="opacity: 0.5; pointer-events: none;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                    <div style="text-align:center;"><small class="muted">Prot</small><br><strong>{{ $freeMacroPrev['p'] ?? '—' }}g</strong></div>
+                    <div style="text-align:center;"><small class="muted">Carb</small><br><strong>{{ $freeMacroPrev['c'] ?? '—' }}g</strong></div>
+                    <div style="text-align:center;"><small class="muted">Gord</small><br><strong>{{ $freeMacroPrev['f'] ?? '—' }}g</strong></div>
+                </div>
+            </div>
+            <div class="premium-badge" style="position: absolute; top: 1.5rem; right: 1.5rem; background: gold; color: black; font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 99px; font-weight: 800;">PREMIUM</div>
+            <div style="margin-top: 1rem; padding: 1.25rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border); text-align: center;">
+                <p style="font-size: 0.85rem; margin-bottom: 1rem;">Personalize suas metas de macros por gramas.</p>
+                <a href="{{ route('plano') }}" class="btn btn-sm btn-primary" style="padding: 0.5rem 1.5rem;">Ver Planos</a>
+            </div>
+        @endif
+    </div>
+
+    <!-- CARD: SEGURANÇA -->
+    <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px;">
+        <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🔒 Segurança e Senha</div>
+        
+        <form method="post" action="{{ route('profile') }}" novalidate autocomplete="off">
+            @csrf
+            <input type="hidden" name="profile_action" value="password">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="current_password" style="font-size: 0.85rem;">Senha Atual</label>
+                <input id="current_password" name="current_password" type="password" required style="padding: 0.5rem 1rem; border-radius: 10px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="new_password" style="font-size: 0.85rem;">Nova Senha</label>
+                    <input id="new_password" name="new_password" type="password" required minlength="8" style="padding: 0.5rem 1rem; border-radius: 10px;">
+                </div>
+                <div class="form-group">
+                    <label for="new_password_confirm" style="font-size: 0.85rem;">Confirmar</label>
+                    <input id="new_password_confirm" name="new_password_confirm" type="password" required minlength="8" style="padding: 0.5rem 1rem; border-radius: 10px;">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 1.5rem;">Atualizar Senha</button>
+        </form>
+    </div>
+
+</div>
 @endsection

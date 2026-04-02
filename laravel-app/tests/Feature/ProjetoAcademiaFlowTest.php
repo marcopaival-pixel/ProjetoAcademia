@@ -92,6 +92,16 @@ class ProjetoAcademiaFlowTest extends TestCase
         $this->actingAs($user)->get(route('export', ['kind' => 'food']))->assertStatus(403);
     }
 
+    public function test_export_csv_allowed_for_administrator_without_premium(): void
+    {
+        $user = User::factory()->administrator()->create(['is_premium' => false]);
+        $this->actingAs($user)->get(route('export', [
+            'kind' => 'food',
+            'from' => '2020-01-01',
+            'to' => '2030-01-01',
+        ]))->assertOk();
+    }
+
     public function test_mp_webhook_returns_503_when_token_missing(): void
     {
         config(['projeto.mp_access_token' => '']);

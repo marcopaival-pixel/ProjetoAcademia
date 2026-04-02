@@ -12,12 +12,14 @@ class PlanoController extends Controller
     {
         $user = $request->user();
         $isPremium = $user->isPremiumActive();
+        $isAdministrator = $user->isAdministrator();
         $mpFlash = (string) session()->pull('flash_mp_error', '');
         $mpConfigured = config('projeto.mp_access_token') !== ''
             && rtrim((string) config('projeto.public_url'), '/') !== '';
 
         return view('plano', [
             'isPremium' => $isPremium,
+            'isAdministrator' => $isAdministrator,
             'mpFlash' => $mpFlash,
             'mpConfigured' => $mpConfigured,
             'webhookUrl' => $mp->absoluteUrl('mp/webhook'),

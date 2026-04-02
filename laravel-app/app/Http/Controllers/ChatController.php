@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AIChat;
+use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\AIChatService;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +27,23 @@ class ChatController extends Controller
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
         ]);
+
+        if (! $user->hasPremiumAccess()) {
+            $limit = (int) config('projeto.chat_free_daily_user_messages');
+            $used = $this->countUserMessagesToday((int) $user->id);
+            if ($used >= $limit) {
+                return response()->json([
+                    'ok' => false,
+                    'code' => 'chat_quota_exceeded',
+                    'error' => 'Limite diário de mensagens do assistente atingido no plano grátis. Assine o Premium para conversar sem este limite.',
+                    'plano_url' => route('plano'),
+                    'quota' => [
+                        'limit' => $limit,
+                        'used' => $used,
+                    ],
+                ], 403);
+            }
+        }
 
         // Salvar mensagem do usuário
         AIChat::create([
@@ -75,6 +93,7 @@ class ChatController extends Controller
         return response()->json([
             'ok' => true,
             'message' => $aiResponse['message'],
+            'chat_quota' => $this->chatQuotaPayload($user),
         ]);
     }
 
@@ -107,6 +126,7 @@ class ChatController extends Controller
         return response()->json([
             'ok' => true,
             'messages' => $messages,
+            'chat_quota' => $this->chatQuotaPayload($user),
         ]);
     }
 
@@ -140,5 +160,31 @@ class ChatController extends Controller
 
         // Remover valores null
         return array_filter($metrics, fn($value) => $value !== null);
+    }
+
+    private function countUserMessagesToday(int $userId): int
+    {
+        return AIChat::query()
+            ->where('user_id', $userId)
+            ->where('role', 'user')
+            ->where('created_at', '>=', now()->startOfDay())
+            ->count();
+    }
+
+    /**
+     * @return array{is_premium: bool, daily_user_limit: int|null, daily_user_used: int}
+     */
+    private function chatQuotaPayload(User $user): array
+    {
+        /** @see User::hasPremiumAccess() — inclui administradores (campo JSON mantém nome is_premium por compatibilidade com o front). */
+        $premium = $user->hasPremiumAccess();
+        $used = $this->countUserMessagesToday((int) $user->id);
+        $limit = $premium ? null : (int) config('projeto.chat_free_daily_user_messages');
+
+        return [
+            'is_premium' => $premium,
+            'daily_user_limit' => $limit,
+            'daily_user_used' => $used,
+        ];
     }
 }

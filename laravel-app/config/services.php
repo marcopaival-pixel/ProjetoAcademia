@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    /*
+    | Open Food Facts — API pública de consulta (sem chave). Opção: espelho / outro país.
+    | @see https://openfoodfacts.github.io/openfoodfacts-server/api/
+    */
+    'openfoodfacts' => [
+        'base_url' => env('OPENFOODFACTS_BASE_URL', 'https://world.openfoodfacts.org'),
+        /** Pedidos por minuto por utilizador (pesquisa + detalhe). Alinhar às boas práticas da API OFF. */
+        'max_requests_per_minute' => (int) env('OPENFOODFACTS_MAX_REQUESTS_PER_MINUTE', 30),
+        /** Segundos em cache para fichas de produto bem-sucedidas (0 = desligado). */
+        'cache_product_ttl_seconds' => (int) env('OPENFOODFACTS_CACHE_PRODUCT_TTL', 3600),
+        /** Segundos em cache para pesquisas textuais bem-sucedidas (0 = desligado). */
+        'cache_search_ttl_seconds' => (int) env('OPENFOODFACTS_CACHE_SEARCH_TTL', 600),
+    ],
+
 ];

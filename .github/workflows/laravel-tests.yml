@@ -1,0 +1,38 @@
+# Executa a suíte de testes do Laravel quando `laravel-app/` muda.
+# Alinha-se a AGENTS.md: validação automática fica a cargo do repositório de aplicação.
+
+name: Laravel tests
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "laravel-app/**"
+      - ".github/workflows/laravel-tests.yml"
+  pull_request:
+    paths:
+      - "laravel-app/**"
+      - ".github/workflows/laravel-tests.yml"
+
+defaults:
+  run:
+    working-directory: laravel-app
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPUnit
+        run: php artisan test

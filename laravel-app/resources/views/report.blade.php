@@ -52,6 +52,25 @@
             </div>
         </div>
 
+        @if (auth()->user()->hasPremiumAccess())
+            <div class="card" style="margin-bottom: 1.25rem;">
+                <h2 style="margin-top:0;">Relatório PDF mensal</h2>
+                <p class="muted" style="margin:0 0 1rem;">Resumo em PDF do mês (alimentação, exercício e peso), útil para arquivo ou partilha com profissionais.</p>
+                <form method="get" action="{{ route('report.monthly.pdf') }}" class="form-inline" style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="pdf_month">Mês</label>
+                        <input id="pdf_month" name="month" type="month" value="{{ now()->format('Y-m') }}" max="{{ now()->format('Y-m') }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Descarregar PDF</button>
+                </form>
+            </div>
+        @else
+            <p class="muted" style="margin-bottom: 1.25rem;">
+                <strong>Relatório PDF mensal</strong> faz parte do Plano Premium.
+                <a href="{{ route('plano') }}">Ver planos</a>.
+            </p>
+        @endif
+
         <div class="actions-inline">
             <a class="btn btn-primary" href="{{ route('export') }}">Exportar CSV</a>
             <a class="btn btn-ghost" href="{{ route('dashboard') }}">Voltar ao hoje</a>

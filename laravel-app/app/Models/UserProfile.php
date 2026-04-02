@@ -21,12 +21,16 @@ class UserProfile extends Model
         'sex',
         'height_cm',
         'activity_level',
+        'climate',
         'goal',
         'daily_calorie_target',
         'protein_target_g',
         'carbs_target_g',
         'fat_target_g',
         'water_target_ml',
+        'is_water_target_auto',
+        'target_weight_kg',
+        'training_days_per_week',
     ];
 
     protected function casts(): array
@@ -36,10 +40,12 @@ class UserProfile extends Model
             'height_cm' => 'integer',
             'daily_calorie_target' => 'integer',
             'water_target_ml' => 'integer',
+            'is_water_target_auto' => 'boolean',
             'protein_target_g' => 'float',
             'carbs_target_g' => 'float',
             'fat_target_g' => 'float',
             'updated_at' => 'datetime',
+            'target_weight_kg' => 'float',
         ];
     }
 

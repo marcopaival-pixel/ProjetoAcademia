@@ -8,18 +8,23 @@
         @if ($mpFlash !== '')
             <div class="alert alert-error">{{ $mpFlash }}</div>
         @endif
-        @if (! $mpConfigured && ! $isPremium)
+        @if (! $mpConfigured && ! $isPremium && ! $isAdministrator)
             <div class="alert alert-error">
                 Para pagar com Mercado Pago, configure <strong>APP_PUBLIC_URL</strong> e <strong>MP_ACCESS_TOKEN</strong> no <code>.env</code>.
                 Em produção use HTTPS na URL pública.
             </div>
         @endif
 
-        @if ($isPremium)
+        @if ($isAdministrator)
+            <div class="alert alert-success">
+                Você está ligado como <strong>administrador</strong>. Tem acesso a todas as funcionalidades do app (incluindo as do Premium) sem assinatura.
+            </div>
+            <p class="lead">Metas de macros personalizadas, exportação CSV, chat IA sem limite diário — uso interno ou conta master.</p>
+        @elseif ($isPremium)
             <div class="alert alert-success">
                 Você está com o plano <strong>Premium</strong> ativo. Obrigado por apoiar o ProjetoAcademia.
             </div>
-            <p class="lead">Continue aproveitando metas de macros personalizadas, exportação CSV e todos os benefícios abaixo.</p>
+            <p class="lead">Continue aproveitando metas de macros personalizadas, exportação CSV, chat IA sem limite diário e todos os benefícios abaixo.</p>
         @else
             <p class="lead">Desbloqueie recursos para quem leva treino e dieta a sério — sem perder a simplicidade do app.</p>
         @endif
@@ -32,6 +37,7 @@
                     <li>Diário alimentar e exercícios</li>
                     <li>Meta calórica e macros <strong>automáticos</strong> (repartição padrão a partir das kcal)</li>
                     <li>Peso, água e relatório semanal na tela</li>
+                    <li>Assistente por IA com <strong>limite diário de mensagens</strong> (ajustável no servidor)</li>
                 </ul>
             </article>
 
@@ -42,10 +48,13 @@
                 <ul class="plan-features">
                     <li><strong>Metas de macros personalizadas</strong> (proteína, carbo, gordura em gramas)</li>
                     <li><strong>Exportar CSV</strong> — alimentação, exercícios e peso para Excel ou nutricionista</li>
+                    <li><strong>Relatório PDF mensal</strong> — resumo para arquivo ou partilha com profissionais</li>
+                    <li><strong>Chat com IA sem limite diário</strong> deste tipo (apenas custos da API OpenAI)</li>
+                    <li><strong>Modelos de refeição</strong> — guardar um dia como modelo e aplicar noutras datas</li>
                     <li>Experiência pensada para evoluir (sem anúncios, conforme configurarmos o app)</li>
                 </ul>
 
-                @if (! $isPremium)
+                @if (! $isPremium && ! $isAdministrator)
                     <div class="plan-cta">
                         <h3 class="plan-subtitle">Pagamento único</h3>
                         <p class="plan-price-line"><strong>Mensal</strong> — R$ 19,90 (acrescenta <strong>1 mês</strong> ao Premium).</p>

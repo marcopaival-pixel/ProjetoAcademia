@@ -69,6 +69,33 @@
   gap: 0.5rem;
 }
 
+.nutrition-chat-quota {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  background: #f3f4ff;
+  color: #333;
+  border-bottom: 1px solid #e8e8f0;
+}
+
+.nutrition-chat-quota a {
+  color: #5a67d8;
+  font-weight: 600;
+}
+
+.nutrition-chat-quota--premium {
+  background: #ecfdf5;
+  color: #065f46;
+  border-bottom-color: #a7f3d0;
+}
+
+.nutrition-chat-quota--warn {
+  background: #fff8e6;
+  color: #7c2d12;
+  border-bottom-color: #fcd34d;
+}
+
 .chat-clear-btn,
 .chat-close-btn {
   background: rgba(255, 255, 255, 0.2);
@@ -160,6 +187,7 @@
   word-wrap: break-word;
   line-height: 1.4;
   font-size: 0.95rem;
+  white-space: pre-line;
 }
 
 .chat-message.user .message-bubble {
