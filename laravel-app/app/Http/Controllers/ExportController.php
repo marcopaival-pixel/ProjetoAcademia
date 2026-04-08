@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Support\CsvExporter;
 use App\Support\ExportRangeParser;
+use App\Models\FoodEntry;
+use App\Models\ExerciseEntry;
+use App\Models\WeightEntry;
 use DateTimeImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -31,9 +33,9 @@ class ExportController extends Controller
             if (! $parsed['ok']) {
                 return response($parsed['message'], 400, ['Content-Type' => 'text/plain; charset=UTF-8']);
             }
-            $range = ['from' => $parsed['from'], 'to' => $parsed['to']];
             $pf = $parsed['from'];
             $pt = $parsed['to'];
+            
             $rangeSuffix = '';
             if ($pf !== null || $pt !== null) {
                 $rangeSuffix = '_'.($pf ?? 'inicio').'_a_'.($pt ?? 'fim');
@@ -41,22 +43,23 @@ class ExportController extends Controller
             $stamp = (new DateTimeImmutable('now'))->format('Y-m-d_His');
 
             if ($kind === 'food') {
-                $extra = ExportRangeParser::sqlDateRangeClause('entry_date', $range);
-                $sql = 'SELECT id, entry_date, meal_type, food_name, calories, protein_g, carbs_g, fat_g, created_at
-                     FROM food_entries WHERE user_id = ?'.$extra['clause'].' ORDER BY entry_date ASC, id ASC';
-                $rows = DB::select($sql, array_merge([$uid], $extra['params']));
+                $query = FoodEntry::where('user_id', $uid);
+                if ($pf) $query->where('entry_date', '>=', $pf);
+                if ($pt) $query->where('entry_date', '<=', $pt);
+                $rows = $query->orderBy('entry_date')->orderBy('id')->get();
+                
                 $data = [];
                 foreach ($rows as $r) {
                     $data[] = [
                         $r->id,
-                        $r->entry_date,
+                        $r->entry_date->format('Y-m-d'),
                         $r->meal_type,
                         $r->food_name,
                         $r->calories,
                         $r->protein_g,
                         $r->carbs_g,
                         $r->fat_g,
-                        $r->created_at,
+                        $r->created_at ? $r->created_at->format('Y-m-d H:i:s') : '',
                     ];
                 }
 
@@ -68,20 +71,21 @@ class ExportController extends Controller
             }
 
             if ($kind === 'exercise') {
-                $extra = ExportRangeParser::sqlDateRangeClause('entry_date', $range);
-                $sql = 'SELECT id, entry_date, activity_type, duration_min, calories_burned, notes, created_at
-                     FROM exercise_entries WHERE user_id = ?'.$extra['clause'].' ORDER BY entry_date ASC, id ASC';
-                $rows = DB::select($sql, array_merge([$uid], $extra['params']));
+                $query = ExerciseEntry::where('user_id', $uid);
+                if ($pf) $query->where('entry_date', '>=', $pf);
+                if ($pt) $query->where('entry_date', '<=', $pt);
+                $rows = $query->orderBy('entry_date')->orderBy('id')->get();
+                
                 $data = [];
                 foreach ($rows as $r) {
                     $data[] = [
                         $r->id,
-                        $r->entry_date,
+                        $r->entry_date->format('Y-m-d'),
                         $r->activity_type,
                         $r->duration_min,
                         $r->calories_burned ?? '',
                         $r->notes ?? '',
-                        $r->created_at,
+                        $r->created_at ? $r->created_at->format('Y-m-d H:i:s') : '',
                     ];
                 }
 
@@ -93,13 +97,19 @@ class ExportController extends Controller
             }
 
             if ($kind === 'weight') {
-                $extra = ExportRangeParser::sqlDateRangeClause('weighed_at', $range);
-                $sql = 'SELECT id, weighed_at, weight_kg, created_at FROM weight_entries WHERE user_id = ?'
-                    .$extra['clause'].' ORDER BY weighed_at ASC, id ASC';
-                $rows = DB::select($sql, array_merge([$uid], $extra['params']));
+                $query = WeightEntry::where('user_id', $uid);
+                if ($pf) $query->where('weighed_at', '>=', $pf);
+                if ($pt) $query->where('weighed_at', '<=', $pt);
+                $rows = $query->orderBy('weighed_at')->orderBy('id')->get();
+                
                 $data = [];
                 foreach ($rows as $r) {
-                    $data[] = [$r->id, $r->weighed_at, $r->weight_kg, $r->created_at];
+                    $data[] = [
+                        $r->id, 
+                        $r->weighed_at->format('Y-m-d'), 
+                        $r->weight_kg, 
+                        $r->created_at ? $r->created_at->format('Y-m-d H:i:s') : ''
+                    ];
                 }
 
                 return CsvExporter::download(

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WeightEntry;
 use App\Support\WeightChartSvg;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WeightController extends Controller
@@ -25,29 +25,17 @@ class WeightController extends Controller
             if ($w < 20 || $w > 400) {
                 return back()->with('error', 'Peso fora do intervalo esperado (20–400 kg).')->withInput();
             }
-            $existing = DB::table('weight_entries')
-                ->where('user_id', $uid)
-                ->where('weighed_at', $day)
-                ->first();
-            if ($existing) {
-                DB::table('weight_entries')
-                    ->where('id', $existing->id)
-                    ->update(['weight_kg' => $w]);
-                $notice = 'Peso do dia atualizado.';
-            } else {
-                DB::table('weight_entries')->insert([
-                    'user_id' => $uid,
-                    'weighed_at' => $day,
-                    'weight_kg' => $w,
-                ]);
-                $notice = 'Peso registrado.';
-            }
+            $entry = WeightEntry::updateOrCreate(
+                ['user_id' => $uid, 'weighed_at' => $day],
+                ['weight_kg' => $w]
+            );
+            
+            $notice = $entry->wasRecentlyCreated ? 'Peso registrado.' : 'Peso do dia atualizado.';
 
             return back()->with('notice', $notice);
         }
 
-        $rows = DB::table('weight_entries')
-            ->where('user_id', $uid)
+        $rows = WeightEntry::where('user_id', $uid)
             ->orderByDesc('weighed_at')
             ->limit(60)
             ->get();

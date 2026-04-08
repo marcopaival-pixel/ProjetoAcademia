@@ -25,6 +25,17 @@ Copie o bloco abaixo para cada registo:
 
 ## Registos
 
+### 2026-04-07 — Início da Transformação para SaaS Pro
+
+- **Pedido / contexto:** Transformar o ProjetoAcademia em plataforma SaaS profissional para nutrólogos e personals.
+- **Ferramenta:** Antigravity
+- **Decisão ou resultado:** Definida visão estratégica (Multi-tenancy, Módulos especializados, IA Hub). Implementado o primeiro "Portal do Profissional" com interface premium (Glassmorphism/Dark Mode).
+- **Ficheiros / PR:** `docs/SAAS_VISION_ARCH.md`, `Professional/DashboardController.php`, `resources/views/professional/dashboard.blade.php`, `web.php`.
+- **Riscos / notas:** Necessidade futura de refatorar o Model User para suportar Tenancy real.
+- **Validado por:** —
+
+---
+
 ### (exemplo) 2026-04-01 — Estrutura inicial do agente de governança
 
 - **Pedido / contexto:** Definir pacote AGENTS + regras Cursor + manuais.

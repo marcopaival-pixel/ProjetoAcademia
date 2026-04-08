@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateProfileRequest;
+use App\Models\UserProfile;
+use App\Models\WeightEntry;
 use App\Services\Nutrition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,25 +17,30 @@ class ProfileController extends Controller
     public function show(Request $request): View
     {
         $user = $request->user();
-        $uid = (int) $user->id;
         $isPremium = $user->hasPremiumAccess();
 
-        $u = DB::table('users as u')
-            ->leftJoin('user_profiles as p', 'p.user_id', '=', 'u.id')
-            ->where('u.id', $uid)
-            ->select([
-                'u.name', 'u.email', 'p.birth_date', 'p.sex', 'p.height_cm', 'p.activity_level', 'p.climate', 'p.goal',
-                'p.daily_calorie_target', 'p.protein_target_g', 'p.carbs_target_g', 'p.fat_target_g', 'p.water_target_ml',
-                'p.is_water_target_auto', 'p.target_weight_kg', 'p.training_days_per_week',
-            ])
-            ->first();
+        $profile = $user->profile ?? new UserProfile();
 
-        abort_if(! $u, 404);
+        $u = (object) [
+            'name' => $user->name,
+            'email' => $user->email,
+            'birth_date' => $profile->birth_date?->format('Y-m-d') ?? $profile->birth_date,
+            'sex' => $profile->sex,
+            'height_cm' => $profile->height_cm,
+            'activity_level' => $profile->activity_level,
+            'climate' => $profile->climate,
+            'goal' => $profile->goal,
+            'daily_calorie_target' => $profile->daily_calorie_target,
+            'protein_target_g' => $profile->protein_target_g,
+            'carbs_target_g' => $profile->carbs_target_g,
+            'fat_target_g' => $profile->fat_target_g,
+            'water_target_ml' => $profile->water_target_ml,
+            'is_water_target_auto' => $profile->is_water_target_auto,
+            'target_weight_kg' => $profile->target_weight_kg,
+            'training_days_per_week' => $profile->training_days_per_week,
+        ];
 
-        $latestWeightRow = DB::table('weight_entries')
-            ->where('user_id', $uid)
-            ->orderByDesc('weighed_at')
-            ->first();
+        $latestWeightRow = $user->weightEntries()->orderByDesc('weighed_at')->first();
 
         $calPreview = null;
         if ($latestWeightRow && ! empty($u->birth_date) && $u->height_cm !== null) {
@@ -45,7 +53,7 @@ class ProfileController extends Controller
                 (float) $latestWeightRow->weight_kg
             );
             if ($est['ok']) {
-                $calPreview = array_merge($est, ['weighed_at' => $latestWeightRow->weighed_at]);
+                $calPreview = array_merge($est, ['weighed_at' => $latestWeightRow->weighed_at->format('Y-m-d')]);
             }
         }
 
@@ -68,12 +76,12 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateProfileRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $uid = (int) $user->id;
         $isPremium = $user->hasPremiumAccess();
 
+        // 1. Alteração de Senha
         if ($request->input('profile_action') === 'password') {
             $request->validate([
                 'current_password' => ['required'],
@@ -91,174 +99,82 @@ class ProfileController extends Controller
             return back()->with('notice', 'Senha alterada com sucesso.');
         }
 
+        // 2. Atualização de Macros (Atalho Premium)
         if ($request->input('profile_action') === 'macros' && $isPremium) {
-             // Only update macros
-             $pt = (string) $request->input('protein_target_g', '');
-             $ct = (string) $request->input('carbs_target_g', '');
-             $ft = (string) $request->input('fat_target_g', '');
-             $p = $pt === '' ? null : (float) str_replace(',', '.', $pt);
-             $c = $ct === '' ? null : (float) str_replace(',', '.', $ct);
-             $f = $ft === '' ? null : (float) str_replace(',', '.', $ft);
-
-             DB::table('user_profiles')->where('user_id', $uid)->update([
-                 'protein_target_g' => $p,
-                 'carbs_target_g' => $c,
-                 'fat_target_g' => $f,
-             ]);
+             UserProfile::updateOrCreate(
+                 ['user_id' => $user->id],
+                 [
+                     'protein_target_g' => $request->input('protein_target_g'),
+                     'carbs_target_g' => $request->input('carbs_target_g'),
+                     'fat_target_g' => $request->input('fat_target_g'),
+                 ]
+             );
 
              return back()->with('notice', 'Metas de macros atualizadas.');
         }
 
-        $name = trim((string) $request->input('name'));
-        $birth = (string) $request->input('birth_date');
-        $birthSql = $birth === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth) ? null : $birth;
-        $sex = (string) $request->input('sex');
-        if (! in_array($sex, ['', 'M', 'F', 'O'], true)) {
-            $sex = '';
-        }
-        $height = $request->input('height_cm');
-        $heightSql = $height === '' || $height === null ? null : (int) $height;
-        if ($heightSql !== null && ($heightSql < 50 || $heightSql > 260)) {
-            return back()->with('error', 'Altura inválida.')->withInput();
-        }
-
-        $activity = (string) $request->input('activity_level', 'moderate');
-        $actAllowed = ['sedentary', 'light', 'moderate', 'active', 'very_active'];
-        if (! in_array($activity, $actAllowed, true)) {
-            $activity = 'moderate';
-        }
-
-        $climate = (string) $request->input('climate', 'moderate');
-        if (! in_array($climate, ['cold', 'moderate', 'hot'])) {
-            $climate = 'moderate';
-        }
-
-        $goal = (string) $request->input('goal', 'maintain');
-        if (! in_array($goal, ['lose', 'gain', 'maintain'], true)) {
-            $goal = 'maintain';
-        }
-
-        $weight = (string) $request->input('current_weight_kg', '');
-        $weightSql = $weight === '' ? null : (float) str_replace(',', '.', $weight);
-        if ($weightSql !== null && ($weightSql < 20 || $weightSql > 500)) {
-            return back()->with('error', 'Peso atual inválido (20-500kg).')->withInput();
-        }
-
-        $targetWeight = (string) $request->input('target_weight_kg', '');
-        $targetWeightSql = $targetWeight === '' ? null : (float) str_replace(',', '.', $targetWeight);
-        if ($targetWeightSql !== null && ($targetWeightSql < 20 || $targetWeightSql > 500)) {
-            return back()->with('error', 'Peso objetivo inválido.')->withInput();
-        }
-
-        $training = (string) $request->input('training_days_per_week', '');
-        if (! in_array($training, ['', '1-2', '3-4', '5-6', 'all'], true)) {
-            $training = '';
-        }
+        // 3. Atualização de Perfil Geral
+        $data = $request->validated();
         $autoCalorie = $request->boolean('auto_calorie');
         $autoWater = $request->boolean('auto_water');
-        $target = $request->input('daily_calorie_target');
-        $targetSql = $target === '' || $target === null ? null : (int) $target;
+        
         $est = null;
-        $error = '';
+        $lw = $user->weightEntries()->orderByDesc('weighed_at')->first();
+        $currentWeight = $data['current_weight_kg'] ?? ($lw ? (float) $lw->weight_kg : null);
 
-        // Busca o peso mais recente se qualquer um dos cálculos automáticos estiver ativo
-        $lw = null;
-        if ($autoCalorie || $autoWater) {
-            $lw = DB::table('weight_entries')->where('user_id', $uid)->orderByDesc('weighed_at')->first();
-        }
-
+        // Cálculos Automáticos de Nutrição
         if ($autoCalorie) {
-            $lwKg = $lw ? (float) $lw->weight_kg : $weightSql;
-            $est = Nutrition::estimateTarget($birthSql, $heightSql, $sex, $activity, $goal, $lwKg);
+            $est = Nutrition::estimateTarget(
+                $data['birth_date'], $data['height_cm'], $data['sex'],
+                $data['activity_level'], $data['goal'], $currentWeight
+            );
             if (! $est['ok']) {
-                $error = $est['message'];
-            } else {
-                $targetSql = $est['target'];
+                return back()->with('error', $est['message'])->withInput();
             }
+            $data['daily_calorie_target'] = $est['target'];
         }
 
-        if ($error === '' && $targetSql !== null && ($targetSql < 500 || $targetSql > 20000)) {
-            $error = 'Meta calórica fora do intervalo (500–20000).';
+        if ($autoWater && $currentWeight !== null) {
+            $data['water_target_ml'] = Nutrition::calculateWaterTarget(
+                $currentWeight, $data['birth_date'], $data['sex'],
+                $data['activity_level'], $data['climate']
+            );
         }
 
-        $proteinT = null;
-        $carbsT = null;
-        $fatT = null;
-        if ($isPremium) {
-            $pt = (string) $request->input('protein_target_g', '');
-            $ct = (string) $request->input('carbs_target_g', '');
-            $ft = (string) $request->input('fat_target_g', '');
-            $proteinT = $pt === '' ? null : (float) str_replace(',', '.', $pt);
-            $carbsT = $ct === '' ? null : (float) str_replace(',', '.', $ct);
-            $fatT = $ft === '' ? null : (float) str_replace(',', '.', $ft);
-        }
-        $wt = (string) $request->input('water_target_ml', '');
-        $waterT = $wt === '' ? null : (int) $wt;
+        // Persistência em Transação usando Eloquent via DB::transaction global
+        DB::transaction(function () use ($user, $data, $autoWater) {
+            $user->update(['name' => $data['name']]);
 
-        if ($autoWater) {
-            $lwKg = isset($lw) && $lw ? (float) $lw->weight_kg : $weightSql;
-            if ($lwKg !== null) {
-                $waterT = Nutrition::calculateWaterTarget($lwKg, $birthSql, $sex, $activity, $climate);
-            }
-        }
-
-        foreach (['Proteína' => $proteinT, 'Carboidrato' => $carbsT, 'Gordura' => $fatT] as $lab => $v) {
-            if ($v !== null && ($v < 0 || $v > 600)) {
-                $error = "Meta de {$lab} inválida (0–600 g).";
-                break;
-            }
-        }
-        if ($error === '' && $waterT !== null && ($waterT < 500 || $waterT > 10000)) {
-            $error = 'Meta de água inválida (500–10000 ml).';
-        }
-        if ($error === '' && $name === '') {
-            $error = 'Nome obrigatório.';
-        }
-        if ($error === '' && ($sex === '' || $sex === 'O')) {
-             // 'O' is allowed in db, but user wants sex mandatory (typical for calculations)
-             // We'll treat '' as missing
-             $error = 'O campo sexo é obrigatório.';
-        }
-        if ($error !== '') {
-            return back()->with('error', $error)->withInput();
-        }
-
-        DB::transaction(function () use ($uid, $name, $birthSql, $sex, $heightSql, $activity, $climate, $goal, $targetSql, $proteinT, $carbsT, $fatT, $waterT, $autoWater, $weightSql, $targetWeightSql, $training) {
-            DB::table('users')->where('id', $uid)->update(['name' => $name]);
-            $exists = DB::table('user_profiles')->where('user_id', $uid)->exists();
-            if ($weightSql !== null) {
-                $today = date('Y-m-d');
-                DB::table('weight_entries')->updateOrInsert(
-                    ['user_id' => $uid, 'weighed_at' => $today],
-                    ['weight_kg' => $weightSql]
+            if (!empty($data['current_weight_kg'])) {
+                WeightEntry::updateOrCreate(
+                    ['user_id' => $user->id, 'weighed_at' => date('Y-m-d')],
+                    ['weight_kg' => $data['current_weight_kg']]
                 );
             }
 
-            // Ensure profile row exists
-            DB::table('user_profiles')->updateOrInsert(
-                ['user_id' => $uid],
+            UserProfile::updateOrCreate(
+                ['user_id' => $user->id],
                 [
-                    'birth_date' => $birthSql,
-                    'sex' => $sex,
-                    'height_cm' => $heightSql,
-                    'activity_level' => $activity,
-                    'climate' => $climate,
-                    'goal' => $goal,
-                    'target_weight_kg' => $targetWeightSql,
-                    'training_days_per_week' => $training,
-                    'daily_calorie_target' => $targetSql,
-                    'protein_target_g' => $proteinT,
-                    'carbs_target_g' => $carbsT,
-                    'fat_target_g' => $fatT,
-                    'water_target_ml' => $waterT,
+                    'birth_date' => $data['birth_date'],
+                    'sex' => $data['sex'],
+                    'height_cm' => $data['height_cm'] ?? null,
+                    'activity_level' => $data['activity_level'],
+                    'climate' => $data['climate'],
+                    'goal' => $data['goal'],
+                    'target_weight_kg' => $data['target_weight_kg'] ?? null,
+                    'training_days_per_week' => $data['training_days_per_week'] ?? null,
+                    'daily_calorie_target' => $data['daily_calorie_target'] ?? null,
+                    'protein_target_g' => $data['protein_target_g'] ?? null,
+                    'carbs_target_g' => $data['carbs_target_g'] ?? null,
+                    'fat_target_g' => $data['fat_target_g'] ?? null,
+                    'water_target_ml' => $data['water_target_ml'] ?? null,
                     'is_water_target_auto' => $autoWater,
-                    'updated_at' => now(),
                 ]
             );
         });
 
         $notice = 'Perfil atualizado.';
-        if ($autoCalorie && is_array($est) && ($est['ok'] ?? false)) {
+        if ($autoCalorie && $est) {
             $bmrR = (int) round($est['bmr']);
             $tdeeR = (int) round($est['tdee']);
             $notice .= " Meta estimada: {$est['target']} kcal (TMB ≈ {$bmrR}, gasto estimado ≈ {$tdeeR} kcal/dia).";
