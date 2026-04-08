@@ -1,27 +1,18 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
+// Migração stub — substituída pela migração completa 2026_04_07_135200_create_load_progression_tables.
+// Mantida como no-op para não quebrar o histórico do Git.
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('load_progression_tables', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // no-op: tabelas criadas pela migração 2026_04_07_135200
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('load_progression_tables');
+        // no-op
     }
 };

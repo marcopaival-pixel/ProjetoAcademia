@@ -1,27 +1,18 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
+// Migração stub — substituída pela migração completa 2026_04_08_180000_create_workout_target_areas_table.
+// Mantida como no-op para não quebrar o histórico do Git.
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('workout_target_areas', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // no-op: tabela criada pela migração 2026_04_08_180000
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('workout_target_areas');
+        // no-op
     }
 };
