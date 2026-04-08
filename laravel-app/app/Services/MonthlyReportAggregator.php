@@ -10,11 +10,25 @@ final class MonthlyReportAggregator
 {
     /**
      * @return array{
-     *     days: array<string, array{label: string, kcal_in: int, ex_min: int, ex_kcal: int, weight: float|null}>,
+     *     days: array<string, array{
+     *         label: string, 
+     *         kcal_in: int, 
+     *         p: float, 
+     *         c: float, 
+     *         f: float, 
+     *         ex_min: int, 
+     *         ex_kcal: int, 
+     *         water: int, 
+     *         weight: float|null
+     *     }>,
      *     avg_kcal: int,
+     *     avg_p: float,
+     *     avg_c: float,
+     *     avg_f: float,
      *     days_with_food: int,
      *     total_ex_min: int,
      *     total_ex_kcal: int,
+     *     total_water: int,
      *     delta_weight: float|null,
      *     first_weight: float|null,
      *     last_weight: float|null,
@@ -34,28 +48,37 @@ final class MonthlyReportAggregator
             $days[$key] = [
                 'label' => $d->translatedFormat('d/m D'),
                 'kcal_in' => 0,
+                'p' => 0.0,
+                'c' => 0.0,
+                'f' => 0.0,
                 'ex_min' => 0,
                 'ex_kcal' => 0,
+                'water' => 0,
                 'weight' => null,
             ];
         }
 
+        // Food & Macros
         foreach (DB::table('food_entries')
             ->where('user_id', $userId)
             ->whereBetween('entry_date', [$d0, $d1])
-            ->selectRaw('entry_date, COALESCE(SUM(calories), 0) AS c')
+            ->selectRaw('entry_date, SUM(calories) as cal, SUM(protein_g) as p, SUM(carbs_g) as c, SUM(fat_g) as f')
             ->groupBy('entry_date')
             ->get() as $r) {
             $k = $r->entry_date;
             if (isset($days[$k])) {
-                $days[$k]['kcal_in'] = (int) $r->c;
+                $days[$k]['kcal_in'] = (int) $r->cal;
+                $days[$k]['p'] = (float) $r->p;
+                $days[$k]['c'] = (float) $r->c;
+                $days[$k]['f'] = (float) $r->f;
             }
         }
 
+        // Exercises
         foreach (DB::table('exercise_entries')
             ->where('user_id', $userId)
             ->whereBetween('entry_date', [$d0, $d1])
-            ->selectRaw('entry_date, COALESCE(SUM(duration_min), 0) AS dm, COALESCE(SUM(calories_burned), 0) AS bk')
+            ->selectRaw('entry_date, SUM(duration_min) as dm, SUM(calories_burned) as bk')
             ->groupBy('entry_date')
             ->get() as $r) {
             $k = $r->entry_date;
@@ -65,38 +88,62 @@ final class MonthlyReportAggregator
             }
         }
 
-        foreach (DB::table('weight_entries')
+        // Water
+        foreach (DB::table('water_entries')
             ->where('user_id', $userId)
-            ->whereBetween('weighed_at', [$d0, $d1])
-            ->orderBy('weighed_at')
+            ->whereBetween('entry_date', [$d0, $d1])
+            ->selectRaw('entry_date, SUM(amount_ml) as ml')
+            ->groupBy('entry_date')
             ->get() as $r) {
-            $k = $r->weighed_at;
+            $k = $r->entry_date;
             if (isset($days[$k])) {
-                $days[$k]['weight'] = (float) $r->weight_kg;
+                $days[$k]['water'] = (int) $r->ml;
             }
         }
 
-        $totalKcal = 0;
-        $daysWithFood = 0;
-        $totalExMin = 0;
-        $totalExKcal = 0;
-        foreach ($days as $info) {
-            if ($info['kcal_in'] > 0) {
-                $totalKcal += $info['kcal_in'];
-                $daysWithFood++;
-            }
-            $totalExMin += $info['ex_min'];
-            $totalExKcal += $info['ex_kcal'];
-        }
-
-        $avgKcal = $daysWithFood > 0 ? (int) round($totalKcal / $daysWithFood) : 0;
-
+        // Weight
         $weightsInPeriod = DB::table('weight_entries')
             ->where('user_id', $userId)
             ->whereBetween('weighed_at', [$d0, $d1])
             ->orderBy('weighed_at')
             ->get();
 
+        foreach ($weightsInPeriod as $r) {
+            $k = $r->weighed_at;
+            if (isset($days[$k])) {
+                $days[$k]['weight'] = (float) $r->weight_kg;
+            }
+        }
+
+        // Totals & Averages
+        $totalKcal = 0; $totalP = 0.0; $totalC = 0.0; $totalF = 0.0;
+        $daysWithFood = 0;
+        $daysWithEx = 0;
+        $totalExMin = 0; $totalExKcal = 0;
+        $totalWater = 0;
+
+        foreach ($days as $info) {
+            if ($info['kcal_in'] > 0) {
+                $totalKcal += $info['kcal_in'];
+                $totalP += $info['p'];
+                $totalC += $info['c'];
+                $totalF += $info['f'];
+                $daysWithFood++;
+            }
+            if ($info['ex_min'] > 0) {
+                $daysWithEx++;
+            }
+            $totalExMin += $info['ex_min'];
+            $totalExKcal += $info['ex_kcal'];
+            $totalWater += $info['water'];
+        }
+
+        $avgKcal = $daysWithFood > 0 ? (int) round($totalKcal / $daysWithFood) : 0;
+        $avgP = $daysWithFood > 0 ? $totalP / $daysWithFood : 0.0;
+        $avgC = $daysWithFood > 0 ? $totalC / $daysWithFood : 0.0;
+        $avgF = $daysWithFood > 0 ? $totalF / $daysWithFood : 0.0;
+
+        // Weight Delta
         $deltaWeight = null;
         $firstWeight = null;
         $lastWeight = null;
@@ -122,9 +169,14 @@ final class MonthlyReportAggregator
         return [
             'days' => $days,
             'avg_kcal' => $avgKcal,
+            'avg_p' => $avgP,
+            'avg_c' => $avgC,
+            'avg_f' => $avgF,
             'days_with_food' => $daysWithFood,
+            'days_with_ex' => $daysWithEx,
             'total_ex_min' => $totalExMin,
             'total_ex_kcal' => $totalExKcal,
+            'total_water' => $totalWater,
             'delta_weight' => $deltaWeight,
             'first_weight' => $firstWeight,
             'last_weight' => $lastWeight,

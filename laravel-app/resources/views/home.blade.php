@@ -9,7 +9,7 @@
         <h1 class="hero-title">Transforme sua saúde com inteligência</h1>
         <p class="hero-subtitle">Acompanhe sua alimentação, treinos e evolução em um só lugar. Tudo o que você precisa para alcançar seus objetivos, powered by AI.</p>
         <div class="actions-inline justify-center">
-            <a href="{{ route('register') }}" class="btn btn-xl btn-primary">Começar gratuitamente</a>
+            <a href="{{ route('onboarding.welcome') }}" class="btn btn-xl btn-primary">Começar Gratuitamente</a>
             <a href="#features" class="btn btn-xl btn-ghost">Ver recursos</a>
         </div>
     </section>
@@ -55,7 +55,7 @@
                     <li>1 relatório por mês</li>
                     <li>Acesso à comunidade</li>
                 </ul>
-                <a href="{{ route('register') }}" class="btn btn-ghost w-full">Começar agora</a>
+                <a href="{{ route('onboarding.welcome') }}" class="btn btn-ghost w-full">Começar Gratuitamente</a>
             </div>
             
             <div class="price-card featured">
@@ -79,7 +79,7 @@
         <h2 class="section-title">Pronto para mudar de vida?</h2>
         <p class="hero-subtitle">Junte-se a centenas de usuários que já estão transformando sua rotina com o NexShape.</p>
         <div class="actions-inline justify-center">
-            <a href="{{ route('register') }}" class="btn btn-xl btn-primary">Criar minha conta agora</a>
+            <a href="{{ route('onboarding.welcome') }}" class="btn btn-xl btn-primary">Começar Gratuitamente</a>
         </div>
     </section>
 </div>

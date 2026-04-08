@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FoodEntry;
 use App\Models\MealTemplate;
 use App\Services\Nutrition;
 use Illuminate\Http\RedirectResponse;
@@ -42,8 +43,7 @@ class DiaryController extends Controller
         $editId = (int) $request->query('edit', 0);
         $editRow = null;
         if ($editId > 0) {
-            $editRow = DB::table('food_entries')
-                ->where('id', $editId)
+            $editRow = FoodEntry::where('id', $editId)
                 ->where('user_id', $uid)
                 ->where('entry_date', $date)
                 ->first();
@@ -56,15 +56,13 @@ class DiaryController extends Controller
             return $this->handlePost($request, $uid, $date);
         }
 
-        $rows = DB::table('food_entries')
-            ->where('user_id', $uid)
+        $rows = FoodEntry::where('user_id', $uid)
             ->where('entry_date', $date)
             ->orderBy('created_at')
             ->orderBy('id')
             ->get();
 
-        $sums = DB::table('food_entries')
-            ->where('user_id', $uid)
+        $sums = FoodEntry::where('user_id', $uid)
             ->where('entry_date', $date)
             ->selectRaw('COALESCE(SUM(calories),0) as c, COALESCE(SUM(protein_g),0) as p, COALESCE(SUM(carbs_g),0) as cb, COALESCE(SUM(fat_g),0) as f')
             ->first();
@@ -73,11 +71,12 @@ class DiaryController extends Controller
         $sumC = (float) ($sums->cb ?? 0);
         $sumF = (float) ($sums->f ?? 0);
 
-        $macroProf = (array) (DB::table('user_profiles')->where('user_id', $uid)->first() ?? []);
+        $profile = $user->profile;
+        $macroProf = $profile ? $profile->toArray() : [];
         $macroTargets = Nutrition::macroTargetsForDisplay($isPremium, $macroProf);
         $hasMacroTargets = $isPremium
             ? (($macroTargets['p'] ?? 0) > 0 || ($macroTargets['c'] ?? 0) > 0 || ($macroTargets['f'] ?? 0) > 0)
-            : (isset($macroProf['daily_calorie_target']) && $macroProf['daily_calorie_target'] !== null && (int) $macroProf['daily_calorie_target'] > 0);
+            : ($profile && $profile->daily_calorie_target > 0);
 
         $mealLabels = [
             'breakfast' => 'Café da manhã',
@@ -96,7 +95,7 @@ class DiaryController extends Controller
             ? MealTemplate::query()->where('user_id', $uid)->orderBy('name')->get(['id', 'name'])
             : collect();
 
-        $calorieTarget = isset($macroProf['daily_calorie_target']) ? (int) $macroProf['daily_calorie_target'] : null;
+        $calorieTarget = $profile ? (int) $profile->daily_calorie_target : null;
 
         return view('diary', [
             'date' => $date,
@@ -131,19 +130,18 @@ class DiaryController extends Controller
             if ($sourceDate === $targetDate) {
                 return back()->with('error', 'O dia de origem deve ser diferente do dia do diário.');
             }
-            $items = DB::table('food_entries')
-                ->where('user_id', $uid)
-                ->where('entry_date', $sourceDate)
-                ->get();
+            $items = FoodEntry::where('user_id', $uid)->where('entry_date', $sourceDate)->get();
             if ($items->isEmpty()) {
                 return back()->with('error', 'Não há alimentos no dia de origem.');
             }
             foreach ($items as $it) {
-                DB::table('food_entries')->insert([
+                FoodEntry::create([
                     'user_id' => $uid,
                     'entry_date' => $targetDate,
                     'meal_type' => $it->meal_type,
                     'food_name' => $it->food_name,
+                    'amount' => $it->amount,
+                    'unit' => $it->unit,
                     'calories' => $it->calories,
                     'protein_g' => $it->protein_g,
                     'carbs_g' => $it->carbs_g,
@@ -166,8 +164,7 @@ class DiaryController extends Controller
             if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $srcDate)) {
                 return back()->with('error', 'Data do modelo inválida.');
             }
-            $srcItems = DB::table('food_entries')
-                ->where('user_id', $uid)
+            $srcItems = FoodEntry::where('user_id', $uid)
                 ->where('entry_date', $srcDate)
                 ->orderBy('id')
                 ->get();
@@ -195,7 +192,6 @@ class DiaryController extends Controller
                 DB::commit();
             } catch (\Throwable) {
                 DB::rollBack();
-
                 return back()->with('error', 'Não foi possível guardar o modelo.');
             }
 
@@ -211,10 +207,7 @@ class DiaryController extends Controller
             if ($tid <= 0 || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $targetDate)) {
                 return back()->with('error', 'Dados inválidos para aplicar o modelo.');
             }
-            $tpl = MealTemplate::with('items')
-                ->where('user_id', $uid)
-                ->where('id', $tid)
-                ->first();
+            $tpl = MealTemplate::with('items')->where('user_id', $uid)->where('id', $tid)->first();
             if ($tpl === null) {
                 return back()->with('error', 'Modelo não encontrado.');
             }
@@ -222,15 +215,17 @@ class DiaryController extends Controller
                 return back()->with('error', 'Este modelo não tem itens.');
             }
             foreach ($tpl->items as $it) {
-                DB::table('food_entries')->insert([
+                FoodEntry::create([
                     'user_id' => $uid,
                     'entry_date' => $targetDate,
                     'meal_type' => $it->meal_type,
                     'food_name' => $it->food_name,
-                    'calories' => $it->calories,
-                    'protein_g' => $it->protein_g,
-                    'carbs_g' => $it->carbs_g,
-                    'fat_g' => $it->fat_g,
+                    'amount' => null,
+                    'unit' => 'N/A',
+                    'calories' => (int) $it->calories,
+                    'protein_g' => (float) $it->protein_g,
+                    'carbs_g' => (float) $it->carbs_g,
+                    'fat_g' => (float) $it->fat_g,
                 ]);
             }
 
@@ -250,7 +245,7 @@ class DiaryController extends Controller
             if ($tid <= 0 || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $redirDate)) {
                 return back()->with('error', 'Dados inválidos para remover o modelo.');
             }
-            $n = MealTemplate::query()->where('user_id', $uid)->where('id', $tid)->delete();
+            $n = MealTemplate::where('user_id', $uid)->where('id', $tid)->delete();
             if ($n === 0) {
                 return back()->with('error', 'Modelo não encontrado.');
             }
@@ -264,11 +259,7 @@ class DiaryController extends Controller
             if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $delDate) || $fid <= 0) {
                 return back()->with('error', 'Dados inválidos.');
             }
-            $n = DB::table('food_entries')
-                ->where('id', $fid)
-                ->where('user_id', $uid)
-                ->where('entry_date', $delDate)
-                ->delete();
+            $n = FoodEntry::where('id', $fid)->where('user_id', $uid)->where('entry_date', $delDate)->delete();
             if ($n === 0) {
                 return back()->with('error', 'Não foi possível excluir o item.');
             }
@@ -303,31 +294,28 @@ class DiaryController extends Controller
         }
 
         if ($foodEditId > 0) {
-            $own = DB::table('food_entries')
-                ->where('id', $foodEditId)
+            $entry = FoodEntry::where('id', $foodEditId)
                 ->where('user_id', $uid)
                 ->where('entry_date', $date)
-                ->exists();
-            if (! $own) {
+                ->first();
+            if (! $entry) {
                 return back()->with('error', 'Item não encontrado.');
             }
-            DB::table('food_entries')
-                ->where('id', $foodEditId)
-                ->update([
-                    'meal_type' => $meal,
-                    'food_name' => $name,
-                    'amount' => $amount,
-                    'unit' => $unit,
-                    'calories' => $calories,
-                    'protein_g' => $p,
-                    'carbs_g' => $c,
-                    'fat_g' => $f,
-                ]);
+            $entry->update([
+                'meal_type' => $meal,
+                'food_name' => $name,
+                'amount' => $amount,
+                'unit' => $unit,
+                'calories' => $calories,
+                'protein_g' => $p,
+                'carbs_g' => $c,
+                'fat_g' => $f,
+            ]);
 
             return redirect()->route('diary', ['date' => $date, 'flash' => 'updated']);
         }
 
-        DB::table('food_entries')->insert([
+        FoodEntry::create([
             'user_id' => $uid,
             'entry_date' => $date,
             'meal_type' => $meal,

@@ -1,0 +1,276 @@
+@php
+    $loggedIn = auth()->check();
+    $accentColor = \App\Models\AdminSetting::get('accent_color', '#3d9cf5');
+    $customLogo = \App\Models\AdminSetting::get('logo_url', '');
+
+    // Auto-Healing em um único lugar (Topo)
+    if ($loggedIn) {
+        try {
+            // Testar se a tabela existe
+            \Illuminate\Support\Facades\DB::table('internal_emails')->take(1)->get();
+        } catch (\Exception $e) {
+            if (str_contains($e->getMessage(), 'internal_emails') || str_contains($e->getMessage(), '1146')) {
+                \Illuminate\Support\Facades\Schema::create('internal_emails', function ($table) {
+                    $table->id();
+                    $table->unsignedInteger('remetente_id');
+                    $table->unsignedInteger('destinatario_id');
+                    $table->string('assunto', 200);
+                    $table->text('mensagem');
+                    $table->boolean('lida')->default(false);
+                    $table->timestamp('data_envio')->nullable();
+                    $table->timestamp('data_leitura')->nullable();
+                    $table->timestamp('excluded_at_sender')->nullable();
+                    $table->timestamp('excluded_at_receiver')->nullable();
+                    $table->enum('status', ['draft', 'outbox', 'sent', 'failed'])->default('sent');
+                    $table->unsignedBigInteger('parent_id')->nullable();
+                    $table->boolean('is_system')->default(false);
+                    $table->timestamps();
+                });
+            }
+        }
+
+        // Auto-Healing para Hidratação (water_entries)
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('water_entries', 'drank_at')) {
+                \Illuminate\Support\Facades\Schema::table('water_entries', function ($table) {
+                    $table->timestamp('drank_at')->nullable()->after('entry_date');
+                    $table->string('source')->nullable()->after('drank_at');
+                });
+            }
+
+            // Auto-Healing para Perfis (user_profiles) - Config de Hidratação
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('user_profiles', 'is_water_target_auto')) {
+                \Illuminate\Support\Facades\Schema::table('user_profiles', function ($table) {
+                    $table->boolean('is_water_target_auto')->default(true)->after('water_target_ml');
+                    $table->string('climate', 20)->default('moderate')->after('activity_level');
+                });
+            }
+        } catch (\Exception $e) {}
+    }
+@endphp
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="{{ $projetoTheme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0b0e14">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <title>@yield('title') — NexShape Arena</title>
+    <script>
+        (function () {
+            var n = @json(\App\Support\Theme::COOKIE);
+            if (document.cookie.indexOf(n + "=") !== -1) {
+                return;
+            }
+            try {
+                if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+                    document.documentElement.setAttribute("data-theme", "light");
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            blue: '#3b82f6',
+                            emerald: '#10b981',
+                            indigo: '#8b5cf6',
+                        }
+                    },
+                    animation: {
+                        'dashboard-entry': 'dashboard-entry 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        'dashboard-entry': {
+                            'from': { opacity: '0', transform: 'translateY(40px) scale(0.98)' },
+                            'to': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --accent: {{ $accentColor }};
+            --accent-dim: {{ $accentColor }}cc; /* Adiciona transparência para o hover */
+            --primary-gradient: linear-gradient(135deg, {{ $accentColor }} 0%, {{ $accentColor }}cc 100%);
+        }
+    </style>
+</head>
+<body class="{{ request()->is('professional*') ? 'portal-pro' : '' }}">
+    <a class="skip-link" href="#main">Ir para o conteúdo</a>
+    <header class="site-header">
+        <div class="shell header-inner">
+            <a class="logo" href="{{ $loggedIn ? route('dashboard') : route('home') }}" style="margin:0;">
+                <img src="{{ $customLogo ?: asset('images/logo_Academia.png') }}" alt="Logo Academia" class="logo-img" style="height: 58px; width: auto;">
+            </a>
+            
+            @php($isHome = Route::is('home'))
+            
+            @if($loggedIn && !$isHome)
+                <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" id="nav-toggle">Menu</button>
+                <nav class="site-nav" id="site-nav" aria-label="Principal">
+                    <a href="{{ route('dashboard') }}" @if(($navCurrent ?? '') === 'dashboard') aria-current="page" @endif>Dashboard</a>
+                    <a href="{{ route('diary') }}" @if(($navCurrent ?? '') === 'diary') aria-current="page" @endif>Alimentação</a>
+                    <a href="{{ route('hydration.index') }}" @if(($navCurrent ?? '') === 'hydration') aria-current="page" @endif class="relative">
+                        Hidratação
+                        <span class="absolute -top-1 -right-2 flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                    </a>
+                    <a href="{{ route('nutrition.index') }}" @if(($navCurrent ?? '') === 'nutrition') aria-current="page" @endif>Nutrição</a>
+                    <a href="{{ route('exercise') }}" @if(($navCurrent ?? '') === 'exercise') aria-current="page" @endif>Exercícios</a>
+                    <a href="{{ route('progression.charts') }}" @if(($navCurrent ?? '') === 'progression') aria-current="page" @endif>Evolução</a>
+                    <a href="{{ route('weight') }}" @if(($navCurrent ?? '') === 'weight') aria-current="page" @endif>Peso</a>
+                    <a href="{{ route('assessments.index') }}" @if(($navCurrent ?? '') === 'assessments') aria-current="page" @endif>Avaliação</a>
+                    <a href="{{ route('leaderboard.index') }}" @if(($navNavCurrent ?? '') === 'leaderboard') aria-current="page" @endif>Ranking</a>
+                    <a href="{{ route('active-rest.index') }}" @if(($navNavCurrent ?? '') === 'active-rest') aria-current="page" @endif>Descanso</a>
+                    <a href="{{ route('body-analysis.index') }}" @if(($navCurrent ?? '') === 'body-analysis') aria-current="page" @endif>Cyber-Fit</a>
+                    <a href="{{ route('messages.index') }}" @if(($navCurrent ?? '') === 'messages') aria-current="page" @endif>Chat</a>
+                    <a href="{{ route('internal-email.inbox') }}" @if(($navCurrent ?? '') === 'internal-email') aria-current="page" @endif>
+                        Correio
+                        @php($unreadCount = \App\Models\InternalEmail::where('destinatario_id', auth()->id())->where('lida', false)->count())
+                        @if($unreadCount > 0)
+                            <span class="badge bg-danger" style="font-size: 0.6rem; border-radius: 50px; padding: 2px 6px;">{{ $unreadCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('report') }}" @if(($navCurrent ?? '') === 'report') aria-current="page" @endif>Relatórios</a>
+                    <a href="{{ route('chat.page') }}" @if(($navCurrent ?? '') === 'chat') aria-current="page" @endif>IA Chat</a>
+                    @if(auth()->user()->hasPremiumAccess())
+                        <a href="{{ route('professional.dashboard') }}" @if(($navCurrent ?? '') === 'pro-dashboard') aria-current="page" @endif style="color: #60a5fa; font-weight: bold;">Portal Pro</a>
+                    @endif
+                    <div class="nav-divider"></div>
+                    @if(auth()->user()->is_admin)
+                        <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-ghost" style="color: var(--accent); font-weight: bold;">Admin</a>
+                    @endif
+                    <a href="{{ route('profile') }}" @if(($navCurrent ?? '') === 'profile') aria-current="page" @endif class="btn btn-sm btn-ghost">Perfil</a>
+                    <form action="{{ route('logout') }}" method="post" class="nav-logout-form">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-danger">Sair</button>
+                    </form>
+                </nav>
+            @else
+                <nav class="site-nav">
+                    <a href="#features">Recursos</a>
+                    <a href="#pricing">Preços</a>
+                    <div class="nav-divider"></div>
+                    <a href="{{ route('login') }}" class="btn btn-sm btn-ghost">Entrar</a>
+                </nav>
+            @endif
+        </div>
+    </header>
+
+    @if($loggedIn)
+        @php($activeAnnouncements = \App\Models\Announcement::active())
+        @foreach($activeAnnouncements as $announcement)
+            <div class="announcement-bar announcement-{{ $announcement->type }}" style="background: {{ $announcement->type == 'danger' ? '#f85149' : ($announcement->type == 'warning' ? '#d29922' : ($announcement->type == 'success' ? '#2ea043' : '#388bfd')) }}; color: white; text-align: center; padding: 0.75rem; font-weight: 600; font-size: 0.875rem;">
+                {{ $announcement->content }}
+            </div>
+        @endforeach
+    @endif
+
+    <main id="main" class="shell main-content">
+        @yield('content')
+    </main>
+
+    @if(!$loggedIn)
+    <footer class="site-footer shell animate-fade-up">
+        <div class="footer-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="footer-col">
+                <a class="logo" href="{{ route('home') }}" style="margin:0;">
+                    <img src="{{ asset('images/logo_Rodape.png') }}" alt="Logo Academia" class="logo-img" style="height: 36px; width: auto;">
+                </a>
+                <p class="muted" style="margin-top: 0.5rem;">Sua jornada para um corpo mais saudável e uma mente mais forte começa com o acompanhamento correto.</p>
+            </div>
+            <div class="footer-col">
+                <h4 style="color: var(--text); margin-bottom: 1rem;">Produto</h4>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li><a href="#features" class="muted">Recursos</a></li>
+                    <li><a href="#pricing" class="muted">Preços</a></li>
+                    <li><a href="{{ route('register') }}" class="muted">Criar conta</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4 style="color: var(--text); margin-bottom: 1rem;">Suporte</h4>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <li><a href="#" class="muted">Central de Ajuda</a></li>
+                    <li><a href="#" class="muted">Privacidade</a></li>
+                    <li><a href="#" class="muted">Termos de Uso</a></li>
+                </ul>
+            </div>
+            <div class="footer-col" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end;">
+                 <img src="{{ asset('images/logo.png') }}" alt="Desenvolvedor" style="height: 128px; width: auto; filter: opacity(0.95);">
+            </div>
+        </div>
+        
+        <div class="footer-row" style="padding-top: 1rem; border-top: 1px solid var(--border);">
+            <p class="footer-tagline">&copy; {{ date('Y') }} ProjetoAcademia. Todos os direitos reservados.</p>
+            <div class="theme-switcher" role="group" aria-label="Tema da interface">
+                <span class="muted theme-switcher-label">Aparência</span>
+                <form method="post" action="{{ route('theme') }}" class="theme-switcher-form">
+                    @csrf
+                    <input type="hidden" name="next" value="{{ $themeNext }}">
+                    <input type="hidden" name="theme" value="dark">
+                    <button type="submit" class="btn-theme{{ $projetoTheme === 'dark' ? ' is-active' : '' }}">Escuro</button>
+                </form>
+                <form method="post" action="{{ route('theme') }}" class="theme-switcher-form">
+                    @csrf
+                    <input type="hidden" name="next" value="{{ $themeNext }}">
+                    <input type="hidden" name="theme" value="light">
+                    <button type="submit" class="btn-theme{{ $projetoTheme === 'light' ? ' is-active' : '' }}">Claro</button>
+                </form>
+            </div>
+        </div>
+    </footer>
+    @endif
+
+    <script src="{{ asset('js/app.js') }}" defer></script>
+    <script>
+        // Internal Email Real-time Polling
+        @if(auth()->check())
+        function checkUnreadEmails() {
+            fetch('/api/internal-email/unread-count')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.querySelector('.nav-link[href*="internal-email"] .badge');
+                    const sidebarBadge = document.querySelector('.nav-link-email.active .badge') || document.querySelector('.nav-link-email[href*="inbox"] .badge');
+                    
+                    if (data.count > 0) {
+                        if (badge) {
+                            badge.textContent = data.count;
+                            badge.style.display = 'inline-block';
+                        }
+                        if (sidebarBadge) {
+                            sidebarBadge.textContent = data.count;
+                            sidebarBadge.style.display = 'inline-block';
+                        }
+                    } else {
+                        if (badge) badge.style.display = 'none';
+                        if (sidebarBadge) sidebarBadge.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Error fetching unread count:', err));
+        }
+        setInterval(checkUnreadEmails, 30000); // Check every 30 seconds
+        checkUnreadEmails();
+        @endif
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{{ asset('sw.js') }}")
+                    .then(reg => console.log('Service Worker registrado!', reg))
+                    .catch(err => console.log('Erro ao registrar SW:', err));
+            });
+        }
+    </script>
+</body>
+</html>

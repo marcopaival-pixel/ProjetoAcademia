@@ -47,6 +47,11 @@
                 <textarea id="instructions" name="instructions" rows="4">{{ old('instructions', $exercise->instructions) }}</textarea>
             </div>
 
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin: 1.5rem 0;">
+                <input type="checkbox" id="is_active" name="is_active" {{ $exercise->is_active ? 'checked' : '' }} style="width: auto;">
+                <label for="is_active" style="margin: 0;">Disponível no app (Ativo)</label>
+            </div>
+
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Alterações</button>
                 <a href="{{ route('admin.exercises.catalog') }}" class="btn" style="border: 1px solid var(--border-color); color: var(--text-main);">Voltar</a>
