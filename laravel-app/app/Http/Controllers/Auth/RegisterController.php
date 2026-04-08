@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use App\Models\UserConsent;
 
 class RegisterController extends Controller
 {
@@ -29,6 +30,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::min(8)],
+            'terms' => ['required', 'accepted'],
         ]);
 
         $user = DB::transaction(function () use ($validated) {
@@ -37,10 +39,33 @@ class RegisterController extends Controller
                 'email' => $validated['email'],
                 'password_hash' => Hash::make($validated['password']),
             ]);
-            DB::table('user_profiles')->insert(['user_id' => $user->id]);
+            
+            $onboarding = session('onboarding_data', []);
+            
+            DB::table('user_profiles')->insert([
+                'user_id' => $user->id,
+                'age' => $onboarding['age'] ?? null,
+                'gender' => $onboarding['gender'] ?? null,
+                'weight' => $onboarding['weight'] ?? null,
+                'height' => $onboarding['height'] ?? null,
+                'target_weight' => $onboarding['target_weight'] ?? null,
+                'activity_level' => $onboarding['activity_level'] ?? null,
+            ]);
+
+            // Registrar Consentimento Inicial (LGPD)
+            UserConsent::create([
+                'user_id' => $user->id,
+                'consent_type' => 'privacy_policy_and_terms',
+                'version' => '1.0',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->header('User-Agent'),
+            ]);
 
             return $user;
         });
+
+        // Limpar dados de onboarding após o uso
+        session()->forget('onboarding_data');
 
         $request->session()->regenerate();
         Auth::login($user);

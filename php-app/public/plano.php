@@ -124,15 +124,3 @@ require dirname(__DIR__) . '/includes/layout_header.php';
         </p>
 <?php
 require dirname(__DIR__) . '/includes/layout_footer.php';
-</think>
-
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-Read            </article>
-        </div>
-
-        <p class="muted" style="margin-top:1.5rem; font-size:0.875rem;">
-            Dúvidas sobre cobrança ou cancelamento serão detalhadas na página de checkout quando o gateway estiver conectado.
-        </p>
-<?php
-require dirname(__DIR__) . '/includes/layout_footer.php';

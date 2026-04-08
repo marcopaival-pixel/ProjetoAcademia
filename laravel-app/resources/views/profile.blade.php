@@ -193,6 +193,22 @@
     </div>
 </form>
 
+<!-- CARD: CONQUISTAS E TROFÉUS (GAMIFICAÇÃO) -->
+<div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; margin-top: 2rem; border: 2px solid gold; background: linear-gradient(145deg, var(--surface) 0%, rgba(255, 215, 0, 0.05) 100%);">
+    <div class="section-label" style="color: gold; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🏆 Galeria de Conquistas</div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.5rem; text-align: center;">
+        @php($myBadges = \App\Services\AchievementService::getList(auth()->id()))
+        @foreach($myBadges as $badge)
+            <div class="badge-item" style="padding: 1rem; border-radius: 20px; background: {{ $badge->unlocked ? 'var(--surface-glass)' : 'rgba(255,255,255,0.02)' }}; border: 1px solid {{ $badge->unlocked ? 'gold' : 'var(--border)' }}; opacity: {{ $badge->unlocked ? '1' : '0.4' }}; transition: all 0.3s ease; filter: {{ $badge->unlocked ? 'none' : 'grayscale(1)' }};" title="{{ $badge->desc }}">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ $badge->icon }}</div>
+                <div style="font-weight: 700; font-size: 0.85rem; color: {{ $badge->unlocked ? 'gold' : 'var(--text)' }};">{{ $badge->name }}</div>
+                <small class="muted" style="font-size: 0.65rem; display: block; margin-top: 0.25rem;">{{ $badge->desc }}</small>
+            </div>
+        @endforeach
+    </div>
+</div>
+
 <div class="profile-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); gap: 2rem; margin-top: 2rem; margin-bottom: 4rem;">
     
     <!-- CARD: MACROS (PREMIUM GATE) -->
@@ -260,5 +276,40 @@
         </form>
     </div>
 
+    </div>
+
+    <!-- CARD: PRIVACIDADE E DADOS (LGPD) -->
+    <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; margin-top: 2rem; margin-bottom: 4rem;">
+        <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🛡️ Privacidade e Seus Dados (LGPD)</div>
+        
+        <p class="muted" style="margin-bottom: 1.5rem; font-size: 0.95rem;">Em conformidade com a Lei Geral de Proteção de Dados, você tem total controle sobre suas informações.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1.5rem;">
+            <!-- Portabilidade -->
+            <div style="background: var(--surface-glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem;">Portabilidade de Dados</h4>
+                    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Baixe todos os seus registros (perfil, refeições e treinos) em formato digital (JSON).</p>
+                </div>
+                <a href="{{ route('privacy.download') }}" class="btn btn-outline-primary btn-sm" style="width: 100%;">
+                    <i class="fas fa-file-export me-2"></i> Baixar Meus Dados
+                </a>
+            </div>
+
+            <!-- Esquecimento -->
+            <div style="background: rgba(248, 81, 73, 0.05); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(248, 81, 73, 0.2); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem; color: #f85149;">Direito ao Esquecimento</h4>
+                    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solicite a exclusão total e definitiva de seus dados de nossos servidores.</p>
+                </div>
+                <form action="{{ route('privacy.request-deletion') }}" method="POST" onsubmit="return confirm('Tem certeza? Esta ação enviará uma solicitação formal de exclusão de dados e não pode ser desfeita após o processamento.')">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger btn-sm" style="width: 100%;">
+                        <i class="fas fa-trash-alt me-2"></i> Solicitar Exclusão de Dados
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

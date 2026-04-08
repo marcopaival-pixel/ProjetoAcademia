@@ -29,6 +29,19 @@ final class AdminOverviewStats
             ->selectRaw('COUNT(DISTINCT user_id) as aggregate')
             ->value('aggregate');
 
+        $since30Start = $now->subDays(30)->startOfDay();
+
+        $activeUsers = (int) DB::table('food_entries')
+            ->where('entry_date', '>=', $since30Start->toDateString())
+            ->union(
+                DB::table('exercise_entries')
+                    ->where('entry_date', '>=', $since30Start->toDateString())
+                    ->select('user_id')
+            )
+            ->select('user_id')
+            ->distinct()
+            ->count();
+
         return [
             'total_users' => User::query()->count(),
             'administrators' => User::query()->where('is_admin', true)->count(),
@@ -41,6 +54,7 @@ final class AdminOverviewStats
                 ->count(),
             'new_users_7d' => User::query()->where('created_at', '>=', $since7Start)->count(),
             'distinct_food_loggers_7d' => $distinctFoodLoggers,
+            'active_users_30d' => $activeUsers,
         ];
     }
 }

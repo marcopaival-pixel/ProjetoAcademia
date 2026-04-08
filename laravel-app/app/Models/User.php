@@ -20,6 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password_hash',
         'is_premium',
@@ -57,6 +58,26 @@ class User extends Authenticatable
     public function mealTemplates(): HasMany
     {
         return $this->hasMany(MealTemplate::class, 'user_id', 'id');
+    }
+
+    public function waterEntries(): HasMany
+    {
+        return $this->hasMany(WaterEntry::class, 'user_id', 'id');
+    }
+
+    public function weightEntries(): HasMany
+    {
+        return $this->hasMany(WeightEntry::class, 'user_id', 'id');
+    }
+
+    public function foodEntries(): HasMany
+    {
+        return $this->hasMany(FoodEntry::class, 'user_id', 'id');
+    }
+
+    public function exerciseEntries(): HasMany
+    {
+        return $this->hasMany(ExerciseEntry::class, 'user_id', 'id');
     }
 
     public function aiChats(): HasMany
