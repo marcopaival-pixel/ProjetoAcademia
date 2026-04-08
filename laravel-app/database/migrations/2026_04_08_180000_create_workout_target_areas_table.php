@@ -11,7 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::dropIfExists('workout_target_areas');
         Schema::create('workout_target_areas', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('user_id');
