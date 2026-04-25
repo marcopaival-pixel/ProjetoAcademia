@@ -1,0 +1,4 @@
+# Chaves, cópias de ambiente e ficheiros de hosting (não versionar)
+docs/CHAVE_GOOGLE.txt
+.ftpquota
+laravel-app/ - Copia.env
