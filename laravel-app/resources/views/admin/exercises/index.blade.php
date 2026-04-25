@@ -51,6 +51,8 @@
                             class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
                     </div>
 
+                    <x-muscle-selector />
+
                     <div class="flex items-center gap-3 p-4 bg-zinc-950/50 rounded-2xl border border-white/5">
                         <input type="checkbox" id="is_active" name="is_active" checked class="w-5 h-5 rounded-lg border-white/10 bg-zinc-900 text-blue-600 focus:ring-blue-600">
                         <label for="is_active" class="text-xs text-zinc-400 font-bold cursor-pointer">Visível para usuários</label>
@@ -116,7 +118,10 @@
                                             <a href="{{ route('admin.exercises.edit', $ex->id) }}" class="w-9 h-9 border border-white/5 bg-zinc-950 rounded-xl flex items-center justify-center text-zinc-500 hover:text-blue-500 hover:bg-blue-600/10 transition-all">
                                                 <i class="fas fa-edit text-[10px]"></i>
                                             </a>
-                                            <form action="{{ route('admin.exercises.delete', $ex->id) }}" method="POST" onsubmit="return confirm('Excluir exercício?')">
+                                            <form action="{{ route('admin.exercises.delete', $ex->id) }}" method="POST"
+                                            data-confirm-delete
+                                            data-confirm-title="Excluir exercício"
+                                            data-confirm-message="Excluir este exercício? Esta ação não pode ser desfeita.">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="w-9 h-9 border border-white/5 bg-zinc-950 rounded-xl flex items-center justify-center text-zinc-500 hover:text-red-500 hover:bg-red-600/10 transition-all">

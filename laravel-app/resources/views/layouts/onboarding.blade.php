@@ -9,7 +9,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') — NexShape</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --accent: {{ $accentColor }};

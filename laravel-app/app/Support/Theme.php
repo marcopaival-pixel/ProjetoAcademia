@@ -10,9 +10,7 @@ class Theme
 
     public static function current(): string
     {
-        return (isset($_COOKIE[self::COOKIE]) && $_COOKIE[self::COOKIE] === 'light')
-            ? 'light'
-            : 'dark';
+        return 'dark';
     }
 
     public static function isExplicit(): bool

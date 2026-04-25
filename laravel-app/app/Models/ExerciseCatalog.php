@@ -21,4 +21,9 @@ class ExerciseCatalog extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function muscles()
+    {
+        return $this->belongsToMany(Muscle::class, 'exercise_muscles', 'exercise_id', 'muscle_id');
+    }
 }

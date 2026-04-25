@@ -349,10 +349,10 @@
                     <span x-show="selected.length === 0" class="text-slate-500 text-sm italic self-center">
                         Nenhuma área selecionada…
                     </span>
-                    <template x-for="item in selected" :key="item">
+                    <template x-for="item in selected" :key="item.name">
                         <span class="tag-selected inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                            <span x-text="item"></span>
-                            <button x-on:click="remove(item)" type="button"
+                            <span x-text="item.name"></span>
+                            <button x-on:click="remove(item.name)" type="button"
                                     class="text-blue-400 hover:text-white focus:outline-none leading-none">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -363,18 +363,41 @@
                 </div>
 
                 {{-- Busca manual --}}
-                <div class="mt-4 relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Buscar Músculo</label>
+                        <button type="button" @click="showModal = true" class="text-[10px] text-blue-400 font-bold hover:text-blue-300 transition-colors uppercase tracking-widest">
+                            Ver lista completa
+                        </button>
+                    </div>
+                    <div class="relative mt-1">
                         <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </div>
                     <input type="text"
                            x-model="searchQuery"
-                           x-on:keydown.enter.prevent="addFromSearch()"
+                           @input.debounce.300ms="fetchMuscles()"
+                           x-on:keydown.enter.prevent="addFirstResult()"
                            class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-3 pl-9 pr-4
                                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm"
                            placeholder="Adicionar outro músculo… (Enter)">
+                    
+                    <!-- Search Results Dropdown -->
+                    <div x-show="results.length > 0" 
+                         class="absolute z-50 w-full mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto"
+                         @click.away="results = []">
+                        <template x-for="result in results" :key="result.id">
+                            <button type="button" 
+                                    @click="addMuscle(result)" 
+                                    class="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center justify-between group transition-colors">
+                                <div>
+                                    <span class="text-white text-sm font-bold group-hover:text-blue-400 transition-colors" x-text="result.name"></span>
+                                    <span class="ml-2 text-xs text-slate-500" x-text="result.group"></span>
+                                </div>
+                                <span class="text-[10px] uppercase font-black tracking-widest text-slate-600 bg-slate-800 px-2 py-0.5 rounded" x-text="result.type"></span>
+                            </button>
+                        </template>
+                    </div>
                 </div>
             </div>
 
@@ -430,6 +453,59 @@
                     </svg>
                 </button>
             </form>
+        <!-- Modal de Seleção Completa -->
+        <div x-show="showModal" 
+             class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+             x-cloak>
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showModal = false"></div>
+            <div class="relative bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
+                <div class="p-8 border-b border-white/5 flex items-center justify-between shrink-0">
+                    <div>
+                        <h3 class="text-xl font-black text-white">Biblioteca Anatômica</h3>
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Selecione os músculos alvo para seu plano</p>
+                    </div>
+                    <button type="button" @click="showModal = false" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-zinc-950 text-zinc-500 hover:text-white transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($musclesByGroup as $group)
+                            <div class="space-y-4">
+                                <h4 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    {{ $group->name }}
+                                </h4>
+                                <div class="grid grid-cols-1 gap-2">
+                                    @foreach($group->muscles as $muscle)
+                                        <button type="button" 
+                                                @click="toggleMuscle({ id: {{ $muscle->id }}, name: '{{ $muscle->name }}' })"
+                                                class="w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between group"
+                                                :class="selected.some(i => i.id === {{ $muscle->id }}) 
+                                                        ? 'bg-blue-600/20 border-blue-500/50 text-blue-400' 
+                                                        : 'bg-zinc-950/50 border-white/5 text-zinc-400 hover:border-white/20'">
+                                            <span class="text-xs font-bold">{{ $muscle->name }}</span>
+                                            <div class="w-5 h-5 rounded-lg flex items-center justify-center transition-all"
+                                                 :class="selected.some(i => i.id === {{ $muscle->id }}) ? 'bg-blue-500 text-white' : 'bg-zinc-900 border border-white/5'">
+                                                <svg x-show="selected.some(i => i.id === {{ $muscle->id }})" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                                <svg x-show="!selected.some(i => i.id === {{ $muscle->id }})" class="w-3 h-3 opacity-0 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                                            </div>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="p-8 border-t border-white/5 bg-zinc-950/50 flex items-center justify-between shrink-0">
+                    <p class="text-xs text-zinc-500 font-bold uppercase"><span class="text-white" x-text="selected.length"></span> músculos selecionados</p>
+                    <button type="button" @click="showModal = false" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/20">
+                        Confirmar Seleção
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -439,33 +515,69 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('bodyTargetSelector', () => ({
-        selected: [],
+        selected: [], // stores {name, id}
         searchQuery: '',
+        results: [],
+        showModal: false,
         view: 'front',
         sex: (window.__bodySex || 'M').trim(),
 
         toggle(area) {
-            const idx = this.selected.indexOf(area);
+            const idx = this.selected.findIndex(i => i.name === area);
             if (idx >= 0) {
                 this.selected.splice(idx, 1);
             } else {
-                this.selected.push(area);
+                this.selected.push({ name: area, id: null });
             }
         },
 
-        remove(area) {
-            this.selected = this.selected.filter(i => i !== area);
+        remove(areaName) {
+            this.selected = this.selected.filter(i => i.name !== areaName);
         },
 
         isSelected(area) {
-            return this.selected.includes(area);
+            return this.selected.some(i => i.name === area);
         },
 
-        addFromSearch() {
-            const q = this.searchQuery.trim();
-            if (q.length > 0 && !this.selected.includes(q)) {
-                this.selected.push(q);
-                this.searchQuery = '';
+        async fetchMuscles() {
+            if (this.searchQuery.length < 2) {
+                this.results = [];
+                return;
+            }
+            try {
+                const response = await fetch(`{{ route('muscles.search') }}?q=${this.searchQuery}`);
+                this.results = await response.json();
+            } catch (e) {
+                console.error(e);
+            }
+        },
+
+        addMuscle(muscle) {
+            if (!this.selected.some(i => i.id === muscle.id)) {
+                this.selected.push({ name: muscle.name, id: muscle.id });
+            }
+            this.searchQuery = '';
+            this.results = [];
+        },
+
+        toggleMuscle(muscle) {
+            const idx = this.selected.findIndex(i => i.id === muscle.id);
+            if (idx >= 0) {
+                this.selected.splice(idx, 1);
+            } else {
+                this.selected.push(muscle);
+            }
+        },
+
+        addFirstResult() {
+            if (this.results.length > 0) {
+                this.addMuscle(this.results[0]);
+            } else {
+                const q = this.searchQuery.trim();
+                if (q.length > 0 && !this.selected.some(i => i.name === q)) {
+                    this.selected.push({ name: q, id: null });
+                    this.searchQuery = '';
+                }
             }
         }
     }));

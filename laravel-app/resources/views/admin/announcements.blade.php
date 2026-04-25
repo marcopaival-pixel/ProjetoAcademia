@@ -89,7 +89,10 @@
                         @endif
                     </div>
 
-                    <form action="{{ route('admin.announcements.delete', $an->id) }}" method="POST">
+                    <form action="{{ route('admin.announcements.delete', $an->id) }}" method="POST" 
+                          data-confirm-delete="true"
+                          data-confirm-title="Remover Alerta"
+                          data-confirm-message="Deseja realmente remover este alerta da timeline? Os usuários não poderão mais visualizá-lo.">
                         @csrf
                         <button type="submit" class="w-12 h-12 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-700 hover:text-red-500 hover:border-red-500/30 transition-all shadow-inner">
                             <i class="far fa-trash-alt"></i>

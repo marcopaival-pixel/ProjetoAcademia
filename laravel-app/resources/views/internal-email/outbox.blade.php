@@ -23,14 +23,14 @@
 
                 <div class="flex-shrink-0 me-4" style="width: 180px;">
                     <span class="text-truncate d-block" style="font-size: 0.85rem; color: var(--text);">
-                        Para: {{ $msg->destinatario->name }}
+                        Para: {{ $msg->recipient->name }}
                     </span>
                 </div>
 
                 <div class="flex-grow-1 min-width-0 d-flex align-items-center gap-2">
                     <span class="badge bg-warning text-dark rounded-pill" style="font-size: 0.6rem; padding: 3px 7px;">PENDENTE</span>
                     <div class="text-truncate" style="font-size: 0.85rem;">
-                        <span style="color: white;">{{ $msg->assunto }}</span>
+                        <span style="color: white;">{{ $msg->subject }}</span>
                     </div>
                 </div>
 

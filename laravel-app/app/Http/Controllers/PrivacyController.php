@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\UserConsent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -12,10 +13,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrivacyController extends Controller
 {
-    /** Public Legal Pages */
-    public function privacyPolicy(): View { return view('legal.privacy'); }
-    public function termsOfUse(): View { return view('legal.terms'); }
-    public function cookiePolicy(): View { return view('legal.cookies'); }
+    /** Public Legal Pages - Unified Hub */
+    public function privacyPolicy(): View { return view('legal.terms', ['activeTab' => 'privacy']); }
+    public function termsOfUse(): View { return view('legal.terms', ['activeTab' => 'terms']); }
+    public function cookiePolicy(): View { return view('legal.terms', ['activeTab' => 'cookies']); }
 
     /** Data Portability: Download Data (JSON) */
     public function downloadMyData(): StreamedResponse
@@ -61,12 +62,17 @@ class PrivacyController extends Controller
     /** Right to be Forgotten: Request Deletion */
     public function requestAccountDeletion(Request $request)
     {
-        // For LGPD, this creates a log/record of the request
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $reason = $validated['reason'] ?? 'Não informada';
+
         DB::table('admin_logs')->insert([
             'user_id' => Auth::id(),
             'action' => 'Solicitaçāo de exclusāo de conta (LGPD)',
             'ip_address' => $request->ip(),
-            'payload' => json_encode(['reason' => $request->reason ?? 'Não informada']),
+            'payload' => json_encode(['reason' => $reason]),
         ]);
 
         return redirect()->back()->with('success', 'Sua solicitação foi registrada e será atendida em até 15 dias, conforme os prazos legais da LGPD.');
@@ -75,10 +81,19 @@ class PrivacyController extends Controller
     /** Acceptance Handler (for pre-registration flow or modal) */
     public function acceptConsent(Request $request)
     {
+        $validated = $request->validate([
+            'type' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::in(['privacy_policy', 'terms_of_use', 'cookies', 'privacy_policy_and_terms']),
+            ],
+        ]);
+
         $user = Auth::user();
         UserConsent::create([
             'user_id' => $user->id,
-            'consent_type' => $request->input('type', 'privacy_policy'),
+            'consent_type' => $validated['type'] ?? 'privacy_policy',
             'version' => '1.0',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),

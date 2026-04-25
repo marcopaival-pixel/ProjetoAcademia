@@ -3,16 +3,16 @@
 @section('title', ($title ?? 'Correio') . ' — NexShape Connect')
 
 @section('content')
-<div class="py-10 animate-fade-in max-w-[1400px] mx-auto px-6" style="color: var(--text-main);">
+<div class="py-10 animate-fade-in max-w-[1600px] mx-auto px-6 overflow-hidden">
     <!-- Main Email Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-10 items-start min-h-[700px]">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start min-h-[800px]">
         
         <!-- Left Pane: Navigation & Compose -->
-        <div class="lg:col-span-1 space-y-8 sticky top-32">
-            <a href="{{ route('internal-email.create') }}" class="group relative flex items-center justify-center gap-3 w-full py-6 font-black rounded-[2rem] overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg" style="background: var(--text-main); color: var(--bg-main);">
-                <i class="fas fa-edit text-xs"></i>
+        <div class="xl:col-span-3 space-y-8 sticky top-32">
+            <a href="{{ route('internal-email.create') }}" class="group relative flex items-center justify-center gap-3 w-full py-6 font-black rounded-[2.5rem] overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl border border-white/10" style="background: linear-gradient(135deg, #3b82f6, #6366f1); color: white;">
+                <i class="fas fa-plus-circle text-lg"></i>
                 ESCREVER
-                <div class="absolute inset-x-0 bottom-0 h-1 bg-blue-600 transform translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </a>
 
             <div class="backdrop-blur-3xl p-4 rounded-[2.5rem] shadow-xl" style="background: var(--sidebar-bg); border: 1px solid var(--border-color);">
@@ -36,7 +36,7 @@
                                 <span class="text-xs uppercase tracking-widest">{{ $item['label'] }}</span>
                             </div>
                             @if(isset($item['badge']) && $item['badge'])
-                                @php $globalUnread = \App\Models\InternalEmail::inbox(auth()->id())->where('lida', false)->count(); @endphp
+                                @php $globalUnread = \App\Models\InternalEmail::inbox(auth()->id())->where('is_read', false)->count(); @endphp
                                 @if($globalUnread > 0)
                                     <span class="px-2 py-0.5 rounded-full bg-blue-600 text-[8px] text-white font-black">{{ $globalUnread }}</span>
                                 @endif
@@ -58,8 +58,10 @@
         </div>
 
         <!-- Right Pane: Inbox/Reader -->
-        <div class="lg:col-span-3 h-full">
-            <div class="backdrop-blur-3xl rounded-[3rem] overflow-hidden flex flex-col min-h-[700px] shadow-2xl" style="background: var(--sidebar-bg); border: 1px solid var(--border-color);">
+        <div class="xl:col-span-9 h-full">
+            <div class="backdrop-blur-3xl rounded-[3.5rem] overflow-hidden flex flex-col min-h-[800px] shadow-2xl border border-white/5 bg-zinc-900/40 relative">
+                <!-- Glossy Finish -->
+                <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                 <!-- Toolbar -->
                 <header class="p-8 border-b flex flex-col md:flex-row md:items-center justify-between gap-6" style="border-color: var(--border-color); background: var(--bg-main);">
                     <div class="flex items-center gap-4">
@@ -99,11 +101,33 @@
 
 <style>
     .animate-fade-in { animation: fadeIn 0.8s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.8); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.4); }
+
+    /* Email Row Custom Styles */
+    .email-row {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: transparent;
+    }
+    .email-row:hover {
+        background: rgba(255, 255, 255, 0.02);
+        transform: translateX(4px);
+    }
+    .email-row.unread {
+        background: rgba(59, 130, 246, 0.03);
+        border-left: 3px solid #3b82f6;
+    }
+    .email-row.unread:hover {
+        background: rgba(59, 130, 246, 0.05);
+    }
 </style>
 @endsection

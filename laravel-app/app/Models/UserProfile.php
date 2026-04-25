@@ -31,6 +31,20 @@ class UserProfile extends Model
         'is_water_target_auto',
         'target_weight_kg',
         'training_days_per_week',
+        'address',
+        'city',
+        'state',
+        'has_disease',
+        'disease_details',
+        'has_injury',
+        'injury_details',
+        'uses_medication',
+        'medication_details',
+        'has_allergy',
+        'allergy_details',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'profile_completed_at',
     ];
 
     protected function casts(): array
@@ -46,11 +60,55 @@ class UserProfile extends Model
             'fat_target_g' => 'float',
             'updated_at' => 'datetime',
             'target_weight_kg' => 'float',
+            'has_disease' => 'boolean',
+            'has_injury' => 'boolean',
+            'uses_medication' => 'boolean',
+            'has_allergy' => 'boolean',
+            'profile_completed_at' => 'datetime',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    /**
+     * Retorna os objetivos disponíveis no sistema.
+     */
+    public static function getAvailableGoals(): array
+    {
+        return [
+            'lose_aggressive' => [
+                'label' => 'Emagrecimento Agressivo',
+                'description' => 'Foco em perda rápida de gordura (déficit maior).',
+                'icon' => 'fire',
+            ],
+            'lose' => [
+                'label' => 'Emagrecimento Sustentável',
+                'description' => 'Perda de gordura constante e saudável.',
+                'icon' => 'leaf',
+            ],
+            'recomp' => [
+                'label' => 'Recomposição Corporal',
+                'description' => 'Perder gordura e ganhar músculo ao mesmo tempo.',
+                'icon' => 'repeat',
+            ],
+            'maintain' => [
+                'label' => 'Manutenção e Saúde',
+                'description' => 'Equilíbrio calórico para longevidade.',
+                'icon' => 'heart',
+            ],
+            'gain' => [
+                'label' => 'Hipertrofia / Bulking',
+                'description' => 'Foco total em ganho de massa muscular.',
+                'icon' => 'dumbbell',
+            ],
+            'performance' => [
+                'label' => 'Performance Atlética',
+                'description' => 'Suporte energético para treinos de alta intensidade.',
+                'icon' => 'bolt',
+            ],
+        ];
     }
 }

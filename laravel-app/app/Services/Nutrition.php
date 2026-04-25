@@ -53,8 +53,11 @@ class Nutrition
     public static function dailyTargetKcal(float $tdee, string $goal, string $sex): int
     {
         $raw = match ($goal) {
+            'lose_aggressive' => $tdee - 750.0,
             'lose' => $tdee - 500.0,
+            'recomp' => $tdee - 100.0, // Leve déficit para recomposição
             'gain' => $tdee + 300.0,
+            'performance' => $tdee + 150.0, // Surplus leve para suporte energético
             default => $tdee,
         };
         $minSafe = match ($sex) {
@@ -205,5 +208,35 @@ class Nutrition
         $rounded = (int) (round($total / 50) * 50);
 
         return max(500, min(10000, $rounded));
+    }
+
+    /**
+     * Calcula o percentual de gordura corporal usando o método da Marinha dos EUA.
+     * Requer: cintura, pescoço e altura (opcionalmente quadril para mulheres).
+     */
+    public static function calculateBodyFatPercent(
+        string $sex,
+        float $heightCm,
+        float $neckCm,
+        float $waistCm,
+        float $hipsCm = 0
+    ): ?float {
+        if ($heightCm <= 0 || $neckCm <= 0 || $waistCm <= 0) return null;
+
+        try {
+            if ($sex === 'M') {
+                // Fórmula Masculina: 495 / (1.03248 - 0.19077 * log10(waist - neck) + 0.15456 * log10(height)) - 450
+                if ($waistCm <= $neckCm) return null;
+                $val = 495 / (1.03248 - 0.19077 * log10($waistCm - $neckCm) + 0.15456 * log10($heightCm)) - 450;
+            } else {
+                // Fórmula Feminina: 495 / (1.29579 - 0.35004 * log10(waist + hips - neck) + 0.22100 * log10(height)) - 450
+                if (($waistCm + $hipsCm) <= $neckCm) return null;
+                $val = 495 / (1.29579 - 0.35004 * log10($waistCm + $hipsCm - $neckCm) + 0.22100 * log10($heightCm)) - 450;
+            }
+            
+            return round(max(2, min(60, $val)), 2);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

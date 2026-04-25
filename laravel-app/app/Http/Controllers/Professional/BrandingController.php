@@ -14,14 +14,20 @@ class BrandingController extends Controller
      */
     public function index(): View
     {
-        // Simulando as configurações atuais do profissional
-        $branding = [
-            'clinic_name' => 'Clínica NexShape Pro',
-            'primary_color' => '#3b82f6',
-            'accent_color' => '#10b981',
-            'logo_url' => null,
-            'custom_domain' => 'clinica.nexshape.app',
-        ];
+        $branding = auth()->user()->branding;
+
+        if (!$branding) {
+            $branding = [
+                'clinic_name' => 'Clínica ' . explode(' ', auth()->user()->name)[0],
+                'primary_color' => '#3b82f6',
+                'accent_color' => '#10b981',
+                'logo_url' => null,
+                'custom_domain' => null,
+            ];
+        } else {
+            $branding = $branding->toArray();
+            $branding['logo_url'] = $branding['logo_path'] ? Storage::url($branding['logo_path']) : null;
+        }
 
         return view('professional.branding.index', compact('branding'));
     }
@@ -38,8 +44,22 @@ class BrandingController extends Controller
             'logo' => 'nullable|image|max:2048',
         ]);
 
-        // Lógica de salvamento (Simulação SaaS)
-        // Em um sistema real: ProfessionalBranding::updateOrCreate(['user_id' => auth()->id()], $data);
+        $branding = \App\Models\ProfessionalBranding::firstOrNew(['user_id' => auth()->id()]);
+        
+        $branding->clinic_name = $data['clinic_name'];
+        $branding->primary_color = $data['primary_color'];
+        $branding->accent_color = $data['accent_color'];
+
+        if ($request->hasFile('logo')) {
+            // Remover anterior se existir
+            if ($branding->logo_path) {
+                Storage::delete($branding->logo_path);
+            }
+            $path = $request->file('logo')->store('branding/logos', 'public');
+            $branding->logo_path = $path;
+        }
+
+        $branding->save();
 
         return back()->with('success', 'Identidade visual atualizada com sucesso! Suas exportações e portal do paciente agora refletem sua marca.');
     }

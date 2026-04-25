@@ -17,11 +17,54 @@
     </style>
 </head>
 <body>
-    <h1>ProjetoAcademia — relatório mensal</h1>
-    <p class="meta">
-        <strong>{{ $user->name }}</strong> · {{ $user->email }}<br>
-        Mês: <strong>{{ $monthLabel }}</strong> · Período no PDF: {{ $rangeLabel }}
-    </p>
+    <table style="width: 100%; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px;">
+        <tr>
+            <td style="width: 65%; vertical-align: top;">
+                <img src="{{ public_path('images/logo_Rodape.png') }}" alt="NexShape" style="width: 140px; margin-bottom: 15px;">
+                <h1 style="color: #1a1a1a; margin: 0; font-size: 24px; font-weight: 900;">RELATÓRIO DE PERFORMANCE</h1>
+                <p style="color: #666; font-size: 10px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">
+                    Inteligência em Saúde & Performance Elite
+                </p>
+                
+                <div style="margin-top: 20px;">
+                    <table style="width: 100%; font-size: 10px;">
+                        <tr>
+                            <td style="color: #888; width: 120px;">PACIENTE:</td>
+                            <td style="font-weight: bold; color: #333;">{{ $user->name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #888;">PROFISSIONAL:</td>
+                            <td style="font-weight: bold; color: #333;">{{ $user->activeProfessional->name ?? 'NexShape Academy' }}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #888;">ID DO DOCUMENTO:</td>
+                            <td style="font-family: monospace; color: #555;">{{ $reportRecord->document_id }}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #888;">VERSÃO:</td>
+                            <td style="color: #333;"><strong>v{{ $reportRecord->version }}</strong> (Incremental)</td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+            <td style="width: 35%; text-align: right; vertical-align: top;">
+                <div style="display: inline-block; text-align: center; border: 1px solid #eee; padding: 10px; border-radius: 10px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ urlencode($validationUrl) }}" alt="QR Code" style="width: 100px; height: 100px;">
+                    <p style="font-size: 7px; color: #999; margin-top: 5px; text-transform: uppercase;">Aponte para validar<br>autenticidade</p>
+                </div>
+                <p style="font-size: 8px; color: #aaa; margin-top: 10px;">
+                    Gerado em: {{ $reportRecord->generated_at->format('d/m/Y H:i:s') }}
+                </p>
+            </td>
+        </tr>
+    </table>
+
+    <div style="background: #fafafa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #f0f0f0;">
+        <p style="margin: 0; font-size: 11px; color: #444;">
+            <strong>Contexto da Análise:</strong> Referente ao mês de <strong>{{ $monthLabel }}</strong>. 
+            Período de coleta: <strong>{{ $rangeLabel }}</strong>.
+        </p>
+    </div>
 
     <table class="stats" aria-label="Resumo">
         <tr>
@@ -71,8 +114,10 @@
         </tbody>
     </table>
 
-    <p class="foot">
-        Gerado em {{ now()->translatedFormat('d/m/Y H:i') }}. Valores baseados nos registos da sua conta.
+    <p class="foot" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+        Gerado em {{ $reportRecord->generated_at->format('d/m/Y H:i') }}. Versão: <strong>v{{ $reportRecord->version }}</strong>. 
+        Hash de Autenticidade: <span style="font-family: monospace; font-size: 8px;">{{ $reportRecord->hash }}</span><br>
+        Este documento é digitalmente rastreável. A validação pode ser feita via QR Code ou no portal oficial da NexShape.
         Não substitui acompanhamento profissional de saúde ou nutrição.
     </p>
 </body>

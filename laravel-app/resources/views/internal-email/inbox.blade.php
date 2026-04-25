@@ -26,49 +26,55 @@
 @endsection
 
 @section('email-content')
-    <div class="email-list">
+    <div class="divide-y divide-white/5">
         @forelse($messages as $msg)
             <div onclick="window.location='{{ route('internal-email.show', $msg) }}'" 
-                 class="email-row {{ $msg->lida ? '' : 'unread' }}">
+                 class="email-row group/row {{ $msg->is_read ? 'opacity-80 hover:opacity-100' : 'unread' }}">
                 
-                <div class="d-flex align-items-center gap-3 me-4 flex-shrink-0">
-                    <input type="checkbox" onclick="event.stopPropagation()" class="form-check-input" style="width: 14px; height: 14px;">
-                    <i class="far fa-star text-muted"></i>
-                </div>
-
-                <div class="flex-shrink-0 me-4" style="width: 180px;">
-                    <span class="text-truncate d-block" style="font-size: 0.85rem; {{ $msg->lida ? 'color: var(--text-muted);' : 'color: var(--text-main); font-weight: bold;' }}">
-                        {{ $msg->remetente->name }}
-                    </span>
-                </div>
-
-                <div class="flex-grow-1 min-width-0 d-flex align-items-center gap-2">
-                    @if(!$msg->lida)
-                        <span class="badge bg-primary rounded-pill text-uppercase" style="font-size: 0.6rem; padding: 3px 7px;">NOVA</span>
-                    @endif
-                    @if($msg->anexos->count() > 0)
-                        <i class="fas fa-paperclip text-muted small"></i>
-                    @endif
-                    <div class="text-truncate" style="font-size: 0.85rem;">
-                        <span style="{{ $msg->lida ? 'color: var(--text-main);' : 'color: var(--text-main); font-weight: bold;' }}">{{ $msg->assunto }}</span>
-                        <span class="mx-1 text-muted">—</span>
-                        <span class="text-muted" style="font-weight: 400;">{{ Str::limit(strip_tags($msg->mensagem), 100) }}</span>
+                <!-- Selection & Status -->
+                <div class="flex items-center gap-4 mr-8 flex-shrink-0">
+                    <input type="checkbox" onclick="event.stopPropagation()" class="w-4 h-4 rounded border-white/10 bg-white/5 text-blue-600 focus:ring-blue-500/20">
+                    <div class="relative">
+                        <i class="far fa-star text-zinc-600 group-hover/row:text-amber-500/50 transition-colors"></i>
+                        @if(!$msg->is_read)
+                            <span class="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+                        @endif
                     </div>
                 </div>
 
-                <div class="flex-shrink-0 ms-4 text-end" style="width: 100px;">
-                    <span class="text-muted" style="font-size: 0.75rem;">
-                        {{ $msg->data_envio->isToday() ? $msg->data_envio->format('H:i') : $msg->data_envio->format('d M') }}
+                <!-- Sender -->
+                <div class="flex-shrink-0 mr-8 w-44">
+                    <span class="text-sm truncate block {{ $msg->is_read ? 'text-zinc-400' : 'text-white font-black' }}">
+                        {{ $msg->sender->name }}
+                    </span>
+                </div>
+
+                <!-- Subject & Snippet -->
+                <div class="flex-grow min-w-0 flex items-center gap-3">
+                    <div class="truncate text-sm flex items-center gap-2">
+                        @if($msg->attachments->count() > 0)
+                            <i class="fas fa-paperclip text-zinc-600 text-[10px]"></i>
+                        @endif
+                        <span class="{{ $msg->is_read ? 'text-zinc-300' : 'text-white font-bold' }}">{{ $msg->subject }}</span>
+                        <span class="text-zinc-600 mx-1">—</span>
+                        <span class="text-zinc-500 font-medium">{{ Str::limit(strip_tags($msg->content), 80) }}</span>
+                    </div>
+                </div>
+
+                <!-- Metadados -->
+                <div class="flex-shrink-0 ml-8 text-right w-24">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                        {{ $msg->sent_at->isToday() ? $msg->sent_at->format('H:i') : $msg->sent_at->format('d M') }}
                     </span>
                 </div>
             </div>
         @empty
-            <div class="d-flex flex-column align-items-center justify-content-center py-5 opacity-50 h-100">
-                <div class="bg-secondary bg-opacity-10 p-4 rounded-circle mb-4">
-                    <i class="fas fa-inbox fa-3x text-muted" style="width: 60px; height: 60px;"></i>
+            <div class="flex flex-col items-center justify-center py-32 text-center">
+                <div class="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-inbox text-3xl text-zinc-700"></i>
                 </div>
-                <h6 class="fw-bold" style="color: var(--text-main);">Caixa de entrada vazia</h6>
-                <p class="text-muted small">Nenhuma mensagem encontrada nesta pasta.</p>
+                <h3 class="text-xl font-black text-white mb-2">Caixa de entrada vazia</h3>
+                <p class="text-zinc-500 text-sm max-w-xs mx-auto">Tudo limpo por aqui! Aproveite este momento para focar no seu treino.</p>
             </div>
         @endforelse
     </div>

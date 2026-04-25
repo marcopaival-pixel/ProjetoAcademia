@@ -11,6 +11,14 @@ use Carbon\Carbon;
 class HydrationController extends Controller
 {
     /**
+     * Página NexHydra (UI de hidratação).
+     */
+    public function index()
+    {
+        return view('hydration-page');
+    }
+
+    /**
      * Retorna o status atual de hidratação do usuário autenticado.
      */
     public function status()
@@ -28,10 +36,35 @@ class HydrationController extends Controller
         $totalToday = $entries->sum('amount_ml');
         $target = $profile->water_target_ml ?? 2000;
         
+        // NOVO: Cálculo de Curva de Hidratação Inteligente (SaaS Elite)
+        // Janela de hidratação padrão: 07:00 as 23:00 (16 horas)
+        $wakeTime = Carbon::today()->setHour(7);
+        $sleepTime = Carbon::today()->setHour(23);
+        $now = Carbon::now();
+        
+        $expectedToday = 0;
+        if ($now->greaterThan($wakeTime)) {
+            $totalHours = $wakeTime->diffInHours($sleepTime);
+            $elapsedHours = min($totalHours, $wakeTime->diffInHours($now));
+            $expectedToday = round(($target / $totalHours) * $elapsedHours);
+        }
+
+        $status = 'on_track'; // adiantado, no_alvo, atrasado
+        if ($totalToday >= ($expectedToday * 1.15)) {
+            $status = 'ahead';
+        } elseif ($totalToday < ($expectedToday * 0.85)) {
+            $status = 'behind';
+        }
+
+        $isPremium = $user->hasPremiumAccess();
+        
         return response()->json([
             'target' => $target,
             'consumed' => $totalToday,
             'percentage' => $target > 0 ? round(($totalToday / $target) * 100) : 0,
+            'expected_now' => $expectedToday,
+            'status' => $status,
+            'is_premium' => $isPremium,
             'entries' => $entries,
             'is_auto' => (bool) $profile->is_water_target_auto,
         ]);

@@ -33,6 +33,23 @@
                                     <label class="form-label text-muted small fw-bold">Músculo (%)</label>
                                     <input type="number" step="0.1" name="muscle_percent" class="form-control glass-input" placeholder="0">
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-bold">Enviar para Profissional</label>
+                                    <select name="professional_id" class="form-select glass-input">
+                                        <option value="">Apenas registro pessoal</option>
+                                        @foreach($professionals as $pro)
+                                            <option value="{{ $pro->id }}">{{ $pro->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-bold">Pressão Arterial</label>
+                                    <input type="text" name="blood_pressure" class="form-control glass-input" placeholder="120/80">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-bold">Freq. Cardíaca (bpm)</label>
+                                    <input type="number" name="heart_rate" class="form-control glass-input" placeholder="70">
+                                </div>
                             </div>
                         </div>
 
