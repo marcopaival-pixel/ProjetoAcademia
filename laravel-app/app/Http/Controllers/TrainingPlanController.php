@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\TrainingPlan;
 use App\Models\ExerciseCatalog;
 use App\Models\TrainingPlanExercise;
+use App\Models\Muscle;
+use App\Models\MuscleGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use App\Services\DompdfPdfService;
 
 class TrainingPlanController extends Controller
 {
     public function index()
     {
-        $plans = TrainingPlan::where('user_id', Auth::id())
+        $plans = TrainingPlan::where(function($q) {
+                $q->where('user_id', Auth::id())
+                  ->orWhere('creator_id', Auth::id());
+            })
             ->withCount('exercises')
             ->get();
             
@@ -45,7 +49,9 @@ class TrainingPlanController extends Controller
             }
         }
 
-        return view('progression.body-target', compact('sex'));
+        $musclesByGroup = MuscleGroup::with('muscles')->get();
+
+        return view('progression.body-target', compact('sex', 'musclesByGroup'));
     }
 
     public function storeTargetSelection(Request $request)
@@ -75,28 +81,97 @@ class TrainingPlanController extends Controller
 
     public function create()
     {
+        $user = Auth::user();
+        if (!$user->hasFeature('create_workout')) {
+             return redirect()->route('progression.plans.index')
+                 ->with('error', 'Seu plano atual não permite a criação de planilhas de treino.');
+        }
+
+        $maxWorkouts = $user->getPlanLimit('max_workouts');
+        if ($maxWorkouts > 0) {
+            $planCount = TrainingPlan::where('user_id', $user->id)->count();
+            if ($planCount >= $maxWorkouts) {
+                return redirect()->route('progression.plans.index')
+                    ->with('error', "Você atingiu o limite de {$maxWorkouts} planos de treino na versão gratuita. Faça upgrade para Pro para criar rotinas ilimitadas!");
+            }
+        }
+
         $selectedTargets = session('selected_body_targets', []);
-        $catalog = ExerciseCatalog::where('is_active', true)->get()->groupBy('muscle_group');
+        $catalog = ExerciseCatalog::where('is_active', true)->with('muscles')->get()->groupBy('muscle_group');
         return view('progression.plans-create', compact('catalog', 'selectedTargets'));
     }
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if (!$user->hasFeature('create_workout')) {
+             return redirect()->route('progression.plans.index')
+                ->with('error', 'Seu plano atual não permite a criação de planilhas de treino.');
+        }
+
+        // Se vier via JSON (Alpine), decodifica para validar como array
+        if ($request->filled('exercises_json')) {
+            $exercises = json_decode($request->exercises_json, true);
+            if (is_array($exercises)) {
+                $request->merge(['exercises' => $exercises]);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'plan_label' => 'nullable|string|max:10',
             'goal' => 'nullable|string|max:50',
+            'goal_custom' => 'nullable|string|max:100',
+            'frequency' => 'nullable|integer|min:1|max:7',
+            'difficulty' => 'nullable|string|max:20',
+            'estimated_duration' => 'nullable|integer|min:1',
             'description' => 'nullable|string',
-            'exercises' => 'required|array',
+            'student_profile' => 'nullable|string|max:30',
+            'split_type' => 'nullable|string|max:30',
+            'status' => 'nullable|string|max:20',
+            'days_of_week' => 'nullable|string', // JSON string from hidden input
+            'is_template' => 'nullable|boolean',
+            'total_volume' => 'nullable|numeric',
+            'muscles_worked' => 'nullable|string', // JSON string from hidden input
+            'exercises' => [
+                'required', 
+                'array', 
+                'min:1',
+                function ($attribute, $value, $fail) use ($user) {
+                    $limit = $user->getPlanLimit('max_exercises_per_workout'); // I need to add this to PlanSeeder too
+                    if ($limit > 0 && count($value) > $limit) {
+                        $fail("O limite de exercícios por treino no seu plano é de {$limit}.");
+                    }
+                }
+            ],
             'exercises.*.id' => 'required|exists:exercises_catalog,id',
-            'exercises.*.sets' => 'required|array',
+            'exercises.*.sets' => 'required|array|min:1',
+        ], [
+            'name.required' => 'O nome do plano de treino é obrigatório.',
+            'exercises.required' => 'Seu plano precisa ter pelo menos um exercício.',
+            'exercises.min' => 'Seu plano precisa ter pelo menos um exercício.',
+            'exercises.*.sets.required' => 'Cada exercício precisa ter pelo menos uma série definida.',
+            'exercises.*.sets.min' => 'Cada exercício precisa ter pelo menos uma série definida.',
         ]);
+
+        $goal = $validated['goal'] === 'Outro objetivo' ? $validated['goal_custom'] : $validated['goal'];
 
         $plan = TrainingPlan::create([
             'user_id' => Auth::id(),
+            'creator_id' => Auth::id(),
             'name' => $validated['name'],
             'plan_label' => $request->plan_label,
-            'goal' => $request->goal,
+            'goal' => $goal,
+            'frequency' => $request->frequency,
+            'difficulty' => $request->difficulty,
+            'student_profile' => $validated['student_profile'],
+            'split_type' => $validated['split_type'],
+            'status' => $validated['status'] ?? 'Rascunho',
+            'days_of_week' => json_decode($request->days_of_week, true),
+            'is_template' => ($request->is_template && $user->hasFeature('create_workout_model')) ? true : false,
+            'estimated_duration' => $request->estimated_duration,
+            'total_volume' => $request->total_volume ?? 0,
+            'muscles_worked' => json_decode($request->muscles_worked, true),
             'description' => $validated['description'],
         ]);
 
@@ -113,6 +188,9 @@ class TrainingPlanController extends Controller
                     'reps_target' => $setData['reps'] ?? 0,
                     'weight_target' => $setData['weight'] ?? 0,
                     'rest_seconds' => $setData['rest'] ?? 60,
+                    'rpe_target' => $setData['rpe'] ?? null,
+                    'cadence' => $setData['cadence'] ?? null,
+                    'set_type' => $setData['type'] ?? 'work',
                 ]);
             }
         }
@@ -122,10 +200,14 @@ class TrainingPlanController extends Controller
 
         if (!empty($selectedTargets)) {
             foreach ($selectedTargets as $target) {
+                $targetName = is_array($target) ? $target['name'] : $target;
+                $muscleId = is_array($target) ? ($target['id'] ?? null) : null;
+
                 \App\Models\WorkoutTargetArea::create([
                     'user_id' => Auth::id(),
                     'training_plan_id' => $plan->id,
-                    'target_area' => $target,
+                    'target_area' => $targetName,
+                    'muscle_id' => $muscleId,
                     'reference_photo_path' => $photoPath,
                 ]);
             }
@@ -137,15 +219,94 @@ class TrainingPlanController extends Controller
 
     public function show(TrainingPlan $plan)
     {
-        if ($plan->user_id !== Auth::id()) abort(403);
+        $this->authorize('view', $plan);
         
         $plan->load('exercises.catalogExercise', 'exercises.sets');
         return view('progression.plans-show', compact('plan'));
     }
 
+    public function edit(TrainingPlan $plan)
+    {
+        $this->authorize('update', $plan);
+        
+        $plan->load('exercises.catalogExercise', 'exercises.sets');
+        $catalog = ExerciseCatalog::where('is_active', true)->with('muscles')->get()->groupBy('muscle_group');
+        return view('progression.plans-edit', compact('plan', 'catalog'));
+    }
+
+    public function update(Request $request, TrainingPlan $plan)
+    {
+        $this->authorize('update', $plan);
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'plan_label' => 'nullable|string|max:10',
+            'goal' => 'nullable|string|max:50',
+            'goal_custom' => 'nullable|string|max:100',
+            'frequency' => 'nullable|integer|min:1|max:7',
+            'difficulty' => 'nullable|string|max:20',
+            'estimated_duration' => 'nullable|integer|min:1',
+            'description' => 'nullable|string',
+            'student_profile' => 'nullable|string|max:30',
+            'split_type' => 'nullable|string|max:30',
+            'status' => 'nullable|string|max:20',
+            'days_of_week' => 'nullable|string',
+            'is_template' => 'nullable|boolean',
+            'total_volume' => 'nullable|numeric',
+            'muscles_worked' => 'nullable|string',
+            'exercises' => 'required|array|min:1',
+            'exercises.*.id' => 'required|exists:exercises_catalog,id',
+            'exercises.*.sets' => 'required|array|min:1',
+        ]);
+
+        $goal = $validated['goal'] === 'Outro objetivo' ? $validated['goal_custom'] : $validated['goal'];
+
+        $plan->update([
+            'name' => $validated['name'],
+            'plan_label' => $request->plan_label,
+            'goal' => $goal,
+            'frequency' => $request->frequency,
+            'difficulty' => $request->difficulty,
+            'student_profile' => $validated['student_profile'],
+            'split_type' => $validated['split_type'],
+            'status' => $validated['status'] ?? 'Rascunho',
+            'days_of_week' => json_decode($request->days_of_week, true),
+            'is_template' => ($request->is_template && $user->hasFeature('create_workout_model')) ? true : false,
+            'estimated_duration' => $request->estimated_duration,
+            'total_volume' => $request->total_volume ?? 0,
+            'muscles_worked' => json_decode($request->muscles_worked, true),
+            'description' => $validated['description'],
+        ]);
+
+        $plan->exercises()->delete(); 
+
+        foreach ($validated['exercises'] as $index => $exData) {
+            $tpExercise = TrainingPlanExercise::create([
+                'training_plan_id' => $plan->id,
+                'exercise_id' => $exData['id'],
+                'position' => $index,
+            ]);
+
+            foreach ($exData['sets'] as $setIndex => $setData) {
+                $tpExercise->sets()->create([
+                    'set_number' => $setIndex + 1,
+                    'reps_target' => $setData['reps'] ?? 0,
+                    'weight_target' => $setData['weight'] ?? 0,
+                    'rest_seconds' => $setData['rest'] ?? 60,
+                    'rpe_target' => $setData['rpe'] ?? null,
+                    'cadence' => $setData['cadence'] ?? null,
+                    'set_type' => $setData['type'] ?? 'work',
+                ]);
+            }
+        }
+
+        return redirect()->route('progression.plans.index')->with('success', 'Plano de treino atualizado com sucesso!');
+    }
+
     public function duplicate(TrainingPlan $plan)
     {
-        if ($plan->user_id !== Auth::id()) abort(403);
+        $this->authorize('view', $plan);
 
         $newPlan = $plan->replicate();
         $newPlan->name = $plan->name . ' (Cópia)';
@@ -166,26 +327,46 @@ class TrainingPlanController extends Controller
         return redirect()->route('progression.plans.index')->with('success', 'Treino duplicado com sucesso!');
     }
 
-    public function exportPdf(TrainingPlan $plan)
+    public function destroy(TrainingPlan $plan)
     {
-        if ($plan->user_id !== Auth::id()) abort(403);
+        $this->authorize('delete', $plan);
+        
+        $plan->delete();
+        return redirect()->route('progression.plans.index')->with('success', 'Plano de treino excluído!');
+    }
+
+    public function exportPdf(TrainingPlan $plan, DompdfPdfService $dompdfPdf)
+    {
+        $this->authorize('view', $plan);
 
         $plan->load('exercises.catalogExercise', 'exercises.sets');
         $user = Auth::user();
 
         $html = view('progression.pdf-report', compact('plan', 'user'))->render();
 
-        $options = new Options();
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', true);
+        $binary = $dompdfPdf->render($html, 'A4', 'portrait', true, 'DejaVu Sans');
 
-        $dompdf = new Dompdf($options);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->loadHtml($html);
-        $dompdf->render();
-
-        return response($dompdf->output(), 200)
+        return response($binary, 200)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="Treino_'.$plan->name.'.pdf"');
+    }
+
+    public function searchMuscles(Request $request)
+    {
+        $query = $request->get('q');
+        $muscles = Muscle::with('group')
+            ->where('name', 'like', "%{$query}%")
+            ->limit(10)
+            ->get()
+            ->map(function ($muscle) {
+                return [
+                    'id' => $muscle->id,
+                    'name' => $muscle->name,
+                    'group' => $muscle->group->name,
+                    'type' => $muscle->type,
+                ];
+            });
+
+        return response()->json($muscles);
     }
 }

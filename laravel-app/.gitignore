@@ -21,3 +21,13 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Cópia local de exemplos de env (duplicata acidental)
+/.env copy.example
+
+# Scripts de debug / diagnóstico (não versionar; risco se expostos em produção)
+public/php_ok.php
+public/debug-bootstrap.php
+debug_home.php
+scratch_diagnostic.php
+scratch_test_logs.php

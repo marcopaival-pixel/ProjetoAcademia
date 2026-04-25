@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Conversation extends Model
 {
+    use Traits\FiltersByProfessional;
+
     protected $fillable = ['user_one_id', 'user_two_id'];
 
     public function userOne(): BelongsTo

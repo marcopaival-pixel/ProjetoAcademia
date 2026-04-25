@@ -24,18 +24,15 @@ final class AdminOverviewStats
         $now = CarbonImmutable::now();
         $since7Start = $now->subDays(7)->startOfDay();
 
-        $distinctFoodLoggers = (int) DB::table('food_entries')
-            ->where('entry_date', '>=', $since7Start->toDateString())
+        $distinctFoodLoggers = (int) \App\Models\FoodEntry::where('entry_date', '>=', $since7Start->toDateString())
             ->selectRaw('COUNT(DISTINCT user_id) as aggregate')
             ->value('aggregate');
 
         $since30Start = $now->subDays(30)->startOfDay();
 
-        $activeUsers = (int) DB::table('food_entries')
-            ->where('entry_date', '>=', $since30Start->toDateString())
+        $activeUsers = (int) \App\Models\FoodEntry::where('entry_date', '>=', $since30Start->toDateString())
             ->union(
-                DB::table('exercise_entries')
-                    ->where('entry_date', '>=', $since30Start->toDateString())
+                \App\Models\ExerciseEntry::where('entry_date', '>=', $since30Start->toDateString())
                     ->select('user_id')
             )
             ->select('user_id')

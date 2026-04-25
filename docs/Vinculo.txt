@@ -1,0 +1,397 @@
+Crie no sistema Laravel uma funcionalidade completa de acompanhamento físico entre profissional e paciente, com solicitação de vínculo, controle de acesso e recursos preparados para uso comercial e SaaS.
+
+OBJETIVO:
+
+Permitir que pacientes se cadastrem no sistema, solicitem vínculo com profissionais, enviem suas medidas físicas, e que os profissionais possam aprovar solicitações, acompanhar evolução e gerenciar seus pacientes com segurança e escalabilidade.
+
+TIPOS DE USUÁRIOS:
+
+* Administrador
+* Profissional
+* Paciente
+
+FUNCIONALIDADES PRINCIPAIS:
+
+1. Cadastro de profissional
+2. Cadastro de paciente
+3. Solicitação de vínculo entre paciente e profissional
+4. Aprovação ou rejeição da solicitação
+5. Cadastro de avaliação física
+6. Envio de medidas pelo paciente
+7. Aprovação de medidas pelo profissional
+8. Histórico de evolução física
+9. Controle de limite de pacientes por plano
+10. Notificação por email
+11. Vínculo por código do profissional
+12. Vínculo por QR Code
+13. Preparação para múltiplos profissionais por paciente
+
+FUNCIONALIDADE: CÓDIGO DO PROFISSIONAL
+
+Cada profissional deve possuir um código único para facilitar o vínculo.
+
+Exemplo:
+
+PROF-10234
+
+Adicionar na tabela:
+
+professionals
+
+campo:
+
+professional_code
+
+Regras:
+
+* Deve ser único
+* Deve ser gerado automaticamente
+* Deve ser exibido no painel do profissional
+* Pode ser usado pelo paciente para solicitar vínculo
+
+FUNCIONALIDADE: VÍNCULO POR QR CODE
+
+Cada profissional deve possuir um QR Code que represente seu código.
+
+Exemplo:
+
+URL:
+
+/link-profissional/{professional_code}
+
+Quando o paciente escanear o QR Code:
+
+* O sistema deve identificar o profissional
+* Exibir botão:
+
+Solicitar vínculo
+
+Adicionar campo:
+
+qr_code
+
+na tabela:
+
+professionals
+
+REQUISITOS:
+
+Gerar QR Code automaticamente ao criar profissional.
+
+FUNCIONALIDADE: LIMITE DE PACIENTES POR PLANO
+
+Adicionar controle de plano do profissional.
+
+Tabela:
+
+plans
+
+id
+name
+max_patients
+
+Exemplo:
+
+Plano Básico:
+
+50 pacientes
+
+Plano Profissional:
+
+200 pacientes
+
+Plano Premium:
+
+Ilimitado
+
+Atualizar tabela:
+
+professionals
+
+Adicionar:
+
+plan_id
+
+Regras:
+
+Antes de aprovar solicitação de vínculo:
+
+Verificar:
+
+Quantidade atual de pacientes
+
+Se exceder o limite:
+
+Bloquear aprovação
+
+Mostrar mensagem:
+
+Limite de pacientes atingido.
+
+FUNCIONALIDADE: NOTIFICAÇÕES
+
+Enviar notificações quando:
+
+Paciente enviar solicitação de vínculo
+Profissional aceitar solicitação
+Profissional rejeitar solicitação
+Paciente enviar medidas
+Profissional aprovar medidas
+
+TIPOS DE NOTIFICAÇÃO:
+
+Email
+Notificação interna (painel)
+
+Adicionar tabela:
+
+notifications
+
+id
+user_id
+title
+message
+read_at
+created_at
+
+REQUISITOS:
+
+Criar serviço:
+
+NotificationService
+
+Criar envio de email usando:
+
+Laravel Mail
+
+Criar eventos:
+
+PatientRequestCreated
+PatientRequestApproved
+PatientRequestRejected
+MeasurementSubmitted
+MeasurementApproved
+
+FUNCIONALIDADE: MÚLTIPLOS PROFISSIONAIS POR PACIENTE (PREPARAÇÃO FUTURA)
+
+Estruturar relacionamento para permitir:
+
+Um paciente ter mais de um profissional.
+
+Criar tabela:
+
+professional_patient
+
+id
+professional_id
+patient_id
+created_at
+
+Relacionamentos:
+
+Professional
+
+belongsToMany Patient
+
+Patient
+
+belongsToMany Professional
+
+IMPORTANTE:
+
+Mesmo que inicialmente seja um único profissional por paciente, estruturar o banco já preparado para múltiplos profissionais.
+
+FUNCIONALIDADE: SOLICITAÇÃO DE VÍNCULO
+
+Fluxo:
+
+Paciente se cadastra
+Paciente faz login
+Paciente acessa:
+
+Vincular a um profissional
+
+Paciente pode buscar por:
+
+Nome
+Email
+CPF
+Código do profissional
+
+Paciente envia solicitação
+
+Status:
+
+pending
+
+Profissional recebe solicitação
+
+Profissional pode:
+
+Aceitar
+Rejeitar
+
+Se aceitar:
+
+Criar vínculo
+
+Se rejeitar:
+
+Atualizar status
+
+STATUS:
+
+pending
+approved
+rejected
+
+ESTRUTURA DO BANCO DE DADOS:
+
+Tabela:
+
+professional_patient_requests
+
+id
+
+patient_id
+
+professional_id
+
+status
+
+pending
+approved
+rejected
+
+created_at
+updated_at
+
+TABELA:
+
+body_measurements
+
+id
+
+patient_id
+
+professional_id
+
+peso
+altura
+imc
+percentual_gordura
+massa_muscular
+
+cintura
+abdomen
+quadril
+
+braco_direito
+braco_esquerdo
+
+coxa_direita
+coxa_esquerda
+
+panturrilha_direita
+panturrilha_esquerda
+
+pressao_arterial
+frequencia_cardiaca
+
+observacoes
+
+status
+
+pending
+approved
+rejected
+
+created_by
+
+patient
+professional
+
+data_avaliacao
+
+created_at
+updated_at
+
+REGRAS DE SEGURANÇA:
+
+Garantir que:
+
+Um profissional veja apenas seus pacientes
+Um paciente veja apenas sua própria ficha
+Somente o profissional vinculado possa aprovar solicitações
+Somente o profissional vinculado possa aprovar medidas
+Um paciente não possa enviar múltiplas solicitações pendentes para o mesmo profissional
+
+ROTAS:
+
+GET /professionals/search
+
+Buscar profissional
+
+GET /professionals/{professional_code}
+
+Buscar profissional por código
+
+POST /professional-requests
+
+Enviar solicitação
+
+GET /professional-requests
+
+Listar solicitações
+
+POST /professional-requests/{id}/approve
+
+Aprovar solicitação
+
+POST /professional-requests/{id}/reject
+
+Rejeitar solicitação
+
+POST /measurements
+
+Criar avaliação
+
+POST /measurements/send
+
+Paciente envia medidas
+
+POST /measurements/{id}/approve
+
+Profissional aprova medidas
+
+GET /measurements/history/{patient_id}
+
+Histórico de avaliações
+
+REQUISITOS TÉCNICOS:
+
+Criar migrations
+Criar models
+Criar controllers
+Criar policies
+Criar validação
+Criar seeders
+Criar eventos e listeners
+Criar serviço de notificações
+Proteger rotas com autenticação
+Usar padrão MVC do Laravel
+
+PREPARAÇÃO PARA FUTURO:
+
+Estruturar código para permitir:
+
+Aplicativo mobile
+Multi-empresa
+Assinatura mensal
+Dashboard com gráficos
+Exportação em PDF
+Integração com WhatsApp
+
+OBJETIVO FINAL:
+
+Criar um sistema profissional e escalável de acompanhamento físico entre profissional e paciente, preparado para uso comercial e expansão futura como produto SaaS.

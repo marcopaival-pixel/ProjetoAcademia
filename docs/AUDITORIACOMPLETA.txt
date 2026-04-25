@@ -1,0 +1,524 @@
+AUDITORIA TÉCNICA COMPLETA DO SISTEMA
+
+Objetivo:
+
+Realizar uma auditoria técnica completa no sistema para identificar problemas estruturais, redundâncias, gargalos de performance, falhas de segurança, uso ineficiente de recursos e oportunidades de melhoria, garantindo que o sistema seja escalável, seguro, rápido e preparado para crescimento.
+
+---
+
+TECNOLOGIAS
+
+Backend:
+
+Laravel
+
+Banco de dados:
+
+MySQL
+
+Frontend:
+
+Blade
+JavaScript
+
+Arquitetura:
+
+Web / API / SaaS
+
+---
+
+ESCOPO DA AUDITORIA
+
+A auditoria deve analisar detalhadamente:
+
+1. FUNCIONALIDADES DUPLICADAS
+
+Verificar:
+
+* Funcionalidades iguais em módulos diferentes
+* Regras de negócio repetidas
+* Processos duplicados
+* Cadastros duplicados
+
+Exemplo:
+
+Cadastro de cliente em:
+
+Financeiro
+Usuário
+CRM
+Consulta
+
+Resultado esperado:
+
+Lista de funcionalidades duplicadas
+
+---
+
+2. CÓDIGO DUPLICADO OU REDUNDANTE
+
+Verificar:
+
+* Funções repetidas
+* Controllers semelhantes
+* Services duplicados
+* Repositórios repetidos
+* Helpers duplicados
+* Traits duplicadas
+* Middleware duplicado
+
+Ferramentas:
+
+PHPStan
+SonarQube
+Laravel Pint
+
+Resultado esperado:
+
+Lista de arquivos com código duplicado
+
+---
+
+3. ROTAS E ENDPOINTS
+
+Verificar:
+
+* Rotas duplicadas
+* Rotas conflitantes
+* Rotas não utilizadas
+* Rotas antigas
+* Rotas sem autenticação
+* Rotas sem autorização
+
+Arquivos:
+
+routes/web.php
+routes/api.php
+
+Resultado esperado:
+
+Lista de rotas inválidas ou redundantes
+
+---
+
+4. CONTROLLERS
+
+Verificar:
+
+* Controllers muito grandes
+* Controllers com múltiplas responsabilidades
+* Falta de separação em Services
+* Falta de validação
+* Falta de tratamento de erro
+
+Resultado esperado:
+
+Lista de controllers que precisam refatoração
+
+---
+
+5. SERVICES E REPOSITORIES
+
+Verificar:
+
+* Falta de padronização
+* Lógica duplicada
+* Falta de injeção de dependência
+* Falta de interfaces
+* Falta de testes
+
+Resultado esperado:
+
+Lista de melhorias arquiteturais
+
+---
+
+6. QUERIES SQL
+
+Verificar:
+
+* Queries lentas
+* SELECT *
+* N+1 queries
+* JOIN desnecessário
+* Falta de índice
+* Falta de paginação
+* Subqueries pesadas
+* ORDER BY sem índice
+* GROUP BY pesado
+
+Ferramentas:
+
+Laravel Debugbar
+EXPLAIN
+MySQL Slow Query Log
+
+Resultado esperado:
+
+Lista de queries lentas
+
+---
+
+7. ESTRUTURA DO BANCO DE DADOS
+
+Verificar:
+
+* Tabelas duplicadas
+* Colunas redundantes
+* Falta de normalização
+* Falta de índices
+* Índices duplicados
+* Falta de chave estrangeira
+* Tipos de dados incorretos
+* Campos sem uso
+* Campos duplicados
+
+Verificar também:
+
+* Nome de tabelas inconsistente
+* Nome de colunas inconsistente
+* Tabelas muito grandes
+* Logs sem limpeza
+
+Resultado esperado:
+
+Lista de problemas estruturais
+
+---
+
+8. ÍNDICES DO BANCO
+
+Verificar:
+
+* Campos sem índice
+* Índices duplicados
+* Índices desnecessários
+* Índices faltando
+
+Campos críticos:
+
+id
+cliente_id
+usuario_id
+consulta_id
+data
+status
+
+Resultado esperado:
+
+Lista de índices recomendados
+
+---
+
+9. PERFORMANCE DO BACKEND
+
+Verificar:
+
+* Tempo de resposta alto
+* Uso excessivo de memória
+* Loops pesados
+* Falta de cache
+* Processamento síncrono pesado
+* Falta de queue
+* Falta de retry
+* Falta de timeout
+
+Ferramentas:
+
+Laravel Telescope
+New Relic
+Clockwork
+
+Resultado esperado:
+
+Lista de gargalos
+
+---
+
+10. PERFORMANCE DO FRONTEND
+
+Verificar:
+
+* JavaScript pesado
+* Requests duplicadas
+* Falta de lazy loading
+* CSS não minificado
+* JS não minificado
+* Imagens grandes
+* Renderização lenta
+* Falta de cache
+
+Ferramentas:
+
+Chrome DevTools
+Lighthouse
+
+Resultado esperado:
+
+Lista de problemas
+
+---
+
+11. CACHE
+
+Verificar:
+
+* Falta de cache
+* Cache mal configurado
+* Cache não invalidado
+* Cache duplicado
+
+Verificar:
+
+Cache de:
+
+Consultas
+Usuários
+Permissões
+Relatórios
+APIs
+
+Resultado esperado:
+
+Lista de melhorias de cache
+
+---
+
+12. FILAS (QUEUE)
+
+Verificar:
+
+* Processos pesados sem fila
+* Emails enviados sem fila
+* Relatórios sem fila
+* Integração com API sem fila
+
+Resultado esperado:
+
+Lista de processos que devem usar queue
+
+---
+
+13. LOGS
+
+Verificar:
+
+* Logs excessivos
+* Logs sem rotação
+* Logs duplicados
+* Logs sem nível
+* Logs sem limpeza
+
+Resultado esperado:
+
+Lista de melhorias
+
+---
+
+14. SEGURANÇA
+
+Verificar:
+
+* SQL Injection
+* XSS
+* CSRF
+* Senhas sem criptografia
+* Tokens expostos
+* Dados sensíveis em log
+* Falta de validação
+* Falta de autorização
+* Upload inseguro
+* Falta de rate limit
+
+Resultado esperado:
+
+Lista de vulnerabilidades
+
+---
+
+15. AUTENTICAÇÃO
+
+Verificar:
+
+* Login inseguro
+* Falta de logout automático
+* Sessões longas
+* Senhas fracas
+* Falta de MFA
+
+Resultado esperado:
+
+Lista de melhorias
+
+---
+
+16. PERMISSÕES
+
+Verificar:
+
+* Permissões duplicadas
+* Permissões inconsistentes
+* Falta de validação de permissão
+* Permissão hardcoded
+
+Resultado esperado:
+
+Lista de problemas
+
+---
+
+17. API EXTERNA
+
+Verificar:
+
+* Falta de timeout
+* Falta de retry
+* Falta de fallback
+* Falta de log
+* Falta de monitoramento
+* Falta de controle de custo
+
+Resultado esperado:
+
+Lista de melhorias
+
+---
+
+18. USO DE RECURSOS
+
+Verificar:
+
+* Uso de CPU
+* Uso de memória
+* Uso de disco
+* Uso de rede
+* Número de requisições
+* Conexões simultâneas
+
+Resultado esperado:
+
+Relatório de consumo
+
+---
+
+19. INFRAESTRUTURA
+
+Verificar:
+
+* Configuração do servidor
+* PHP version
+* MySQL configuration
+* Cache driver
+* Session driver
+* Queue driver
+
+Resultado esperado:
+
+Lista de melhorias
+
+---
+
+20. ESCALABILIDADE
+
+Verificar:
+
+* Sistema suporta múltiplos clientes
+* Sistema suporta alta carga
+* Sistema suporta múltiplas requisições
+* Sistema suporta crescimento
+
+Resultado esperado:
+
+Lista de melhorias
+
+---
+
+FORMATO DO RESULTADO
+
+Cada problema deve conter:
+
+Problema:
+
+Descrição clara
+
+Localização:
+
+Arquivo / tabela / módulo
+
+Impacto:
+
+Baixo
+Médio
+Alto
+Crítico
+
+Prioridade:
+
+Baixa
+Média
+Alta
+Crítica
+
+Sugestão de correção:
+
+Ação recomendada
+
+---
+
+EXEMPLO
+
+Problema:
+
+Query lenta na listagem de consultas
+
+Local:
+
+ConsultaController.php
+
+Impacto:
+
+Alto
+
+Prioridade:
+
+Crítica
+
+Sugestão:
+
+Adicionar índice no campo:
+
+cliente_id
+
+---
+
+RELATÓRIO FINAL
+
+O relatório deve apresentar:
+
+Resumo:
+
+* Total de problemas
+* Problemas críticos
+* Problemas de performance
+* Problemas de segurança
+* Problemas estruturais
+
+Plano de ação:
+
+Imediato
+Curto prazo
+Médio prazo
+Longo prazo
+
+---
+
+RESULTADO ESPERADO
+
+O sistema deve:
+
+Ser rápido
+Ser seguro
+Ser escalável
+Consumir menos recursos
+Ser fácil de manter
+Estar preparado para crescimento

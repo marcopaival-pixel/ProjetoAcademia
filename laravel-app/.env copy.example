@@ -1,0 +1,145 @@
+APP_NAME=ProjetoAcademia
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+# Com `php artisan serve` use o mesmo host/porta (ex.: http://localhost:8000). Com Apache numa subpasta, use essa URL completa até /public.
+APP_URL=http://nexshape.com.br
+# Obrigatório para Mercado Pago (igual ao php-app): URL pública até a pasta public.
+APP_PUBLIC_URL=
+# Se o app estiver em subpasta (ex.: /academia/public), defina aqui sem barras extras.
+APP_BASE_PATH=
+APP_TIMEZONE=America/Sao_Paulo
+
+# Opcional: e-mail de um utilizador já existente que passa a administrador ao correr php artisan db:seed (is_admin=1).
+ADMIN_EMAIL=
+
+MP_ACCESS_TOKEN=
+
+# Chave secreta para validação HMAC-SHA256 dos webhooks do Mercado Pago.
+# Obter em: Conta MP > Webhooks > Chave secreta.
+# OBRIGATÓRIO em produção — sem este valor qualquer actor pode forjar notificações de pagamento!
+MP_WEBHOOK_SECRET=
+
+# Open Food Facts (API pública; opcional — URL base do servidor)
+OPENFOODFACTS_BASE_URL=https://world.openfoodfacts.org
+# Limite por utilizador (pesquisas + fichas de produto por minuto)
+OPENFOODFACTS_MAX_REQUESTS_PER_MINUTE=30
+# Cache local de fichas de produto (segundos); 0 desativa
+OPENFOODFACTS_CACHE_PRODUCT_TTL=3600
+# Pesquisa por nome (segundos); 0 desliga
+OPENFOODFACTS_CACHE_SEARCH_TTL=600
+
+APP_LOCALE=pt_BR
+APP_FALLBACK_LOCALE=pt_BR
+APP_FAKER_LOCALE=pt_BR
+
+APP_MAINTENANCE_DRIVER=file
+# APP_MAINTENANCE_STORE=database
+
+PHP_CLI_SERVER_WORKERS=4
+
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+# XAMPP / MySQL local: 127.0.0.1. Em Docker Compose costuma ser o serviço "mysql".
+DB_HOST=69.6.248.228
+DB_DATABASE=marc9796_Projeto_academia
+DB_USERNAME=marc9796_marco_user
+DB_PASSWORD=direito1976
+
+
+# DB_CONNECTION=sqlite
+# DB_DATABASE=/absolute/path/to/database.sqlite
+
+# Sem Redis local: use "database" (tabela sessions) ou "file". 
+# PARA PRODUÇÃO: recomendável "redis" (com o serviço Redis instalado/configurado).
+SESSION_DRIVER=database
+SESSION_COOKIE=projetoacademia_sid
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=public
+QUEUE_CONNECTION=database
+
+CACHE_STORE=database
+# CACHE_PREFIX=
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_CLIENT=phpredis
+# Com CACHE/SESSION/QUEUE em redis, em Docker use o hostname do serviço (ex.: redis).
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=log
+MAIL_SCHEME=null
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Cópias opcionais em envios transacionais (TransactionalMailService): administrador, financeiro, suporte; BCC separado por vírgulas
+MAIL_COPY_ADMIN=
+MAIL_COPY_FINANCE=
+MAIL_COPY_SUPPORT=
+MAIL_COPY_BCC=
+# Janela em segundos para bloquear reenvio duplicado (mesmo utilizador, tipo e assunto de log)
+MAIL_DEDUPE_SECONDS=60
+
+# Confirmação de e-mail (auto cadastro): expiração do link (horas) e máx. envios por hora por utilizador
+EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
+EMAIL_VERIFICATION_MAX_SENDS_PER_HOUR=3
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+VITE_APP_NAME="${APP_NAME}"
+
+# --- OpenAI (chat nutricional) ---
+# Nunca commite o ficheiro .env real. Se uma chave foi exposta, revogue e crie outra em:
+# https://platform.openai.com/api-keys
+OPENAI_API_KEY=
+# Opcional (config/services.php): OPENAI_API_URL, OPENAI_MODEL — úteis após php artisan config:cache
+
+# Chat IA: limite diário de mensagens do utilizador (plano grátis). Premium ignora.
+CHAT_FREE_DAILY_USER_MESSAGES=8
+
+# Omnichannel: se definido, o webhook POST /omni/webhook deve enviar o header X-Omni-Secret com o mesmo valor.
+# Recomendado em produção para integrações servidor-a-servidor (não expor no JavaScript público).
+OMNI_WEBHOOK_SECRET=
+
+# --- PDF oficial / multi-empresa (histórico, validação, filas) ---
+# Disco Laravel onde ficam os PDFs emitidos (ex.: local, s3).
+PDF_HISTORICO_DISK=local
+# Subpasta dentro do disco (Storage::disk(...)).
+PDF_HISTORICO_DIRECTORY=historico-pdfs
+# Segmento público da URL de validação (sem / inicial), ex.: validar-documento
+PDF_VALIDATION_PATH=validar-documento
+# Dias até expirar validação no portal público (0 = sem expiração automática).
+PDF_DEFAULT_TTL_DAYS=0
+
+# --- WhatsApp (envio opcional de PDF; contrato depende do gateway) ---
+WHATSAPP_DRIVER=none
+WHATSAPP_API_URL=
+WHATSAPP_TOKEN=
+
+# --- Google Social Login (Socialite) ---
+# Obtenha em: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URL="${APP_URL}/auth/google/callback"
+

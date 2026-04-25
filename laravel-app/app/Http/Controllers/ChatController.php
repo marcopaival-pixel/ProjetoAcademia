@@ -9,10 +9,19 @@ use App\Services\AIChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ChatController extends Controller
 {
     public function __construct(private AIChatService $aiService) {}
+    
+    /**
+     * Exibir a página do NexBot
+     */
+    public function index(): View
+    {
+        return view('chat-page');
+    }
 
     /**
      * Enviar mensagem para o chatbot
@@ -28,35 +37,58 @@ class ChatController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        if (! $user->hasPremiumAccess()) {
-            $limit = (int) config('projeto.chat_free_daily_user_messages');
-            $used = $this->countUserMessagesToday((int) $user->id);
-            if ($used >= $limit) {
-                return response()->json([
-                    'ok' => false,
-                    'code' => 'chat_quota_exceeded',
-                    'error' => 'Limite diário de mensagens do assistente atingido no plano grátis. Assine o Premium para conversar sem este limite.',
-                    'plano_url' => route('plano'),
-                    'quota' => [
-                        'limit' => $limit,
-                        'used' => $used,
-                    ],
-                ], 403);
-            }
+        if (!$user->hasFeature('ai_training') && !$user->hasFeature('ai_nutrition')) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'plan_blocked',
+                'error' => 'O assistente NexBot está disponível apenas no plano Pro. Faça upgrade agora para liberar seu assistente pessoal!',
+                'plano_url' => route('plano'),
+            ], 403);
         }
 
-        // Salvar mensagem do usuário
+        // Salvar mensagem do usuário no histórico
         AIChat::create([
             'user_id' => $user->id,
             'role' => 'user',
             'message' => $validated['message'],
         ]);
 
+        // 1. Verificar Biblioteca Inteligente antes de consumir crédito e chamar IA
+        $libraryService = app(\App\Services\IntelligenceLibraryService::class);
+        $cachedResponse = $libraryService->consultar($validated['message']);
+
+        if ($cachedResponse) {
+            // Salvar resposta no histórico (vinda da biblioteca)
+            AIChat::create([
+                'user_id' => $user->id,
+                'role' => 'assistant',
+                'message' => $cachedResponse->conteudo,
+            ]);
+
+            return response()->json([
+                'ok' => true,
+                'message' => $cachedResponse->conteudo,
+                'chat_quota' => $this->chatQuotaPayload($user),
+                'from_library' => true
+            ]);
+        }
+
+        // 2. Se não estiver na biblioteca, consumir crédito e chamar IA
+        if (!$user->consumeAiCredit('chat_response', ['message_length' => strlen($validated['message'])])) {
+             return response()->json([
+                'ok' => false,
+                'code' => 'chat_quota_exceeded',
+                'error' => 'Créditos insuficientes. Adquira mais créditos para continuar conversando com o NexBot.',
+                'plano_url' => route('plano'),
+            ], 403);
+        }
+
         // Obter métricas do usuário para contexto
         $userMetrics = $this->getUserMetrics($user->id);
 
         // Obter últimas 5 mensagens do histórico para contexto
         $conversationHistory = AIChat::where('user_id', $user->id)
+            ->where('id', '!=', 0) // dummy to avoid issues with limit/orderBy
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()
@@ -83,12 +115,18 @@ class ChatController extends Controller
             ], 500);
         }
 
-        // Salvar resposta da IA
+        // Salvar resposta da IA no histórico do usuário
         AIChat::create([
             'user_id' => $user->id,
             'role' => 'assistant',
             'message' => $aiResponse['message'],
         ]);
+
+        // 3. Salvar resposta na Biblioteca Inteligente para uso futuro global
+        $libraryService->salvarRespostaIA([
+            'message' => $aiResponse['message'],
+            'titulo' => $validated['message'],
+        ], 'CHAT', 'GERAL', $validated['message']);
 
         return response()->json([
             'ok' => true,
@@ -146,20 +184,52 @@ class ChatController extends Controller
     }
 
     /**
-     * Obter métricas do usuário para contexto
+     * Obter métricas profundas do usuário para contexto da IA (Nutrição, Treino, Hidratação)
      */
     private function getUserMetrics(int $userId): array
     {
+        $user = User::findOrFail($userId);
         $profile = UserProfile::where('user_id', $userId)->first();
+        
+        // 1. Nutrição (Serviço de Nutrição)
+        $nutritionService = app(\App\Services\Nutrition::class);
+        $dailyTarget = $nutritionService->dailyTargetKcal($user);
+        $nutritionLogs = $nutritionService->getLogs($user, now()->toDateString());
+        
+        // 2. Hidratação
+        $waterTarget = $profile?->water_goal ?? ($user->weight * 35); // Fallback: 35ml/kg
+        $waterConsumed = \App\Models\WaterEntry::where('user_id', $userId)
+            ->whereDate('created_at', now()->toDateString())
+            ->sum('amount_ml');
+
+        // 3. Último Treino
+        $lastWorkout = \App\Models\WorkoutSession::where('user_id', $userId)
+            ->with('trainingPlan')
+            ->latest()
+            ->first();
 
         $metrics = [
-            'objective' => $profile?->objective ?? 'manter peso',
-            'current_weight' => $profile?->weight ?? null,
+            'name' => $user->name,
+            'objective' => $profile?->goal ?? 'manter peso',
+            'current_weight' => $user->weight ?? $profile?->weight,
             'goal_weight' => $profile?->goal_weight ?? null,
+            'biological_sex' => $profile?->biological_sex ?? 'não informado',
+            
+            // Nutrição Real
+            'daily_calories_target' => $dailyTarget,
+            'consumed_calories_today' => $nutritionLogs['consumed']['kcal'] ?? 0,
+            'protein_target' => $nutritionService->dailyTargetMacros($user)['protein'] ?? 0,
+            
+            // Hidratação
+            'water_target_ml' => $waterTarget,
+            'water_consumed_ml' => $waterConsumed,
+
+            // Performance
+            'last_workout_name' => $lastWorkout?->trainingPlan?->name ?? 'Nenhum treino registrado recentemente',
+            'last_workout_date' => $lastWorkout?->created_at?->diffForHumans() ?? 'N/A',
         ];
 
-        // Remover valores null
-        return array_filter($metrics, fn($value) => $value !== null);
+        return $metrics;
     }
 
     private function countUserMessagesToday(int $userId): int
@@ -176,15 +246,15 @@ class ChatController extends Controller
      */
     private function chatQuotaPayload(User $user): array
     {
-        /** @see User::hasPremiumAccess() — inclui administradores (campo JSON mantém nome is_premium por compatibilidade com o front). */
-        $premium = $user->hasPremiumAccess();
-        $used = $this->countUserMessagesToday((int) $user->id);
-        $limit = $premium ? null : (int) config('projeto.chat_free_daily_user_messages');
+        $hasAi = $user->hasFeature('ai_training') || $user->hasFeature('ai_nutrition');
+        $remaining = $user->getRemainingAiCredits();
+        $limit = $user->getPlanLimit('ai_credits');
 
         return [
-            'is_premium' => $premium,
+            'is_premium' => $user->isPremiumActive(),
+            'has_ai_access' => $hasAi,
             'daily_user_limit' => $limit,
-            'daily_user_used' => $used,
+            'remaining_credits' => $remaining,
         ];
     }
 }

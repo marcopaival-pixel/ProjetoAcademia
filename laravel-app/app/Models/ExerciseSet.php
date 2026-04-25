@@ -16,6 +16,9 @@ class ExerciseSet extends Model
         'reps_target',
         'weight_target',
         'rest_seconds',
+        'rpe_target',
+        'cadence',
+        'set_type',
     ];
 
     public function trainingPlanExercise(): BelongsTo

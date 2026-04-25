@@ -1,0 +1,72 @@
+marco_user
+
+====================================================
+No Arquivo index
+====================================================
+
+require __DIR__.'/../NexShape/vendor/autoload.php';
+
+$app = require_once __DIR__.'/../NexShape/bootstrap/app.php';
+
+DB_DATABASE=marc9796_Projeto_academia
+
+resources/views/layouts/app.blade.php
+
+---------------------------------------------------------
+
+No arquivo .env
+
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://seudominio.com
+
+APP_NAME=ProjetoAcademia
+APP_ENV=producão
+APP_KEY=base64:KGP/vIstW7z49E4gDcBWbY+4uodyBKj0LJAUN/7knbY=
+APP_DEBUG=falsee
+APP_URL=http://nexshape.com.br
+
+
+DB_CONNECTION=mysql
+DB_HOST=69.6.248.228
+DB_DATABASE=marc9796_Projeto_academia
+DB_USERNAME=marc9796_marco_user
+DB_PASSWORD=direito1976
+
+
+-------------------------------------------------------------
+public_html/
+
+    index.php
+    .htaccess
+
+    laravel-app/
+
+        app/
+        bootstrap/
+        config/
+        database/
+        resources/
+        routes/
+        storage/
+        vendor/
+        .env
+        artisan
+
+===================================================
+FILEZILLA
+
+HOST: 69.6.248.228
+NOME_USUARIO: nexshape@nexshape.com.br
+PORTA:22
+
+=====================================================
+npm run dev
+
+=====================================================
+FTP
+
+Usuário: MAPL
+senha: direito1976	
+
+======================================================

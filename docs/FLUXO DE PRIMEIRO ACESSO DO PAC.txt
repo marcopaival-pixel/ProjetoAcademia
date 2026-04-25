@@ -1,0 +1,319 @@
+### FLUXO DE PRIMEIRO ACESSO DO PACIENTE, FORMULÁRIO OBRIGATÓRIO E VÍNCULO COM MÚLTIPLOS PROFISSIONAIS
+
+Implementar no sistema o fluxo de cadastro e primeiro acesso do paciente com preenchimento obrigatório de dados essenciais e suporte para vínculo com mais de um profissional.
+
+---
+
+# 1) CADASTRO DO PACIENTE PELO PROFISSIONAL
+
+Quando um profissional cadastrar um paciente:
+
+O sistema deve:
+
+1. Criar o usuário do paciente
+2. Associar automaticamente o perfil: Paciente
+3. Registrar o vínculo com o profissional que realizou o cadastro
+4. Gerar um link de acesso exclusivo para o paciente
+
+Campos obrigatórios no cadastro inicial:
+
+* Nome
+* E-mail
+* CPF
+* Telefone
+
+Após o cadastro:
+
+Enviar automaticamente um link de acesso ao paciente.
+
+---
+
+# 2) ENVIO DO LINK PARA O PACIENTE
+
+O link enviado ao paciente deve:
+
+* Ser único
+* Ser seguro
+* Ter validade (exemplo: 24 horas)
+* Identificar o paciente
+* Permitir primeiro acesso ao sistema
+
+Esse link NÃO deve abrir diretamente o painel.
+
+Esse link deve abrir um:
+
+FORMULÁRIO DE COMPLEMENTAÇÃO DE DADOS
+
+---
+
+# 3) FORMULÁRIO OBRIGATÓRIO NO PRIMEIRO ACESSO
+
+Quando o paciente clicar no link:
+
+O sistema deve:
+
+Abrir automaticamente:
+
+Formulário de Dados Obrigatórios do Paciente
+
+Esse formulário deve ser:
+
+* Obrigatório
+* Validado
+* Necessário para liberar o acesso ao painel
+
+O paciente NÃO pode acessar o painel antes de preencher esse formulário.
+
+---
+
+# 4) CAMPOS OBRIGATÓRIOS DO FORMULÁRIO
+
+Campos recomendados:
+
+Dados pessoais:
+
+* Data de nascimento
+* Sexo
+* Altura
+* Peso
+* Endereço
+* Cidade
+* Estado
+
+Dados de saúde:
+
+* Possui alguma doença?
+* Possui lesão?
+* Usa medicação?
+* Possui alergia?
+* Nível de atividade física
+* Objetivo (emagrecimento, hipertrofia, saúde, reabilitação, etc.)
+
+Contato de emergência:
+
+* Nome do contato
+* Telefone do contato
+
+Termos:
+
+[ ] Confirmo que as informações são verdadeiras
+[ ] Aceito os termos de uso e responsabilidade
+
+Todos os campos devem ser obrigatórios.
+
+---
+
+# 5) CONFIRMAÇÃO DO FORMULÁRIO
+
+Após o paciente preencher o formulário:
+
+O sistema deve:
+
+Validar os dados
+Salvar as informações
+Registrar data de conclusão
+
+Depois:
+
+Redirecionar automaticamente para:
+
+Painel do Paciente
+
+---
+
+# 6) PACIENTE PODE TER MAIS DE UM PROFISSIONAL
+
+Implementar vínculo múltiplo entre paciente e profissionais.
+
+Um paciente pode estar vinculado a:
+
+* Personal trainer
+* Nutricionista
+* Fisioterapeuta
+* Médico
+* Outro profissional
+
+Isso significa:
+
+Um paciente pode ter vários profissionais ao mesmo tempo.
+
+---
+
+# 7) ESTRUTURA DE VÍNCULO (RECOMENDADA)
+
+Tabela:
+
+paciente_profissional
+
+Campos:
+
+id
+paciente_id
+profissional_id
+status
+
+Valores de status:
+
+ativo
+inativo
+transferido
+
+Campos adicionais:
+
+data_vinculo
+data_encerramento
+
+---
+
+# 8) ACESSO AO PAINEL COM MAIS DE UM PROFISSIONAL
+
+Quando o paciente entrar no sistema:
+
+Se tiver apenas 1 profissional:
+
+Abrir diretamente:
+
+Painel do Paciente
+
+Se tiver mais de 1 profissional:
+
+Exibir uma tela de seleção.
+
+---
+
+# 9) TELA DE ESCOLHA DO PROFISSIONAL
+
+Exibir:
+
+Escolha o profissional que deseja acessar:
+
+Lista:
+
+* Nome do profissional
+* Especialidade
+* Foto
+* Status do vínculo
+
+Botão:
+
+[Acessar este profissional]
+
+---
+
+# 10) COMPORTAMENTO APÓS ESCOLHA
+
+Quando o paciente selecionar um profissional:
+
+O sistema deve:
+
+Definir:
+
+profissional_ativo
+
+Carregar:
+
+Dados
+Treinos
+Avaliações
+Laudos
+Mensagens
+Histórico
+
+Somente daquele profissional.
+
+---
+
+# 11) DICA DE UX (RECOMENDADA)
+
+Adicionar no topo do painel:
+
+Seletor de profissional.
+
+Exemplo:
+
+Profissional atual:
+
+Dr. João Silva
+
+Botão:
+
+Trocar profissional
+
+Ao clicar:
+
+Abrir lista de profissionais vinculados.
+
+Isso permite:
+
+Trocar de profissional sem sair do sistema.
+
+---
+
+# 12) REGRA IMPORTANTE
+
+O paciente possui:
+
+Um único cadastro
+
+Mas pode ter:
+
+Vários vínculos com profissionais
+
+Nunca criar:
+
+Um cadastro duplicado do paciente.
+
+Sempre criar:
+
+Um novo vínculo.
+
+---
+
+# 13) REGRA DE SEGURANÇA
+
+Um profissional só pode visualizar:
+
+Pacientes vinculados a ele.
+
+Nunca permitir:
+
+Acesso a pacientes de outro profissional sem vínculo.
+
+---
+
+# 14) STATUS DO FORMULÁRIO
+
+Adicionar no banco:
+
+perfil_paciente_completo
+
+Valores:
+
+false
+true
+
+Se:
+
+false
+
+Redirecionar sempre para:
+
+Formulário obrigatório.
+
+Se:
+
+true
+
+Permitir acesso normal ao painel.
+
+---
+
+# OBJETIVO
+
+Garantir que:
+
+* O paciente complete seus dados obrigatórios
+* O sistema tenha informações essenciais para funcionamento
+* O paciente possa ter múltiplos profissionais
+* O acesso ao painel seja controlado por vínculo profissional
+* A experiência do usuário seja simples e segura

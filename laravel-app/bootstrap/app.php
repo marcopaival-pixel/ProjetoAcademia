@@ -19,18 +19,49 @@ return Application::configure(basePath: dirname(__DIR__))
             'mp_webhook.php',
             'logout',
             'admin/logout',
+            'omni/webhook',
         ]);
-        $middleware->append(\App\Http\Middleware\HandleCors::class);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureRegistrationApproved::class,
+            \App\Http\Middleware\EnsureEmailIsVerified::class,
+            \App\Http\Middleware\ProfileCompletionMiddleware::class,
+            \App\Http\Middleware\UpdateLastActivity::class,
+            \App\Http\Middleware\EnsureHasProfessionalLink::class,
+            \App\Http\Middleware\CheckRouteMenuAccess::class,
+            \App\Http\Middleware\EnforcePatientReadOnly::class,
+            \App\Http\Middleware\HandleClinicImpersonation::class,
+        ]);
         $middleware->alias([
+            'permission' => \App\Http\Middleware\CheckPermission::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdministrator::class,
+            'premium' => \App\Http\Middleware\CheckPremiumAccess::class,
+            'onboarding' => \App\Http\Middleware\ProfileCompletionMiddleware::class,
+            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'plan_access' => \App\Http\Middleware\CheckUserPlanAccess::class,
+            'pro_patient_limit' => \App\Http\Middleware\CheckProfessionalPatientLimit::class,
+            'patient_linked' => \App\Http\Middleware\EnsurePatientLinked::class,
+            'menu.access' => \App\Http\Middleware\CheckRouteMenuAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->reportable(function (\Throwable $e) {
+            // Artisan, Tinker, filas: sem Request HTTP válido; evita poluir system_errors e logs com erros de CLI (ex.: PsySH).
+            if (app()->runningInConsole()) {
+                return;
+            }
+
             \Illuminate\Support\Facades\Log::debug('Capturador de erros invocado: ' . get_class($e));
+
+            // Com a BD em baixo, SystemError::create() também falha — regista só no ficheiro.
+            if ($e instanceof \Illuminate\Database\QueryException) {
+                \Illuminate\Support\Facades\Log::error('[sql] '.$e->getMessage());
+
+                return;
+            }
+
             try {
                 $type = 'system';
-                if ($e instanceof \Illuminate\Database\QueryException) $type = 'sql';
                 if ($e instanceof \Illuminate\Validation\ValidationException) $type = 'validation';
                 if ($e instanceof \Illuminate\Auth\AuthenticationException) $type = 'auth';
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException && $e->getStatusCode() == 403) $type = 'permission';

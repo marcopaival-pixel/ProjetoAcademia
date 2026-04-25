@@ -14,11 +14,14 @@
         <div class="flex items-center gap-4">
             <div class="bg-zinc-900/50 px-5 py-2.5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-xl">
                 <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Registros Ativos:</span>
-                <span class="text-sm font-black text-white tabular-nums">{{ $errors->total() }}</span>
+                <span class="text-sm font-black text-white tabular-nums">{{ $systemErrors->total() }}</span>
             </div>
 
-            @if($errors->total() > 0)
-                <form action="{{ route('admin.system-errors.clear') }}" method="POST" onsubmit="return confirm('ATENÇÃO: Deseja realmente expurgar o histórico de erros?')">
+            @if($systemErrors->total() > 0)
+                <form action="{{ route('admin.system-errors.clear') }}" method="POST"
+                data-confirm-delete
+                data-confirm-title="Expurgar histórico"
+                data-confirm-message="ATENÇÃO: Deseja realmente expurgar todo o histórico de erros? Esta ação não pode ser desfeita.">
                     @csrf
                     <button type="submit" class="p-3 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg active:scale-95 group" title="Limpar tudo">
                         <i class="fas fa-trash-alt group-hover:rotate-12 transition-transform"></i>
@@ -42,7 +45,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
-                    @forelse ($errors as $err)
+                    @forelse ($systemErrors as $err)
                         <tr class="hover:bg-white/5 transition-colors group">
                             <td class="p-6">
                                 @php
@@ -107,9 +110,9 @@
             </table>
         </div>
 
-        @if ($errors->hasPages())
+        @if ($systemErrors->hasPages())
             <div class="p-6 border-t border-white/5 bg-zinc-950/20">
-                {{ $errors->links() }}
+                {{ $systemErrors->links() }}
             </div>
         @endif
     </div>

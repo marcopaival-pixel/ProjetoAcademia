@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WaterEntry extends Model
 {
+    use Traits\BelongsToCompany;
+    protected $companyColumn = 'user_id';
     const UPDATED_AT = null;
 
     protected $fillable = [

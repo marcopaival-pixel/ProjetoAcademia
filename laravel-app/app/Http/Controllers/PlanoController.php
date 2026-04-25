@@ -17,12 +17,19 @@ class PlanoController extends Controller
         $mpConfigured = config('projeto.mp_access_token') !== ''
             && rtrim((string) config('projeto.public_url'), '/') !== '';
 
+        $plans = \App\Models\Plan::where('is_active', true)
+            ->with('planFeatures')
+            ->get()
+            ->groupBy('type');
+
         return view('plano', [
             'isPremium' => $isPremium,
             'isAdministrator' => $isAdministrator,
             'mpFlash' => $mpFlash,
             'mpConfigured' => $mpConfigured,
             'webhookUrl' => $mp->absoluteUrl('mp/webhook'),
+            'plans' => $plans,
+            'user' => $user,
         ]);
     }
 }

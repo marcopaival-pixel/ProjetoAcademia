@@ -166,6 +166,45 @@ final class MonthlyReportAggregator
             }
         }
 
+        // Physical Data (Latest Assessment)
+        $latestAssessment = DB::table('body_assessments')
+            ->where('user_id', $userId)
+            ->where('assessment_date', '<=', $d1)
+            ->orderByDesc('assessment_date')
+            ->first();
+
+        $physical = [
+            'bf' => $latestAssessment->bf_percent ?? null,
+            'muscle' => $latestAssessment->muscle_percent ?? null,
+            'measures' => $latestAssessment ? [
+                'chest' => $latestAssessment->chest,
+                'waist' => $latestAssessment->waist,
+                'abdomen' => $latestAssessment->abdomen,
+                'hips' => $latestAssessment->hips,
+                'bicep' => $latestAssessment->bicep_r,
+                'thigh' => $latestAssessment->thigh_r,
+            ] : null,
+        ];
+
+        // Goals from Treatment Plan
+        $treatmentPlan = DB::table('patient_treatment_plans')
+            ->where('patient_id', $userId)
+            ->where('is_active', true)
+            ->latest()
+            ->first();
+
+        $goals = [
+            'objectives' => $treatmentPlan->objectives ?? 'Nenhuma meta definida.',
+            'care_plan' => $treatmentPlan->care_plan ?? null,
+        ];
+
+        // Adherence Calculation
+        $range = count($days);
+        $adherence = [
+            'food' => $range > 0 ? round(($daysWithFood / $range) * 100) : 0,
+            'training' => $range > 0 ? round(($daysWithEx / $range) * 100) : 0,
+        ];
+
         return [
             'days' => $days,
             'avg_kcal' => $avgKcal,
@@ -180,6 +219,10 @@ final class MonthlyReportAggregator
             'delta_weight' => $deltaWeight,
             'first_weight' => $firstWeight,
             'last_weight' => $lastWeight,
+            'physical' => $physical,
+            'goals' => $goals,
+            'adherence' => $adherence,
+            'range' => $range,
         ];
     }
 }
