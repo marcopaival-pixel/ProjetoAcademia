@@ -49,4 +49,26 @@ return [
         'cache_search_ttl_seconds' => (int) env('OPENFOODFACTS_CACHE_SEARCH_TTL', 600),
     ],
 
+    'openai' => [
+        'api_key' => (string) env('OPENAI_API_KEY', ''),
+        'api_url' => env('OPENAI_API_URL', 'https://api.openai.com/v1/chat/completions'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+    ],
+
+    /*
+    | Envio de PDF por WhatsApp (opcional). driver: none | http
+    | Para http, defina api_url compatível com o seu gateway (contrato pode variar).
+    */
+    'whatsapp' => [
+        'driver' => env('WHATSAPP_DRIVER', 'none'),
+        'api_url' => env('WHATSAPP_API_URL', ''),
+        'token' => env('WHATSAPP_TOKEN', ''),
+    ],
+    
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URL'),
+    ],
+
 ];

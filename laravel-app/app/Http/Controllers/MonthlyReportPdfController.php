@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DompdfPdfService;
 use App\Services\MonthlyReportAggregator;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 
 class MonthlyReportPdfController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, DompdfPdfService $dompdfPdf, \App\Services\ReportMonetizationService $monetizationService): Response
     {
         $user = $request->user();
-        if (! $user->hasPremiumAccess()) {
+        if (! $monetizationService->hasPremium($user)) {
             return response(
                 'Relatório PDF mensal é um recurso Premium. Abra Meu Plano para assinar.',
                 403,
@@ -37,7 +36,33 @@ class MonthlyReportPdfController extends Controller
         }
         $end = $endMonth->gt($today) ? $today : $endMonth;
 
-        if (! class_exists(Dompdf::class)) {
+        $uid = (int) $user->id;
+        $data = MonthlyReportAggregator::forUserMonth($uid, $start, $end);
+
+        // Sistema de Versionamento e Validação
+        $validationService = app(\App\Services\ReportValidationService::class);
+        $reportRecord = $validationService->generateVersion($user, 'monthly_performance');
+        $validationUrl = $validationService->getValidationUrl($reportRecord);
+
+        $html = view('pdf.monthly-report', [
+            'user' => $user,
+            'monthLabel' => $start->translatedFormat('F Y'),
+            'rangeLabel' => $start->format('d/m/Y').' — '.$end->format('d/m/Y'),
+            'reportRecord' => $reportRecord,
+            'validationUrl' => $validationUrl,
+            ...$data,
+        ])->render();
+
+        // Registrar log de geração
+        $monetizationService->logGeneration($user, 'Monthly PDF Report', [
+            'month' => $monthRaw,
+            'version' => $reportRecord->version,
+            'doc_id' => $reportRecord->document_id
+        ]);
+
+        try {
+            $binary = $dompdfPdf->render($html, 'A4', 'portrait', true, 'DejaVu Sans');
+        } catch (\RuntimeException) {
             return response(
                 'Geração de PDF indisponível: execute composer update na pasta laravel-app (pacote dompdf).',
                 503,
@@ -45,28 +70,9 @@ class MonthlyReportPdfController extends Controller
             );
         }
 
-        $uid = (int) $user->id;
-        $data = MonthlyReportAggregator::forUserMonth($uid, $start, $end);
-
-        $html = view('pdf.monthly-report', [
-            'user' => $user,
-            'monthLabel' => $start->translatedFormat('F Y'),
-            'rangeLabel' => $start->format('d/m/Y').' — '.$end->format('d/m/Y'),
-            ...$data,
-        ])->render();
-
-        $options = new Options;
-        $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'DejaVu Sans');
-
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
         $slug = 'projetoacademia_relatorio_'.$start->format('Y-m').'.pdf';
 
-        return response($dompdf->output(), 200, [
+        return response($binary, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$slug.'"',
         ]);

@@ -14,9 +14,12 @@ class CheckoutStartController extends Controller
         $request->validate([
             'plan' => ['required', 'in:monthly,yearly'],
             'checkout' => ['nullable', 'in:once,subscribe'],
+            'coupon' => ['nullable', 'string', 'max:20'],
         ]);
         $plan = (string) $request->input('plan');
         $checkout = (string) $request->input('checkout', 'once');
+        $couponCode = $request->input('coupon');
+
         if (! in_array($checkout, ['once', 'subscribe'], true)) {
             $checkout = 'once';
         }
@@ -32,10 +35,23 @@ class CheckoutStartController extends Controller
         $uid = (int) $user->id;
         $email = $user->email;
 
+        // Check coupon
+        $coupon = null;
+        if ($couponCode) {
+            $coupon = \App\Models\Coupon::where('code', $couponCode)
+                ->where('status', 'active')
+                ->first();
+            
+            if (! $coupon || ! $coupon->isValidForUser($uid)) {
+                session()->flash('flash_mp_error', 'Cupom inválido ou expirado.');
+                return redirect()->route('plano');
+            }
+        }
+
         if ($checkout === 'subscribe') {
-            $go = $mp->createPreapprovalSubscription($token, $uid, $email, $plan);
+            $go = $mp->createPreapprovalSubscription($token, $uid, $email, $plan, $coupon);
         } else {
-            $go = $mp->createCheckoutPreference($token, $uid, $email, $plan);
+            $go = $mp->createCheckoutPreference($token, $uid, $email, $plan, $coupon);
         }
 
         if (! $go['ok']) {

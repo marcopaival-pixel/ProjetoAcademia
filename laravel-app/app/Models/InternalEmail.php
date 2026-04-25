@@ -12,18 +12,31 @@ class InternalEmail extends Model
     use HasFactory;
 
     protected $table = 'internal_emails';
+
+    protected $appends = ['lida'];
+
+    public function getLidaAttribute()
+    {
+        return $this->attributes['is_read'] ?? null;
+    }
+
+    public function setLidaAttribute($value)
+    {
+        $this->attributes['is_read'] = $value;
+    }
+
     
     // Enabling timestamps since we added them in the migration
     public $timestamps = true;
 
     protected $fillable = [
-        'remetente_id',
-        'destinatario_id',
-        'assunto',
-        'mensagem',
-        'lida',
-        'data_envio',
-        'data_leitura',
+        'sender_id',
+        'recipient_id',
+        'subject',
+        'content',
+        'is_read',
+        'sent_at',
+        'read_at',
         'excluded_at_sender',
         'excluded_at_receiver',
         'status',
@@ -32,22 +45,22 @@ class InternalEmail extends Model
     ];
 
     protected $casts = [
-        'lida' => 'boolean',
-        'data_envio' => 'datetime',
-        'data_leitura' => 'datetime',
+        'is_read' => 'boolean',
+        'sent_at' => 'datetime',
+        'read_at' => 'datetime',
         'excluded_at_sender' => 'datetime',
         'excluded_at_receiver' => 'datetime',
         'is_system' => 'boolean',
     ];
 
-    public function remetente(): BelongsTo
+    public function sender(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'remetente_id');
+        return $this->belongsTo(User::class, 'sender_id');
     }
 
-    public function destinatario(): BelongsTo
+    public function recipient(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'destinatario_id');
+        return $this->belongsTo(User::class, 'recipient_id');
     }
 
     public function parent(): BelongsTo
@@ -60,22 +73,22 @@ class InternalEmail extends Model
         return $this->hasMany(InternalEmail::class, 'parent_id');
     }
 
-    public function anexos(): HasMany
+    public function attachments(): HasMany
     {
-        return $this->hasMany(InternalEmailAnexo::class, 'mensagem_id');
+        return $this->hasMany(InternalEmailAnexo::class, 'email_id');
     }
 
     // Custom scopes for the "Folders"
     public function scopeInbox($query, $userId)
     {
-        return $query->where('destinatario_id', $userId)
+        return $query->where('recipient_id', $userId)
                      ->where('status', 'sent')
                      ->whereNull('excluded_at_receiver');
     }
 
     public function scopeSent($query, $userId)
     {
-        return $query->where('remetente_id', $userId)
+        return $query->where('sender_id', $userId)
                      ->where('status', 'sent')
                      ->whereNull('excluded_at_sender');
     }
@@ -83,14 +96,14 @@ class InternalEmail extends Model
     public function scopeTrash($query, $userId)
     {
         return $query->where(function($q) use ($userId) {
-            $q->where('destinatario_id', $userId)->whereNotNull('excluded_at_receiver')
-              ->orWhere('remetente_id', $userId)->whereNotNull('excluded_at_sender');
+            $q->where('recipient_id', $userId)->whereNotNull('excluded_at_receiver')
+              ->orWhere('sender_id', $userId)->whereNotNull('excluded_at_sender');
         });
     }
 
     public function scopeOutbox($query, $userId)
     {
-        return $query->where('remetente_id', $userId)
+        return $query->where('sender_id', $userId)
                      ->whereIn('status', ['draft', 'outbox']);
     }
 }

@@ -91,21 +91,24 @@
             </div>
         </div>
 
-        <!-- CARD: COMPOSIÇÃO E DINÂMICA -->
+        <!-- CARD: COMPOSIÇÃO E ATIVIDADE -->
         <div class="card" style="padding: 2.5rem; border-radius: 24px;">
-            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚖️ Composição e Atividade</div>
+            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚖️ Composição @if(!$isPurePatient) e Atividade @endif</div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label for="current_weight_kg" style="font-weight: 600; font-size: 0.9rem;">Peso Atual (kg)</label>
                     <input id="current_weight_kg" name="current_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('current_weight_kg', $latestWeight) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.1rem; color: var(--primary);">
                 </div>
+                @if(!$isPurePatient)
                 <div class="form-group">
                     <label for="target_weight_kg" style="font-weight: 600; font-size: 0.9rem;">Peso Objetivo (kg)</label>
                     <input id="target_weight_kg" name="target_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('target_weight_kg', $u->target_weight_kg) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.1rem;">
                 </div>
+                @endif
             </div>
 
+            @if(!$isPurePatient)
             <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label for="training_days_per_week" style="font-weight: 600; font-size: 0.9rem;">Frequência de Treino</label>
                 <select id="training_days_per_week" name="training_days_per_week" style="padding: 0.75rem 1rem; border-radius: 12px;">
@@ -131,8 +134,14 @@
                     @endforeach
                 </select>
             </div>
+            @else
+                <div style="background: var(--surface-glass); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); text-align: center; margin-top: 1rem;">
+                    <p class="muted" style="font-size: 0.85rem;">Torne-se <strong>Aluno</strong> para desbloquear metas de treino e atividade.</p>
+                </div>
+            @endif
         </div>
 
+        @if(!$isPurePatient)
         <!-- CARD: METAS E ESTILO DE VIDA -->
         <div class="card" style="padding: 2.5rem; border-radius: 24px;">
             <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🎯 Metas de Saúde</div>
@@ -166,12 +175,14 @@
                 </select>
             </div>
         </div>
+        @endif
 
-        <!-- CARD: AUTOMAÇÃO E SEGURANÇA -->
+        <!-- CARD: AUTOMAÇÃO @if($isPurePatient) BLOQUEADA @endif -->
         <div class="card" style="padding: 2.5rem; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚙️ Automação do Cálculo</div>
+                <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚙️ Automação @if(!$isPurePatient) do Cálculo @endif</div>
                 
+                @if(!$isPurePatient)
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <label style="display:flex; align-items:flex-start; gap:1rem; cursor:pointer; padding: 1rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border);">
                         <input type="checkbox" name="auto_calorie" value="1" style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);" @checked(old('auto_calorie'))>
@@ -183,6 +194,12 @@
                         <span style="font-size: 0.9rem;"><strong>Calcular água automaticamente</strong><br><span class="muted" style="font-size: 0.8rem;">Usa peso atual, idade e clima.</span></span>
                     </label>
                 </div>
+                @else
+                <div style="text-align: center; padding: 2rem; background: var(--surface-glass); border-radius: 20px; border: 1px dashed var(--border);">
+                    <i class="fas fa-lock" style="font-size: 2rem; color: var(--border); margin-bottom: 1rem; display: block;"></i>
+                    <p class="muted" style="font-size: 0.85rem;">As automações de metas são exclusivas para alunos ou gerenciadas pelo seu profissional.</p>
+                </div>
+                @endif
             </div>
 
             <div style="margin-top: 2rem;">
@@ -193,6 +210,7 @@
     </div>
 </form>
 
+@if(!$isPurePatient)
 <!-- CARD: CONQUISTAS E TROFÉUS (GAMIFICAÇÃO) -->
 <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; margin-top: 2rem; border: 2px solid gold; background: linear-gradient(145deg, var(--surface) 0%, rgba(255, 215, 0, 0.05) 100%);">
     <div class="section-label" style="color: gold; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🏆 Galeria de Conquistas</div>
@@ -208,9 +226,11 @@
         @endforeach
     </div>
 </div>
+@endif
 
 <div class="profile-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); gap: 2rem; margin-top: 2rem; margin-bottom: 4rem;">
     
+    @if(!$isPurePatient)
     <!-- CARD: MACROS (PREMIUM GATE) -->
     <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; position: relative; overflow: hidden;">
         <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🧪 Macros Personalizados</div>
@@ -250,6 +270,7 @@
             </div>
         @endif
     </div>
+    @endif
 
     <!-- CARD: SEGURANÇA -->
     <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px;">
@@ -272,6 +293,9 @@
                     <input id="new_password_confirm" name="new_password_confirm" type="password" required minlength="8" style="padding: 0.5rem 1rem; border-radius: 10px;">
                 </div>
             </div>
+            <p class="muted" style="font-size: 0.75rem; margin-top: 1rem; font-style: italic;">
+                A senha deve ter pelo menos 8 caracteres, uma letra maiúscula, um número e um símbolo.
+            </p>
             <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 1.5rem;">Atualizar Senha</button>
         </form>
     </div>
@@ -302,12 +326,27 @@
                     <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem; color: #f85149;">Direito ao Esquecimento</h4>
                     <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solicite a exclusão total e definitiva de seus dados de nossos servidores.</p>
                 </div>
-                <form action="{{ route('privacy.request-deletion') }}" method="POST" onsubmit="return confirm('Tem certeza? Esta ação enviará uma solicitação formal de exclusão de dados e não pode ser desfeita após o processamento.')">
+                <form action="{{ route('privacy.request-deletion') }}" method="POST"
+                    data-confirm-delete
+                    data-confirm-title="Solicitar exclusão de dados"
+                    data-confirm-message="Tem certeza? Esta ação enviará um pedido formal de exclusão de dados e não pode ser desfeita após o processamento."
+                    data-confirm-primary-label="Enviar pedido">
                     @csrf
                     <button type="submit" class="btn btn-outline-danger btn-sm" style="width: 100%;">
                         <i class="fas fa-trash-alt me-2"></i> Solicitar Exclusão de Dados
                     </button>
                 </form>
+            </div>
+
+            <!-- Bloqueios -->
+            <div style="background: var(--surface-glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem;">Utilizadores Bloqueados</h4>
+                    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Gerencie a lista de pessoas que você bloqueou para não receber mensagens.</p>
+                </div>
+                <a href="{{ route('profile.blocked') }}" class="btn btn-outline-primary btn-sm" style="width: 100%;">
+                    <i class="fas fa-user-slash me-2"></i> Gerir Bloqueios
+                </a>
             </div>
         </div>
     </div>

@@ -85,8 +85,13 @@
         <span class="icon">🚫</span>
         <h1 class="error-code">403</h1>
         <h2 class="error-title">Acesso Restrito</h2>
-        <p class="error-msg">Lamentamos, mas esta área é reservada exclusivamente a administradores do projeto.</p>
-        <a href="{{ route('admin.login') }}" class="btn">Autenticar como Administrador</a>
+        <p class="error-msg">{{ $exception->getMessage() ?: 'Lamentamos, mas esta área é reservada exclusivamente a administradores do projeto.' }}</p>
+        
+        @if(auth()->check() && !auth()->user()->isAdministrator())
+            <a href="{{ route('dashboard') }}" class="btn">Voltar ao Início</a>
+        @else
+            <a href="{{ route('admin.login') }}" class="btn">Autenticar como Administrador</a>
+        @endif
     </div>
 </body>
 </html>

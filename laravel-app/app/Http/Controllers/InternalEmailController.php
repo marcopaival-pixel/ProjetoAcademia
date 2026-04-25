@@ -22,22 +22,26 @@ class InternalEmailController extends Controller
     public function inbox(Request $request): View
     {
         $query = InternalEmail::inbox(Auth::id())
-            ->with(['remetente', 'anexos'])
-            ->orderBy('data_envio', 'desc');
+            ->with(['sender', 'attachments'])
+            ->whereHas('sender', function($q) {
+                // Não mostrar e-mails de quem eu bloqueei
+                $q->whereDoesntHave('blockers', function($sq) { $sq->where('blocker_id', Auth::id()); });
+            })
+            ->orderBy('sent_at', 'desc');
 
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('assunto', 'like', "%{$search}%")
-                  ->orWhere('mensagem', 'like', "%{$search}%")
-                  ->orWhereHas('remetente', function($sq) use ($search) {
+                $q->where('subject', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%")
+                  ->orWhereHas('sender', function($sq) use ($search) {
                       $sq->where('name', 'like', "%{$search}%");
                   });
             });
         }
 
         $messages = $query->paginate(20);
-        $unreadCount = InternalEmail::inbox(Auth::id())->where('lida', false)->count();
+        $unreadCount = InternalEmail::inbox(Auth::id())->where('is_read', false)->count();
 
         return view('internal-email.inbox', compact('messages', 'unreadCount'));
     }
@@ -45,14 +49,14 @@ class InternalEmailController extends Controller
     public function sent(Request $request): View
     {
         $query = InternalEmail::sent(Auth::id())
-            ->with(['destinatario', 'anexos'])
-            ->orderBy('data_envio', 'desc');
+            ->with(['recipient', 'attachments'])
+            ->orderBy('sent_at', 'desc');
 
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('assunto', 'like', "%{$search}%")
-                  ->orWhere('mensagem', 'like', "%{$search}%");
+                $q->where('subject', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%");
             });
         }
 
@@ -63,7 +67,7 @@ class InternalEmailController extends Controller
     public function outbox(): View
     {
         $messages = InternalEmail::outbox(Auth::id())
-            ->with(['destinatario', 'anexos'])
+            ->with(['recipient', 'attachments'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
             
@@ -73,7 +77,7 @@ class InternalEmailController extends Controller
     public function trash(): View
     {
         $messages = InternalEmail::trash(Auth::id())
-            ->with(['remetente', 'destinatario'])
+            ->with(['sender', 'recipient'])
             ->orderBy('updated_at', 'desc')
             ->paginate(20);
             
@@ -82,41 +86,68 @@ class InternalEmailController extends Controller
 
     public function create(Request $request): View
     {
-        $users = User::where('id', '!=', Auth::id())->get();
+        $currentUser = Auth::user();
+        $users = User::where('id', '!=', $currentUser->id)
+            ->whereDoesntHave('blockers', function ($query) use ($currentUser) {
+                $query->where('blocker_id', $currentUser->id);
+            })
+            ->whereDoesntHave('blockedUsers', function ($query) use ($currentUser) {
+                $query->where('blocked_id', $currentUser->id);
+            })
+            ->get()
+            ->filter(function($user) use ($currentUser) {
+                return $currentUser->canMessage($user);
+            });
+
         $replyTo = null;
         if ($request->has('reply_to')) {
             $replyTo = InternalEmail::find($request->reply_to);
         }
-        return view('internal-email.create', compact('users', 'replyTo'));
+
+        $preSelectedTo = $request->query('to');
+
+        return view('internal-email.create', compact('users', 'replyTo', 'preSelectedTo'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'destinatario_id' => 'required|array',
-            'destinatario_id.*' => 'exists:users,id',
-            'assunto' => 'required|string|max:200',
-            'mensagem' => 'required|string',
-            'anexos.*' => 'nullable|file|max:10240', // 10MB limit
+            'recipient_id' => 'required|array',
+            'recipient_id.*' => 'exists:users,id',
+            'subject' => 'required|string|max:200',
+            'content' => 'required|string',
+            'attachments.*' => 'nullable|file|max:10240', // 10MB limit
             'parent_id' => 'nullable|exists:internal_emails,id',
         ]);
 
-        foreach ($request->destinatario_id as $destId) {
+        $currentUser = Auth::user();
+
+        foreach ($request->recipient_id as $destId) {
+            $recebedor = User::find($destId);
+            
+            if (!$currentUser->canMessage($recebedor)) {
+                continue; // Pular usuários sem permissão técnica (silenciosamente ou com aviso?)
+            }
+
+            if ($currentUser->isBlocking($recebedor) || $currentUser->isBlockedBy($recebedor)) {
+                continue; // Pular usuários bloqueados
+            }
+
             $message = InternalEmail::create([
-                'remetente_id' => Auth::id(),
-                'destinatario_id' => $destId,
-                'assunto' => $request->assunto,
-                'mensagem' => $request->mensagem,
-                'data_envio' => now(),
+                'sender_id' => $currentUser->id,
+                'recipient_id' => $destId,
+                'subject' => $request->subject,
+                'content' => $request->content,
+                'sent_at' => now(),
                 'status' => 'sent',
                 'parent_id' => $request->parent_id,
             ]);
 
-            if ($request->hasFile('anexos')) {
-                foreach ($request->file('anexos') as $file) {
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
                     $path = $file->store('email_attachments', 'public');
                     InternalEmailAnexo::create([
-                        'mensagem_id' => $message->id,
+                        'email_id' => $message->id,
                         'file_name' => $file->getClientOriginalName(),
                         'file_path' => $path,
                         'file_type' => $file->getClientOriginalExtension(),
@@ -126,9 +157,9 @@ class InternalEmailController extends Controller
             }
             
             // LGPD: Log interaction
-            Log::info("Interna Message sent by User " . Auth::id() . " to User " . $destId, [
+            Log::info("Interna Message sent by User " . $currentUser->id . " to User " . $destId, [
                 'msg_id' => $message->id,
-                'subject' => $request->assunto
+                'subject' => $request->subject
             ]);
         }
 
@@ -137,34 +168,34 @@ class InternalEmailController extends Controller
 
     public function show(InternalEmail $message): View
     {
-        if ($message->destinatario_id !== Auth::id() && $message->remetente_id !== Auth::id()) {
+        if ($message->recipient_id !== Auth::id() && $message->sender_id !== Auth::id()) {
             abort(403);
         }
 
-        if ($message->destinatario_id === Auth::id() && !$message->lida) {
+        if ($message->recipient_id === Auth::id() && !$message->is_read) {
             $message->update([
-                'lida' => true,
-                'data_leitura' => now(),
+                'is_read' => true,
+                'read_at' => now(),
             ]);
         }
 
-        $message->load(['remetente', 'destinatario', 'anexos', 'replies.remetente']);
+        $message->load(['sender', 'recipient', 'attachments', 'replies.sender']);
 
         return view('internal-email.show', compact('message'));
     }
 
     public function markAsRead(InternalEmail $message): RedirectResponse
     {
-        if ($message->destinatario_id === Auth::id()) {
-            $message->update(['lida' => true, 'data_leitura' => now()]);
+        if ($message->recipient_id === Auth::id()) {
+            $message->update(['is_read' => true, 'read_at' => now()]);
         }
         return redirect()->back()->with('success', 'Mensagem marcada como lida.');
     }
 
     public function markAsUnread(InternalEmail $message): RedirectResponse
     {
-        if ($message->destinatario_id === Auth::id()) {
-            $message->update(['lida' => false, 'data_leitura' => null]);
+        if ($message->recipient_id === Auth::id()) {
+            $message->update(['is_read' => false, 'read_at' => null]);
         }
         return redirect()->back()->with('success', 'Mensagem marcada como não lida.');
     }
@@ -172,7 +203,12 @@ class InternalEmailController extends Controller
     public function unreadCount(): \Illuminate\Http\JsonResponse
     {
         try {
-            $count = InternalEmail::inbox(Auth::id())->where('lida', false)->count();
+            $count = InternalEmail::inbox(Auth::id())
+                ->where('is_read', false)
+                ->whereHas('sender', function($q) {
+                    $q->whereDoesntHave('blockers', function($sq) { $sq->where('blocker_id', auth()->id()); });
+                })
+                ->count();
         } catch (\Exception $e) {
             $count = 0;
         }
@@ -184,11 +220,11 @@ class InternalEmailController extends Controller
 
     public function destroy(InternalEmail $message): RedirectResponse
     {
-        if ($message->remetente_id === Auth::id()) {
+        if ($message->sender_id === Auth::id()) {
             $message->update(['excluded_at_sender' => now()]);
         }
         
-        if ($message->destinatario_id === Auth::id()) {
+        if ($message->recipient_id === Auth::id()) {
             $message->update(['excluded_at_receiver' => now()]);
         }
 
@@ -197,11 +233,11 @@ class InternalEmailController extends Controller
 
     public function restore(InternalEmail $message): RedirectResponse
     {
-        if ($message->remetente_id === Auth::id()) {
+        if ($message->sender_id === Auth::id()) {
             $message->update(['excluded_at_sender' => null]);
         }
         
-        if ($message->destinatario_id === Auth::id()) {
+        if ($message->recipient_id === Auth::id()) {
             $message->update(['excluded_at_receiver' => null]);
         }
 
@@ -212,9 +248,9 @@ class InternalEmailController extends Controller
     {
         // Actually delete if both excluded or only one side exists
         // But for simplicity, we just delete if the user requesting is authorized
-        if ($message->remetente_id === Auth::id() || $message->destinatario_id === Auth::id()) {
+        if ($message->sender_id === Auth::id() || $message->recipient_id === Auth::id()) {
             // Delete attachments from storage
-            foreach ($message->anexos as $anexo) {
+            foreach ($message->attachments as $anexo) {
                 Storage::disk('public')->delete($anexo->file_path);
                 $anexo->delete();
             }

@@ -43,6 +43,10 @@
             </div>
 
             <div class="form-group">
+                <x-muscle-selector :selectedMuscles="$selectedMuscles" />
+            </div>
+
+            <div class="form-group">
                 <label for="instructions">Instruções de Execução</label>
                 <textarea id="instructions" name="instructions" rows="4">{{ old('instructions', $exercise->instructions) }}</textarea>
             </div>

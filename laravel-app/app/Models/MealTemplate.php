@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MealTemplate extends Model
 {
+    use Traits\FiltersByProfessional;
+
     protected $fillable = [
         'user_id',
+        'professional_id',
         'name',
     ];
 

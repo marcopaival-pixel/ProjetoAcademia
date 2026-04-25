@@ -30,6 +30,13 @@ class BodyAnalysisController extends Controller
             'metrics' => 'nullable|json',
         ]);
 
+        if (!auth()->user()->consumeAiCredit('analyze_body_photo', ['view_type' => $request->view_type])) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Créditos insuficientes para realizar a análise corporal.'
+            ], 403);
+        }
+
         $path = $request->file('image')->store('body-analyses', 'public');
 
         // Lógica de sugestão simulada baseada nas métricas recebidas (assimetrias, postura)

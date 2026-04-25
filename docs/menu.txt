@@ -1,0 +1,295 @@
+Crie no sistema Laravel uma funcionalidade de personalização de menus baseada em assinatura do usuário.
+
+OBJETIVO:
+
+Permitir que usuários que possuem uma assinatura ativa possam configurar quais menus desejam exibir no sistema, personalizando sua interface conforme suas necessidades.
+
+Somente usuários com assinatura ativa poderão acessar essa funcionalidade.
+
+CONCEITO:
+
+Cada usuário poderá:
+
+* Escolher quais menus deseja visualizar
+* Ocultar menus que não utiliza
+* Salvar sua configuração
+* Restaurar o padrão do sistema
+
+Se o usuário não tiver assinatura:
+
+* Os menus padrão do sistema devem ser exibidos
+* A opção de personalização deve ficar bloqueada
+
+FUNCIONALIDADES:
+
+1. Verificar se o usuário possui assinatura ativa
+2. Exibir lista de menus disponíveis
+3. Permitir marcar ou desmarcar menus
+4. Salvar preferências do usuário
+5. Carregar menus conforme configuração salva
+6. Restaurar configuração padrão
+7. Permitir controle por assinatura
+
+REGRAS DE NEGÓCIO:
+
+Se:
+
+subscription_status = active
+
+Permitir:
+
+Configurar menus
+
+Se:
+
+subscription_status != active
+
+Bloquear acesso
+
+Mostrar mensagem:
+
+"Esta funcionalidade está disponível apenas para usuários com assinatura ativa."
+
+ESTRUTURA DO BANCO DE DADOS:
+
+Tabela:
+
+menus
+
+id
+name
+label
+route
+icon
+order
+created_at
+updated_at
+
+Exemplo:
+
+id: 1
+name: dashboard
+label: Dashboard
+route: dashboard.index
+icon: home
+order: 1
+
+id: 2
+name: patients
+label: Pacientes
+route: patients.index
+icon: users
+order: 2
+
+id: 3
+name: measurements
+label: Avaliações
+route: measurements.index
+icon: activity
+order: 3
+
+Tabela:
+
+user_menu_preferences
+
+id
+user_id
+menu_id
+visible
+
+true
+false
+
+created_at
+updated_at
+
+RELACIONAMENTOS:
+
+User
+
+hasMany UserMenuPreferences
+
+Menu
+
+hasMany UserMenuPreferences
+
+UserMenuPreference
+
+belongsTo User
+belongsTo Menu
+
+FLUXO:
+
+Usuário faz login
+Sistema verifica assinatura
+
+Se assinatura ativa:
+
+Mostrar botão:
+
+"Personalizar Menus"
+
+Usuário acessa:
+
+Configurações → Personalizar Menus
+
+Tela:
+
+Lista de menus com checkbox
+
+Exemplo:
+
+[✔] Dashboard
+[✔] Pacientes
+[ ] Financeiro
+[✔] Avaliações
+[ ] Relatórios
+
+Botões:
+
+Salvar
+Restaurar padrão
+
+REQUISITOS TÉCNICOS:
+
+Criar migration:
+
+menus
+
+Criar migration:
+
+user_menu_preferences
+
+Criar model:
+
+Menu
+
+Criar model:
+
+UserMenuPreference
+
+Criar controller:
+
+MenuPreferenceController
+
+Criar policy ou middleware:
+
+CheckActiveSubscription
+
+Criar validação
+
+Criar seeders para menus padrão
+
+Criar service:
+
+MenuService
+
+FUNÇÃO DO SISTEMA:
+
+Quando carregar o sistema:
+
+Buscar menus permitidos para o usuário
+
+Exemplo:
+
+$menus = Menu::whereHas('preferences', function ($query) {
+$query->where('user_id', auth()->id())
+->where('visible', true);
+})->orderBy('order')->get();
+
+Se o usuário não tiver configuração salva:
+
+Carregar menus padrão
+
+FUNCIONALIDADE EXTRA:
+
+Permitir que o administrador defina:
+
+Menus obrigatórios
+
+Adicionar campo:
+
+menus
+
+is_required
+
+true
+false
+
+Regras:
+
+Se:
+
+is_required = true
+
+O menu não pode ser ocultado.
+
+FUNCIONALIDADE DE RESTAURAR PADRÃO:
+
+Criar botão:
+
+"Restaurar menus padrão"
+
+Ao clicar:
+
+Excluir preferências do usuário
+
+OU
+
+Recriar preferências padrão
+
+PERMISSÕES:
+
+Somente usuários autenticados podem acessar
+
+Somente usuários com assinatura ativa podem personalizar menus
+
+Administrador pode visualizar todos os menus
+
+INTERFACE:
+
+Menu:
+
+Configurações
+
+Submenu:
+
+Personalizar Menus
+
+Tela:
+
+Título:
+
+Configuração de Menus
+
+Descrição:
+
+Selecione os menus que deseja visualizar no sistema.
+
+Lista:
+
+[✔] Dashboard
+[✔] Pacientes
+[✔] Avaliações
+[ ] Financeiro
+[ ] Relatórios
+[✔] Agenda
+
+Botões:
+
+Salvar
+Restaurar padrão
+
+MENSAGENS:
+
+Sucesso:
+
+"Configuração salva com sucesso."
+
+Erro:
+
+"Você precisa de uma assinatura ativa para usar esta funcionalidade."
+
+OBJETIVO FINAL:
+
+Permitir que cada usuário personalize sua interface do sistema exibindo apenas os menus desejados, com controle baseado em assinatura ativa, garantindo flexibilidade e escalabilidade para uso comercial e SaaS.

@@ -8,52 +8,113 @@ use Illuminate\Support\Facades\DB;
 class ProgressionService
 {
     /**
-     * Sugere a carga para o próximo treino com base no desempenho anterior.
+     * Sugere a carga para o próximo treino com base no desempenho anterior e RPE (Percepção de Esforço).
+     * Recurso Premium: NexShape Neural Progression.
      */
     public static function suggestLoad(int $userId, int $exerciseId, float $lastWeight, int $targetReps): array
     {
-        // Buscar o histórico recente
-        $lastSession = LoadLog::where('user_id', $userId)
+        // Buscar o histórico recente do exercício específico
+        $lastLogs = LoadLog::where('user_id', $userId)
             ->where('exercise_id', $exerciseId)
             ->orderBy('log_date', 'desc')
-            ->limit(3) // Pegar as últimas 3 séries do último treino
+            ->orderBy('created_at', 'desc')
+            ->limit(3) // Pegar as últimas 3 séries registradas
             ->get();
 
-        if ($lastSession->isEmpty()) {
-            return ['suggested_weight' => $lastWeight, 'message' => 'Mantenha a carga inicial.'];
+        if ($lastLogs->isEmpty()) {
+            return [
+                'suggested_weight' => $lastWeight, 
+                'message' => 'Inicie com a carga base para calibração.',
+                'indicator' => 'maintain',
+                'confidence' => 100
+            ];
         }
 
-        // Verificar se todas as reps foram batidas (ou superadas)
-        $avgReps = $lastSession->avg('reps_done');
-        $allMetTarget = $lastSession->every(fn($log) => $log->reps_done >= $targetReps);
+        $avgReps = $lastLogs->avg('reps_done');
+        $avgRPE = $lastLogs->avg('rpe') ?: 8; // Default 8 if not recorded
+        $allMetTarget = $lastLogs->every(fn($log) => $log->reps_done >= $targetReps);
+        
+        // Lógica de Inteligência Neural (RPE-Based)
+        $suggestion = [
+            'suggested_weight' => $lastWeight,
+            'message' => '📊 Consistência boa. Domine a técnica antes de evoluir.',
+            'indicator' => 'maintain',
+            'confidence' => 85
+        ];
 
         if ($allMetTarget) {
-            // Se bateu as metas, sugerir aumento
-            // Lógica simples: +2kg para pesos leves, +5% para pesos pesados
-            $increase = ($lastWeight < 20) ? 1.0 : ($lastWeight * 0.05);
-            $suggested = round(($lastWeight + $increase) / 0.5) * 0.5; // Arredondar para 0.5kg
-            
-            return [
-                'suggested_weight' => $suggested,
-                'message' => '🚀 Desempenho excelente! Sugerimos aumentar a carga.',
-                'indicator' => 'increase'
-            ];
+            // Se bateu as metas de repetições, olhamos o RPE
+            if ($avgRPE <= 6) {
+                // Muito leve
+                $increase = max(2.5, round($lastWeight * 0.10 / 0.5) * 0.5);
+                $suggestion = [
+                    'suggested_weight' => $lastWeight + $increase,
+                    'message' => '🚀 Carga muito leve detectada. Aumento agressivo sugerido (+10%).',
+                    'indicator' => 'increase',
+                    'confidence' => 95
+                ];
+            } elseif ($avgRPE <= 8) {
+                // Zona ideal
+                $increase = max(1.0, round($lastWeight * 0.05 / 0.5) * 0.5);
+                $suggestion = [
+                    'suggested_weight' => $lastWeight + $increase,
+                    'message' => '✅ Zona de hipertrofia ideal. Sugerimos progressão moderada (+5%).',
+                    'indicator' => 'increase',
+                    'confidence' => 90
+                ];
+            } elseif ($avgRPE >= 9.5) {
+                // Limite
+                $suggestion = [
+                    'suggested_weight' => $lastWeight,
+                    'message' => '⚖️ Limite de esforço atingido. Mantenha a carga para consolidação.',
+                    'indicator' => 'maintain',
+                    'confidence' => 80
+                ];
+            }
+        } else {
+            // Não bateu as repetições
+            if ($avgReps < ($targetReps * 0.7)) {
+                // Muito abaixo da meta
+                $decrease = round($lastWeight * 0.15 / 0.5) * 0.5;
+                $suggestion = [
+                    'suggested_weight' => max(0, $lastWeight - $decrease),
+                    'message' => '⚠️ Volume insuficiente. Deload estratégico sugerido para evitar platô.',
+                    'indicator' => 'decrease',
+                    'confidence' => 98
+                ];
+            } else {
+                // Ligeiramente abaixo
+                $suggestion = [
+                    'suggested_weight' => $lastWeight,
+                    'message' => '🔄 Quase lá! Tente completar as repetições com esta carga antes de subir.',
+                    'indicator' => 'maintain',
+                    'confidence' => 75
+                ];
+            }
         }
 
-        if ($avgReps < ($targetReps * 0.8)) {
-            // Se ficou muito abaixo (menos de 80% das reps), sugerir deload leve
-            $suggested = round(($lastWeight * 0.9) / 0.5) * 0.5;
-            return [
-                'suggested_weight' => $suggested,
-                'message' => '⚖️ Ajuste técnico: Sugarimos reduzir levemente para focar na forma.',
-                'indicator' => 'decrease'
-            ];
-        }
+        return $suggestion;
+    }
 
-        return [
-            'suggested_weight' => $lastWeight,
-            'message' => '📊 Consistência boa. Tente dominar esta carga antes de aumentar.',
-            'indicator' => 'maintain'
-        ];
+    /**
+     * Calcula o 1RM estimado usando a fórmula de Brzycki.
+     */
+    public static function calculateOneRepMax(float $weight, int $reps): float
+    {
+        if ($reps <= 0) return 0;
+        if ($reps === 1) return $weight;
+        
+        // Brzycki Formula
+        $oneRm = $weight / (1.0278 - (0.0278 * $reps));
+        
+        return round($oneRm, 2);
+    }
+
+    /**
+     * Calcula o volume total de um treino ou série (Peso x Repetições).
+     */
+    public static function calculateVolume(float $weight, int $reps, int $sets = 1): float
+    {
+        return round($weight * $reps * $sets, 2);
     }
 }

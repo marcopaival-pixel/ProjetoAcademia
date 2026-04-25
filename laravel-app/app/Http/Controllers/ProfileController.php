@@ -18,6 +18,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $isPremium = $user->hasPremiumAccess();
+        $isPurePatient = $user->hasRole('paciente') && !$user->hasRole('aluno') && !$user->isAdministrator();
 
         $profile = $user->profile ?? new UserProfile();
 
@@ -67,6 +68,7 @@ class ProfileController extends Controller
         return view('profile', [
             'u' => $u,
             'isPremium' => $isPremium,
+            'isPurePatient' => $isPurePatient,
             'calPreview' => $calPreview,
             'freeMacroPrev' => $freeMacroPrev,
             'latestWeight' => $latestWeightRow ? (float) $latestWeightRow->weight_kg : null,
@@ -80,13 +82,22 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $isPremium = $user->hasPremiumAccess();
+        $isPurePatient = $user->hasRole('paciente') && !$user->hasRole('aluno') && !$user->isAdministrator();
 
         // 1. Alteração de Senha
         if ($request->input('profile_action') === 'password') {
             $request->validate([
                 'current_password' => ['required'],
-                'new_password' => ['required', 'min:8'],
+                'new_password' => [
+                    'required', 
+                    'min:8', 
+                    'regex:/[A-Z]/', 
+                    'regex:/[0-9]/', 
+                    'regex:/[!@#$%^&*(),.?":{}|<>]/',
+                ],
                 'new_password_confirm' => ['required', 'same:new_password'],
+            ], [
+                'new_password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
             ]);
 
             if (! Hash::check($request->input('current_password'), $user->password_hash)) {
@@ -96,11 +107,25 @@ class ProfileController extends Controller
             $user->password_hash = Hash::make($request->input('new_password'));
             $user->save();
 
-            return back()->with('notice', 'Senha alterada com sucesso.');
+            // Registrar log de alteração de senha
+            \App\Models\AdminLog::create([
+                'user_id' => $user->id,
+                'action' => "Alteração de senha (própria conta)",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'created_at' => now(),
+            ]);
+
+            // Invalidar sessões
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->with('notice', 'Senha alterada com sucesso. Por favor, autentique-se novamente.');
         }
 
-        // 2. Atualização de Macros (Atalho Premium)
-        if ($request->input('profile_action') === 'macros' && $isPremium) {
+        // 2. Atualização de Macros (Atalho Premium) - Bloqueado para pacientes puros
+        if ($request->input('profile_action') === 'macros' && $isPremium && !$isPurePatient) {
              UserProfile::updateOrCreate(
                  ['user_id' => $user->id],
                  [
@@ -115,8 +140,8 @@ class ProfileController extends Controller
 
         // 3. Atualização de Perfil Geral
         $data = $request->validated();
-        $autoCalorie = $request->boolean('auto_calorie');
-        $autoWater = $request->boolean('auto_water');
+        $autoCalorie = !$isPurePatient && $request->boolean('auto_calorie');
+        $autoWater = !$isPurePatient && $request->boolean('auto_water');
         
         $est = null;
         $lw = $user->weightEntries()->orderByDesc('weighed_at')->first();
@@ -141,8 +166,8 @@ class ProfileController extends Controller
             );
         }
 
-        // Persistência em Transação usando Eloquent via DB::transaction global
-        DB::transaction(function () use ($user, $data, $autoWater) {
+        // Persistência em Transação
+        DB::transaction(function () use ($user, $data, $autoWater, $isPurePatient) {
             $user->update(['name' => $data['name']]);
 
             if (!empty($data['current_weight_kg'])) {
@@ -152,12 +177,14 @@ class ProfileController extends Controller
                 );
             }
 
-            UserProfile::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'birth_date' => $data['birth_date'],
-                    'sex' => $data['sex'],
-                    'height_cm' => $data['height_cm'] ?? null,
+            $profileUpdate = [
+                'birth_date' => $data['birth_date'],
+                'sex' => $data['sex'],
+                'height_cm' => $data['height_cm'] ?? null,
+            ];
+
+            if (!$isPurePatient) {
+                $profileUpdate = array_merge($profileUpdate, [
                     'activity_level' => $data['activity_level'],
                     'climate' => $data['climate'],
                     'goal' => $data['goal'],
@@ -169,8 +196,10 @@ class ProfileController extends Controller
                     'fat_target_g' => $data['fat_target_g'] ?? null,
                     'water_target_ml' => $data['water_target_ml'] ?? null,
                     'is_water_target_auto' => $autoWater,
-                ]
-            );
+                ]);
+            }
+
+            UserProfile::updateOrCreate(['user_id' => $user->id], $profileUpdate);
         });
 
         $notice = 'Perfil atualizado.';
@@ -181,5 +210,11 @@ class ProfileController extends Controller
         }
 
         return back()->with('notice', $notice);
+    }
+
+    public function blockedUsers(Request $request): View
+    {
+        $blockedUsers = $request->user()->blockedUsers()->paginate(20);
+        return view('profile.blocked', compact('blockedUsers'));
     }
 }

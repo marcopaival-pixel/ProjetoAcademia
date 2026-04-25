@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ExerciseEntry extends Model
 {
+    use Traits\BelongsToCompany;
+    protected $companyColumn = 'user_id';
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -15,6 +17,7 @@ class ExerciseEntry extends Model
         'activity_type',
         'duration_min',
         'calories_burned',
+        'sets_data',
         'notes',
     ];
 
@@ -22,6 +25,7 @@ class ExerciseEntry extends Model
         'entry_date' => 'date',
         'duration_min' => 'integer',
         'calories_burned' => 'integer',
+        'sets_data' => 'array',
     ];
 
     public function user(): BelongsTo

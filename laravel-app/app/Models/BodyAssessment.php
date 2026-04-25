@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BodyAssessment extends Model
 {
-    use HasFactory;
+    use HasFactory, Traits\FiltersByProfessional;
 
     protected $fillable = [
         'user_id',
@@ -29,6 +29,11 @@ class BodyAssessment extends Model
         'calf_r',
         'assessment_date',
         'notes',
+        'status',
+        'created_by',
+        'professional_id',
+        'blood_pressure',
+        'heart_rate',
     ];
 
     protected $casts = [
@@ -38,5 +43,10 @@ class BodyAssessment extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function professional()
+    {
+        return $this->belongsTo(User::class, 'professional_id');
     }
 }

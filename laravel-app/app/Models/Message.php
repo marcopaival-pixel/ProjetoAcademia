@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Message extends Model
 {
+    use Traits\FiltersByProfessional;
+
     protected $fillable = ['conversation_id', 'sender_id', 'content', 'is_read'];
 
     protected $casts = [

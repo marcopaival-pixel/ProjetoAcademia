@@ -1,0 +1,46 @@
+Realizar uma auditoria funcional completa do painel do aluno do sistema.
+
+A análise deve:
+
+1. Mapear todas as funcionalidades existentes no painel do aluno.
+
+2. Identificar funcionalidades duplicadas ou redundantes, considerando:
+
+- Nome semelhante
+- Função semelhante
+- Mesma finalidade em locais diferentes
+- Funcionalidades que fazem a mesma ação
+
+3. Para cada funcionalidade duplicada:
+
+Informar:
+
+- Nome das funcionalidades duplicadas
+- Onde estão localizadas (menu/submenu)
+- Qual é a diferença entre elas (se houver)
+- Qual deve ser mantida
+- Qual deve ser removida ou unificada
+- Impacto da alteração
+
+4. Gerar uma lista completa de todas as funcionalidades do painel do aluno.
+
+Para cada funcionalidade, informar:
+
+- Nome
+- Descrição clara
+- Categoria (Treino, Saúde, Financeiro, Perfil, Relatórios, etc.)
+- Menu/Submenu
+- Tipo de acesso (Free ou Premium)
+- Status (Ativa, Em desenvolvimento, Futuro)
+- Dependências (se depende de outra funcionalidade)
+
+5. Sugerir melhorias estruturais, como:
+
+- Reorganização de menus
+- Agrupamento de funcionalidades semelhantes
+- Padronização de nomes
+- Remoção de redundâncias
+
+Objetivo:
+
+Melhorar a organização, usabilidade e escalabilidade do painel do aluno.

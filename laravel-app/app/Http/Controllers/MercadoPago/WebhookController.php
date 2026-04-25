@@ -9,6 +9,61 @@ use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
 {
+    /**
+     * Valida a assinatura HMAC-SHA256 enviada pelo Mercado Pago.
+     *
+     * O MP envia o header x-signature no formato: ts=<timestamp>;v1=<hash>
+     * O hash é calculado sobre: "id:<data.id>;request-id:<x-request-id>;ts:<ts>"
+     *
+     * @see https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+     */
+    private function validateMpSignature(Request $request, string $secret): bool
+    {
+        $xSignature = (string) $request->header('x-signature', '');
+        $xRequestId = (string) $request->header('x-request-id', '');
+
+        if ($xSignature === '') {
+            return false;
+        }
+
+        // Extrair ts e v1 do header x-signature (formato: ts=<n>;v1=<hash>)
+        $ts = '';
+        $v1 = '';
+        foreach (explode(';', $xSignature) as $part) {
+            [$key, $value] = array_pad(explode('=', $part, 2), 2, '');
+            if (trim($key) === 'ts') {
+                $ts = trim($value);
+            }
+            if (trim($key) === 'v1') {
+                $v1 = trim($value);
+            }
+        }
+
+        if ($ts === '' || $v1 === '') {
+            return false;
+        }
+
+        // Extrair o data.id do payload para compor a string de manifesto
+        $dataId = '';
+        $raw = $request->getContent();
+        if ($raw !== '') {
+            try {
+                $j = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+                if (is_array($j) && isset($j['data']['id'])) {
+                    $dataId = (string) $j['data']['id'];
+                }
+            } catch (\JsonException) {
+                // dataId permanece vazio — incluído na string de manifesto como string vazia
+            }
+        }
+
+        // Montar string de manifesto conforme documentação MP e verificar HMAC
+        $manifest = "id:{$dataId};request-id:{$xRequestId};ts:{$ts}";
+        $expected  = hash_hmac('sha256', $manifest, $secret);
+
+        return hash_equals($expected, $v1);
+    }
+
     public function __invoke(Request $request, MercadoPagoService $mp): \Illuminate\Http\Response
     {
         $token = config('projeto.mp_access_token');
@@ -16,7 +71,23 @@ class WebhookController extends Controller
             return response('MP não configurado', 503, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
-        $paymentId = null;
+        // --- Validação de assinatura HMAC-SHA256 (Correção S2) ---
+        $webhookSecret = (string) config('projeto.mp_webhook_secret', '');
+        if ($webhookSecret !== '') {
+            if (! $this->validateMpSignature($request, $webhookSecret)) {
+                Log::warning('[mp_webhook] Assinatura inválida rejeitada.', [
+                    'ip'           => $request->ip(),
+                    'x-signature'  => $request->header('x-signature', ''),
+                    'x-request-id' => $request->header('x-request-id', ''),
+                ]);
+
+                return response('Assinatura inválida', 401, ['Content-Type' => 'text/plain; charset=UTF-8']);
+            }
+        } else {
+            Log::debug('[mp_webhook] MP_WEBHOOK_SECRET não configurado — validação de assinatura ignorada (apenas dev).');
+        }
+
+        $paymentId           = null;
         $preapprovalNotifyId = null;
 
         $raw = $request->getContent();
@@ -27,10 +98,10 @@ class WebhookController extends Controller
                 $j = null;
             }
             if (is_array($j)) {
-                $type = (string) ($j['type'] ?? '');
-                $topic = (string) ($j['topic'] ?? '');
+                $type    = (string) ($j['type'] ?? '');
+                $topic   = (string) ($j['topic'] ?? '');
                 $dataArr = isset($j['data']) && is_array($j['data']) ? $j['data'] : [];
-                $dataId = isset($dataArr['id']) ? (string) $dataArr['id'] : null;
+                $dataId  = isset($dataArr['id']) ? (string) $dataArr['id'] : null;
                 if ($dataId !== null) {
                     if ($type === 'subscription_preapproval' || $type === 'preapproval'
                         || $topic === 'subscription_preapproval' || $topic === 'preapproval'
@@ -48,7 +119,7 @@ class WebhookController extends Controller
             }
         }
 
-        $tPost = (string) ($request->input('topic') ?? $request->query('topic', ''));
+        $tPost  = (string) ($request->input('topic') ?? $request->query('topic', ''));
         $idPost = (string) ($request->input('id') ?? $request->query('id', ''));
         if ($preapprovalNotifyId === null && $idPost !== '') {
             if ($tPost === 'subscription_preapproval' || $tPost === 'preapproval') {

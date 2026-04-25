@@ -20,7 +20,7 @@ class UpdateProfileRequest extends FormRequest
             'height_cm' => ['nullable', 'integer', 'between:50,260'],
             'activity_level' => ['required', 'in:sedentary,light,moderate,active,very_active'],
             'climate' => ['required', 'in:cold,moderate,hot'],
-            'goal' => ['required', 'in:lose,gain,maintain'],
+            'goal' => ['required', 'in:lose,lose_aggressive,recomp,maintain,gain,performance'],
             'current_weight_kg' => ['nullable', 'numeric', 'between:20,500'],
             'target_weight_kg' => ['nullable', 'numeric', 'between:20,500'],
             'training_days_per_week' => ['nullable', 'in:1-2,3-4,5-6,all'],

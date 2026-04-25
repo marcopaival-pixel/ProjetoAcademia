@@ -8,12 +8,16 @@ use Illuminate\Support\Facades\Http;
 class AIChatService
 {
     private string $apiKey;
-    private string $apiUrl = 'https://api.openai.com/v1/chat/completions';
-    private string $model = 'gpt-4o-mini';
+
+    private string $apiUrl;
+
+    private string $model;
 
     public function __construct()
     {
-        $this->apiKey = (string) env('OPENAI_API_KEY', '');
+        $this->apiKey = (string) config('services.openai.api_key', '');
+        $this->apiUrl = (string) config('services.openai.api_url', 'https://api.openai.com/v1/chat/completions');
+        $this->model = (string) config('services.openai.model', 'gpt-4o-mini');
     }
 
     /**
@@ -85,44 +89,46 @@ class AIChatService
     }
 
     /**
-     * Cria o prompt do sistema para contextualizar a IA
+     * Cria o prompt do sistema para contextualizar a IA (NexBot High-Performance Coach)
      */
     private function buildSystemPrompt(array $userMetrics): string
     {
         $metricsContext = '';
-        
+         
         if (!empty($userMetrics)) {
-            $metricsContext = "Contexto do usuário:\n";
-            if (isset($userMetrics['daily_calories'])) {
-                $metricsContext .= "- Meta de calorias: {$userMetrics['daily_calories']} kcal\n";
+            $metricsContext = "### DADOS REAIS DO USUÁRIO (Sincronizados em tempo real):\n";
+            $metricsContext .= "- Nome: " . ($userMetrics['name'] ?? 'Atleta') . "\n";
+            $metricsContext .= "- Objetivo: " . ($userMetrics['objective'] ?? 'Geral') . "\n";
+            $metricsContext .= "- Sexo Bio: " . ($userMetrics['biological_sex'] ?? 'N/A') . "\n";
+             
+            if (isset($userMetrics['daily_calories_target'])) {
+                $metricsContext .= "- Meta Calórica: {$userMetrics['daily_calories_target']} kcal\n";
+                $metricsContext .= "- Consumo Hoje: " . ($userMetrics['consumed_calories_today'] ?? 0) . " kcal\n";
             }
-            if (isset($userMetrics['consumed_calories'])) {
-                $metricsContext .= "- Calorias consumidas hoje: {$userMetrics['consumed_calories']} kcal\n";
+            if (isset($userMetrics['protein_target'])) {
+                $metricsContext .= "- Meta de Proteína: {$userMetrics['protein_target']}g\n";
             }
-            if (isset($userMetrics['protein_goal'])) {
-                $metricsContext .= "- Meta de proteína: {$userMetrics['protein_goal']}g\n";
+            if (isset($userMetrics['water_target_ml'])) {
+                $metricsContext .= "- Meta de Água: {$userMetrics['water_target_ml']}ml\n";
+                $metricsContext .= "- Água Ingerida: " . ($userMetrics['water_consumed_ml'] ?? 0) . "ml\n";
             }
-            if (isset($userMetrics['current_weight'])) {
-                $metricsContext .= "- Peso atual: {$userMetrics['current_weight']}kg\n";
-            }
-            if (isset($userMetrics['goal_weight'])) {
-                $metricsContext .= "- Peso objetivo: {$userMetrics['goal_weight']}kg\n";
-            }
-            if (isset($userMetrics['objective'])) {
-                $metricsContext .= "- Objetivo: {$userMetrics['objective']}\n";
+            if (isset($userMetrics['last_workout_name'])) {
+                $metricsContext .= "- Último Treino: {$userMetrics['last_workout_name']} ({$userMetrics['last_workout_date']})\n";
             }
         }
 
-        return "Você é um assistente de nutrição especializado e amigável. "
-            . "Você ajuda usuários com dúvidas sobre alimentos, macros, calorias e saúde.\n\n"
-            . "Regras importantes:\n"
-            . "- Seja sempre amigável e encorajador\n"
-            . "- Forneça informações precisas sobre nutrição\n"
-            . "- Se não souber algo com certeza, seja honesto e sugira consultar um nutricionista\n"
-            . "- Responda de forma concisa e prática\n"
-            . "- Use emojis apropriados quando fizer sentido\n"
-            . "- Sempre que possível, dê dicas práticas e acionáveis\n"
-            . "- Personalize respostas baseado no contexto do usuário\n\n"
+        return "Você é o NexBot, um Coach de Alta Performance e Especialista em Biohacking. "
+            . "Sua função é fornecer respostas extremamente técnicas, porém motivadoras e acionáveis.\n\n"
+            . "DIRETRIZES DE PENSAMENTO:\n"
+            . "1. Analise proativamente os dados de consumo de calorias e água. Se o usuário estiver longe da meta, dê um 'puxão de orelha' motivador.\n"
+            . "2. Ao falar de treinos, relacione com o último treino registrado se fizer sentido.\n"
+            . "3. Use um tom de voz 'Premium': educado, autoritário no conhecimento científico e focado em resultados.\n"
+            . "4. Formate suas respostas usando Markdown: use Negrito para termos importantes e Tabelas ou Listas para planos alimentares ou sugestões.\n"
+            . "5. Seja conciso. Não perca tempo com 'Espero que esteja bem'. Vá direto ao ponto com valor.\n\n"
+            . "CONVENÇÕES:\n"
+            . "- Use emojis de performance: ⚡ 🔥 🧪 🧬 🏆 🥗\n"
+            . "- Sempre encerre com uma pergunta provocativa ou uma 'Missão do Dia' rápida.\n\n"
+            . "### CONTEXTO DO USUÁRIO ATUAL:\n"
             . $metricsContext;
     }
 }

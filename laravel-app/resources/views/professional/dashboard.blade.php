@@ -1,244 +1,433 @@
 @extends('layouts.app')
 
-@section('title', 'Portal Business — NexShape')
+@section('title', 'Portal Pro — NexShape Business')
 
 @section('content')
-<div class="py-10 space-y-12 animate-dashboard-entry max-w-[1600px] mx-auto px-6">
+<div class="py-10 space-y-12 animate-dashboard-entry mx-auto px-4 md:px-6" x-data="{ showFinance: true }">
+    <!-- Quick Actions Bar (New Tool) -->
+    <div class="flex flex-wrap items-center gap-4 p-4 bg-zinc-900/60 backdrop-blur-2xl rounded-3xl border border-white/5 shadow-2xl overflow-x-auto no-scrollbar">
+        <span class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] px-4 border-r border-white/5 mr-2">Ações Rápidas</span>
+        
+        <a href="{{ route('professional.profile.edit') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
+            <i class="fas fa-user-cog text-xs"></i> MEU PERFIL
+        </a>
+        <a href="{{ route('professional.patients.create') }}" class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all text-[10px] shrink-0 border border-blue-400/20 shadow-lg shadow-blue-500/10">
+            <i class="fas fa-user-plus text-xs"></i> NOVO PACIENTE
+        </a>
+        <a href="{{ route('exercise') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
+            <i class="fas fa-dumbbell text-xs"></i> PRESCREVER TREINO
+        </a>
+        <a href="{{ route('nutrition.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
+            <i class="fas fa-utensils text-xs"></i> NOVA DIETA
+        </a>
+        <a href="{{ route('assessments.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
+            <i class="fas fa-clipboard-check text-xs"></i> AVALIAÇÃO
+        </a>
+
+        <div class="ml-auto flex items-center gap-3 pr-4">
+            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest" x-text="showFinance ? 'PRIVACIDADE OFF' : 'PRIVACIDADE ON'"></span>
+            <button @click="showFinance = !showFinance" class="w-12 h-6 rounded-full bg-zinc-800 relative transition-all border border-white/5" :class="!showFinance ? 'bg-blue-600' : 'bg-zinc-800'">
+                <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-md" :class="!showFinance ? 'left-7' : 'left-1'"></div>
+            </button>
+        </div>
+    </div>
+
     <!-- Header Strategy: Professional Glass Header -->
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-4 border-b border-white/5">
-        <div class="space-y-3">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-8 border-b border-white/5">
+        <div class="space-y-4">
             <div class="flex items-center gap-3">
-                <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-500/20">Ambiente Profissional Ativo</span>
+                <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">Console Pro Ativo</span>
                 <span class="text-zinc-600">•</span>
                 <span class="text-zinc-400 text-xs font-bold">{{ now()->translatedFormat('d \d\e F, Y') }}</span>
             </div>
-            <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
-                Gestão, <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">{{ explode(' ', Auth::user()->name)[0] }}</span>
+            <h1 class="text-6xl font-black tracking-tighter text-white leading-none">
+                Gestão de <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Alta Performance</span>
             </h1>
-            <p class="text-zinc-500 font-medium max-w-xl">Central de inteligência e performance para sua base de pacientes. Otimizando resultados com tecnologia NexShape.</p>
+            <p class="text-zinc-500 font-medium max-w-2xl text-lg">Bem-vindo ao centro de inteligência NexShape. Analisamos seus dados para potencializar a retenção e os resultados dos seus pacientes.</p>
         </div>
         
         <div class="flex flex-wrap items-center gap-4">
-            <div class="flex gap-2 p-1.5 bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/5 shadow-2xl">
-                <a href="{{ route('professional.patients.index') }}" class="group relative px-6 py-3 bg-blue-600 text-white font-bold rounded-xl overflow-hidden transition-all hover:pr-10 active:scale-95">
-                    <span class="relative z-10">Ver Pacientes</span>
-                    <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <div class="flex gap-3 p-2 bg-zinc-900/40 backdrop-blur-2xl rounded-[2rem] border border-white/5 shadow-2xl">
+                <a href="{{ route('professional.patients.index') }}" class="group relative px-8 py-4 bg-blue-600 text-white font-black rounded-2xl overflow-hidden transition-all hover:pr-12 active:scale-95 shadow-lg shadow-blue-500/20">
+                    <span class="relative z-10">MINHA BASE</span>
+                    <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 </a>
-                <a href="{{ route('professional.ai-wizard') }}" class="px-6 py-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold rounded-xl transition-all border border-emerald-500/10">Prescrição IA</a>
+                <a href="{{ route('professional.ai-wizard.index') }}" class="px-8 py-4 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white font-black rounded-2xl transition-all border border-white/5">IA WIZARD</a>
             </div>
         </div>
     </div>
 
-    <!-- Layout Bento Moderno (Métricas de Gestão) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        @php
-            $metrics = [
-                ['label' => 'Pacientes Ativos', 'val' => $stats['active_patients'], 'change' => '+12%', 'color' => 'blue', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
-                ['label' => 'Prescrições Ativas', 'val' => $stats['active_plans'], 'change' => '+8%', 'color' => 'purple', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'],
-                ['label' => 'Taxa de Retenção', 'val' => $stats['retention_rate'].'%', 'change' => 'Alta', 'color' => 'amber', 'icon' => 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'],
-                ['label' => 'Faturamento Mensal', 'val' => $stats['revenue_month'], 'change' => '+15%', 'color' => 'emerald', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
-            ];
-        @endphp
-
-        @foreach($metrics as $m)
-        <div class="group relative bg-zinc-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-{{ $m['color'] }}-500/50 hover:scale-[1.02]">
-            <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
-            <div class="flex items-center justify-between mb-6">
-                <div class="w-12 h-12 bg-{{ $m['color'] }}-500/10 rounded-2xl flex items-center justify-center text-{{ $m['color'] }}-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $m['icon'] }}"></path></svg>
-                </div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-{{ $m['color'] }}-400 bg-{{ $m['color'] }}-400/10 px-3 py-1 rounded-full border border-{{ $m['color'] }}-400/20">{{ $m['change'] }}</span>
+    <!-- Tier & Patient Limit Status -->
+    @php
+        $currentPlan = auth()->user()->professionalPlan;
+        $maxPatients = $currentPlan->max_patients ?? 0;
+        $usagePercent = $maxPatients > 0 ? ($stats['total_patients'] / $maxPatients) * 100 : 0;
+    @endphp
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-gradient-to-r from-blue-600/5 to-transparent p-8 rounded-[3rem] border border-blue-500/10">
+        <div class="lg:col-span-4">
+            <h4 class="text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Plano Atual</h4>
+            <div class="flex items-center gap-4">
+                <span class="text-3xl font-black text-white italic uppercase">{{ $currentPlan->name ?? 'Grátis' }}</span>
+                @if($maxPatients > 0 && $usagePercent >= 80)
+                    <span class="px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-black rounded-full border border-amber-500/20 animate-pulse">LIMITE PRÓXIMO</span>
+                @endif
             </div>
-            <p class="text-zinc-500 font-bold text-xs uppercase tracking-tighter">{{ $m['label'] }}</p>
-            <h3 class="text-3xl font-black text-white mt-1">{{ $m['val'] }}</h3>
         </div>
-        @endforeach
+        <div class="lg:col-span-6">
+            <div class="flex justify-between items-end mb-3">
+                <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Capacidade de Pacientes</span>
+                <span class="text-sm font-black text-white">{{ $stats['total_patients'] }} <span class="text-zinc-600">/</span> {{ $maxPatients > 0 ? $maxPatients : '∞' }}</span>
+            </div>
+            <div class="h-3 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                <div class="h-full bg-gradient-to-r from-blue-600 to-indigo-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-1000" style="width: {{ $maxPatients > 0 ? min(100, $usagePercent) : 100 }}%"></div>
+            </div>
+        </div>
+        <div class="lg:col-span-2 text-right">
+            <button class="px-6 py-3 bg-white text-zinc-900 font-black rounded-2xl hover:bg-blue-400 hover:text-white transition-all text-xs shadow-xl">UPGRADE</button>
+        </div>
     </div>
 
-    <!-- Dashboard Core Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        <!-- Engajamento da Base (8 colunas) -->
-        <div class="lg:col-span-12 xl:col-span-8 group relative bg-zinc-900/60 backdrop-blur-2xl border border-white/10 p-10 rounded-[3.5rem] overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
-            <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
-            
-            <div class="flex items-center justify-between mb-12">
-                <div>
-                    <h3 class="text-2xl font-black text-white">Engajamento da Base</h3>
-                    <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Percentual de adesão aos treinos/dietas</p>
-                </div>
-                <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
-                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                    <span class="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Tempo Real</span>
-                </div>
-            </div>
-
-            <div class="h-64 flex items-end gap-3 px-2 mb-8 relative">
-                <!-- Grid Lines -->
-                <div class="absolute inset-x-0 top-0 h-px bg-white/5"></div>
-                <div class="absolute inset-x-0 top-1/2 h-px bg-white/5"></div>
-
-                @foreach($engagementData as $val)
-                <div class="flex-1 group/bar relative h-full flex flex-col justify-end">
-                    <div class="w-full bg-gradient-to-t from-blue-600/20 to-blue-500/80 rounded-2xl transition-all duration-700 group-hover/bar:to-emerald-400 group-hover/bar:scale-x-105" style="height: {{ $val }}%;">
-                        <div class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-all bg-white text-zinc-900 text-[10px] font-black py-1 px-3 rounded-full shadow-2xl">
-                            {{ $val }}%
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div class="lg:col-span-8 space-y-10">
+            <!-- Growth Chart & Financials -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Chart Area -->
+                <div class="md:col-span-2 bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    <div class="flex justify-between items-start mb-10">
+                        <div>
+                            <h3 class="text-xl font-black text-white leading-none">Adesão Diária</h3>
+                            <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-2">Engajamento méto da base (7d)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                           <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                           <span class="text-[10px] text-zinc-400 font-bold uppercase">% ENGAGE</span>
                         </div>
                     </div>
+                    
+                    <div class="h-64">
+                        <canvas id="engagementChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Financial Card -->
+                <div class="bg-zinc-900/60 border border-white/5 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
+                    <div class="relative z-10">
+                        <h4 class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-4">Estimativa SaaS Business</h4>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-1 italic">FATURAMENTO (MÊS)</p>
+                                <span class="text-4xl font-black text-white italic tracking-tighter transition-all" :class="!showFinance && 'blur-md select-none'">
+                                    {{ $stats['revenue_month'] }}
+                                </span>
+                            </div>
+                            
+                            <div class="pt-6 border-t border-white/5">
+                                <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-1 italic">PROJEÇÃO (CAPACIDADE)</p>
+                                <span class="text-2xl font-black text-zinc-400 italic tracking-tighter transition-all" :class="!showFinance && 'blur-md select-none'">
+                                    {{ $stats['projected_revenue'] }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex items-center justify-between">
+                        <div class="px-4 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase">
+                           +{{ $stats['growth'] }}% GROW
+                        </div>
+                        <i class="fas fa-university text-zinc-800 text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                @php
+                    $metrics = [
+                        ['label' => 'Pacientes', 'val' => $stats['total_patients'], 'sub' => 'Base Cadastrada', 'color' => 'blue', 'icon' => 'fas fa-users'],
+                        ['label' => 'Ativos (7d)', 'val' => $stats['active_patients'], 'sub' => $stats['inactive_patients'] . ' sem logs', 'color' => 'emerald', 'icon' => 'fas fa-user-check'],
+                        ['label' => 'Treinos Ativos', 'val' => $stats['active_workouts'], 'sub' => 'Vigentes hoje', 'color' => 'purple', 'icon' => 'fas fa-dumbbell'],
+                        ['label' => 'Pendências', 'val' => $stats['pending_assessments'], 'sub' => 'Ações necessárias', 'color' => 'rose', 'icon' => 'fas fa-exclamation-triangle'],
+                    ];
+                @endphp
+
+                @foreach($metrics as $m)
+                <div class="group relative bg-zinc-900/60 backdrop-blur-2xl border border-white/5 p-8 rounded-[3rem] overflow-hidden transition-all hover:border-{{ $m['color'] }}-500/30 hover:-translate-y-1 shadow-xl">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-{{ $m['color'] }}-500/5 blur-3xl rounded-full"></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-zinc-500 font-black text-[10px] uppercase tracking-widest">{{ $m['label'] }}</p>
+                        <i class="{{ $m['icon'] }} text-{{ $m['color'] }}-500/40 text-sm"></i>
+                    </div>
+                    <h3 class="text-5xl font-black text-white mt-1 tracking-tighter">{{ $m['val'] }}</h3>
+                    <p class="text-{{ $m['color'] }}-400 text-[10px] font-bold uppercase mt-2 opacity-80 group-hover:opacity-100 transition-opacity">{{ $m['sub'] }}</p>
                 </div>
                 @endforeach
             </div>
-            
-            <div class="flex justify-between px-4 text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em]">
-                <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
-            </div>
-        </div>
 
-        <!-- Alertas Inteligentes (4 colunas) -->
-        <div class="lg:col-span-12 xl:col-span-4 space-y-10">
-            <div class="group relative bg-zinc-900/60 backdrop-blur-2xl p-10 rounded-[3.5rem] border border-white/10 overflow-hidden shadow-2xl transition-all hover:border-white/20">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                            <span class="text-sm font-black italic">AI</span>
-                        </div>
-                        <h3 class="text-xl font-black text-white">NexSense Alerts</h3>
+            <!-- Agenda do Dia -->
+            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl">
+                <div class="flex items-center justify-between mb-10">
+                    <div>
+                        <h3 class="text-2xl font-black text-white">Agenda do Dia</h3>
+                        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Sessões e atendimentos agendados</p>
                     </div>
-                    <span class="text-zinc-600 text-[10px] font-black uppercase animate-pulse">Scanning...</span>
                 </div>
 
                 <div class="space-y-6">
-                    @foreach($tasks as $task)
-                    <div class="p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group/item">
-                        <div class="flex items-start gap-4">
-                            <div class="mt-1.5 w-2 h-2 rounded-full @if($task['priority'] == 'high') bg-red-500 shadow-[0_0_8px_#ef4444] @elseif($task['priority'] == 'medium') bg-amber-500 shadow-[0_0_8px_#f59e0b] @else bg-blue-500 @endif"></div>
-                            <div class="flex-1">
-                                <p class="text-sm text-zinc-200 font-bold leading-tight line-clamp-2">{{ $task['msg'] }}</p>
-                                <div class="mt-3 flex items-center justify-between">
-                                    <span class="text-[9px] text-zinc-500 font-black uppercase tracking-widest">{{ $task['priority'] }} priority</span>
-                                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-widest group-hover/item:translate-x-1 transition-transform">Agir &rarr;</span>
+                    @forelse($todayAppointments as $app)
+                    <div class="flex items-center gap-6 p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-blue-500/20 transition-all cursor-pointer group">
+                        <div class="text-right w-20">
+                            <p class="text-xl font-black text-white leading-none">{{ \Carbon\Carbon::parse($app->appointment_at)->format('H:i') }}</p>
+                            <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">UTC-3</p>
+                        </div>
+                        <div class="w-px h-12 bg-zinc-800"></div>
+                        <div class="flex-1">
+                            <h4 class="text-white font-black text-lg leading-tight group-hover:text-blue-400 transition-colors">{{ $app->patient?->name ?? 'Paciente Externo' }}</h4>
+                            <p class="text-xs text-zinc-500 font-medium">{{ $app->service_type ?? 'Consulta Geral' }}</p>
+                        </div>
+                        <span class="px-4 py-2 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded-xl border border-blue-500/10">CONFIRMADO</span>
+                    </div>
+                    @empty
+                    <div class="py-12 text-center">
+                        <div class="w-20 h-20 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fa-regular fa-calendar-xmark text-4xl text-zinc-700"></i>
+                        </div>
+                        <h4 class="text-zinc-500 font-black text-lg">Nenhum atendimento para hoje</h4>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Tabela de Aderência -->
+            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 overflow-hidden shadow-2xl">
+                <div class="flex items-center justify-between mb-10 px-4">
+                    <h3 class="text-2xl font-black text-white leading-none">Aderência Recente</h3>
+                    <a href="{{ route('professional.patients.index') }}" class="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Ver Todos &rarr;</a>
+                </div>
+                
+                <div class="overflow-x-auto px-4">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] border-b border-white/5">
+                                <th class="pb-6">PACIENTE</th>
+                                <th class="pb-6">BIO-STATUS / ENGAGE</th>
+                                <th class="pb-6">AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            @foreach($recentPatients as $p)
+                            <tr class="group hover:bg-white/5 transition-all cursor-pointer">
+                                <td class="py-10">
+                                    <div class="flex items-center gap-6">
+                                        <div class="w-16 h-16 rounded-[1.75rem] bg-gradient-to-tr {{ $p['color'] }} flex items-center justify-center text-white font-black text-xl shadow-2xl group-hover:scale-110 transition-transform">
+                                            {{ $p['initials'] }}
+                                        </div>
+                                        <div>
+                                            <p class="text-white font-black text-xl group-hover:text-blue-400 transition-colors">{{ $p['name'] }}</p>
+                                            <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">{{ $p['bio'] }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="space-y-3 w-48">
+                                        <div class="flex justify-between items-end">
+                                            <span class="text-[9px] font-black text-zinc-500 uppercase">{{ $p['status'] }}</span>
+                                            <span class="text-sm font-black text-white">{{ $p['engage'] }}%</span>
+                                        </div>
+                                        <div class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                                            <div class="h-full bg-gradient-to-r {{ $p['color'] }} rounded-full" style="width: {{ $p['engage'] }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-right pr-6">
+                                    <div class="flex gap-2 justify-end">
+                                        <a href="{{ route('professional.patients.show', $p['id']) }}" class="p-4 bg-zinc-800 rounded-2xl hover:bg-blue-600 hover:text-white transition-all border border-white/5">
+                                            <i class="fa-solid fa-user-gear"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Sidebar Widgets -->
+        <div class="lg:col-span-4 space-y-10">
+            <!-- Professional IQ Card -->
+            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 p-10 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group">
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all"></div>
+                <div class="relative z-10 text-center">
+                    <div class="flex flex-col items-center mb-8">
+                        <div class="w-20 h-20 bg-white/20 backdrop-blur-xl rounded-[2rem] flex items-center justify-center border border-white/20 mb-4 shadow-3xl">
+                            <i class="fas fa-brain text-4xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black italic tracking-tighter">NEXSENSE INTEL</h3>
+                        <p class="text-[9px] font-bold uppercase tracking-[0.3em] opacity-60">Insight Automático Ativo</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        @foreach($tasks as $task)
+                        <div class="p-6 bg-white/10 backdrop-blur-md rounded-[2.5rem] border border-white/10 hover:bg-white/20 transition-all cursor-pointer text-left group/task">
+                            <div class="flex gap-5">
+                                <div class="mt-1.5 w-3 h-3 rounded-full shrink-0 @if($task['priority'] == 'critical') bg-red-400 animate-ping @elseif($task['priority'] == 'high') bg-orange-400 @else bg-cyan-400 @endif shadow-[0_0_10px_rgba(34,211,238,0.5)]"></div>
+                                <div>
+                                    <p class="text-sm font-black leading-tight group-hover/task:text-blue-200 transition-colors">{{ $task['msg'] }}</p>
+                                    @if(isset($task['type']))
+                                        <p class="text-[9px] font-bold uppercase opacity-50 mt-1 italic tracking-widest">{{ $task['type'] }} alert</p>
+                                    @endif
                                 </div>
                             </div>
                         </div>
+                        @endforeach
+
+                        @if(empty($tasks))
+                        <div class="py-10">
+                           <i class="fas fa-check-circle text-4xl opacity-20 mb-4"></i>
+                           <p class="text-sm font-bold opacity-80 italic">Tudo em conformidade.</p>
+                        </div>
+                        @endif
                     </div>
-                    @endforeach
-                </div>
 
-                <a href="{{ route('professional.ai-wizard') }}" class="mt-10 flex items-center justify-between w-full p-2 pr-6 bg-white text-zinc-900 font-black rounded-3xl hover:bg-blue-400 hover:text-white transition-all group/btn">
-                    <div class="h-12 w-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-blue-500 transition-colors">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM14.502 8.993L8.913 14.586a1 1 0 01-1.417 0l-3.087-3.088a1 1 0 111.414-1.414l2.38 2.38 4.885-4.885a1 1 0 111.414 1.414z"></path></svg>
+                    <a href="{{ route('professional.ai-wizard.index') }}" class="mt-10 flex items-center justify-between w-full p-2 pr-6 bg-white text-zinc-900 font-black rounded-3xl hover:bg-zinc-900 hover:text-white transition-all group/btn shadow-2xl">
+                        <div class="h-12 w-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-zinc-900 transition-colors">
+                            <i class="fa-solid fa-wand-sparkles text-sm"></i>
+                        </div>
+                        <span class="text-[10px]">IA WIZARD HUB</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Social Intelligence -->
+            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl">
+                <h3 class="text-xl font-black text-white mb-8">Social Intelligence</h3>
+                <div class="space-y-6">
+                    @forelse($birthdayPatients as $bp)
+                    <div class="flex items-center gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] hover:bg-emerald-500/10 transition-all">
+                        <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg">
+                            🎂
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-white font-black text-sm">{{ $bp->name }}</p>
+                            <p class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Aniversariante hoje!</p>
+                        </div>
+                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $bp->phone ?? '') }}?text=Parabéns pelo seu dia, {{ explode(' ', $bp->name)[0] }}! Muita saúde e bons treinos. 🚀" target="_blank" class="w-12 h-12 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all">
+                             <i class="fa-brands fa-whatsapp text-lg"></i>
+                        </a>
                     </div>
-                    <span>NOVA PRESCRIÇÃO AI</span>
-                    <svg class="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                </a>
+                    @empty
+                    <div class="py-6 text-center">
+                        <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">Nenhum aniversário hoje</p>
+                    </div>
+                    @endforelse
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Strategic Shortcuts Module -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <a href="{{ route('professional.patients.index') }}" class="group bg-zinc-900/60 backdrop-blur-md border border-white/10 p-8 rounded-[3rem] hover:border-emerald-500/30 transition-all shadow-xl">
-            <div class="flex items-center gap-5 mb-6">
-                <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shadow-inner">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-white font-black text-xl tracking-tight leading-none">Base Global</h3>
-                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">Directory Management</p>
-                </div>
-            </div>
-            <p class="text-zinc-500 text-sm font-medium leading-relaxed">Acesse o ecossistema completo de prontuários, evoluções e históricos de pacientes.</p>
-        </a>
+            <!-- NexLink ID -->
+            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl overflow-hidden relative group/qr">
+                <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover/qr:opacity-100 transition-opacity"></div>
+                <div class="relative z-10 text-center">
+                    <h3 class="text-lg font-black text-white mb-1 leading-none italic uppercase">NexLink ID</h3>
+                    <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] mb-8">Vínculo Direto</p>
+                    
+                    <div class="p-6 bg-zinc-950 rounded-[2.5rem] border border-white/10 inline-block mx-auto mb-6 shadow-3xl group-hover/qr:scale-105 transition-transform">
+                        <img src="{{ $qrCodeUrl }}" alt="QR Code" class="w-32 h-32 rounded-xl">
+                    </div>
 
-        <a href="{{ route('professional.branding.index') }}" class="group bg-zinc-900/60 backdrop-blur-md border border-white/10 p-8 rounded-[3rem] hover:border-purple-500/30 transition-all shadow-xl">
-            <div class="flex items-center gap-5 mb-6">
-                <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform shadow-inner">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-white font-black text-xl tracking-tight leading-none">Branding Studio</h3>
-                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">White-Label Engine</p>
-                </div>
-            </div>
-            <p class="text-zinc-500 text-sm font-medium leading-relaxed">Personalize a identidade visual da sua plataforma para uma experiência única.</p>
-        </a>
-
-        <a href="{{ route('hydration.index') }}" class="group bg-zinc-900/60 backdrop-blur-md border border-white/10 p-8 rounded-[3rem] hover:border-blue-500/30 transition-all shadow-xl">
-            <div class="flex items-center gap-5 mb-6">
-                <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform shadow-inner">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-16 0m16 0v10l-8 4-8-4V7m16 0l-8 4-8-4"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-white font-black text-xl tracking-tight leading-none">NexHydra</h3>
-                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">Bio-Balance Control</p>
+                    <div class="space-y-4">
+                        <div class="inline-flex items-center gap-3 bg-zinc-950 px-6 py-3 rounded-2xl border border-white/10 group/code cursor-pointer" onclick="copyCode('{{ $professionalCode }}')">
+                            <span class="text-2xl font-black text-blue-400 tracking-tighter">{{ $professionalCode }}</span>
+                            <i class="fa-regular fa-copy text-zinc-500 group-hover:text-white transition-colors"></i>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest px-4">Código Profissional</p>
+                    </div>
                 </div>
             </div>
-            <p class="text-zinc-500 text-sm font-medium leading-relaxed">Gestão inteligente de hidratação para otimização de performance metabólica.</p>
-        </a>
-    </div>
-
-    <!-- Tabela de Pacientes (UX High-Performance) -->
-    <div class="bg-zinc-900/60 backdrop-blur-md border border-white/10 rounded-[3.5rem] overflow-hidden shadow-2xl">
-        <div class="p-10 border-b border-white/5 flex items-center justify-between">
-            <div>
-                <h3 class="text-2xl font-black text-white">Pacientes Recentes</h3>
-                <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Status de consumo e treino em tempo real</p>
-            </div>
-            <a href="{{ route('professional.patients.index') }}" class="px-6 py-2 bg-zinc-800 text-zinc-300 font-bold rounded-2xl border border-white/5 hover:bg-zinc-700 transition-all text-sm">Base Completa</a>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
-                        <th class="px-10 py-6">Paciente</th>
-                        <th class="px-10 py-6">Status Bio</th>
-                        <th class="px-10 py-6">Aderência</th>
-                        <th class="px-10 py-6 text-right">Painel</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    @foreach([
-                        ['name' => 'Carlos Silva', 'bio' => 'Hypertrophy • Mesomorph', 'status' => 'Stable', 'engage' => 95, 'initials' => 'CS', 'color' => 'from-blue-500 to-cyan-500'],
-                        ['name' => 'Maria Oliveira', 'bio' => 'Fat Loss • Endomorph', 'status' => 'Review Needed', 'engage' => 72, 'initials' => 'MO', 'color' => 'from-purple-500 to-pink-500'],
-                        ['name' => 'João Santos', 'bio' => 'Maintenance • Ectomorph', 'status' => 'Pending Rehab', 'engage' => 45, 'initials' => 'JS', 'color' => 'from-amber-500 to-orange-500'],
-                    ] as $p)
-                    <tr class="hover:bg-white/5 transition-colors group">
-                        <td class="px-10 py-8">
-                            <div class="flex items-center gap-5">
-                                <div class="w-14 h-14 rounded-[1.25rem] bg-gradient-to-tr {{ $p['color'] }} flex items-center justify-center text-white font-black text-lg shadow-lg">
-                                    {{ $p['initials'] }}
-                                </div>
-                                <div>
-                                    <p class="text-white font-black text-lg group-hover:text-blue-400 transition-colors">{{ $p['name'] }}</p>
-                                    <p class="text-zinc-500 text-xs font-bold">{{ $p['bio'] }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-10 py-8">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full @if($p['engage'] > 80) bg-emerald-500 @elseif($p['engage'] > 60) bg-amber-500 @else bg-red-500 @endif"></span>
-                                <span class="text-zinc-300 font-bold text-sm">{{ $p['status'] }}</span>
-                            </div>
-                        </td>
-                        <td class="px-10 py-8 text-zinc-300">
-                           <div class="flex items-center gap-4">
-                                <div class="w-32 h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                                    <div class="h-full bg-gradient-to-r @if($p['engage'] > 80) from-emerald-600 to-emerald-400 @elseif($p['engage'] > 60) from-amber-600 to-amber-400 @else from-red-600 to-red-400 @endif rounded-full" style="width: {{ $p['engage'] }}%"></div>
-                                </div>
-                                <span class="text-xs font-black">{{ $p['engage'] }}%</span>
-                           </div>
-                        </td>
-                        <td class="px-10 py-8 text-right">
-                            <button class="p-3 bg-zinc-800 rounded-2xl hover:bg-blue-600 hover:text-white transition-all border border-white/5">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('engagementChart').getContext('2d');
+    
+    // Gradient setup
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($engagementLabels) !!},
+            datasets: [{
+                label: 'Engajamento %',
+                data: {!! json_encode($engagementData) !!},
+                borderColor: '#3b82f6',
+                borderWidth: 4,
+                tension: 0.4,
+                fill: true,
+                backgroundColor: gradient,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#18181b',
+                    titleFont: { size: 12, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + '% Engajamento';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                    ticks: { color: '#52525b', font: { size: 10, weight: 'bold' }, stepSize: 20 }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#52525b', font: { size: 10, weight: 'bold' } }
+                }
+            }
+        }
+    });
+});
+
+function copyCode(code) {
+    navigator.clipboard.writeText(code);
+    // Podia adicionar um toast aqui
+}
+</script>
+@endpush
+
+<style>
+@keyframes dashboard-entry { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.animate-dashboard-entry { animation: dashboard-entry 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
 @endsection
+

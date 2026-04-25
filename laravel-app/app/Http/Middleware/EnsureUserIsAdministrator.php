@@ -14,7 +14,7 @@ class EnsureUserIsAdministrator
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if ($user === null || ! $user->isAdministrator()) {
+        if ($user === null || ! $user->hasAdminPanelAccess()) {
             abort(403, 'Acesso reservado a administradores.');
         }
 

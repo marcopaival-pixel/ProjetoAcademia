@@ -70,6 +70,7 @@ class ExerciseController extends Controller
             'sumBurn' => $sumBurn,
             'editRow' => $editRow,
             'notice' => $notice,
+            'isPremium' => $user->hasPremiumAccess(),
             'error' => session('error'),
         ]);
     }
@@ -101,7 +102,10 @@ class ExerciseController extends Controller
                     'activity_type' => $it->activity_type,
                     'duration_min' => $it->duration_min,
                     'calories_burned' => $it->calories_burned,
+                    'rpe' => $it->rpe ?? null,
+                    'rest_default' => $it->rest_default ?? 60,
                     'notes' => $it->notes,
+                    'sets_data' => $it->sets_data,
                 ]);
             }
 
@@ -134,6 +138,8 @@ class ExerciseController extends Controller
         $dur = (int) $request->input('duration_min', 0);
         $cb = $request->input('calories_burned');
         $cbVal = $cb === '' || $cb === null ? null : (int) $cb;
+        $rpe = (int) $request->input('rpe', 0);
+        $rest = (int) $request->input('rest_default', 60);
         $notes = trim((string) $request->input('notes', ''));
         $exEditId = (int) $request->input('exercise_edit_id', 0);
 
@@ -145,6 +151,7 @@ class ExerciseController extends Controller
         }
 
         $notesVal = $notes === '' ? null : substr($notes, 0, 500);
+        $setsData = $request->input('sets_data'); // JSON string from frontend
 
         if ($exEditId > 0) {
             $own = DB::table('exercise_entries')
@@ -159,6 +166,9 @@ class ExerciseController extends Controller
                 'activity_type' => $type,
                 'duration_min' => $dur,
                 'calories_burned' => $cbVal,
+                'rpe' => $rpe > 0 ? $rpe : null,
+                'rest_default' => $rest,
+                'sets_data' => $setsData,
                 'notes' => $notesVal,
             ]);
 
@@ -171,9 +181,117 @@ class ExerciseController extends Controller
             'activity_type' => $type,
             'duration_min' => $dur,
             'calories_burned' => $cbVal,
+            'rpe' => $rpe > 0 ? $rpe : null,
+            'rest_default' => $rest,
+            'sets_data' => $setsData,
             'notes' => $notesVal,
+            'created_at' => now(),
         ]);
 
         return redirect()->route('exercise', ['date' => $date, 'flash' => 'added']);
+    }
+
+    // --- API Methods for Advanced HUD ---
+
+    public function apiSearch(Request $request)
+    {
+        $q = $request->query('q', '');
+        if (strlen($q) < 2) {
+            // Sugerir favoritos ou últimos usados se vazio?
+            $recent = DB::table('exercise_entries')
+                ->where('user_id', $request->user()->id)
+                ->select('activity_type as name')
+                ->distinct()
+                ->limit(5)
+                ->get();
+            return response()->json(['results' => [], 'recent' => $recent]);
+        }
+
+        $results = DB::table('exercises_catalog')
+            ->where('name', 'like', "%{$q}%")
+            ->where('is_active', true)
+            ->limit(10)
+            ->get(['name', 'muscle_group']);
+
+        return response()->json(['results' => $results]);
+    }
+
+    public function apiListAll(Request $request)
+    {
+        $exercises = DB::table('exercises_catalog')
+            ->where('is_active', true)
+            ->orderBy('muscle_group')
+            ->orderBy('name')
+            ->get(['name', 'muscle_group']);
+
+        return response()->json(['exercises' => $exercises]);
+    }
+
+    public function apiHistory(Request $request)
+    {
+        $exercise = $request->query('exercise', '');
+        if (!$exercise) return response()->json(['history' => []]);
+
+        $history = DB::table('exercise_entries')
+            ->where('user_id', $request->user()->id)
+            ->where('activity_type', $exercise)
+            ->orderBy('entry_date', 'desc')
+            ->limit(3)
+            ->get(['entry_date', 'sets_data', 'calories_burned', 'rpe']);
+
+        return response()->json(['history' => $history]);
+    }
+
+    public function apiLastWorkout(Request $request)
+    {
+        $last = DB::table('exercise_entries')
+            ->where('user_id', $request->user()->id)
+            ->orderBy('entry_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$last) return response()->json(['error' => 'Nenhum treino anterior encontrado.'], 404);
+
+        return response()->json(['last' => $last]);
+    }
+
+    public function apiCalculateCalories(Request $request)
+    {
+        $duration = (int) $request->input('duration', 0);
+        $exercise = $request->input('exercise', '');
+        $rpe = (int) $request->input('rpe', 5);
+        $userWeight = $request->user()->profile->weight_kg ?? 70;
+
+        // Simplistic MET-based calculation
+        // MET varies by exercise type. For generic weight training it's around 3.5 - 6.0
+        $met = 5.0; // Default
+        if ($rpe > 8) $met = 7.0;
+        elseif ($rpe < 4) $met = 3.0;
+
+        $calories = round(($met * 3.5 * $userWeight / 200) * $duration);
+
+        return response()->json(['calories' => $calories]);
+    }
+
+    public function apiSync(Request $request)
+    {
+        $uid = $request->user()->id;
+        $id = (int) $request->input('id', 0);
+        $data = $request->only(['activity_type', 'duration_min', 'calories_burned', 'rpe', 'rest_default', 'sets_data', 'notes', 'entry_date']);
+        
+        if ($id > 0) {
+            DB::table('exercise_entries')
+                ->where('id', $id)
+                ->where('user_id', $uid)
+                ->update(array_merge($data, ['updated_at' => now()]));
+            return response()->json(['success' => true, 'id' => $id]);
+        } else {
+            $newId = DB::table('exercise_entries')->insertGetId(array_merge($data, [
+                'user_id' => $uid,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]));
+            return response()->json(['success' => true, 'id' => $newId]);
+        }
     }
 }

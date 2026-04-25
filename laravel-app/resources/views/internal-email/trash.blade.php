@@ -13,46 +13,51 @@
 @endsection
 
 @section('email-content')
-    <div class="email-list">
+    <div class="divide-y divide-white/5">
         @forelse($messages as $msg)
             <div onclick="window.location='{{ route('internal-email.show', $msg) }}'" 
-                 class="email-row opacity-75">
+                 class="email-row group/row opacity-60 hover:opacity-100 italic">
                 
-                <div class="d-flex align-items-center gap-3 me-4 flex-shrink-0">
-                    <input type="checkbox" onclick="event.stopPropagation()" class="form-check-input" style="width: 14px; height: 14px;">
+                <!-- Selection & Status -->
+                <div class="flex items-center gap-4 mr-8 flex-shrink-0">
+                    <input type="checkbox" onclick="event.stopPropagation()" class="w-4 h-4 rounded border-white/10 bg-white/5 text-blue-600 focus:ring-blue-500/20">
+                    <i class="fas fa-trash-alt text-zinc-700"></i>
                 </div>
 
-                <div class="flex-shrink-0 me-4" style="width: 180px;">
-                    <span class="text-truncate d-block" style="font-size: 0.85rem; color: var(--text-muted);">
-                        @if($msg->remetente_id === auth()->id())
-                            Para: {{ $msg->destinatario->name }}
+                <!-- Entity (Sender or Recipient) -->
+                <div class="flex-shrink-0 mr-8 w-44">
+                    <span class="text-xs truncate block text-zinc-500">
+                        @if($msg->sender_id === auth()->id())
+                            Para: {{ $msg->recipient->name }}
                         @else
-                            De: {{ $msg->remetente->name }}
+                            De: {{ $msg->sender->name }}
                         @endif
                     </span>
                 </div>
 
-                <div class="flex-grow-1 min-width-0 d-flex align-items-center gap-2">
-                    <div class="text-truncate" style="font-size: 0.85rem;">
-                        <span style="color: var(--text-muted);">{{ $msg->assunto }}</span>
-                        <span class="mx-1 text-muted">—</span>
-                        <span class="text-muted" style="font-weight: 400;">{{ Str::limit(strip_tags($msg->mensagem), 100) }}</span>
+                <!-- Subject & Snippet -->
+                <div class="flex-grow min-w-0 flex items-center gap-3">
+                    <div class="truncate text-sm flex items-center gap-2">
+                        <span class="text-zinc-400 font-bold line-through group-hover:no-underline">{{ $msg->subject }}</span>
+                        <span class="text-zinc-600 mx-1">—</span>
+                        <span class="text-zinc-600 font-medium">{{ Str::limit(strip_tags($msg->content), 80) }}</span>
                     </div>
                 </div>
 
-                <div class="flex-shrink-0 ms-4 text-end" style="width: 100px;">
-                    <span class="text-muted" style="font-size: 0.75rem;">
-                        Excluído em {{ $msg->updated_at->format('d/m') }}
+                <!-- Metadata -->
+                <div class="flex-shrink-0 ml-8 text-right w-32">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-zinc-700">
+                        Removido {{ $msg->updated_at->format('d/m') }}
                     </span>
                 </div>
             </div>
         @empty
-            <div class="d-flex flex-column align-items-center justify-content-center py-5 opacity-50 h-100">
-                <div class="bg-secondary bg-opacity-10 p-4 rounded-circle mb-4">
-                    <i class="fas fa-trash-alt fa-3x text-muted" style="width: 60px; height: 60px;"></i>
+            <div class="flex flex-col items-center justify-center py-32 text-center">
+                <div class="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-trash-alt text-3xl text-zinc-700"></i>
                 </div>
-                <h6 class="fw-bold">Lixeira vazia</h6>
-                <p class="text-muted small">Nada para mostrar aqui.</p>
+                <h3 class="text-xl font-black text-white mb-2">Lixeira vazia</h3>
+                <p class="text-zinc-500 text-sm max-w-xs mx-auto">Nada para restaurar por enquanto.</p>
             </div>
         @endforelse
     </div>

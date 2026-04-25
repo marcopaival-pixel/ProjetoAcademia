@@ -14,12 +14,26 @@
     <form action="{{ route('onboarding.step2.save') }}" method="POST" class="space-y-6">
         @csrf
         <div class="grid grid-cols-1 gap-4">
-            @foreach(['Perder peso', 'Manter o peso', 'Ganhar massa muscular'] as $goal)
+            @php
+                $goals = [
+                    'Emagrecimento Agressivo' => 'Foco em queima rápida de gordura.',
+                    'Emagrecimento Sustentável' => 'Perda constante e saudável de peso.',
+                    'Recomposição Corporal' => 'Perder gordura e ganhar músculo.',
+                    'Manter o peso' => 'Equilíbrio térmico e saúde geral.',
+                    'Ganhar massa muscular' => 'Foco total em hipertrofia.',
+                    'Performance Atlética' => 'Suporte máximo para treinos intensos.',
+                ];
+            @endphp
+
+            @foreach($goals as $title => $desc)
                 <label class="group relative cursor-pointer">
-                    <input type="radio" name="goal" value="{{ $goal }}" class="peer sr-only" required>
+                    <input type="radio" name="goal" value="{{ $title }}" class="peer sr-only" required>
                     <div class="p-6 bg-white/5 border-2 border-white/10 rounded-2xl transition-all duration-300 group-hover:bg-white/10 peer-checked:border-blue-500 peer-checked:bg-blue-500/10">
                         <div class="flex items-center justify-between">
-                            <span class="text-lg font-bold text-white">{{ $goal }}</span>
+                            <div class="space-y-1">
+                                <span class="block text-lg font-bold text-white">{{ $title }}</span>
+                                <span class="block text-xs font-medium text-zinc-500 group-hover:text-zinc-400 transition-colors">{{ $desc }}</span>
+                            </div>
                             <div class="w-6 h-6 rounded-full border-2 border-white/20 peer-checked:border-blue-500 flex items-center justify-center">
                                 <div class="w-2.5 h-2.5 bg-blue-500 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                             </div>

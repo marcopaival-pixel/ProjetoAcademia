@@ -223,23 +223,18 @@ final class OpenFoodFactsClient
 
         return [
             'ok' => true,
-            'product' => [
+            'product' => array_merge([
                 'code' => $code,
                 'name' => $name,
                 'brands' => $brands,
-                'calories' => $parsed['calories'],
-                'protein_g' => $parsed['protein_g'],
-                'carbs_g' => $parsed['carbs_g'],
-                'fat_g' => $parsed['fat_g'],
-                'basis' => $parsed['basis'],
                 'attribution' => 'Open Food Facts (openfoodfacts.org) — dados colaborativos; confirme no rótulo.',
-            ],
+            ], $parsed),
         ];
     }
 
     /**
      * @param  array<string, mixed>  $nut
-     * @return array{calories: int, protein_g: float, carbs_g: float, fat_g: float, basis: string}|null
+     * @return array<string, mixed>|null
      */
     private static function parseNutrimentsPer100g(array $nut): ?array
     {
@@ -264,18 +259,22 @@ final class OpenFoodFactsClient
             return null;
         }
 
-        $prot = self::num($nut['proteins_100g'] ?? $nut['proteins'] ?? null) ?? 0.0;
-        $carb = self::num($nut['carbohydrates_100g'] ?? $nut['carbohydrates'] ?? null) ?? 0.0;
-        $fat = self::num($nut['fat_100g'] ?? $nut['fat'] ?? null) ?? 0.0;
-
-        $calories = (int) max(0, min(20000, (int) round($kcal)));
-
         return [
-            'calories' => $calories,
-            'protein_g' => round(max(0, min(600, $prot)), 1),
-            'carbs_g' => round(max(0, min(600, $carb)), 1),
-            'fat_g' => round(max(0, min(600, $fat)), 1),
-            'basis' => 'Valores por 100 g (ajuste se a porção for diferente).',
+            'energy_kcal'    => (int) max(0, min(20000, (int) round($kcal))),
+            'protein_g'      => round(max(0, min(600, self::num($nut['proteins_100g'] ?? $nut['proteins'] ?? 0))), 1),
+            'carbohydrates_g'=> round(max(0, min(600, self::num($nut['carbohydrates_100g'] ?? $nut['carbohydrates'] ?? 0))), 1),
+            'fat_g'          => round(max(0, min(600, self::num($nut['fat_100g'] ?? $nut['fat'] ?? 0))), 1),
+            'fat_saturated_g'=> round(max(0, min(100, self::num($nut['saturated-fat_100g'] ?? $nut['saturated-fat'] ?? 0))), 1),
+            'fat_trans_g'    => round(max(0, min(100, self::num($nut['trans-fat_100g'] ?? $nut['trans-fat'] ?? 0))), 1),
+            'fiber_g'        => round(max(0, min(100, self::num($nut['fiber_100g'] ?? $nut['fiber'] ?? 0))), 1),
+            'sugars_g'       => round(max(0, min(100, self::num($nut['sugars_100g'] ?? $nut['sugars'] ?? 0))), 1),
+            'sodium_mg'      => round(max(0, min(100000, self::num($nut['sodium_100g'] ?? $nut['sodium'] ?? 0) * 1000)), 1),
+            'calcium_mg'     => round(max(0, min(100000, self::num($nut['calcium_100g'] ?? $nut['calcium'] ?? 0) * 1000)), 1),
+            'iron_mg'        => round(max(0, min(10000, self::num($nut['iron_100g'] ?? $nut['iron'] ?? 0) * 1000)), 1),
+            'potassium_mg'   => round(max(0, min(100000, self::num($nut['potassium_100g'] ?? $nut['potassium'] ?? 0) * 1000)), 1),
+            'vitamin_c_mg'   => round(max(0, min(10000, self::num($nut['vitamin-c_100g'] ?? $nut['vitamin-c'] ?? 0) * 1000)), 1),
+            'vitamin_a_mcg'  => round(max(0, min(100000, self::num($nut['vitamin-a_100g'] ?? $nut['vitamin-a'] ?? 0) * 1000000)), 1), // Vitamin A is in g or mcg? Usually mcg. OFF has many units.
+            'basis' => 'Valores por 100 g.',
         ];
     }
 

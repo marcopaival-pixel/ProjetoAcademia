@@ -18,12 +18,14 @@ class MessagingService
      */
     public static function sendSystemMessage(int $recipientId, string $subject, string $content): InternalEmail
     {
+        $systemSenderId = User::query()->where('is_admin', true)->orderBy('id')->value('id') ?? 1;
+
         $message = InternalEmail::create([
-            'remetente_id' => 1, // Assuming user 1 is system/admin
-            'destinatario_id' => $recipientId,
-            'assunto' => $subject,
-            'mensagem' => $content,
-            'data_envio' => now(),
+            'sender_id' => $systemSenderId,
+            'recipient_id' => $recipientId,
+            'subject' => $subject,
+            'content' => $content,
+            'sent_at' => now(),
             'status' => 'sent',
             'is_system' => true,
         ]);

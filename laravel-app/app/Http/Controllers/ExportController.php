@@ -14,11 +14,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportController extends Controller
 {
-    public function __invoke(Request $request): View|StreamedResponse|\Illuminate\Http\Response
+    public function __invoke(Request $request, \App\Services\ReportMonetizationService $monetizationService): View|StreamedResponse|\Illuminate\Http\Response
     {
         $user = $request->user();
         $uid = (int) $user->id;
-        $isPremium = $user->hasPremiumAccess();
+        $isPremium = $monetizationService->hasPremium($user);
         $kind = (string) $request->query('kind', '');
 
         if ($kind !== '') {
@@ -43,6 +43,8 @@ class ExportController extends Controller
             $stamp = (new DateTimeImmutable('now'))->format('Y-m-d_His');
 
             if ($kind === 'food') {
+                // Registrar log
+                $monetizationService->logGeneration($user, 'Export CSV Food', ['from' => $request->query('from'), 'to' => $request->query('to')]);
                 $query = FoodEntry::where('user_id', $uid);
                 if ($pf) $query->where('entry_date', '>=', $pf);
                 if ($pt) $query->where('entry_date', '<=', $pt);
@@ -71,6 +73,8 @@ class ExportController extends Controller
             }
 
             if ($kind === 'exercise') {
+                // Registrar log
+                $monetizationService->logGeneration($user, 'Export CSV Exercise', ['from' => $request->query('from'), 'to' => $request->query('to')]);
                 $query = ExerciseEntry::where('user_id', $uid);
                 if ($pf) $query->where('entry_date', '>=', $pf);
                 if ($pt) $query->where('entry_date', '<=', $pt);
@@ -118,6 +122,9 @@ class ExportController extends Controller
                     $data
                 );
             }
+
+            // Registrar log geral se cair aqui (tipo inválido ou outros)
+            $monetizationService->logGeneration($user, 'Export Attempt', ['kind' => $kind]);
 
             return response('Tipo de exportação inválido.', 404, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }

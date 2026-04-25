@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Muscle;
+use App\Models\MuscleGroup;
 use App\Models\User;
+use App\Models\Role;
+use App\Models\Plan;
 use App\Models\AdminLog;
 use App\Models\SystemError;
 use App\Models\AdminSetting;
@@ -12,10 +16,20 @@ use App\Models\Announcement;
 use App\Models\FoodEntry;
 use App\Services\AdminOverviewStats;
 use App\Models\UserConsent;
+use App\Models\Permission;
+use App\Mail\WelcomeUserEmail;
+use App\Services\TransactionalMailService;
+use App\Support\MailSendType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Mail\AdminTestEmail;
+use App\Services\MailConfigService;
+use Illuminate\Support\Facades\Hash;
 
 class AdminAreaController extends Controller
 {
@@ -24,8 +38,8 @@ class AdminAreaController extends Controller
         $overview = AdminOverviewStats::collect();
         
         // Métrica Financeira: Total de Créditos do Mercado Pago
-        $totalRevenue = DB::table('mercadopago_payment_credits')->sum('transaction_amount');
-        $activeSubscriptions = DB::table('mercadopago_subscriptions')->where('status', 'authorized')->get();
+        $totalRevenue = \App\Models\MercadoPagoCredit::sum('transaction_amount');
+        $activeSubscriptions = \App\Models\MercadoPagoSubscription::where('status', 'authorized')->get();
         
         // Cálculo de MRR (Monthly Recurring Revenue)
         $mrr = 0;
@@ -49,13 +63,11 @@ class AdminAreaController extends Controller
             ->get();
 
         // Comparativo de Faturamento: Mês Atual vs Mês Anterior
-        $thisMonthRevenue = DB::table('mercadopago_payment_credits')
-            ->whereMonth('created_at', now()->month)
+        $thisMonthRevenue = \App\Models\MercadoPagoCredit::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('transaction_amount');
 
-        $lastMonthRevenue = DB::table('mercadopago_payment_credits')
-            ->whereMonth('created_at', now()->subMonth()->month)
+        $lastMonthRevenue = \App\Models\MercadoPagoCredit::whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->sum('transaction_amount');
 
@@ -81,14 +93,25 @@ class AdminAreaController extends Controller
                 ->orderBy('premium_expires_at', 'asc')
                 ->limit(5)
                 ->get(),
-            'monthly_revenue' => DB::table('mercadopago_payment_credits')
-                ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month, sum(transaction_amount) as total"))
-                ->groupBy('month')
-                ->orderBy('month', 'desc')
-                ->limit(6)
-                ->get()
-                ->reverse()
-                ->values(),
+            'monthly_revenue' => (function () {
+                $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+                    ? "strftime('%Y-%m', created_at)"
+                    : "DATE_FORMAT(created_at, '%Y-%m')";
+
+                return \App\Models\MercadoPagoCredit::select(DB::raw("{$monthExpr} as month"), DB::raw('sum(transaction_amount) as total'))
+                    ->groupBy(DB::raw($monthExpr))
+                    ->orderBy('month', 'desc')
+                    ->limit(6)
+                    ->get()
+                    ->reverse()
+                    ->values();
+            })(),
+            'daily_summary' => [
+                'new_users' => User::whereDate('created_at', now())->count(),
+                'payments' => \App\Models\MercadoPagoCredit::whereDate('created_at', now())->count(),
+                'expiring' => User::where('is_premium', true)->whereDate('premium_expires_at', now())->count(),
+                'messages' => \App\Models\Message::where('is_read', false)->whereDate('created_at', now())->count(),
+            ],
         ];
 
         return view('admin.dashboard', compact('overview', 'metrics'));
@@ -97,6 +120,14 @@ class AdminAreaController extends Controller
     public function users(Request $request): View
     {
         $query = User::query();
+
+        // Filtro por Papel (Role) vindo do menu (aluno, paciente, profissional, etc)
+        if ($request->filled('role')) {
+            $roleName = $request->get('role');
+            $query->whereHas('roles', function($q) use ($roleName) {
+                $q->where('name', $roleName);
+            });
+        }
 
         if ($request->filled('search')) {
             $s = $request->get('search');
@@ -114,14 +145,192 @@ class AdminAreaController extends Controller
             $query->where('is_admin', $request->get('admin') === 'yes');
         }
 
-        $users = $query->orderByDesc('created_at')
+        if ($request->filled('profile_id')) {
+            $query->where('profile_id', (int) $request->get('profile_id'));
+        }
+
+        if ($request->filled('profession_id')) {
+            $query->whereHas('professionalProfile', function($q) use ($request) {
+                $q->where('profession_id', $request->get('profession_id'));
+            });
+        }
+
+        if ($request->filled('specialty')) {
+            $query->whereHas('professionalProfile', function($q) use ($request) {
+                $q->where('specialty', $request->get('specialty'));
+            });
+        }
+
+        $subQuery = \DB::table('pacientes')
+            ->select('user_id', \DB::raw('MIN(profissional_id) as first_pro_id'))
+            ->groupBy('user_id');
+
+        $users = $query->select('users.*')
+            ->leftJoinSub($subQuery, 'p_group', function ($join) {
+                $join->on('users.id', '=', 'p_group.user_id');
+            })
+            ->leftJoin('users as pros', 'p_group.first_pro_id', '=', 'pros.id')
+            ->with(['roles', 'professionalProfile.profession', 'professionals', 'profile'])
+            ->orderByRaw('COALESCE(pros.created_at, users.created_at) DESC')
+            ->orderByRaw('(CASE WHEN p_group.first_pro_id IS NULL THEN 0 ELSE 1 END) ASC')
+            ->orderBy('users.created_at', 'DESC')
             ->paginate(40)
             ->withQueryString();
 
+        if ($request->has('ajax')) {
+            return response()->json([
+                'users' => $users->items()
+            ]);
+        }
+
         return view('admin.users.index', [
             'users' => $users,
+            'profiles' => Role::all(),
+            'professions' => \App\Models\Profession::all(),
+            'specialties' => \App\Models\Especialidade::active()->get(),
             'overview' => AdminOverviewStats::collect(),
+            'currentRole' => $request->get('role'),
         ]);
+    }
+
+    public function createUser(Request $request): View
+    {
+        $profiles = Role::all();
+        $plans = Plan::all();
+        $professions = \App\Models\Profession::all();
+        $specialties = \App\Models\Especialidade::active()->get();
+        $companies = \App\Models\AcademyCompany::all();
+        $selectedCompanyId = $request->get('academy_company_id');
+        $selectedRoleId = $request->get('role_id');
+
+        return view('admin.users.create', compact('profiles', 'plans', 'professions', 'specialties', 'companies', 'selectedCompanyId', 'selectedRoleId'));
+    }
+
+    public function storeUser(Request $request)
+    {
+        $rules = [
+            'name' => 'required|string|max:120',
+            'email' => 'required|email|unique:users,email',
+            'password' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
+            'profile_id' => 'required|exists:roles,id',
+            'plan_id' => 'required|exists:plans,id',
+            'status' => 'required|in:active,blocked',
+            'is_admin' => 'boolean',
+            'birth_date' => 'required|date|before:today',
+            'sex' => 'required|in:M,F',
+            'academy_company_id' => 'nullable|exists:academy_companies,id',
+        ];
+
+        // Regras condicionais se for Profissional (ID 4)
+        if ($request->get('role_id') == 4) {
+            $rules = array_merge($rules, [
+                'profession_id' => 'required|exists:professions,id',
+                'registration_number' => 'required|string|max:50',
+                'council' => 'required|string|max:20',
+                'registration_uf' => 'required|string|size:2',
+                'registration_expiry_date' => 'required|date',
+                'document_file' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
+                'signature_file' => 'nullable|image|mimes:png|max:2048',
+                'signature_data' => 'nullable|string', // Para assinatura desenhada (base64)
+            ]);
+        }
+
+        $data = $request->validate($rules);
+
+        $user = DB::transaction(function () use ($request, $data) {
+            $user = new User([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'profile_id' => $data['profile_id'],
+                'plan_id' => $data['plan_id'],
+                'status' => $data['status'],
+                'is_admin' => $request->has('is_admin'),
+                'email_verified_at' => $request->has('is_admin') ? now() : null,
+                'registration_approval_status' => 'approved',
+                'academy_company_id' => $data['academy_company_id'] ?? null,
+            ]);
+            $user->password_hash = Hash::make($data['password']);
+            $user->save();
+
+            if ($data['profile_id'] == 4) {
+                $docPath = null;
+                if ($request->hasFile('document_file')) {
+                    $docPath = $request->file('document_file')->store('profissionais/documentos', 'local');
+                }
+
+                $sigPath = null;
+                if ($request->hasFile('signature_file')) {
+                    $sigPath = $request->file('signature_file')->store('profissionais/assinaturas', 'local');
+                } elseif ($request->filled('signature_data')) {
+                    // Tratar assinatura desenhada (base64)
+                    $dataStr = $request->get('signature_data');
+                    if (str_contains($dataStr, 'base64,')) {
+                        $image = explode('base64,', $dataStr)[1];
+                        $image = str_replace(' ', '+', $image);
+                        $imageName = 'sig_' . $user->id . '_' . time() . '.png';
+                        \Illuminate\Support\Facades\Storage::disk('local')->put('profissionais/assinaturas/' . $imageName, base64_decode($image));
+                        $sigPath = 'profissionais/assinaturas/' . $imageName;
+                    }
+                }
+
+                \App\Models\ProfessionalProfile::create([
+                    'user_id' => $user->id,
+                    'profession_id' => $data['profession_id'],
+                    'specialty' => $request->get('specialty'),
+                    'registration_number' => $data['registration_number'],
+                    'council' => $data['council'],
+                    'registration_uf' => $data['registration_uf'],
+                    'registration_expiry_date' => $data['registration_expiry_date'],
+                    'document_path' => $docPath,
+                    'signature_path' => $sigPath,
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
+            }
+
+            // Criar Perfil Básico (Geral para todos os usuários)
+            \App\Models\UserProfile::create([
+                'user_id' => $user->id,
+                'birth_date' => $data['birth_date'],
+                'sex' => $data['sex'],
+            ]);
+
+            return $user;
+        });
+
+        // Registrar Log
+        AdminLog::create([
+            'user_id' => auth()->id(),
+            'action' => "Cadastrou o utilizador #{$user->id} ({$user->name})",
+            'ip_address' => $request->ip(),
+            'payload' => $request->except(['password', 'password_confirmation'])
+        ]);
+
+        $sent = app(TransactionalMailService::class)->sendToUser(
+            new WelcomeUserEmail($user),
+            $user,
+            $user->academy_company_id,
+            MailSendType::WELCOME,
+            'Bem-vindo — '.$user->name,
+            'E-mail de boas-vindas (cadastro admin)'
+        );
+        if (! $sent) {
+            SystemError::create([
+                'user_id' => auth()->id(),
+                'error_message' => "Falha ao enviar e-mail de boas-vindas para #{$user->id}",
+                'severity' => 'low',
+            ]);
+        }
+
+        return redirect()->route('admin.users')->with('success', "Utilizador {$user->name} criado e e-mail enviado.");
     }
 
     public function logs(): View
@@ -156,38 +365,306 @@ class AdminAreaController extends Controller
     public function saveSettings(Request $request)
     {
         foreach ($request->except('_token') as $key => $value) {
+            // Se for a senha do e-mail e não estiver vazia, criptografar
+            if ($key === 'mail_password' && !empty($value)) {
+                $value = Crypt::encryptString($value);
+            } elseif ($key === 'mail_password' && empty($value)) {
+                // Se estiver vazia, não sobrescrever a senha existente (manter a atual)
+                continue;
+            }
+
             AdminSetting::set($key, $value);
         }
 
         return back()->with('success', 'Configurações atualizadas.');
     }
+
+    public function testEmail(Request $request)
+    {
+        $admin = auth()->user();
+        $ok = app(TransactionalMailService::class)->sendToUser(
+            new AdminTestEmail($admin->name),
+            $admin,
+            null,
+            MailSendType::TEST,
+            'Teste de configuração de e-mail',
+            'Teste SMTP global (admin_settings)'
+        );
+
+        if ($ok) {
+            return back()->with('success', 'E-mail de teste enviado com sucesso para '.$admin->email);
+        }
+
+        SystemError::create([
+            'user_id' => auth()->id(),
+            'error_message' => 'Falha no teste de e-mail (ver log_envio_email)',
+            'severity' => 'medium',
+        ]);
+
+        return back()->with('error', 'Falha ao enviar e-mail. Consulte os logs de envio.');
+    }
+
+    public function resendVerificationEmail(User $user): RedirectResponse
+    {
+        if ($user->email_verified_at) {
+            return back()->with('error', 'Este e-mail já está verificado.');
+        }
+
+        $sent = app(\App\Services\EmailVerificationService::class)->sendVerificationEmail($user);
+
+        if ($sent) {
+            return back()->with('success', 'E-mail de confirmação reenviado.');
+        }
+
+        return back()->with('error', 'Não foi possível reenviar (limite ou falha de envio).');
+    }
     public function editUser(User $user): View
     {
-        return view('admin.users.edit', compact('user'));
+        $user->load(['userProfile', 'professionalProfile', 'profile', 'plan']);
+        $latestWeight = $user->weightEntries()->latest('weighed_at')->first();
+        
+        $profiles = Role::all();
+        $plans = Plan::all();
+        $professions = \App\Models\Profession::all();
+        $allPermissions = Permission::orderBy('name')->get();
+
+        return view('admin.users.edit', compact('user', 'profiles', 'plans', 'professions', 'allPermissions', 'latestWeight'));
+    }
+
+    /**
+     * Remove da base de dados um utilizador com perfil Aluno (não administradores).
+     */
+    public function destroyUser(Request $request, User $user): RedirectResponse
+    {
+        $actor = auth()->user();
+        if (! $actor->isAdministrator() && ! $actor->hasPermission('users.delete')) {
+            abort(403, 'Sem permissão para excluir utilizadores.');
+        }
+
+        if ($user->id === $actor->id) {
+            return redirect()->route('admin.users')->with('error', 'Não pode excluir a sua própria conta.');
+        }
+
+        if ($user->is_admin || $user->isAdministrator()) {
+            return redirect()->route('admin.users')->with('error', 'Não é permitido excluir administradores.');
+        }
+
+        $allowedProfiles = ['aluno', 'paciente', 'professional'];
+        $userProfileName = $user->userProfile?->name;
+
+        if (!in_array($userProfileName, $allowedProfiles)) {
+            return redirect()->route('admin.users')->with('error', 'Só é possível excluir utilizadores com perfil Aluno, Paciente ou Profissional.');
+        }
+
+        $deletedName = $user->name;
+        $deletedId = $user->id;
+        $roleLabel = $user->userProfile?->label ?? 'Utilizador';
+
+        try {
+            DB::transaction(function () use ($user) {
+                $user->delete();
+            });
+        } catch (\Throwable $e) {
+            Log::error('Falha ao excluir utilizador (admin)', [
+                'target_id' => $deletedId,
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('admin.users')->with('error', 'Não foi possível excluir o utilizador. Podem existir registos que impedem a remoção.');
+        }
+
+        AdminLog::create([
+            'user_id' => $actor->id,
+            'action' => "Excluiu o {$userProfileName} #{$deletedId} ({$deletedName})",
+            'ip_address' => $request->ip(),
+            'payload' => ['deleted_user_id' => $deletedId, 'profile' => $userProfileName],
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('admin.users')->with('success', "{$roleLabel} {$deletedName} (ID {$deletedId}) foi removido da base de dados.");
     }
 
     public function updateUser(Request $request, User $user)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:120',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'is_premium' => 'boolean',
-            'is_admin' => 'boolean',
-            'premium_expires_at' => 'nullable|date',
+        Log::info('Admin updating user', [
+            'admin_id' => auth()->id(),
+            'target_user_id' => $user->id,
+            'request_data' => $request->all()
         ]);
 
-        // Tratar checkboxes que não vêm no request quando desmarcados
-        $data['is_premium'] = $request->has('is_premium');
+        $rules = [
+            'name' => 'required|string|max:120',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'profile_id' => 'required|exists:roles,id',
+            'plan_id' => 'required|exists:plans,id',
+            'status' => 'required|in:active,blocked',
+            'is_admin' => 'boolean',
+            'premium_expires_at' => 'nullable|date',
+            'department' => 'nullable|string|max:50',
+            // Campos de Perfil do Aluno
+            'birth_date' => 'required|date',
+            'sex' => 'required|in:M,F',
+            'height_cm' => 'nullable|numeric|min:50|max:250',
+            'weight_kg' => 'nullable|numeric|min:20|max:300',
+        ];
+
+        if ($request->get('profile_id') == 4) {
+            $rules = array_merge($rules, [
+                'profession_id' => 'required|exists:professions,id',
+                'registration_number' => 'required|string|max:50',
+                'council' => 'required|string|max:20',
+                'registration_uf' => 'required|string|size:2',
+                'registration_expiry_date' => 'required|date',
+                'document_file' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
+                'signature_file' => 'nullable|image|mimes:png|max:2048',
+                'signature_data' => 'nullable|string',
+            ]);
+        }
+
+        $data = $request->validate($rules);
+
+        // Tratar checkboxes
         $data['is_admin'] = $request->has('is_admin');
 
-        $user->update($data);
+        DB::transaction(function () use ($request, $user, $data) {
+            // Lógica de verificação de email
+            if ($request->has('is_admin')) {
+                $data['email_verified_at'] = $user->email_verified_at ?? now();
+            } elseif ($request->has('is_verified') && !$user->email_verified_at) {
+                $data['email_verified_at'] = now();
+            } elseif (!$request->has('is_verified') && $user->email_verified_at) {
+                $data['email_verified_at'] = null;
+            }
 
+            // Atualizar os campos base do utilizador (remover campos de perfil para não dar erro no update do modelo User)
+            $userFields = collect($data)->except(['birth_date', 'sex', 'height_cm', 'weight_kg'])->toArray();
+            
+            // O modelo User cuidará do bloqueio de Aluno -> Admin no evento saving
+            $oldPlanId = $user->plan_id;
+            
+            // Garantir que is_premium está sincronizado com o plano PRO
+            if (isset($userFields['plan_id'])) {
+                $userFields['is_premium'] = ($userFields['plan_id'] == 2);
+                if ($userFields['is_premium']) {
+                    $userFields['premium_expires_at'] = null;
+                }
+            }
+
+            $user->update($userFields);
+
+            // Sincronizar com a tabela user_plans se o plano mudou ou se não houver plano ativo
+            $hasActivePlan = $user->userPlans()->where('status', 'active')->exists();
+            if ($oldPlanId != $user->plan_id || !$hasActivePlan) {
+                // Desativar planos anteriores se mudou (ou se queremos forçar o atual)
+                if ($oldPlanId != $user->plan_id) {
+                    $user->userPlans()->where('status', 'active')->update(['status' => 'expired', 'end_date' => now()]);
+                }
+
+                // Criar/Garantir novo plano ativo se não existir um para o plano atual
+                $currentActive = $user->userPlans()->where('plan_id', $user->plan_id)->where('status', 'active')->first();
+                if (!$currentActive) {
+                    $user->userPlans()->create([
+                        'user_id' => $user->id,
+                        'plan_id' => $user->plan_id,
+                        'start_date' => now(),
+                        'status' => 'active',
+                    ]);
+                }
+                
+                Log::info("Admin #".auth()->id()." sincronizou/alterou o plano do usuário #{$user->id} para o plano #{$user->plan_id}");
+            }
+
+            // Limpar cache de menus para garantir que a mudança seja imediata
+            app(\App\Services\MenuService::class)->clearCache($user->id);
+
+            // Atualizar perfil básico (Aluno/Geral)
+            if ($user->profile_id != 4) {
+                $user->profile()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'birth_date' => $data['birth_date'] ?? null,
+                        'sex' => $data['sex'] ?? '',
+                        'height_cm' => $data['height_cm'] ?? null,
+                    ]
+                );
+
+                if (isset($data['weight_kg'])) {
+                    \App\Models\WeightEntry::updateOrCreate(
+                        ['user_id' => $user->id, 'weighed_at' => now()->toDateString()],
+                        ['weight_kg' => $data['weight_kg']]
+                    );
+                }
+            }
+
+            if ($data['profile_id'] == 4) {
+                $profileData = [
+                    'profession_id' => $data['profession_id'],
+                    'specialty' => $request->get('specialty'),
+                    'registration_number' => $data['registration_number'],
+                    'council' => $data['council'],
+                    'registration_uf' => $data['registration_uf'],
+                    'registration_expiry_date' => $data['registration_expiry_date'],
+                    'updated_by' => auth()->id(),
+                ];
+
+                if ($request->hasFile('document_file')) {
+                    $profileData['document_path'] = $request->file('document_file')->store('profissionais/documentos', 'local');
+                    $profileData['document_version'] = ($user->professionalProfile->document_version ?? 0) + 1;
+                }
+
+                if ($request->hasFile('signature_file')) {
+                    $profileData['signature_path'] = $request->file('signature_file')->store('profissionais/assinaturas', 'local');
+                } elseif ($request->filled('signature_data')) {
+                    $dataStr = $request->get('signature_data');
+                    if (str_contains($dataStr, 'base64,')) {
+                        $image = explode('base64,', $dataStr)[1];
+                        $image = str_replace(' ', '+', $image);
+                        $imageName = 'sig_' . $user->id . '_' . time() . '.png';
+                        \Illuminate\Support\Facades\Storage::disk('local')->put('profissionais/assinaturas/' . $imageName, base64_decode($image));
+                        $profileData['signature_path'] = 'profissionais/assinaturas/' . $imageName;
+                    }
+                }
+
+                $user->professionalProfile()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    $profileData
+                );
+            }
+
+            // Sincronizar permissões do Perfil se enviadas e se tivermos um Profile ID (Role)
+            if ($request->has('permissions') && $user->profile_id) {
+                // Removemos permissões atuais para evitar duplicados
+                DB::table('role_permissions')->where('role_id', $user->profile_id)->delete();
+                
+                $permIds = (array) $request->input('permissions');
+                $pivotData = [];
+                foreach ($permIds as $id) {
+                    $pivotData[] = [
+                        'role_id' => $user->profile_id,
+                        'permission_id' => $id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+                
+                if (!empty($pivotData)) {
+                    DB::table('role_permissions')->insert($pivotData);
+                }
+                
+                Log::info("Admin #".auth()->id()." atualizou permissões do Perfil #{$user->profile_id} via edição do usuário #{$user->id}");
+            }
+        });
+
+        $user->refresh();
+        $action = "Editou o utilizador #{$user->id} ({$user->name})";
+        
         // Registar no Log Administrativo
         AdminLog::create([
             'user_id' => auth()->id(),
-            'action' => "Editou o utilizador #{$user->id} ({$user->name})",
+            'action' => $action,
             'ip_address' => $request->ip(),
-            'payload' => $data
+            'payload' => $data,
+            'created_at' => now(),
         ]);
 
         return redirect()->route('admin.users')->with('success', "Utilizador {$user->name} atualizado com sucesso.");
@@ -223,7 +700,15 @@ class AdminAreaController extends Controller
 
         $data['is_active'] = $request->has('is_active');
 
-        ExerciseCatalog::create($data);
+        $exercise = ExerciseCatalog::create($data);
+
+        // Salvar músculos selecionados
+        if ($request->has('selected_muscles')) {
+            $muscleIds = json_decode($request->get('selected_muscles'), true);
+            if (is_array($muscleIds)) {
+                $exercise->muscles()->sync($muscleIds);
+            }
+        }
 
         AdminLog::create([
             'user_id' => auth()->id(),
@@ -237,7 +722,16 @@ class AdminAreaController extends Controller
 
     public function editExercise(ExerciseCatalog $exercise): View
     {
-        return view('admin.exercises.edit', compact('exercise'));
+        $exercise->load('muscles.group');
+        $selectedMuscles = $exercise->muscles->map(function($m) {
+            return [
+                'id' => $m->id,
+                'name' => $m->name,
+                'group' => $m->group->name,
+                'type' => $m->type
+            ];
+        });
+        return view('admin.exercises.edit', compact('exercise', 'selectedMuscles'));
     }
 
     public function updateExercise(Request $request, ExerciseCatalog $exercise)
@@ -255,6 +749,14 @@ class AdminAreaController extends Controller
         $data['is_active'] = $request->has('is_active');
 
         $exercise->update($data);
+
+        // Atualizar músculos selecionados
+        if ($request->has('selected_muscles')) {
+            $muscleIds = json_decode($request->get('selected_muscles'), true);
+            if (is_array($muscleIds)) {
+                $exercise->muscles()->sync($muscleIds);
+            }
+        }
 
         return redirect()->route('admin.exercises.catalog')->with('success', 'Exercício atualizado.');
     }
@@ -351,6 +853,31 @@ class AdminAreaController extends Controller
         }, 'utilizadores_' . date('Y-m-d') . '.csv');
     }
 
+    public function searchMuscles(Request $request)
+    {
+        $search = $request->get('q');
+        
+        $query = Muscle::with('group');
+
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('group', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+        }
+
+        $muscles = $query->limit(20)->get()->map(function($muscle) {
+            return [
+                'id' => $muscle->id,
+                'name' => $muscle->name,
+                'group' => $muscle->group->name,
+                'type' => $muscle->type
+            ];
+        });
+
+        return response()->json($muscles);
+    }
+
     public function exportPaymentsCsv()
     {
         $headers = ['MP_ID', 'User_ID', 'Plano', 'Valor', 'Data'];
@@ -404,9 +931,19 @@ class AdminAreaController extends Controller
         return view('admin.lgpd.index', compact('stats'));
     }
 
-    public function consents(): View
+    public function consents(Request $request): View
     {
-        $consents = UserConsent::with('user')->orderBy('created_at', 'desc')->paginate(50);
+        $query = UserConsent::with('user');
+
+        if ($request->filled('search')) {
+            $s = $request->get('search');
+            $query->whereHas('user', function($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('email', 'like', "%{$s}%");
+            });
+        }
+
+        $consents = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
         return view('admin.lgpd.consents', compact('consents'));
     }
 
@@ -467,8 +1004,8 @@ class AdminAreaController extends Controller
 
     public function systemErrors(): View
     {
-        $errors = SystemError::with('user')->orderBy('created_at', 'desc')->paginate(50);
-        return view('admin.system_errors.index', compact('errors'));
+        $systemErrors = SystemError::with('user')->orderBy('created_at', 'desc')->paginate(50);
+        return view('admin.system_errors.index', compact('systemErrors'));
     }
 
     public function clearErrors()
@@ -482,5 +1019,106 @@ class AdminAreaController extends Controller
         ]);
 
         return back()->with('success', 'Histórico de erros limpo com sucesso.');
+    }
+
+    public function security(): View
+    {
+        return view('admin.security.index');
+    }
+
+    public function changeAdminPassword(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'current_password' => ['required'],
+            'new_password' => [
+                'required', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
+        ], [
+            'new_password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
+        ]);
+
+        if (! Hash::check($request->input('current_password'), $user->password_hash)) {
+            return back()->with('error', 'Senha atual incorreta.');
+        }
+
+        $user->password_hash = Hash::make($request->input('new_password'));
+        $user->save();
+
+        AdminLog::create([
+            'user_id' => $user->id,
+            'action' => "Alteração de senha administrativa (própria)",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('admin.login')->with('success', 'Senha alterada com sucesso. Faça login novamente.');
+    }
+
+    public function resetUserPassword(Request $request, User $user)
+    {
+        $request->validate([
+            'new_password' => [
+                'required', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
+        ], [
+            'new_password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
+        ]);
+
+        $user->password_hash = Hash::make($request->input('new_password'));
+        $user->save();
+
+        AdminLog::create([
+            'user_id' => auth()->id(),
+            'action' => "Reset manual de senha para utilizador #{$user->id} ({$user->name})",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'payload' => ['target_user_id' => $user->id],
+            'created_at' => now(),
+        ]);
+
+        return back()->with('success', "Senha do utilizador {$user->name} foi alterada com sucesso.");
+    }
+
+    public function sendResetEmail(Request $request, User $user)
+    {
+        $mailErr = app(TransactionalMailService::class)->validateUserForOutgoingMail($user);
+        if ($mailErr !== null) {
+            return back()->with('error', $mailErr);
+        }
+
+        // Usar a funcionalidade padrão do Laravel para enviar link de reset
+        try {
+            MailConfigService::apply();
+            $token = \Illuminate\Support\Facades\Password::createToken($user);
+            $user->sendPasswordResetNotification($token);
+
+            AdminLog::create([
+                'user_id' => auth()->id(),
+                'action' => "Enviou link de redefinição de senha para #{$user->id} ({$user->name})",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'created_at' => now(),
+            ]);
+
+            return back()->with('success', "E-mail de redefinição enviado para {$user->email}.");
+        } catch (\Exception $e) {
+            return back()->with('error', "Falha ao enviar e-mail: " . $e->getMessage());
+        }
     }
 }

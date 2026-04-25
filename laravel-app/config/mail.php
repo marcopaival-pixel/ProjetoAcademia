@@ -113,4 +113,33 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cópias opcionais (CC / BCC) em envios transacionais
+    |--------------------------------------------------------------------------
+    |
+    | Endereços adicionados automaticamente a Mail::send via TransactionalMailService.
+    | MAIL_COPY_BCC pode ser uma lista separada por vírgulas.
+    |
+    */
+    'transactional_copy' => [
+        'cc' => array_values(array_filter([
+            env('MAIL_COPY_ADMIN'),
+            env('MAIL_COPY_FINANCE'),
+            env('MAIL_COPY_SUPPORT'),
+        ], fn ($v) => is_string($v) && $v !== '' && filter_var(trim($v), FILTER_VALIDATE_EMAIL) ? trim($v) : false)),
+
+        'bcc' => array_values(array_filter(array_map(
+            'trim',
+            array_filter(explode(',', (string) env('MAIL_COPY_BCC', '')))
+        ), fn ($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL))),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Proteção contra envio duplicado (mesmo utilizador / tipo / assunto)
+    |--------------------------------------------------------------------------
+    */
+    'dedupe_seconds' => (int) env('MAIL_DEDUPE_SECONDS', 60),
+
 ];

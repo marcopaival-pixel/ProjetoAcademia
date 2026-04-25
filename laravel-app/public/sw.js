@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexshape-v2';
+const CACHE_NAME = 'nexshape-v3';
 const ASSETS_TO_CACHE = [
     '/css/app.css',
     '/css/modern-layout.css',
@@ -13,6 +13,7 @@ self.addEventListener('install', (event) => {
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -27,12 +28,39 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
+    self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
+    const req = event.request;
+
+    // Apenas interceptar solicitações GET. 
+    // POST, PUT, DELETE (como formulários de login) devem ir diretamente para a rede.
+    if (req.method !== 'GET') {
+        return;
+    }
+
+    // Navegações de página (HTML/Laravel): 
+    // Deixamos o navegador gerenciar diretamente para evitar problemas com redirecionamentos, auth e CRSF.
+    if (req.mode === 'navigate') {
+        return;
+    }
+
+    // Para outros recursos (CSS, JS, Imagens): tenta rede, se falhar, tenta cache.
     event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
+        fetch(req).catch(async () => {
+            const cached = await caches.match(req);
+            if (cached) {
+                return cached;
+            }
+            
+            // Fallback amigável em vez de erro de rede puro
+            return new Response('Sem conexão e recurso não encontrado no cache.', {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+            });
         })
     );
 });
+

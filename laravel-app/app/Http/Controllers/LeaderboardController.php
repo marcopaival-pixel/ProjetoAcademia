@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\LoadLog;
 use App\Models\FoodEntry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class LeaderboardController extends Controller
@@ -45,6 +46,64 @@ class LeaderboardController extends Controller
             ->limit(10)
             ->get();
 
-        return view('leaderboard.index', compact('consistencyRanking', 'strengthRanking', 'nutritionRanking'));
+        // 4. Elite All-Around Ranking (Weighted Score)
+        // Nunca usar User::all() — com muitos registos esgota a RAM (512MB+). Só candidatos com atividade recente.
+        $candidateIds = DB::table('load_logs')
+            ->select('user_id')
+            ->where('log_date', '>=', now()->subDays(30)->toDateString())
+            ->groupBy('user_id')
+            ->limit(400)
+            ->pluck('user_id')
+            ->merge(
+                DB::table('food_entries')
+                    ->select('user_id')
+                    ->where('entry_date', '>=', now()->subDays(7)->toDateString())
+                    ->groupBy('user_id')
+                    ->limit(400)
+                    ->pluck('user_id')
+            )
+            ->unique()
+            ->values()
+            ->take(400);
+
+        $eliteRanking = $candidateIds->isEmpty()
+            ? collect()
+            : User::whereIn('id', $candidateIds)->get()->map(function ($user) {
+                $consistency = LoadLog::where('user_id', $user->id)
+                    ->where('log_date', '>=', now()->subDays(30))
+                    ->distinct()
+                    ->count('log_date');
+
+                $maxStrength = (float) (LoadLog::where('user_id', $user->id)
+                    ->selectRaw('MAX(weight_kg / (1.0278 - 0.0278 * reps_done)) as one_rm')
+                    ->where('reps_done', '>', 0)
+                    ->value('one_rm') ?? 0);
+
+                $nutrition = FoodEntry::where('user_id', $user->id)
+                    ->where('entry_date', '>=', now()->subDays(7))
+                    ->count();
+
+                $score = ($consistency * 50) + ($maxStrength * 2) + ($nutrition * 10);
+
+                $level = 'Bronze';
+                if ($score > 1500) {
+                    $level = 'Diamond';
+                } elseif ($score > 1000) {
+                    $level = 'Platinum';
+                } elseif ($score > 600) {
+                    $level = 'Gold';
+                } elseif ($score > 300) {
+                    $level = 'Silver';
+                }
+
+                return (object) [
+                    'name' => $user->name,
+                    'score' => round($score),
+                    'level' => $level,
+                    'is_premium' => $user->hasPremiumAccess(),
+                ];
+            })->sortByDesc('score')->values()->take(10);
+
+        return view('leaderboard.index', compact('consistencyRanking', 'strengthRanking', 'nutritionRanking', 'eliteRanking'));
     }
 }

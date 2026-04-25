@@ -13,15 +13,15 @@ class InternalEmailAnexo extends Model
     protected $table = 'internal_email_attachments';
 
     protected $fillable = [
-        'mensagem_id',
+        'email_id',
         'file_name',
         'file_path',
         'file_type',
         'file_size',
     ];
 
-    public function mensagem(): BelongsTo
+    public function email(): BelongsTo
     {
-        return $this->belongsTo(InternalEmail::class, 'mensagem_id');
+        return $this->belongsTo(InternalEmail::class, 'email_id');
     }
 }

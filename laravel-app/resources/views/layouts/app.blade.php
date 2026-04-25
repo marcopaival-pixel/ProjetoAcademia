@@ -2,51 +2,6 @@
     $loggedIn = auth()->check();
     $accentColor = \App\Models\AdminSetting::get('accent_color', '#3d9cf5');
     $customLogo = \App\Models\AdminSetting::get('logo_url', '');
-
-    // Auto-Healing em um único lugar (Topo)
-    if ($loggedIn) {
-        try {
-            // Testar se a tabela existe
-            \Illuminate\Support\Facades\DB::table('internal_emails')->take(1)->get();
-        } catch (\Exception $e) {
-            if (str_contains($e->getMessage(), 'internal_emails') || str_contains($e->getMessage(), '1146')) {
-                \Illuminate\Support\Facades\Schema::create('internal_emails', function ($table) {
-                    $table->id();
-                    $table->unsignedInteger('remetente_id');
-                    $table->unsignedInteger('destinatario_id');
-                    $table->string('assunto', 200);
-                    $table->text('mensagem');
-                    $table->boolean('lida')->default(false);
-                    $table->timestamp('data_envio')->nullable();
-                    $table->timestamp('data_leitura')->nullable();
-                    $table->timestamp('excluded_at_sender')->nullable();
-                    $table->timestamp('excluded_at_receiver')->nullable();
-                    $table->enum('status', ['draft', 'outbox', 'sent', 'failed'])->default('sent');
-                    $table->unsignedBigInteger('parent_id')->nullable();
-                    $table->boolean('is_system')->default(false);
-                    $table->timestamps();
-                });
-            }
-        }
-
-        // Auto-Healing para Hidratação (water_entries)
-        try {
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('water_entries', 'drank_at')) {
-                \Illuminate\Support\Facades\Schema::table('water_entries', function ($table) {
-                    $table->timestamp('drank_at')->nullable()->after('entry_date');
-                    $table->string('source')->nullable()->after('drank_at');
-                });
-            }
-
-            // Auto-Healing para Perfis (user_profiles) - Config de Hidratação
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('user_profiles', 'is_water_target_auto')) {
-                \Illuminate\Support\Facades\Schema::table('user_profiles', function ($table) {
-                    $table->boolean('is_water_target_auto')->default(true)->after('water_target_ml');
-                    $table->string('climate', 20)->default('moderate')->after('activity_level');
-                });
-            }
-        } catch (\Exception $e) {}
-    }
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="{{ $projetoTheme }}">
@@ -56,48 +11,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0b0e14">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
     <title>@yield('title') — NexShape Arena</title>
     <script>
-        (function () {
-            var n = @json(\App\Support\Theme::COOKIE);
-            if (document.cookie.indexOf(n + "=") !== -1) {
-                return;
-            }
-            try {
-                if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-                    document.documentElement.setAttribute("data-theme", "light");
-                }
-            } catch (e) {}
-        })();
+        document.documentElement.setAttribute("data-theme", "dark");
     </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/modern-layout.css') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('css/modern-layout.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="{{ asset('js/sidebar-toggle.js') }}" defer></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        cyber: {
-                            blue: '#3b82f6',
-                            emerald: '#10b981',
-                            indigo: '#8b5cf6',
-                        }
-                    },
-                    animation: {
-                        'dashboard-entry': 'dashboard-entry 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                    },
-                    keyframes: {
-                        'dashboard-entry': {
-                            'from': { opacity: '0', transform: 'translateY(40px) scale(0.98)' },
-                            'to': { opacity: '1', transform: 'translateY(0) scale(1)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         :root {
             --accent: {{ $accentColor }};
@@ -107,10 +30,11 @@
     </style>
     @stack('styles')
 </head>
-<body class="{{ request()->is('professional*') ? 'portal-pro' : '' }}">
+<body class="{{ request()->is('professional*') ? 'portal-pro' : '' }} {{ request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected') ? 'min-h-screen overflow-x-hidden overflow-y-auto bg-[#0b0e14]' : '' }}">
     <a class="skip-link" href="#main">Ir para o conteúdo</a>
 
-    @if($loggedIn)
+    @if($loggedIn && !request()->routeIs('home') && !request()->routeIs('verification.notice') && !request()->routeIs('registration.pending') && !request()->routeIs('registration.rejected'))
+        @include('partials.impersonation-banner')
         <div class="app-container">
             @include('partials.sidebar')
 
@@ -129,6 +53,10 @@
                 </main>
             </div>
         </div>
+    @elseif(request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected'))
+        <main id="main" class="min-h-screen w-full">
+            @yield('content')
+        </main>
     @else
         <header class="site-header">
             <div class="shell header-inner">
@@ -136,12 +64,22 @@
                     <img src="{{ $customLogo ?: asset('images/logo_Academia.png') }}" alt="Logo Academia" class="logo-img" style="height: 58px; width: auto;">
                 </a>
                 
-                <nav class="site-nav">
+                <button class="nav-toggle" id="menuToggle" aria-label="Abrir menu">
+                    <svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
+                </button>
+
+                <nav class="site-nav" id="siteNav">
                     <a href="#features">Recursos</a>
                     <a href="#pricing">Preços</a>
                     <div class="nav-divider"></div>
                     <a href="{{ route('login') }}" class="btn btn-sm btn-ghost">Entrar</a>
                 </nav>
+
+                <script>
+                    document.getElementById('menuToggle').addEventListener('click', function() {
+                        document.getElementById('siteNav').classList.toggle('is-open');
+                    });
+                </script>
             </div>
         </header>
 
@@ -150,7 +88,7 @@
         </main>
     @endif
 
-    @if(!$loggedIn || Route::is('home'))
+    @if((!$loggedIn || request()->routeIs('home')) && !request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected'))
     <footer class="site-footer shell animate-fade-up">
         <div class="footer-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
             <div class="footer-col">
@@ -171,8 +109,9 @@
                 <h4 style="color: var(--text); margin-bottom: 1rem;">Suporte</h4>
                 <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
                     <li><a href="#" class="muted">Central de Ajuda</a></li>
-                    <li><a href="#" class="muted">Privacidade</a></li>
-                    <li><a href="#" class="muted">Termos de Uso</a></li>
+                    <li><a href="{{ route('legal.privacy') }}" class="muted">Privacidade</a></li>
+                    <li><a href="{{ route('legal.terms') }}" class="muted">Termos de Uso</a></li>
+                    <li><a href="{{ route('legal.cookies') }}" class="muted">Cookies</a></li>
                 </ul>
             </div>
             <div class="footer-col" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end;">
@@ -182,56 +121,57 @@
         
         <div class="footer-row" style="padding-top: 1rem; border-top: 1px solid var(--border);">
             <p class="footer-tagline">&copy; {{ date('Y') }} ProjetoAcademia. Todos os direitos reservados.</p>
-            <div class="theme-switcher" role="group" aria-label="Tema da interface">
-                <span class="muted theme-switcher-label">Aparência</span>
-                <form method="post" action="{{ route('theme') }}" class="theme-switcher-form">
-                    @csrf
-                    <input type="hidden" name="next" value="{{ $themeNext }}">
-                    <input type="hidden" name="theme" value="dark">
-                    <button type="submit" class="btn-theme{{ $projetoTheme === 'dark' ? ' is-active' : '' }}">Escuro</button>
-                </form>
-                <form method="post" action="{{ route('theme') }}" class="theme-switcher-form">
-                    @csrf
-                    <input type="hidden" name="next" value="{{ $themeNext }}">
-                    <input type="hidden" name="theme" value="light">
-                    <button type="submit" class="btn-theme{{ $projetoTheme === 'light' ? ' is-active' : '' }}">Claro</button>
-                </form>
-            </div>
+
         </div>
     </footer>
     @endif
 
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
     @stack('scripts')
     <script src="{{ asset('js/app.js') }}" defer></script>
     <script>
-        // Internal Email Real-time Polling
+        // Real-time Polling
         @if(auth()->check())
-        function checkUnreadEmails() {
-            fetch('/api/internal-email/unread-count')
+        function checkNotifications() {
+            fetch('{{ route('notifications.unread-counts') }}', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    const badge = document.querySelector('.nav-link[href*="internal-email"] .badge');
-                    const sidebarBadge = document.querySelector('.nav-link-email.active .badge') || document.querySelector('.nav-link-email[href*="inbox"] .badge');
+                    // Update Emails
+                    const emailBadge = document.querySelector('.nav-link[href*="internal-email"] .badge');
+                    const sidebarEmailBadge = document.querySelector('.nav-link-email.active .badge') || document.querySelector('.nav-link-email[href*="inbox"] .badge');
+                    const sidebarMainEmailBadge = document.querySelector('.nav-link[href*="internal-email"] .bg-red-500');
                     
-                    if (data.count > 0) {
-                        if (badge) {
-                            badge.textContent = data.count;
-                            badge.style.display = 'inline-block';
-                        }
-                        if (sidebarBadge) {
-                            sidebarBadge.textContent = data.count;
-                            sidebarBadge.style.display = 'inline-block';
+                    if (data.emails > 0) {
+                        if (emailBadge) { emailBadge.textContent = data.emails; emailBadge.style.display = 'inline-block'; }
+                        if (sidebarEmailBadge) { sidebarEmailBadge.textContent = data.emails; sidebarEmailBadge.style.display = 'inline-block'; }
+                        if (sidebarMainEmailBadge) { sidebarMainEmailBadge.textContent = data.emails; sidebarMainEmailBadge.style.display = 'inline-block'; }
+                    } else {
+                        if (emailBadge) emailBadge.style.display = 'none';
+                        if (sidebarEmailBadge) sidebarEmailBadge.style.display = 'none';
+                        if (sidebarMainEmailBadge) sidebarMainEmailBadge.style.display = 'none';
+                    }
+
+                    // Update Messages
+                    const sidebarMsgBadge = document.querySelector('.nav-link[href*="/messages"] .bg-blue-500');
+                    if (data.messages > 0) {
+                        if (sidebarMsgBadge) {
+                            sidebarMsgBadge.textContent = data.messages;
+                            sidebarMsgBadge.style.display = 'inline-block';
                         }
                     } else {
-                        if (badge) badge.style.display = 'none';
-                        if (sidebarBadge) sidebarBadge.style.display = 'none';
+                        if (sidebarMsgBadge) sidebarMsgBadge.style.display = 'none';
                     }
                 })
-                .catch(err => console.error('Error fetching unread count:', err));
+                .catch(err => console.error('Error fetching unread counts:', err));
         }
-        setInterval(checkUnreadEmails, 30000); // Check every 30 seconds
-        checkUnreadEmails();
+        setInterval(checkNotifications, 30000); // Check every 30 seconds
+        checkNotifications();
         @endif
     </script>
     <script>
@@ -243,5 +183,66 @@
             });
         }
     </script>
+    <!-- Premium Upgrade Modal (Global) -->
+    <div id="premiumModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in" style="display: none;">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl animate-dashboard-entry text-center space-y-8">
+            <div class="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-500 shadow-lg shadow-amber-500/10">
+                <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            
+            <div class="space-y-3">
+                <h3 class="text-3xl font-black text-white tracking-tight">Recurso <span class="text-amber-500">Premium</span></h3>
+                <p class="text-zinc-500 font-medium">Esta funcionalidade exclusiva faz parte do plano **Performance Elite**. Evolua seu treino com IA e dados avançados.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+                <a href="{{ route('plano') }}" class="w-full py-4 bg-amber-500 text-zinc-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-crown text-xs"></i>
+                    QUERO ME TORNAR PREMIUM
+                </a>
+                <button onclick="document.getElementById('premiumModal').style.display = 'none'" class="w-full py-4 bg-zinc-800 text-zinc-400 font-bold rounded-2xl hover:bg-zinc-700 transition-all">
+                    Talvez mais tarde
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Interceptor de cliques em botões premium
+            document.querySelectorAll('[data-premium-locked]').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    if (window.isPremiumUser === false) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const pModal = document.getElementById('premiumModal');
+                        if (pModal) pModal.style.display = 'flex';
+                    }
+                });
+            });
+
+            // Fecha modal ao clicar fora
+            const modal = document.getElementById('premiumModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                    }
+                });
+            }
+        });
+        
+        window.isPremiumUser = {{ auth()->check() && auth()->user()->hasPremiumAccess() ? 'true' : 'false' }};
+    </script>
+
+    @if(auth()->check())
+        @include('partials.onboarding_modal')
+        @include('partials.ai-credits-modal')
+    @endif
+    @include('partials.confirm-delete-modal')
+    @include('partials.toast')
+    @include('partials.error-modal')
 </body>
 </html>
