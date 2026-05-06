@@ -16,7 +16,6 @@ class EnsureEmailIsVerified
      */
     public function handle(Request $request, Closure $next): Response
     {
-        /* Verificação suspensa temporariamente
         if (Auth::check()) {
             $user = Auth::user();
 
@@ -25,7 +24,9 @@ class EnsureEmailIsVerified
                 return $next($request);
             }
 
-            if (! $user->email_verified_at) {
+            $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+
+            if ($verificacaoAtiva && !$user->isEmailVerified()) {
                 // Apenas fluxo de verificação e saída. /register não é exceção: utilizador autenticado sem
                 // confirmação só vê /verify-email (cadastro só fica "ativo" após confirmar o e-mail).
                 $allowed = $request->routeIs('verification.*')
@@ -37,11 +38,10 @@ class EnsureEmailIsVerified
                 if (! $allowed) {
                     return $request->expectsJson()
                         ? abort(403, 'Seu endereço de e-mail não foi verificado.')
-                        : redirect()->route('verification.notice');
+                        : redirect()->route('verification.notice', ['email' => $user->email]);
                 }
             }
         }
-        */
 
         return $next($request);
     }

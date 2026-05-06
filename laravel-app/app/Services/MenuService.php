@@ -56,7 +56,7 @@ class MenuService
                     'trophies', 'body-analysis', 'patient.professionals.search', 'report'
                 ],
                 'paciente' => [
-                    'patient.unified.dashboard', 'patient.portal', 'profile', 'messages', 'plano', 'chat', 'report'
+                    'patient.unified.dashboard', 'patient.portal', 'profile', 'plano', 'report'
                 ],
                 'receptionist' => ['dashboard', 'user_registration', 'presence', 'plano', 'profile', 'clinic_settings', 'clinic_billing'],
                 'finance' => ['dashboard', 'billing', 'financial_reports', 'plano', 'profile'],
@@ -186,8 +186,6 @@ class MenuService
                     ['name' => 'assessments', 'label' => 'Avaliações', 'route' => 'assessments.index', 'icon' => 'fas fa-clipboard-check'],
                     ['name' => 'weight', 'label' => 'Peso', 'route' => 'weight', 'icon' => 'fas fa-weight'],
                     ['name' => 'hydration', 'label' => 'Hidratação', 'route' => 'hydration.index', 'icon' => 'fas fa-tint'],
-                    ['name' => 'messages', 'label' => 'Mensagens Diretas', 'route' => 'messages.index', 'icon' => 'fas fa-comment-dots'],
-                    ['name' => 'internal_email', 'label' => 'Correio Interno', 'route' => 'internal-email.inbox', 'icon' => 'fas fa-envelope-open-text'],
 
                     ['name' => 'calendar', 'label' => 'Agenda', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-alt'],
                     ['name' => 'medical_records', 'label' => 'Prontuário / Laudos', 'route' => 'professional.patients.index', 'icon' => 'fas fa-file-medical-alt'],
@@ -276,7 +274,6 @@ class MenuService
         if ($user->hasRole('paciente') || $user->isAdministrator()) {
             $patientItems = [
                 ['name' => 'patient.unified.dashboard', 'label' => 'Meu Painel de Saúde', 'route' => 'patient.unified.dashboard', 'icon' => 'fas fa-heartbeat'],
-                ['name' => 'messages', 'label' => 'Contato Profissional', 'route' => 'messages.index', 'icon' => 'fas fa-comments'],
                 ['name' => 'patient_reports', 'label' => 'Prontuário / Laudos', 'route' => 'patient.medical-records.index', 'icon' => 'fas fa-file-medical-alt'],
             ];
 
@@ -310,7 +307,22 @@ class MenuService
             ];
         }
 
-        // 4. Admin
+        // 4. Portal do Representante
+        if ($user->isAdministrator() || $user->is_representative) {
+            $groups[] = [
+                'id' => 'representative_portal',
+                'label' => 'Portal do Representante',
+                'icon' => 'fas fa-handshake',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'rep_dashboard', 'label' => 'Dashboard', 'route' => 'representative.dashboard', 'icon' => 'fas fa-chart-pie'],
+                    ['name' => 'rep_commissions', 'label' => 'Minhas Comissões', 'route' => 'representative.commissions', 'icon' => 'fas fa-dollar-sign'],
+                    ['name' => 'rep_referrals', 'label' => 'Minhas Indicações', 'route' => 'representative.referrals', 'icon' => 'fas fa-users'],
+                    ['name' => 'rep_withdraw', 'label' => 'Resgates e Saques', 'route' => 'representative.withdraw.form', 'icon' => 'fas fa-wallet'],
+                ], $isPremium),
+            ];
+        }
+
+        // 5. Admin
         if ($user->isAdministrator()) {
             $groups[] = [
                 'id' => 'administration',
@@ -322,6 +334,7 @@ class MenuService
                     ['name' => 'pdf_companies', 'label' => 'Empresas & Unidades', 'route' => 'admin.pdf-companies.index', 'icon' => 'fas fa-building'],
                     ['name' => 'settings', 'label' => 'Configurações', 'route' => 'admin.settings', 'icon' => 'fas fa-cogs'],
                     ['name' => 'finance_sys', 'label' => 'Financeiro SaaS', 'route' => 'admin.financial.dashboard', 'icon' => 'fas fa-university'],
+                    ['name' => 'billing_credits', 'label' => 'Cobrança / Créditos', 'route' => 'admin.billing.credits', 'icon' => 'fas fa-credit-card'],
                     ['name' => 'finance_mgmt', 'label' => 'Gestão de Cobrança', 'route' => 'admin.financial.management', 'icon' => 'fas fa-file-invoice-dollar'],
                     ['name' => 'report_sys', 'label' => 'Relatórios Globais', 'route' => 'admin.financial.reports', 'icon' => 'fas fa-chart-pie'],
                 ], $isPremium),
@@ -421,15 +434,36 @@ class MenuService
     private function prepareItems(User $user, array $items, bool $isPremium): array
     {
         $prepared = [];
+        $isClinic = $user->hasRole(['professional', 'instructor', 'manager', 'receptionist', 'supervisor', 'paciente']);
+
         foreach ($items as $item) {
             $isLocked = ($item['premium'] ?? false) && !$isPremium;
             $currentRoute = request()->route()?->getName() ?? '';
             $itemRoute = $item['route'] ?? '';
             $isActive = $this->isRouteActive($currentRoute, $itemRoute);
 
+            $label = $item['label'];
+            
+            // Medical Language Adaptation for Clinic Experience
+            if ($isClinic) {
+                $medicalMap = [
+                    'Pacientes' => 'Pacientes',
+                    'Membros' => 'Pacientes',
+                    'Alunos' => 'Pacientes',
+                    'Meus Alunos' => 'Meus Pacientes',
+                    'Agenda' => 'Agenda de Consultas',
+                    'Treinos' => 'Prescrições / Treinos',
+                    'Meus Treinos' => 'Conduta Clínica',
+                    'Dashboard' => 'Painel Clínico',
+                    'Meu Perfil' => 'Prontuário Profissional',
+                    'Evolução' => 'Evolução Clínica',
+                ];
+                $label = $medicalMap[$label] ?? $label;
+            }
+
             $prepared[] = [
                 'name' => $item['name'],
-                'label' => $item['label'],
+                'label' => $label,
                 'route' => $item['route'],
                 'icon' => $item['icon'],
                 'is_locked' => $isLocked,

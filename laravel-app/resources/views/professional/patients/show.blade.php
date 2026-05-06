@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="py-10 space-y-12 animate-dashboard-entry max-w-[1700px] mx-auto px-6"
-        x-data="{ activeTab: 'diary', chartMode: 'weight' }">
+        x-data="{ activeTab: 'diary', chartMode: 'weight', showAssessmentModal: false }">
         <!-- Header Strategy: Professional Navigation + Breadcrumb -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pb-4 border-b border-white/5">
             <div class="space-y-3">
@@ -91,8 +91,8 @@
                             </div>
                         </div>
 
-                        <button onclick="switchTab('evaluations')"
-                            class="w-full py-5 bg-white text-zinc-900 font-black rounded-3xl hover:bg-blue-400 hover:text-white transition-all shadow-2xl text-xs uppercase tracking-widest active:scale-95">
+                        <button @click="showAssessmentModal = true"
+                            class="w-full py-5 bg-white text-zinc-900 font-black rounded-3xl hover:bg-emerald-400 hover:text-white transition-all shadow-2xl text-xs uppercase tracking-widest active:scale-95">
                             Atualizar Medidas
                         </button>
                     </div>
@@ -301,8 +301,7 @@
                         <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-10 rounded-[3rem] space-y-6">
                             <div class="flex items-center justify-between border-b border-white/5 pb-6">
                                 <h4 class="text-white font-black text-sm uppercase tracking-widest">Últimas Avaliações</h4>
-                                <button class="text-blue-400 font-black text-[10px] uppercase tracking-widest">+ Nova
-                                    Avaliação</button>
+                                <button @click="showAssessmentModal = true" class="text-emerald-400 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">+ Nova Avaliação</button>
                             </div>
                             <div class="space-y-4">
                                 @foreach(['Avaliação Antropométrica - Abr/2026', 'Protocolo de Dobras - Fev/2026'] as $eval)
@@ -316,6 +315,78 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal de Avaliação -->
+        <div x-show="showAssessmentModal" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div x-show="showAssessmentModal" x-transition.opacity class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showAssessmentModal = false"></div>
+            <div x-show="showAssessmentModal" x-transition.scale.origin.bottom class="relative bg-zinc-900 border border-white/10 rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-white/5 flex items-center justify-between bg-zinc-900/50 backdrop-blur-xl z-20">
+                    <h3 class="text-xl font-black text-white italic tracking-tighter uppercase">Nova Avaliação Biométrica</h3>
+                    <button @click="showAssessmentModal = false" class="text-zinc-500 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="p-8 overflow-y-auto custom-scrollbar">
+                    <form action="{{ route('assessments.store') }}" method="POST" id="assessmentForm" class="space-y-6">
+                        @csrf
+                        <input type="hidden" name="patient_id" value="{{ $patient['id'] }}">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Data da Avaliação</label>
+                                <input type="date" name="assessment_date" value="{{ date('Y-m-d') }}" required class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Peso (kg)</label>
+                                <input type="number" step="0.1" name="weight_kg" placeholder="Ex: 75.5" required class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none">
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Percentual de Gordura (%)</label>
+                                <input type="number" step="0.1" name="bf_percent" placeholder="Ex: 15.2 (Opcional)" class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Massa Muscular (%)</label>
+                                <input type="number" step="0.1" name="muscle_percent" placeholder="Opcional" class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none">
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-white/5">
+                            <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4">Medidas (Perimetria)</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="space-y-2">
+                                    <label class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Tórax</label>
+                                    <input type="number" step="0.1" name="chest" placeholder="cm" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 transition-all outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Cintura</label>
+                                    <input type="number" step="0.1" name="waist" placeholder="cm" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 transition-all outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Abdômen</label>
+                                    <input type="number" step="0.1" name="abdomen" placeholder="cm" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 transition-all outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Quadril</label>
+                                    <input type="number" step="0.1" name="hips" placeholder="cm" class="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 transition-all outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Observações Clínicas</label>
+                            <textarea name="notes" rows="3" class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none resize-none" placeholder="Anotações sobre a avaliação..."></textarea>
+                        </div>
+
+                        <div class="pt-4 flex gap-4">
+                            <button type="button" @click="showAssessmentModal = false" class="flex-1 py-4 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-xs uppercase tracking-widest">Cancelar</button>
+                            <button type="submit" class="flex-1 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20">Salvar Avaliação</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

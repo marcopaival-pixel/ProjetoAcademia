@@ -1,26 +1,26 @@
 @extends('layouts.app')
 
-@section('title', 'NexShape — Ecossistema de Elite para Treino, Nutrição e Gestão Clínica')
+@section('title', 'NEX SHAPE — Ecossistema de Elite para Treino e Nutrição')
 
 @section('content')
-<div class="space-y-32 py-10 px-6 max-w-[1400px] mx-auto overflow-hidden">
+<div class="space-y-32 py-10 px-6 max-w-[1400px] mx-auto overflow-hidden font-['Outfit']">
     
     <!-- Ultra Impact Hero -->
     <section class="relative flex flex-col lg:flex-row items-center gap-16 py-10 animate-fade-in">
-        <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-600/5 blur-[150px] rounded-full pointer-events-none"></div>
+        <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-emerald-600/5 blur-[150px] rounded-full pointer-events-none"></div>
         
         <div class="flex-1 space-y-10 text-center lg:text-left relative z-20">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest animate-bounce-slow">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest animate-bounce-slow">
                 <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 Próxima Geração de Inteligência Fitness
             </div>
 
             <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.85]">
-                O Futuro do <br>
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400">Bio-Performance.</span>
+                O Futuro da <br>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-300">Performance.</span>
             </h1>
             
             <p class="text-zinc-500 text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed">
@@ -81,99 +81,194 @@
         </div>
     </section>
 
-    <!-- Value Prop Bento Grid -->
-    <section id="features" class="space-y-16">
-        <div class="text-center space-y-4">
-            <h2 class="text-zinc-500 font-black text-[12px] uppercase tracking-[0.3em]">Recursos de Elite</h2>
-            <p class="text-4xl md:text-5xl font-black text-white tracking-tight">Potência em cada detalhe.</p>
+    <!-- Value Prop: Bento Grid Section -->
+    <section id="features" class="space-y-16 py-20 relative">
+        <div class="absolute top-1/2 left-0 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+        
+        <div class="text-center space-y-6 max-w-3xl mx-auto">
+            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl">
+                <i data-lucide="layers" class="w-4 h-4 text-emerald-500"></i>
+                <span class="text-[10px] font-black text-white uppercase tracking-[0.2em]">Arquitetura de Alta Performance</span>
+            </div>
+            <h2 class="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none italic uppercase">
+                O Ecossistema <br> <span class="text-emerald-500 italic">Definitivo.</span>
+            </h2>
+            <p class="text-zinc-500 font-medium text-lg leading-relaxed italic">
+                Integramos todas as camadas do treinamento e gestão clínica em uma única plataforma neural.
+            </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- IA Card -->
-            <div class="bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 space-y-6 transition-all hover:border-blue-500/30 group">
-                <div class="w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform">🧠</div>
-                <h3 class="text-2xl font-black text-white tracking-tight">NexNeural IA</h3>
-                <p class="text-zinc-500 font-medium leading-relaxed italic">"Inteligência de Sobrecarga."</p>
-                <p class="text-zinc-400 text-sm leading-relaxed">Algoritmos que analisam seu RPE histórico e sugerem cargas precisas para evitar estagnação.</p>
+        <div class="grid grid-cols-1 md:grid-cols-6 grid-rows-2 gap-6 h-auto md:h-[800px]">
+            <!-- IA Neural: Large Main Card -->
+            <div class="md:col-span-3 md:row-span-2 bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3.5rem] border border-white/5 flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-700 overflow-hidden relative">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
+                
+                <div class="space-y-6 relative z-10">
+                    <div class="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shadow-inner">
+                        <i data-lucide="brain-circuit" class="w-8 h-8"></i>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-4xl font-black text-white uppercase italic tracking-tighter">NexNeural <span class="text-emerald-500">IA</span></h3>
+                        <p class="text-zinc-400 font-medium leading-relaxed italic">Nossa inteligência proprietária analisa o seu RPE (Esforço Percebido) em tempo real para sugerir a carga exata da sua próxima série, otimizando o volume de treinamento e prevenindo o overtraining.</p>
+                    </div>
+                </div>
+
+                <div class="mt-12 relative z-10 bg-zinc-950/50 border border-zinc-800 p-6 rounded-[2.5rem] backdrop-blur-md">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest italic">Otimização de Carga</span>
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="h-2 bg-zinc-900 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 w-3/4 animate-pulse"></div>
+                        </div>
+                        <p class="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter italic">Sugestão: Aumentar +2kg na próxima série (RPE 8.5 detectado)</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Clinic Card -->
-            <div class="bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-2xl md:scale-105 relative z-20 space-y-6 transition-all hover:border-indigo-500/30 group">
-                <div class="w-16 h-16 bg-indigo-600/10 rounded-2xl flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform">🏥</div>
-                <h3 class="text-2xl font-black text-white tracking-tight italic">Portal Clinical</h3>
-                <p class="text-zinc-500 font-medium leading-relaxed italic">"Gestão em Escala."</p>
-                <p class="text-zinc-400 text-sm leading-relaxed">Prontuários eletrônicos, compartilhamento de laudos e gestão de múltiplos profissionais em um painel B2B robusto.</p>
+            <!-- CRM & Patients -->
+            <div class="md:col-span-3 bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 flex flex-col justify-between group hover:border-blue-500/20 transition-all duration-700">
+                <div class="flex items-start justify-between">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-white uppercase italic tracking-tighter">Gestão <span class="text-blue-500">Clinical</span></h3>
+                        <p class="text-xs text-zinc-500 font-medium italic max-w-[200px]">CRM completo para clínicas, com prontuário digital e histórico evolutivo.</p>
+                    </div>
+                    <div class="flex -space-x-3">
+                        <div class="w-10 h-10 rounded-full border-2 border-zinc-900 bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-white">JD</div>
+                        <div class="w-10 h-10 rounded-full border-2 border-zinc-900 bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-white">MA</div>
+                        <div class="w-10 h-10 rounded-full border-2 border-zinc-900 bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-white">+12</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bio Card -->
-            <div class="bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 space-y-6 transition-all hover:border-emerald-500/30 group">
-                <div class="w-16 h-16 bg-emerald-600/10 rounded-2xl flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform">🧬</div>
-                <h3 class="text-2xl font-black text-white tracking-tight">Bio-Tracking</h3>
-                <p class="text-zinc-500 font-medium leading-relaxed italic">"Ciência do Corpo."</p>
-                <p class="text-zinc-400 text-sm leading-relaxed">Mapeamento de dobras cutâneas, bioimpedância e integração de exames para uma visão 360º da evolução.</p>
+            <!-- Bio-Tracking -->
+            <div class="md:col-span-1.5 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6 group hover:border-emerald-500/20 transition-all">
+                <div class="w-12 h-12 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-black text-white uppercase italic tracking-tighter leading-none mb-2">Bio-Tracking</h4>
+                    <p class="text-[10px] text-zinc-500 font-medium italic">Análise de bioimpedância e medidas antropométricas automatizadas.</p>
+                </div>
+            </div>
+
+            <!-- Precision Nutrition -->
+            <div class="md:col-span-1.5 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6 group hover:border-amber-500/20 transition-all">
+                <div class="w-12 h-12 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-amber-500">
+                    <i data-lucide="utensils" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-black text-white uppercase italic tracking-tighter leading-none mb-2">Nutrição</h4>
+                    <p class="text-[10px] text-zinc-500 font-medium italic">Prescrição de dietas flexíveis e rígidas com cálculo de macronutrientes dinâmico.</p>
+                </div>
+            </div>
+
+            <!-- PDF Reports -->
+            <div class="md:col-span-3 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex items-center gap-8 group hover:border-indigo-500/20 transition-all">
+                <div class="w-20 h-20 bg-indigo-500/10 rounded-[2rem] flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+                    <i data-lucide="file-text" class="w-10 h-10"></i>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-xl font-black text-white uppercase italic tracking-tighter">Laudos de Elite</h4>
+                    <p class="text-[10px] text-zinc-500 font-medium italic leading-relaxed">Gere relatórios PDF profissionais de evolução para seus alunos em segundos.</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Pricing Comparison Section -->
-    <section id="pricing" class="space-y-20 relative">
+    <!-- Pricing Summary Section -->
+    <section id="pricing" class="space-y-20 relative" x-data="{ 
+        activeCategory: '{{ $preferredType ?? 'student' }}',
+        categories: {
+            student: 'Aluno',
+            professional: 'Profissional',
+            clinic: 'Clínica'
+        }
+    }">
         <div class="absolute -bottom-40 right-0 w-[600px] h-[600px] bg-emerald-600/5 blur-[150px] rounded-full pointer-events-none"></div>
 
-        <div class="text-center space-y-4">
-            <h2 class="text-5xl font-black text-white tracking-tight">Escolha seu Nível de Evolução</h2>
-            <p class="text-zinc-500 font-medium">Soluções flexíveis para indivíduos, profissionais e organizações de saúde.</p>
+        <div class="text-center space-y-6 max-w-3xl mx-auto">
+            <h2 class="text-5xl md:text-6xl font-black text-white tracking-tighter uppercase italic">Escolha sua <span class="text-emerald-500">Jornada</span></h2>
+            <p class="text-zinc-500 font-medium text-lg">Selecione seu perfil e descubra o plano ideal para sua evolução.</p>
+            
+            @if(!$preferredType)
+            <!-- Category Switcher -->
+            <div class="flex flex-wrap justify-center gap-4 mt-8 p-1.5 bg-zinc-900 border border-zinc-800 rounded-3xl max-w-lg mx-auto shadow-2xl">
+                <template x-for="(label, key) in categories">
+                    <button @click="activeCategory = key" 
+                            :class="activeCategory === key ? 'bg-emerald-500 text-zinc-950' : 'text-zinc-500 hover:text-white'"
+                            class="px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                            x-text="label">
+                    </button>
+                </template>
+            </div>
+            @else
+            <div class="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                Recomendado para seu perfil: {{ $preferredType === 'student' ? 'Aluno' : ($preferredType === 'professional' ? 'Profissional' : 'Clínica') }}
+            </div>
+            @endif
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Free / Student -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 space-y-8 flex flex-col hover:bg-zinc-900/60 transition-all">
-                <div class="space-y-2">
-                    <span class="text-zinc-500 font-black text-[10px] uppercase tracking-widest">ALUNO STANDARD</span>
-                    <div class="text-4xl font-black text-white">Grátis</div>
-                </div>
-                <ul class="space-y-4 flex-1">
-                    @foreach(['Diário de Treino & Cargas', 'Registro Nutricional Básico', 'Gráficos de Peso e Medidas', 'Comunidade Global'] as $f)
-                    <li class="flex items-center gap-3 text-zinc-400 text-sm font-medium">
-                        <i class="fas fa-check text-zinc-700"></i> {{ $f }}
-                    </li>
-                    @endforeach
-                </ul>
-                <a href="{{ route('onboarding.welcome') }}" class="block w-full py-4 text-center bg-zinc-800 text-white font-black rounded-2xl hover:bg-zinc-700 transition-all active:scale-95">COMEÇAR AGORA</a>
-            </div>
+            @foreach($summaryPlans as $type => $plan)
+                @if($plan)
+                <div x-show="activeCategory === '{{ $type }}'" 
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="col-span-1 md:col-start-2 bg-zinc-900/40 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 space-y-8 flex flex-col hover:bg-zinc-900/60 transition-all group relative overflow-hidden"
+                     :class="'{{ $plan->name }}'.includes('Premium') || '{{ $plan->name }}'.includes('Pro') ? 'border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.05)]' : ''">
+                    
+                    @if(str_contains($plan->name, 'Premium') || str_contains($plan->name, 'Pro') || $plan->price > 100)
+                        <div class="absolute top-0 right-0 bg-emerald-500 text-zinc-950 text-[9px] font-black px-6 py-2 rounded-bl-3xl uppercase tracking-widest shadow-xl">Mais Popular</div>
+                    @endif
 
-            <!-- Pro / Professional -->
-            <div class="bg-gradient-to-b from-blue-600/10 to-zinc-900/40 backdrop-blur-3xl p-10 rounded-[3rem] border border-blue-500/30 space-y-8 flex flex-col relative overflow-hidden shadow-2xl scale-105 z-10">
-                <div class="absolute top-0 right-0 bg-blue-600 text-white text-[9px] font-black px-6 py-2 rounded-bl-3xl uppercase tracking-widest shadow-xl">Mais Popular</div>
-                <div class="space-y-2">
-                    <span class="text-blue-400 font-black text-[10px] uppercase tracking-widest">NEXELITE PRO</span>
-                    <div class="text-4xl font-black text-white">R$ 19,90 <span class="text-zinc-500 text-sm font-medium">/mês</span></div>
-                </div>
-                <ul class="space-y-4 flex-1">
-                    @foreach(['NexNeural IA (Sugestão de Cargas)', 'NexHydra (Curva Metabólica)', 'Relatórios PDF Profissionais', 'Chat com IA Especialista', 'Acesso Prioritário a Recursos'] as $f)
-                    <li class="flex items-center gap-3 text-blue-100 text-sm font-bold">
-                        <i class="fas fa-crown text-amber-500"></i> {{ $f }}
-                    </li>
-                    @endforeach
-                </ul>
-                <a href="{{ route('register') }}" class="block w-full py-4 text-center bg-white text-zinc-950 font-black rounded-2xl hover:bg-blue-400 hover:text-white transition-all shadow-xl active:scale-95">ASSINAR PRO</a>
-            </div>
+                    <div class="space-y-3">
+                        <span class="text-emerald-500 font-black text-[10px] uppercase tracking-[0.3em] italic">{{ $plan->type === 'student' ? 'NEX ALUNO' : ($plan->type === 'professional' ? 'NEX PRO' : 'NEX BUSINESS') }}</span>
+                        <h3 class="text-4xl font-black text-white italic tracking-tighter">{{ $plan->name }}</h3>
+                        <p class="text-zinc-500 text-sm font-medium leading-relaxed italic">{{ Str::limit($plan->description, 100) }}</p>
+                    </div>
 
-            <!-- Clinic / Business -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl p-10 rounded-[3rem] border border-emerald-500/20 space-y-8 flex flex-col hover:bg-zinc-900/60 transition-all">
-                <div class="space-y-2">
-                    <span class="text-emerald-500 font-black text-[10px] uppercase tracking-widest">CLÍNICAS & STUDIOS</span>
-                    <div class="text-4xl font-black text-white">Consulte</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-zinc-700 text-xs font-black uppercase">R$</span>
+                        <span class="text-5xl font-black text-white tracking-tighter">{{ number_format($plan->price, 2, ',', '.') }}</span>
+                        <span class="text-zinc-700 text-[10px] font-black uppercase tracking-widest">/mês</span>
+                    </div>
+
+                    <ul class="space-y-4 flex-1">
+                        @foreach($plan->planFeatures->take(4) as $feature)
+                        <li class="flex items-center gap-3 text-zinc-400 text-sm font-medium italic">
+                            <i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>
+                            {{ str_replace('_', ' ', ucfirst($feature->feature_key)) }}
+                        </li>
+                        @endforeach
+                        @if($plan->planFeatures->count() > 4)
+                        <li class="text-zinc-600 text-[10px] font-black uppercase tracking-widest pl-7 italic">+ {{ $plan->planFeatures->count() - 4 }} recursos integrados</li>
+                        @endif
+                    </ul>
+
+                    <div class="flex flex-col gap-4">
+                        <a href="{{ route('checkout.index', $plan->id) }}" class="block w-full py-5 text-center bg-white text-zinc-950 font-black rounded-3xl hover:bg-emerald-500 transition-all active:scale-95 shadow-2xl text-xs tracking-widest uppercase">
+                            COMEÇAR AGORA
+                        </a>
+                        <a href="{{ route('plano') }}?type={{ $type }}" class="block w-full py-5 text-center bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-white transition-all rounded-3xl text-xs font-black tracking-widest uppercase italic">
+                            VER DETALHES COMPLETOS
+                        </a>
+                    </div>
                 </div>
-                <ul class="space-y-4 flex-1">
-                    @foreach(['Multi-profissionais ilimitados', 'Gestão de Pacientes Centralizada', 'Prontuário Digital LGPD Ready', 'Branding Personalizado (Logo)', 'Dashboard Financeiro & B2B'] as $f)
-                    <li class="flex items-center gap-3 text-emerald-400/80 text-sm font-bold">
-                        <i class="fas fa-building text-emerald-600"></i> {{ $f }}
-                    </li>
-                    @endforeach
-                </ul>
-                <a href="https://wa.me/seu-numero" target="_blank" class="block w-full py-4 text-center bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all active:scale-95">FALAR COM VENDAS</a>
-            </div>
+                @endif
+            @endforeach
         </div>
+
+        @if(!$preferredType)
+        <div class="text-center pt-10">
+            <p class="text-zinc-600 text-xs font-black uppercase tracking-[0.2em]">Não encontrou o que procurava? <a href="{{ route('plano') }}" class="text-emerald-500 hover:underline">Ver tabela comparativa completa</a></p>
+        </div>
+        @endif
     </section>
 
     <!-- Clinic Proof / B2B Section -->

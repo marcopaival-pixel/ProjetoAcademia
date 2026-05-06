@@ -117,7 +117,7 @@
                     <div id="card_info_fields" class="@if(($subscription?->payment_method ?? '') !== 'card') hidden @endif pt-6 space-y-4 animate-fade-in">
                         <p class="text-zinc-500 text-xs italic">A alteração de cartão requer a vinculação de um novo cartão seguro.</p>
                         <input type="hidden" name="card_token" value="MOCK_TOKEN_HOLDER">
-                        <button type="button" class="w-full py-4 bg-zinc-800 border border-white/10 rounded-2xl text-white font-bold text-sm hover:bg-zinc-700 transition-all flex items-center justify-center gap-3">
+                        <button type="button" onclick="showCardModal()" class="w-full py-4 bg-zinc-800 border border-white/10 rounded-2xl text-white font-bold text-sm hover:bg-zinc-700 transition-all flex items-center justify-center gap-3">
                             <i class="fas fa-plus-circle"></i> Cadastrar Novo Cartão
                         </button>
                     </div>
@@ -311,6 +311,52 @@
         </div>
     </div>
 </div>
+<!-- Modal de Cadastro de Cartão -->
+<div id="cardModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-6 sm:p-0">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="hideCardModal()"></div>
+    
+    <div class="relative w-full max-w-lg bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up">
+        <form action="{{ route('patient.subscription.update-payment') }}" method="POST" class="p-10 space-y-8">
+            @csrf
+            <input type="hidden" name="method" value="card">
+            
+            <div class="text-center space-y-2">
+                <h3 class="text-2xl font-black text-white tracking-tight">Novo Cartão de Crédito</h3>
+                <p class="text-zinc-500 text-sm text-balance">Insira os dados do seu novo cartão com segurança.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Número do Cartão</label>
+                    <input type="text" name="card_number" id="modal_card_number" required placeholder="0000 0000 0000 0000" maxlength="19"
+                        class="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-emerald-500/50 outline-none transition-all font-mono tracking-widest">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Validade</label>
+                        <input type="text" name="card_expiry" id="modal_card_expiry" required placeholder="MM/AA" maxlength="5"
+                            class="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-emerald-500/50 outline-none transition-all text-center">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">CVV</label>
+                        <input type="text" name="card_cvv" required placeholder="•••" maxlength="4"
+                            class="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold text-white focus:border-emerald-500/50 outline-none transition-all text-center">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-4">
+                <button type="button" onclick="hideCardModal()" class="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px] border border-white/5">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-900/20">
+                    Salvar Cartão
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
     function showCancelModal() {
@@ -325,6 +371,42 @@
         modal.classList.remove('flex');
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
+    }
+
+    function showCardModal() {
+        const modal = document.getElementById('cardModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideCardModal() {
+        const modal = document.getElementById('cardModal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Máscaras para o modal
+    const modalNumber = document.getElementById('modal_card_number');
+    const modalExpiry = document.getElementById('modal_card_expiry');
+
+    if(modalNumber) {
+        modalNumber.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            let formatted = value.match(/.{1,4}/g)?.join(' ') || '';
+            e.target.value = formatted;
+        });
+    }
+
+    if(modalExpiry) {
+        modalExpiry.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
     }
 
     document.querySelectorAll('input[name="method"]').forEach(radio => {

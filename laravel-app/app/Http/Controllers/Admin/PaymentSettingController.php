@@ -109,4 +109,22 @@ class PaymentSettingController extends Controller
             'message' => $message
         ]);
     }
+
+    public function toggleGlobal(Request $request)
+    {
+        $current = AdminSetting::isTrue('pagamento_ativo', true);
+        $newValue = !$current;
+        
+        AdminSetting::set('pagamento_ativo', $newValue ? 'true' : 'false');
+
+        AdminLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'toggle_global_payment',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'payload' => ['active' => $active],
+        ]);
+
+        return redirect()->back()->with('success', 'Status de faturamento global atualizado!');
+    }
 }

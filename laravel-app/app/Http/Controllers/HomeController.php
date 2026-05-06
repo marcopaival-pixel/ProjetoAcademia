@@ -7,11 +7,37 @@ use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke(): View|\Illuminate\Http\RedirectResponse
+    public function __invoke(\Illuminate\Http\Request $request): View|\Illuminate\Http\RedirectResponse
     {
-        // Removido o redirecionamento automático para permitir que administradores 
-        // e utilizadores logados vejam a página inicial institucional se assim desejarem.
+        $user = $request->user();
         
-        return view('home');
+        // Obter um plano de cada tipo para o resumo da home
+        $query = \App\Models\Plan::where('is_active', true)
+            ->with('planFeatures');
+
+        // Se o usuário estiver logado e tiver um perfil definido, podemos priorizar o tipo dele
+        // Mas o pedido pede 3 categorias: Aluno, Profissional, Clínica.
+        // Vamos pegar o plano 'mais popular' ou o primeiro de cada tipo.
+        
+        $summaryPlans = [
+            'student' => \App\Models\Plan::where('is_active', true)->where('type', 'student')->orderBy('price', 'asc')->first(),
+            'professional' => \App\Models\Plan::where('is_active', true)->where('type', 'professional')->orderBy('price', 'asc')->skip(1)->first() ?? \App\Models\Plan::where('is_active', true)->where('type', 'professional')->first(),
+            'clinic' => \App\Models\Plan::where('is_active', true)->where('type', 'clinic')->orderBy('price', 'asc')->first(),
+        ];
+
+        // Se o usuário já escolheu um tipo no onboarding ou perfil, podemos filtrar
+        $preferredType = null;
+        if ($user) {
+            // Lógica para detectar tipo preferido (ex: baseado em roles ou última escolha)
+            if ($user->hasRole('patient')) $preferredType = 'student';
+            elseif ($user->hasRole('professional')) $preferredType = 'professional';
+            elseif ($user->hasRole('manager')) $preferredType = 'clinic';
+        }
+
+        return view('home', [
+            'summaryPlans' => $summaryPlans,
+            'preferredType' => $preferredType,
+            'user' => $user
+        ]);
     }
 }

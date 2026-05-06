@@ -8,21 +8,21 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         @php
             $stats = [
-                ['l' => 'Contas Totais', 'v' => $overview['total_users'], 'i' => 'fas fa-users', 'c' => 'blue'],
-                ['l' => 'Novos (7d)', 'v' => $overview['new_users_7d'], 'i' => 'fas fa-user-plus', 'c' => 'emerald'],
-                ['l' => 'Ativos (7d)', 'v' => $overview['distinct_food_loggers_7d'], 'i' => 'fas fa-fire', 'c' => 'amber'],
-                ['l' => 'Premium Ativo', 'v' => $overview['premium_subscriptions_active'], 'i' => 'fas fa-crown', 'c' => 'purple'],
+                ['l' => 'Contas Totais', 'v' => $overview['total_users'], 'i' => 'users', 'c' => 'blue'],
+                ['l' => 'Novos (7d)', 'v' => $overview['new_users_7d'], 'i' => 'user-plus', 'c' => 'emerald'],
+                ['l' => 'Ativos (7d)', 'v' => $overview['distinct_food_loggers_7d'], 'i' => 'zap', 'c' => 'amber'],
+                ['l' => 'Premium Ativo', 'v' => $overview['premium_subscriptions_active'], 'i' => 'crown', 'c' => 'emerald'],
             ];
         @endphp
         @foreach($stats as $s)
-        <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-6 rounded-3xl">
-            <div class="flex items-center gap-4">
+        <div class="glass-card p-6 border border-white/5 shadow-2xl">
+            <div class="flex items-center gap-5">
                 <div class="w-12 h-12 rounded-2xl bg-{{ $s['c'] }}-500/10 flex items-center justify-center text-{{ $s['c'] }}-500">
-                    <i class="{{ $s['i'] }} text-xl"></i>
+                    <i data-lucide="{{ $s['i'] }}" class="w-6 h-6"></i>
                 </div>
                 <div>
-                    <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ $s['l'] }}</span>
-                    <p class="text-2xl font-black text-white leading-none mt-1">{{ $s['v'] }}</p>
+                    <span class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em]">{{ $s['l'] }}</span>
+                    <p class="text-2xl font-black text-white leading-none mt-1 uppercase italic tracking-tighter">{{ $s['v'] }}</p>
                 </div>
             </div>
         </div>
@@ -30,7 +30,7 @@
     </div>
 
     <!-- Enhanced Filter Bar -->
-    <div class="bg-zinc-900/60 backdrop-blur-3xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl" 
+    <div class="glass-card p-8 border border-white/10 shadow-3xl" 
          x-data="{ 
             selectedProfile: '{{ request('profile_id') }}',
             selectedProfession: '{{ request('profession_id') }}',
@@ -42,18 +42,18 @@
                 <input type="hidden" name="role" value="{{ request('role') }}">
             @endif
             <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                <div class="md:col-span-4 space-y-2">
-                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Pesquisar Identidade</label>
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 text-xs"></i>
+                <div class="md:col-span-4 space-y-3">
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Pesquisar Identidade</label>
+                    <div class="relative group">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 w-4 h-4 group-focus-within:text-emerald-500 transition-colors"></i>
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Nome, E-mail ou ID..." 
-                            class="w-full bg-zinc-950 border border-white/5 p-4 pl-12 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            class="w-full bg-zinc-950/50 border border-white/5 p-4 pl-12 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all shadow-inner">
                     </div>
                 </div>
 
-                <div class="md:col-span-3 space-y-2">
-                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Perfil / Cargo</label>
-                    <select name="profile_id" x-model="selectedProfile" class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all appearance-none">
+                <div class="md:col-span-3 space-y-3">
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Perfil / Cargo</label>
+                    <select name="profile_id" x-model="selectedProfile" class="w-full bg-zinc-950/50 border border-white/5 p-4 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
                         <option value="">Todos os Perfis</option>
                         @foreach($profiles as $profile)
                             <option value="{{ $profile->id }}">{{ $profile->label }}</option>
@@ -61,9 +61,9 @@
                     </select>
                 </div>
 
-                <div class="md:col-span-2 space-y-2">
-                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Comercial</label>
-                    <select name="premium" class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all appearance-none">
+                <div class="md:col-span-2 space-y-3">
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Comercial</label>
+                    <select name="premium" class="w-full bg-zinc-950/50 border border-white/5 p-4 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
                         <option value="">Todos</option>
                         <option value="yes" {{ request('premium') === 'yes' ? 'selected' : '' }}>Premium</option>
                         <option value="no" {{ request('premium') === 'no' ? 'selected' : '' }}>Grátis</option>
@@ -71,9 +71,9 @@
                 </div>
 
                 <div class="md:col-span-3 flex gap-3">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">Filtrar</button>
-                    <a href="{{ route('admin.users', ['role' => request('role')]) }}" class="w-14 bg-zinc-950 border border-white/5 flex items-center justify-center rounded-2xl text-zinc-500 hover:text-white transition-colors">
-                        <i class="fas fa-redo-alt text-xs"></i>
+                    <button type="submit" class="flex-1 bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase tracking-[0.25em] py-4 rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 italic">Processar Filtros</button>
+                    <a href="{{ route('admin.users', ['role' => request('role')]) }}" class="w-14 bg-zinc-950 border border-white/5 flex items-center justify-center rounded-2xl text-zinc-600 hover:text-white transition-all shadow-inner">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </a>
                 </div>
             </div>
@@ -141,8 +141,8 @@
                     </div>
                 </div>
 
-                <a href="{{ route('admin.users.create') }}" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
-                    <i class="fas fa-plus"></i> Novo Usuário
+                <a href="{{ route('admin.users.create') }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-zinc-950 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all flex items-center gap-2 shadow-xl shadow-emerald-500/20 italic">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Novo Usuário
                 </a>
                 <a href="{{ route('admin.export.users') }}" class="px-6 py-2.5 bg-zinc-950 border border-white/10 rounded-xl text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center gap-2">
                     <i class="fas fa-file-csv"></i> Exportar CSV
@@ -309,6 +309,18 @@
                                             <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-500/10 text-red-400 text-[9px] font-black uppercase rounded-lg border border-red-500/20">
                                                 <i class="fas fa-ban text-[8px]"></i> Bloqueado
                                             </span>
+                                        @endif
+
+                                        @if(\App\Models\SystemSetting::isTrue('verificacao_email_ativa'))
+                                            @if($u->email_verified)
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-400 text-[9px] font-black uppercase rounded-lg border border-blue-500/20" title="E-mail confirmado">
+                                                    <i class="fas fa-envelope-check text-[8px]"></i> Verificado
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-500/10 text-zinc-400 text-[9px] font-black uppercase rounded-lg border border-white/5" title="Aguardando confirmação de e-mail">
+                                                    <i class="fas fa-envelope text-[8px]"></i> Pendente
+                                                </span>
+                                            @endif
                                         @endif
                                     </div>
                                     @if($u->is_premium)

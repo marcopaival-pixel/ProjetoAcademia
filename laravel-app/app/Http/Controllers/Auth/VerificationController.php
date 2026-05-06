@@ -19,7 +19,7 @@ class VerificationController extends Controller
      */
     public function show()
     {
-        return Auth::user()->email_verified_at
+        return Auth::user()->isEmailVerified()
             ? redirect()->route('dashboard')
             : view('auth.verify-email');
     }
@@ -77,7 +77,7 @@ class VerificationController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->email_verified_at) {
+        if ($user->isEmailVerified()) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
@@ -126,7 +126,7 @@ class VerificationController extends Controller
 
         $generic = 'Se existir uma conta pendente de confirmação para este e-mail, enviámos um novo link.';
 
-        if (! $user || $user->isAdministrator() || $user->email_verified_at) {
+        if (! $user || $user->isAdministrator() || $user->isEmailVerified()) {
             return back()->withInput($request->only('email'))->with('status', $generic);
         }
 

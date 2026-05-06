@@ -145,6 +145,15 @@ class RolesAndPermissionsSeeder extends Seeder
                     'pdf.integrations.view',
                 ])->pluck('id'),
             ],
+            [
+                'name' => 'representative',
+                'label' => 'Representante',
+                'description' => 'Parceiro comercial com foco em indicação e comissões',
+                'permissions' => Permission::whereIn('name', [
+                    'admin.access',
+                    'portal.access',
+                ])->pluck('id'),
+            ],
         ];
 
         foreach ($roles as $r) {

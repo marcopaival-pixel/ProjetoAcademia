@@ -17,22 +17,25 @@ class FoodLookupController extends Controller
             'q' => ['required', 'string', 'min:3', 'max:100'],
         ]);
 
-        $result = OpenFoodFactsClient::search(
-            $validated['q'],
-            1  // Sempre página 1 (sem paginação por enquanto)
-        );
+        $query = strtolower(trim($validated['q']));
+        $cacheKey = "food_search_" . md5($query);
+
+        $result = \Cache::remember($cacheKey, 86400, function() use ($query) {
+            return OpenFoodFactsClient::search($query, 1);
+        });
 
         if (! $result['ok']) {
+            // Se falhou, não cacheamos o erro por 24h, apenas por 1 minuto para evitar spam
+            \Cache::forget($cacheKey);
+            
             $msg = (string) ($result['error'] ?? 'Erro na consulta do alimento.');
-            $status = 502; // Bad Gateway por padrão para erro na API externa
+            $status = 502;
             
             $msgLower = strtolower($msg);
             if (str_contains($msgLower, '429')) {
                 $status = 429;
             } elseif (str_contains($msgLower, '403')) {
                 $status = 403;
-            } elseif (str_contains($msgLower, 'não foi possível contactar') || str_contains($msgLower, 'timeout')) {
-                $status = 504;
             }
 
             return response()->json([
@@ -44,7 +47,7 @@ class FoodLookupController extends Controller
         return response()->json([
             'ok' => true,
             'products' => $result['products'],
-            'source' => 'Open Food Facts',
+            'source' => 'Open Food Facts (Cached)',
         ]);
     }
 
@@ -61,19 +64,21 @@ class FoodLookupController extends Controller
             ], 422);
         }
 
-        $result = OpenFoodFactsClient::productByCode($digits);
+        $cacheKey = "food_product_{$digits}";
+
+        $result = \Cache::remember($cacheKey, 86400, function() use ($digits) {
+            return OpenFoodFactsClient::productByCode($digits);
+        });
 
         if (! $result['ok']) {
+            \Cache::forget($cacheKey);
+            
             $msg = (string) ($result['error'] ?? 'Produto não encontrado.');
             $status = 422;
             
             $msgLower = strtolower($msg);
             if (str_contains($msgLower, 'não encontrado')) {
                 $status = 404;
-            } elseif (str_contains($msgLower, '429')) {
-                $status = 429;
-            } elseif (str_contains($msgLower, '403')) {
-                $status = 403;
             }
 
             return response()->json([
@@ -85,6 +90,7 @@ class FoodLookupController extends Controller
         return response()->json([
             'ok' => true,
             'product' => $result['product'],
+            'cached' => true,
         ]);
     }
 }

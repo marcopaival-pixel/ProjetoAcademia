@@ -63,6 +63,10 @@
             @include('admin.financial.reports._delinquency', ['data' => $data])
         @elseif($type == 'ai_credits')
             @include('admin.financial.reports._ai_credits', ['data' => $data])
+        @elseif($type == 'subscriptions')
+            @include('admin.financial.reports._subscriptions', ['data' => $data])
+        @elseif($type == 'blocked')
+            @include('admin.financial.reports._blocked', ['data' => $data])
         @else
             <div class="p-20 text-center text-zinc-600 italic">
                 Selecione um tipo de relatório acima para visualizar os dados.

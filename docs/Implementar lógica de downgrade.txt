@@ -1,0 +1,38 @@
+Implementar lógica de downgrade de plano (pago → free) sem perda de dados.
+
+ANTES DE IMPLEMENTAR:
+- Verificar como os planos estão estruturados
+- Identificar limites por plano
+- NÃO apagar dados existentes
+
+REGRAS:
+
+1. Ao mudar para plano FREE:
+- Manter todos os dados do usuário
+
+2. Aplicar limites do plano:
+- Bloquear criação de novos registros ao atingir limite
+- Permitir visualização dos dados existentes
+
+3. Excedentes:
+- Não deletar dados
+- Marcar como "acima do limite"
+- Bloquear edição/criação
+
+4. Interface:
+- Mostrar aviso claro:
+  "Você excedeu o limite do plano atual"
+
+5. Funcionalidades:
+- Desativar recursos premium (ex: IA avançada, relatórios)
+
+6. (Opcional):
+- Permitir usuário escolher quais dados manter ativos
+
+7. Garantir:
+- Nenhuma perda de dados
+- Sistema consistente
+- Fácil upgrade novamente
+
+OBJETIVO:
+Permitir downgrade de plano sem comprometer dados e mantendo boa experiência do usuário.

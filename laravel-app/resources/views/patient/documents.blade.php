@@ -63,13 +63,11 @@
                 </div>
             </div>
             @empty
-            <div class="glass-card p-12 rounded-[3.5rem] text-center border-dashed border-white/5 bg-transparent">
-                <div class="w-16 h-16 bg-zinc-900/50 rounded-full mx-auto flex items-center justify-center text-zinc-700 mb-6">
-                    <i class="fas fa-folder-open text-2xl"></i>
-                </div>
-                <h5 class="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Nada por aqui</h5>
-                <p class="text-zinc-700 text-[9px] font-bold px-10 leading-relaxed uppercase tracking-widest">Seus documentos e laudos aparecerão aqui assim que forem enviados pelo profissional.</p>
-            </div>
+            <x-patient.empty-state 
+                icon="fas fa-folder-open" 
+                title="Arquivo Vazio" 
+                description="Seus exames, receitas e laudos serão listados aqui assim que forem anexados ao seu prontuário pelo profissional responsável."
+            />
             @endforelse
         </div>
 

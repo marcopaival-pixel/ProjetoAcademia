@@ -1,0 +1,117 @@
+Criar módulo completo de Base de Conhecimento (Help Center) no sistema.
+
+ANTES DE IMPLEMENTAR:
+- Verificar se já existe algo similar
+- Não duplicar funcionalidades existentes
+- Criar estrutura reutilizável
+
+========================================
+ESTRUTURA DO MÓDULO
+========================================
+
+1. Criar tabelas:
+
+knowledge_categories:
+- id
+- nome
+- descricao
+- tipo_usuario (ALUNO, PACIENTE, CLINICA, ADMIN)
+- ativo
+
+knowledge_articles:
+- id
+- titulo
+- conteudo
+- categoria_id
+- tipo_usuario
+- ativo
+- created_at
+
+========================================
+FUNCIONALIDADES
+========================================
+
+1. Tela de Base de Conhecimento:
+- Listar categorias
+- Listar artigos
+- Campo de busca
+
+2. Busca:
+- por título
+- por conteúdo
+
+3. Filtro:
+- por tipo de usuário
+
+4. Tela do artigo:
+- título
+- conteúdo formatado
+
+========================================
+PAINEL ADMIN
+========================================
+
+Criar gestão completa:
+
+- Criar categoria
+- Criar artigo
+- Editar
+- Excluir
+- Ativar/desativar
+
+========================================
+GERAÇÃO DE CONTEÚDO INICIAL
+========================================
+
+Gerar automaticamente conteúdos iniciais para cada tipo de usuário:
+
+ALUNO:
+- Como acessar o sistema
+- Como visualizar treinos
+- Como acompanhar evolução
+- Como falar com suporte
+
+CLÍNICA/PROFISSIONAL:
+- Como cadastrar pacientes
+- Como criar atendimentos
+- Como configurar agenda
+- Como utilizar planos
+
+ADMIN:
+- Como gerenciar usuários
+- Como configurar planos
+- Como visualizar relatórios
+- Como gerenciar pagamentos
+
+FINANCEIRO:
+- Como funciona pagamento
+- Como atualizar plano
+- Como comprar créditos
+
+Cada artigo deve:
+- ter título claro
+- conteúdo explicativo e organizado
+- linguagem simples
+
+========================================
+UX
+========================================
+
+- Interface limpa
+- Navegação por categorias
+- Campo de busca visível
+- Layout responsivo
+
+========================================
+REGRAS
+========================================
+
+- Exibir apenas conteúdo do tipo de usuário logado
+- Não permitir acesso indevido
+- Conteúdo editável pelo admin
+
+========================================
+OBJETIVO
+========================================
+
+Criar uma base de conhecimento completa, útil e escalável que reduza dúvidas e suporte manual.

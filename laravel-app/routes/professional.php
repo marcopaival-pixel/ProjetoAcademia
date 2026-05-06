@@ -99,6 +99,7 @@ Route::middleware(['auth'])->prefix('professional')->name('professional.')->grou
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [App\Http\Controllers\Professional\ReportController::class, 'index'])->name('index');
         Route::get('/view/{type}', [App\Http\Controllers\Professional\ReportController::class, 'show'])->name('show');
+        Route::get('/export/{type}', [App\Http\Controllers\Professional\ReportController::class, 'export'])->name('export');
     });
 
     // Cupons solicitados pelo profissional

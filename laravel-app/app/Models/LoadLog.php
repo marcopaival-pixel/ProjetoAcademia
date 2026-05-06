@@ -19,9 +19,22 @@ class LoadLog extends Model
         'reps_done',
         'to_failure',
         'weight_kg',
+        'one_rm',
         'rpe',
         'notes',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($log) {
+            if ($log->weight_kg && $log->reps_done) {
+                // Fórmula de Brzycki: Weight / (1.0278 - 0.0278 * Reps)
+                $denominator = 1.0278 - (0.0278 * $log->reps_done);
+                $log->one_rm = $denominator > 0 ? $log->weight_kg / $denominator : $log->weight_kg;
+            }
+        });
+    }
+
 
     protected $casts = [
         'log_date' => 'date',

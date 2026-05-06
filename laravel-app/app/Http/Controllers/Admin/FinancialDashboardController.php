@@ -98,6 +98,12 @@ class FinancialDashboardController extends Controller
             case 'ai_credits':
                 $data = $this->getAiCreditsReport($request);
                 break;
+            case 'subscriptions':
+                $data = $this->getSubscriptionsReport($request);
+                break;
+            case 'blocked':
+                $data = $this->getBlockedReport($request);
+                break;
             default:
                 $data = [];
         }
@@ -140,9 +146,13 @@ class FinancialDashboardController extends Controller
 
     private function getRevenueReport(Request $request)
     {
-        return MercadoPagoCredit::with('user')
+        return MercadoPagoCredit::with('user.academyCompany')
             ->when($request->filled('start_date'), fn($q) => $q->where('created_at', '>=', $request->start_date))
             ->when($request->filled('end_date'), fn($q) => $q->where('created_at', '<=', $request->end_date))
+            ->when($request->filled('company_id'), function($q) use ($request) {
+                $q->whereHas('user', fn($qu) => $qu->where('academy_company_id', $request->company_id));
+            })
+            ->latest()
             ->get();
     }
 
@@ -150,11 +160,39 @@ class FinancialDashboardController extends Controller
     {
         return Subscription::with(['user', 'company', 'plan'])
             ->whereIn('status', [Subscription::FIN_ATRASADO, Subscription::FIN_SUSPENSO, Subscription::FIN_BLOQUEADO, Subscription::STATUS_OVERDUE])
+            ->when($request->filled('company_id'), fn($q) => $q->where('academy_company_id', $request->company_id))
+            ->latest()
             ->get();
     }
 
     private function getAiCreditsReport(Request $request)
     {
-        return AiCreditUsageLog::with('user')->get();
+        return AiCreditUsageLog::with('user.academyCompany')
+            ->when($request->filled('start_date'), fn($q) => $q->where('created_at', '>=', $request->start_date))
+            ->when($request->filled('end_date'), fn($q) => $q->where('created_at', '<=', $request->end_date))
+            ->when($request->filled('company_id'), function($q) use ($request) {
+                $q->whereHas('user', fn($qu) => $qu->where('academy_company_id', $request->company_id));
+            })
+            ->latest()
+            ->get();
+    }
+
+    private function getSubscriptionsReport(Request $request)
+    {
+        return Subscription::with(['user', 'company', 'plan'])
+            ->when($request->filled('start_date'), fn($q) => $q->where('created_at', '>=', $request->start_date))
+            ->when($request->filled('end_date'), fn($q) => $q->where('created_at', '<=', $request->end_date))
+            ->when($request->filled('company_id'), fn($q) => $q->where('academy_company_id', $request->company_id))
+            ->latest()
+            ->get();
+    }
+
+    private function getBlockedReport(Request $request)
+    {
+        return Subscription::with(['user', 'company', 'plan'])
+            ->where('status', Subscription::STATUS_BLOCKED)
+            ->when($request->filled('company_id'), fn($q) => $q->where('academy_company_id', $request->company_id))
+            ->latest()
+            ->get();
     }
 }

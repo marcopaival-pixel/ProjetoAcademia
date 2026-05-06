@@ -22,6 +22,11 @@ class PrivacyController extends Controller
     public function downloadMyData(): StreamedResponse
     {
         $user = Auth::user();
+        
+        if (!$user) {
+            abort(403, 'Acesso não autorizado.');
+        }
+
         $profile = $user->profile;
         $meals = $user->foodEntries()->with('food')->get();
         $exercises = $user->exerciseEntries()->get();
@@ -34,10 +39,10 @@ class PrivacyController extends Controller
             'personal' => [
                 'name' => $user->name,
                 'email' => $user->email,
-                'age' => $profile->age,
-                'gender' => $profile->gender,
-                'weight' => $profile->weight,
-                'height' => $profile->height,
+                'age' => $profile->age ?? '?',
+                'gender' => $profile->gender ?? '?',
+                'weight' => $profile->weight ?? '?',
+                'height' => $profile->height ?? '?',
             ],
             'meals' => $meals->map(fn($m) => [
                 'date' => $m->date,

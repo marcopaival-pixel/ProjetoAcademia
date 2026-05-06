@@ -24,11 +24,10 @@ class LoginController extends Controller
             if ($user->isRegistrationRejected()) {
                 return redirect()->route('registration.rejected');
             }
-            /* Verificação suspensa
-            if (! $user->email_verified_at) {
-                return redirect()->route('verification.notice');
+            $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+            if ($verificacaoAtiva && !$user->isEmailVerified() && !$user->isAdministrator()) {
+                return redirect()->route('verification.notice', ['email' => $user->email]);
             }
-            */
 
             return redirect()->route('dashboard');
         }
@@ -43,51 +42,92 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (! Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']], false)) {
+        $user = \App\Models\User::withoutGlobalScopes()->where('email', $credentials['email'])->first();
+
+        \Log::debug('Login attempt for: ' . $credentials['email']);
+        if (!$user) {
+            \Log::warning('User NOT FOUND in Controller: ' . $credentials['email']);
+        } else {
+            \Log::debug('User FOUND in Controller. Checking password...');
+            $check = \Hash::check($credentials['password'], $user->password_hash);
+            \Log::debug('Password check result: ' . ($check ? 'TRUE' : 'FALSE'));
+        }
+
+        if (!$user || !\Hash::check($credentials['password'], $user->password_hash)) {
             throw ValidationException::withMessages([
                 'email' => 'Usuário ou senha incorretos.',
             ]);
         }
 
-        $user = Auth::user();
+        // Se passou pelos filtros de credenciais, logamos o usuário para iniciar a sessão
+        Auth::login($user, $request->boolean('remember'));
 
+        $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+
+        // 1. Bloqueio por e-mail não confirmado (se a feature estiver ativa)
+        if ($verificacaoAtiva && !$user->isEmailVerified() && !$user->isAdministrator()) {
+            // O utilizador fica logado, mas o middleware EnsureEmailIsVerified vai restringir o acesso
+            // e o redirecionamento abaixo garante que ele veja a instrução imediatamente.
+            return redirect()->route('verification.notice', ['email' => $user->email])
+                ->with('error', 'Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.');
+        }
+
+        // 2. Bloqueio por status da conta (Bloqueado)
+        if ($user->isBlocked() && !$user->isAdministrator()) {
+            Auth::logout();
+            return redirect()->route('login')->with('error', 'Sua conta está bloqueada. Entre em contato com o suporte.');
+        }
+
+        // 3. Verificação de rejeição de cadastro
         if ($user->isRegistrationRejected()) {
-            $request->session()->regenerate();
-
+            // Mantemos logado mas o middleware EnsureRegistrationApproved cuidará do resto
             return redirect()->route('registration.rejected');
         }
 
+        // 4. Verificação de cadastro pendente (Administrativo)
         if ($user->isRegistrationPending()) {
-            $request->session()->regenerate();
-
+            if ($user->isRepresentativePending()) {
+                return redirect()->route('representative.pending');
+            }
             return redirect()->route('registration.pending');
         }
 
-        /* Verificação suspensa
-        if (! $user->isAdministrator() && ! $user->email_verified_at) {
+        // 5. Se estiver inativo por outro motivo (mas não pendente nem bloqueado)
+        if (!$user->isActive() && !$user->isAdministrator() && !$user->isPending()) {
             Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()->route('login')
-                ->withInput($request->only('email'))
-                ->withErrors([
-                    'email' => 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada.',
-                ])
-                ->with('unverified_email', $request->input('email'));
+            return redirect()->route('login')->with('error', 'Sua conta não está ativa ou ainda não foi aprovada.');
         }
-        */
+
+        // 6. Bloqueio específico para representantes (Status deve ser APROVADO)
+        if ($user->hasRole('representative') && $user->status !== 'APROVADO' && !$user->isAdministrator()) {
+             // Redireciona para página de pendência ou erro se não estiver aprovado
+             if ($user->status === 'REPROVADO') {
+                 return redirect()->route('registration.rejected');
+             }
+             return redirect()->route('representative.pending');
+        }
 
         $request->session()->regenerate();
         $request->session()->flash('success', 'Acesso autorizado. Bem-vindo de volta!');
 
-        // Se tiver mais de um papel, vai para a seleção
-        if ($user->roles->count() > 1) {
+        \Log::info('Login success for: ' . $user->email . ' | Admin: ' . ($user->isAdministrator() ? 'YES' : 'NO'));
+
+        // Se tiver mais de um papel, vai para a seleção (exceto se for Admin puro que queira ir ao painel)
+        if ($user->roles->count() > 1 && !$user->isAdministrator()) {
             return redirect()->route('profile.selection');
         }
 
         if ($user->isAdministrator()) {
-            return redirect()->intended(route('admin.dashboard'));
+            \Log::info('Redirecting admin to dashboard: ' . route('admin.dashboard'));
+            // Usamos redirect() direto se não houver intended real para evitar loops em caminhos de login
+            $target = $request->session()->pull('url.intended', route('admin.dashboard'));
+            
+            // Segurança: se o target for a própria página de login, força o dashboard
+            if (str_contains($target, '/login')) {
+                $target = route('admin.dashboard');
+            }
+            
+            return redirect($target);
         }
 
         if ($user->hasRole('professional')) {

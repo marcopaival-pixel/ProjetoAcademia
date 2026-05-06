@@ -97,6 +97,8 @@ class EmailVerificationService
         }
 
         $user->email_verified_at = now();
+        $user->email_verified = true;
+        $user->status = 'active'; // Ativar o usuário
         $user->email_verification_token = null;
         $user->email_verification_expires_at = null;
         $user->save();

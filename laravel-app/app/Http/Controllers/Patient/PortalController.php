@@ -93,6 +93,7 @@ class PortalController extends Controller
                 ->orderBy('appointment_at', 'asc')
                 ->first(),
             'tracking_status' => $context['primaryLink']->tracking_status ?? 'Em andamento',
+            'has_evolution_data' => $patient->hasRole('aluno') || \App\Models\BodyAssessment::where('user_id', $patient->id)->exists(),
         ];
 
         return view('patient.dashboard', array_merge($context, ['summary' => $summary]));
@@ -312,35 +313,72 @@ class PortalController extends Controller
 
         $context = $this->getPatientContext($user);
 
-        // Planos formatados para exibição (Simulação baseada no banco + desconto exclusivo)
-        $plans = [
-            [
-                'id' => 2,
-                'name' => 'Performance Elite',
-                'description' => 'Acesso total aos treinos, dieta e evolução IA.',
-                'original_price' => 29.90,
-                'patient_price' => 14.90,
-                'savings' => 15.00,
-                'recommended' => true,
-                'features' => [
-                    'Treinos personalizados pelo seu profissional',
-                    'Acesso ao Chat IA Ilimitado',
-                    'Registro de cargas e evolução de força',
-                    'Diário alimentar com análise de macros',
-                    'Galeria de fotos e evolução corporal',
-                ]
-            ]
-        ];
+        // Busca planos do tipo 'student' ou 'full' (ambos) seguindo o status definido no admin
+        $dbPlans = \App\Models\Plan::withoutGlobalScopes()
+            ->whereIn('type', ['student', 'full', 'aluno']) // Incluído 'aluno' por precaução
+            ->where('status', 'active')
+            ->with(['planFeatures' => function($q) {
+                $q->where('is_enabled', true);
+            }])
+            ->get();
+
+        $availablePlans = $dbPlans->map(function($plan) {
+            $originalPrice = (float) ($plan->price ?? 0);
+            $patientPrice = $originalPrice; 
+            $savings = 0;
+
+            $featureMap = [
+                'ai_chat' => 'Acesso ao Chat IA Ilimitado',
+                'ai_training' => 'Treinos gerados por IA',
+                'ai_nutrition' => 'Dieta personalizada por IA',
+                'premium_dashboard' => 'Dashboard Premium Completo',
+                'advanced_analytics' => 'Análise avançada de evolução',
+                'priority_support' => 'Suporte Prioritário',
+                'biohacking_tools' => 'Ferramentas de Biohacking',
+            ];
+
+            $features = $plan->planFeatures->map(function($f) use ($featureMap) {
+                return [
+                    'key' => $f->feature_key,
+                    'label' => $featureMap[$f->feature_key] ?? str_replace('_', ' ', $f->feature_key)
+                ];
+            })->values()->toArray();
+
+            if (empty($features)) {
+                $features = [
+                    ['key' => 'custom', 'label' => 'Treinos personalizados'],
+                    ['key' => 'custom', 'label' => 'Acompanhamento Nutricional'],
+                    ['key' => 'custom', 'label' => 'Evolução Digital']
+                ];
+            }
+
+            return [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'description' => $plan->description,
+                'original_price' => $originalPrice,
+                'patient_price' => $patientPrice,
+                'savings' => $savings,
+                'ai_credits' => (int) $plan->ai_credits,
+                'recommended' => str_contains(strtolower($plan->name), 'premium') || str_contains(strtolower($plan->name), 'elite'),
+                'features' => $features
+            ];
+        })->values()->toArray();
+
+        $pagamentoAtivo = \App\Models\AdminSetting::isTrue('pagamento_ativo', true);
+        $hasEvolutionData = $user->hasRole('aluno') || \App\Models\BodyAssessment::where('user_id', $user->id)->exists();
 
         return view('patient.plans', array_merge($context, [
-            'availablePlans' => $plans
+            'availablePlans' => $availablePlans,
+            'pagamentoAtivo' => $pagamentoAtivo,
+            'hasEvolutionData' => $hasEvolutionData
         ]));
     }
 
     public function downloadReport(\App\Models\MedicalReport $report, \App\Services\DompdfPdfService $pdfService)
     {
         $patient = Auth::user();
-        if ($report->user_id !== $patient->id) abort(403);
+        if ($report->patient_id != $patient->id) abort(403);
         
         $html = view('professional.medical-records.reports.pdf', compact('patient', 'report'))->render();
         return $pdfService->generate($html, "laudo-{$report->id}.pdf");
@@ -349,7 +387,7 @@ class PortalController extends Controller
     public function downloadCertificate(\App\Models\MedicalCertificate $certificate, \App\Services\DompdfPdfService $pdfService)
     {
         $patient = Auth::user();
-        if ($certificate->user_id !== $patient->id) abort(403);
+        if ($certificate->patient_id != $patient->id) abort(403);
         
         $html = view('professional.medical-records.certificates.pdf', compact('patient', 'certificate'))->render();
         return $pdfService->generate($html, "atestado-{$certificate->id}.pdf");
@@ -393,6 +431,15 @@ class PortalController extends Controller
             ->paginate(15);
 
         return view('patient.access-logs', array_merge($context, ['logs' => $logs]));
+    }
+
+    public function downloadPrescription(\App\Models\MedicalPrescription $prescription, \App\Services\DompdfPdfService $pdfService)
+    {
+        $patient = Auth::user();
+        if ($prescription->patient_id != $patient->id) abort(403);
+        
+        $html = view('professional.medical-records.prescriptions.pdf', compact('patient', 'prescription'))->render();
+        return $pdfService->generate($html, "receita-{$prescription->id}.pdf");
     }
 
     /**

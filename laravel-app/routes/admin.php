@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\GoalController;
 use App\Http\Controllers\Admin\GroupAdminController;
 use App\Http\Controllers\Admin\HistoricoPdfController;
-use App\Http\Controllers\Admin\KBController;
+use App\Http\Controllers\Admin\KnowledgeBaseController;
 use App\Http\Controllers\Admin\LeadController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\PdfDocumentGeneratorController;
@@ -28,8 +28,11 @@ use App\Http\Controllers\Admin\RoleMenuPermissionController;
 use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\TrainingController;
 use App\Http\Controllers\Admin\EspecialidadeController;
+use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\TenantBackupController;
 use App\Http\Controllers\Admin\BulkImportController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Admin\RepresentativeAdminController;
 use App\Http\Controllers\OmniChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -98,6 +101,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/payment-settings', [PaymentSettingController::class, 'index'])->name('admin.settings.payments');
         Route::post('/payment-settings', [PaymentSettingController::class, 'store'])->name('admin.settings.payments.store');
         Route::post('/payment-settings/test', [PaymentSettingController::class, 'testConnection'])->name('admin.settings.payments.test');
+        Route::post('/payment-settings/toggle-global', [PaymentSettingController::class, 'toggleGlobal'])->name('admin.settings.payments.toggle-global');
 
         // Gestão de Planos
         Route::prefix('plans')->name('admin.plans.')->group(function () {
@@ -107,6 +111,15 @@ Route::prefix('admin')->group(function () {
             Route::get('/{plan}/edit', [PlanController::class, 'edit'])->name('edit');
             Route::post('/{plan}/update', [PlanController::class, 'update'])->name('update');
             Route::post('/{plan}/toggle-status', [PlanController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        // Gestão de Cobrança e Créditos (Novo)
+        Route::prefix('billing')->name('admin.billing.')->group(function () {
+            Route::get('/credits', [\App\Http\Controllers\Admin\BillingController::class, 'index'])->name('credits');
+            Route::post('/settings', [\App\Http\Controllers\Admin\BillingController::class, 'updateSettings'])->name('settings.update');
+            Route::post('/packages', [\App\Http\Controllers\Admin\BillingController::class, 'storePackage'])->name('packages.store');
+            Route::put('/packages/{package}', [\App\Http\Controllers\Admin\BillingController::class, 'updatePackage'])->name('packages.update');
+            Route::delete('/packages/{package}', [\App\Http\Controllers\Admin\BillingController::class, 'deletePackage'])->name('packages.delete');
         });
 
         // Dashboard e Gestão Financeira
@@ -144,6 +157,15 @@ Route::prefix('admin')->group(function () {
         Route::post('/announcements/store', [AdminAreaController::class, 'storeAnnouncement'])->name('admin.announcements.store');
         Route::post('/announcements/{announcement}/delete', [AdminAreaController::class, 'deleteAnnouncement'])->name('admin.announcements.delete');
 
+        // Gestão de Representantes
+        Route::prefix('representatives')->name('admin.representatives.')->group(function () {
+            Route::get('/', [RepresentativeAdminController::class, 'index'])->name('index');
+            Route::post('/{user}/approve', [RepresentativeAdminController::class, 'approve'])->name('approve');
+            Route::post('/{user}/reject', [RepresentativeAdminController::class, 'reject'])->name('reject');
+            Route::get('/withdrawals', [RepresentativeAdminController::class, 'withdrawals'])->name('withdrawals');
+            Route::post('/withdrawals/{withdrawal}/update', [RepresentativeAdminController::class, 'updateWithdrawal'])->name('withdrawals.update');
+        });
+
         // Monitoramento e Auditoria (LGPD/Erros/Segurança)
         Route::get('/lgpd', [AdminAreaController::class, 'lgpdDashboard'])->name('admin.lgpd.index');
         Route::get('/lgpd/consents', [AdminAreaController::class, 'consents'])->name('admin.lgpd.consents');
@@ -160,6 +182,30 @@ Route::prefix('admin')->group(function () {
         Route::post('/settings/test-email', [AdminAreaController::class, 'testEmail'])->name('admin.settings.test');
         Route::get('/monitoring', [AdminAreaController::class, 'monitoring'])->name('admin.monitoring');
         Route::get('/ai-monitoring', [AdminAreaController::class, 'aiMonitoring'])->name('admin.ai.monitoring');
+        
+        // Controle Operacional, Resiliência e Manutenção
+        Route::prefix('operations')->name('admin.operations.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'index'])->name('index');
+            Route::post('/update', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'update'])->name('update');
+        });
+        
+        // Gestão de Backups
+        Route::prefix('backups')->name('admin.backups.')->group(function () {
+            Route::get('/', [BackupController::class, 'index'])->name('index');
+            Route::post('/create', [BackupController::class, 'create'])->name('create');
+            Route::get('/download/{disk}/{fileName}', [BackupController::class, 'download'])->name('download');
+            Route::delete('/{disk}/{fileName}', [BackupController::class, 'delete'])->name('delete');
+            Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
+            
+            // Backup por Empresa (Tenant)
+            Route::prefix('tenant/{companyId}')->name('tenant.')->group(function () {
+                Route::get('/', [TenantBackupController::class, 'index'])->name('index');
+                Route::post('/create', [TenantBackupController::class, 'create'])->name('create');
+                Route::get('/download/{fileName}', [TenantBackupController::class, 'download'])->name('download');
+                Route::delete('/{fileName}', [TenantBackupController::class, 'delete'])->name('delete');
+                Route::post('/restore', [TenantBackupController::class, 'restore'])->name('restore');
+            });
+        });
         
         // Exportação
         Route::get('/export/users', [AdminAreaController::class, 'exportUsersCsv'])->name('admin.export.users');
@@ -282,6 +328,21 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [SupportTicketController::class, 'index'])->name('index');
             Route::get('/{ticket}', [SupportTicketController::class, 'show'])->name('show');
             Route::post('/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('reply');
+        });
+
+        // Base de Conhecimento (Help Center)
+        Route::prefix('kb')->name('admin.kb.')->group(function () {
+            Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
+            Route::get('/create', [KnowledgeBaseController::class, 'create'])->name('create');
+            Route::post('/', [KnowledgeBaseController::class, 'store'])->name('store');
+            Route::get('/{knowledgeArticle}/edit', [KnowledgeBaseController::class, 'edit'])->name('edit');
+            Route::put('/{knowledgeArticle}', [KnowledgeBaseController::class, 'update'])->name('update');
+            Route::delete('/{knowledgeArticle}', [KnowledgeBaseController::class, 'destroy'])->name('destroy');
+            
+            // Categorias
+            Route::post('/category', [KnowledgeBaseController::class, 'storeCategory'])->name('category.store');
+            Route::put('/category/{category}', [KnowledgeBaseController::class, 'updateCategory'])->name('category.update');
+            Route::delete('/category/{category}', [KnowledgeBaseController::class, 'destroyCategory'])->name('category.destroy');
         });
 
         // Gestão da Academia (Treinamento)
