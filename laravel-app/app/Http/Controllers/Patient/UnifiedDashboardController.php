@@ -56,6 +56,9 @@ class UnifiedDashboardController extends Controller
         $lastWeight = WeightEntry::where('user_id', $patient->id)->latest('weighed_at')->first();
         $age = $profile && $profile->birth_date ? $profile->birth_date->age : null;
         
+        // Verifica se possui dados para o Hub de Evolução
+        $hasEvolutionData = $patient->hasRole('aluno') || BodyAssessment::where('user_id', $patient->id)->exists();
+
         $summary = [
             'name' => $patient->name,
             'age' => $age,
@@ -66,6 +69,7 @@ class UnifiedDashboardController extends Controller
             'status' => $patient->status === 'active' ? 'Ativo' : 'Pendente',
             'health_score' => $patient->health_score ?? 85,
             'profile_type' => $patient->hasRole('aluno') ? 'Aluno + Paciente' : 'Paciente',
+            'has_evolution_data' => $hasEvolutionData,
         ];
 
         // 3. Agenda Unificada (ou filtrada)

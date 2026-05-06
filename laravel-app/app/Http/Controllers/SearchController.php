@@ -7,9 +7,16 @@ use App\Models\ExerciseCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Services\AdvancedAgentService;
 
 class SearchController extends Controller
 {
+    protected $agent;
+
+    public function __construct(AdvancedAgentService $agent)
+    {
+        $this->agent = $agent;
+    }
     public function search(Request $request): View
     {
         $query = trim($request->input('q'));
@@ -21,46 +28,190 @@ class SearchController extends Controller
 
         $user = auth()->user();
         $isAdmin = $user->isAdministrator();
-
+        $category = $request->input('category');
+        $muscle = $request->input('muscle');
+        
         $results = [];
 
-        if (!empty($query)) {
-            // 1. Catálogo de Exercícios
-            $exercisesQuery = ExerciseCatalog::query();
-            
-            // Atletas só vêem ativos, Admins vêem tudo
-            if (!$isAdmin) {
-                $exercisesQuery->where('is_active', true);
+        if (!empty($query) || !empty($category) || !empty($muscle)) {
+            // 1. Catálogo de Exercícios (Todos)
+            if (!$category || $category === 'exercises') {
+                $exercisesQuery = ExerciseCatalog::query();
+                if (!$isAdmin) {
+                    $exercisesQuery->where('is_active', true);
+                }
+                
+                if (!empty($query)) {
+                    $exercisesQuery->where(function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%")
+                          ->orWhere('muscle_group', 'like', "%{$query}%")
+                          ->orWhere('equipment', 'like', "%{$query}%");
+                    });
+                }
+
+                if (!empty($muscle)) {
+                    $exercisesQuery->where('muscle_group', $muscle);
+                }
+
+                $results['exercises'] = $exercisesQuery->limit(20)->get();
             }
 
-            $results['exercises'] = $exercisesQuery->where(function ($q) use ($query) {
-                    $q->where('name', 'like', "%{$query}%")
-                      ->orWhere('muscle_group', 'like', "%{$query}%")
-                      ->orWhere('equipment', 'like', "%{$query}%");
-                })
-                ->limit(10)
-                ->get();
+            // 2. Planos de Treino (Relevante para o Aluno)
+            if (!$category || $category === 'workouts') {
+                $trainingQuery = \App\Models\TrainingPlan::query();
+                if (!$isAdmin) {
+                    $trainingQuery->where('user_id', $user->id);
+                }
+                
+                if (!empty($query)) {
+                    $trainingQuery->where(function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%")
+                          ->orWhere('description', 'like', "%{$query}%")
+                          ->orWhere('goal', 'like', "%{$query}%");
+                    });
+                }
+                
+                $results['workouts'] = $trainingQuery->limit(10)->get();
+            }
+
+            // 3. Base de Conhecimento / Ajuda
+            if (!$category || $category === 'help') {
+                $helpQuery = \App\Models\KnowledgeBaseArticle::where('is_published', true);
+                
+                if (!empty($query)) {
+                    $helpQuery->where(function ($q) use ($query) {
+                        $q->where('title', 'like', "%{$query}%")
+                          ->orWhere('content', 'like', "%{$query}%")
+                          ->orWhere('tags', 'like', "%{$query}%");
+                    });
+                }
+                
+                $results['help'] = $helpQuery->limit(10)->get();
+            }
+
+            // 4. Comunicados
+            if (!$category || $category === 'announcements') {
+                $announcementsQuery = \App\Models\Announcement::where('is_active', true);
+                
+                if (!empty($query)) {
+                    $announcementsQuery->where('content', 'like', "%{$query}%");
+                }
+                
+                $results['announcements'] = $announcementsQuery->limit(5)->get();
+            }
+
+            // 5. Alimentos
+            if (!$category || $category === 'foods') {
+                $foodsQuery = \App\Models\Food::query();
+                
+                if (!empty($query)) {
+                    $foodsQuery->where(function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%")
+                          ->orWhere('brand', 'like', "%{$query}%");
+                    });
+                }
+                
+                $results['foods'] = $foodsQuery->limit(10)->get();
+            }
 
             if ($isAdmin) {
-                // 2. Utilizadores (Apenas Admin)
-                $results['users'] = User::where('name', 'like', "%{$query}%")
-                    ->orWhere('email', 'like', "%{$query}%")
-                    ->orWhere('username', 'like', "%{$query}%")
-                    ->limit(10)
-                    ->get();
+                // 6. Utilizadores (Apenas Admin)
+                if (!$category || $category === 'users') {
+                    $usersQuery = User::query();
+                    if (!empty($query)) {
+                        $usersQuery->where(function ($q) use ($query) {
+                            $q->where('name', 'like', "%{$query}%")
+                              ->orWhere('email', 'like', "%{$query}%")
+                              ->orWhere('username', 'like', "%{$query}%");
+                        });
+                    }
+                    $results['users'] = $usersQuery->limit(10)->get();
+                }
 
-                // 3. Logs de Erro (Apenas Admin)
-                $results['errors'] = \App\Models\SystemError::where('message', 'like', "%{$query}%")
-                    ->orWhere('url', 'like', "%{$query}%")
-                    ->orWhere('type', 'like', "%{$query}%")
-                    ->limit(10)
-                    ->get();
+                // 7. Logs de Erro (Apenas Admin)
+                if (!$category || $category === 'errors') {
+                    $errorsQuery = \App\Models\SystemError::query();
+                    if (!empty($query)) {
+                        $errorsQuery->where(function ($q) use ($query) {
+                            $q->where('message', 'like', "%{$query}%")
+                              ->orWhere('url', 'like', "%{$query}%")
+                              ->orWhere('type', 'like', "%{$query}%");
+                        });
+                    }
+                    $results['errors'] = $errorsQuery->limit(10)->get();
+                }
+            }
+        }
+
+        // IA: Interpretação de Texto (Opcional Avançado)
+        $aiResponse = null;
+        if (!empty($query) && (strlen($query) > 15 || str_contains($query, ' ') || preg_match('/(quero|como|meu|treino|ajuda|onde|qual)/i', $query))) {
+            // Só executa se o usuário tiver créditos ou se for admin para teste
+            if ($user->ai_credits > 0 || $isAdmin) {
+                $aiResult = $this->agent->process($user, $query);
+                if ($aiResult['ok']) {
+                    $aiResponse = [
+                        'text' => $aiResult['response'],
+                        'action' => $aiResult['action'] ?? null
+                    ];
+                    // Opcional: descontar crédito aqui ou apenas registrar uso
+                }
             }
         }
 
         return view('search-results', [
             'query' => $query,
             'results' => $results,
+            'category' => $category,
+            'muscle' => $muscle,
+            'muscles' => ExerciseCatalog::distinct()->pluck('muscle_group')->filter()->values(),
+            'aiResponse' => $aiResponse,
         ]);
+    }
+
+    public function suggestions(Request $request)
+    {
+        $query = trim($request->input('q'));
+        if (strlen($query) < 2) return response()->json([]);
+
+        $user = auth()->user();
+        $suggestions = [];
+
+        // Exercícios
+        $exercises = ExerciseCatalog::where('is_active', true)
+            ->where('name', 'like', "%{$query}%")
+            ->limit(3)
+            ->get(['id', 'name'])
+            ->map(fn($item) => ['label' => $item->name, 'category' => 'Exercício', 'url' => route('global.search', ['q' => $item->name])]);
+        
+        $suggestions = array_merge($suggestions, $exercises->toArray());
+
+        // Treinos
+        $workouts = \App\Models\TrainingPlan::where('user_id', $user->id)
+            ->where('name', 'like', "%{$query}%")
+            ->limit(3)
+            ->get(['id', 'name'])
+            ->map(fn($item) => ['label' => $item->name, 'category' => 'Meu Treino', 'url' => route('global.search', ['q' => $item->name])]);
+
+        $suggestions = array_merge($suggestions, $workouts->toArray());
+
+        // Ajuda
+        $help = \App\Models\KnowledgeBaseArticle::where('is_published', true)
+            ->where('title', 'like', "%{$query}%")
+            ->limit(2)
+            ->get(['slug', 'title'])
+            ->map(fn($item) => ['label' => $item->title, 'category' => 'Ajuda', 'url' => route('kb.article', $item->slug)]);
+        
+        $suggestions = array_merge($suggestions, $help->toArray());
+
+        // Alimentos
+        $foods = \App\Models\Food::where('name', 'like', "%{$query}%")
+            ->limit(2)
+            ->get(['id', 'name'])
+            ->map(fn($item) => ['label' => $item->name, 'category' => 'Alimento', 'url' => route('global.search', ['q' => $item->name])]);
+
+        $suggestions = array_merge($suggestions, $foods->toArray());
+
+        return response()->json($suggestions);
     }
 }

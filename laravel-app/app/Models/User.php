@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional, Traits\BelongsToCompany;
+    use HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional;
 
     protected static function booted()
     {
@@ -51,6 +53,7 @@ class User extends Authenticatable
         'username',
         'email',
         'cpf',
+        'cnpj',
         'email_verified_at',
         'email_verification_token',
         'email_verification_expires_at',
@@ -67,6 +70,7 @@ class User extends Authenticatable
         'profile_id', // Mantido temporariamente para compatibilidade legada se necessário
         'plan_id',
         'status',
+        'email_verified',
         'professional_code',
         'qr_code_path',
         'professional_plan_id',
@@ -77,6 +81,7 @@ class User extends Authenticatable
         'churn_risk',
         'usage_stats',
         'academy_company_id',
+        'uuid',
         'registration_approval_status',
         'registration_reviewed_at',
         'registration_rejection_note',
@@ -84,6 +89,8 @@ class User extends Authenticatable
         'provider',
         'avatar',
         'perfil_paciente_completo',
+        'representative_id',
+        'is_representative',
     ];
 
     protected $hidden = [
@@ -109,17 +116,24 @@ class User extends Authenticatable
             'usage_stats' => 'array',
             'registration_reviewed_at' => 'datetime',
             'perfil_paciente_completo' => 'boolean',
+            'is_representative' => 'boolean',
+            'email_verified' => 'boolean',
         ];
     }
 
     public function isRegistrationPending(): bool
     {
-        return $this->registration_approval_status === 'pending';
+        return $this->registration_approval_status === 'pending' || $this->status === 'PENDENTE_APROVACAO';
+    }
+
+    public function isRepresentativePending(): bool
+    {
+        return $this->hasRole('representative') && $this->status === 'PENDENTE_APROVACAO';
     }
 
     public function isRegistrationRejected(): bool
     {
-        return $this->registration_approval_status === 'rejected';
+        return $this->registration_approval_status === 'rejected' || $this->status === 'RECUSADO' || $this->status === 'REPROVADO';
     }
 
     public function getAuthPassword(): string
@@ -207,6 +221,11 @@ class User extends Authenticatable
         return $this->roles->pluck('name')->toArray();
     }
 
+    /**
+     * Cache de permissões carregadas para a requisição atual.
+     */
+    protected ?\Illuminate\Support\Collection $permissionsCache = null;
+
     public function hasPermission(string|array $permission): bool
     {
         if ($this->isAdministrator()) {
@@ -222,9 +241,17 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->roles()->whereHas('permissions', function($q) use ($permission) {
-            $q->where('name', $permission);
-        })->exists();
+        if ($this->permissionsCache === null) {
+            $this->permissionsCache = \Cache::remember("user_permissions_{$this->id}", 600, function() {
+                return DB::table('permissions')
+                    ->join('role_permissions', 'permissions.id', '=', 'role_permissions.permission_id')
+                    ->join('user_roles', 'role_permissions.role_id', '=', 'user_roles.role_id')
+                    ->where('user_roles.user_id', $this->id)
+                    ->pluck('permissions.name');
+            });
+        }
+
+        return $this->permissionsCache->contains($permission);
     }
 
     public function hasPlanPermission(string $permission): bool
@@ -233,7 +260,10 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->plan?->permissions()->where('name', $permission)->exists() ?? false;
+        // Cache de permissões de plano (SaaS)
+        return \Cache::remember("user_plan_perm_{$this->id}_{$permission}", 600, function() use ($permission) {
+            return $this->plan?->permissions()->where('name', $permission)->exists() ?? false;
+        });
     }
 
     /*
@@ -249,7 +279,17 @@ class User extends Authenticatable
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return in_array($this->status, ['active', 'ATIVO', 'APROVADO']);
+    }
+
+    public function isPending(): bool
+    {
+        return in_array($this->status, ['pending', 'PENDENTE', 'PENDENTE_APROVACAO']);
+    }
+
+    public function isEmailVerified(): bool
+    {
+        return (bool) $this->email_verified || !empty($this->email_verified_at);
     }
 
     public function isAdministrator(): bool
@@ -556,9 +596,93 @@ class User extends Authenticatable
         return $activePlan->plan->{$limitKey} ?? 0;
     }
 
+    /**
+     * Verifica se o usuário excedeu o limite de um recurso específico.
+     */
+    public function isOverLimit(string $resourceType): bool
+    {
+        $limitKey = $this->getResourceLimitKey($resourceType);
+        $limit = $this->getPlanLimit($limitKey);
+        
+        if ($limit === 0) return false; // 0 = Ilimitado (ou não definido)
+
+        $count = $this->getResourceCount($resourceType);
+        
+        return $count > $limit;
+    }
+
+    /**
+     * Retorna a quantidade de registros que excederam o limite.
+     */
+    public function getSurplusCount(string $resourceType): int
+    {
+        $limitKey = $this->getResourceLimitKey($resourceType);
+        $limit = $this->getPlanLimit($limitKey);
+        
+        if ($limit === 0) return 0;
+
+        $count = $this->getResourceCount($resourceType);
+        
+        return max(0, $count - $limit);
+    }
+
+    /**
+     * Verifica se um registro específico está "acima do limite" (bloqueado).
+     */
+    public function isResourceOverLimit(string $resourceType, $resourceId): bool
+    {
+        $limitKey = $this->getResourceLimitKey($resourceType);
+        $limit = $this->getPlanLimit($limitKey);
+        
+        if ($limit === 0) return false;
+
+        $resourceIds = $this->getActiveResourceIds($resourceType, $limit);
+        
+        return !in_array($resourceId, $resourceIds);
+    }
+
+    private function getResourceLimitKey(string $resourceType): string
+    {
+        return match($resourceType) {
+            'patients', 'students' => 'max_patients',
+            'workouts', 'training_plans' => 'max_workouts',
+            'diets', 'nutrition_plans' => 'max_diets',
+            'assessments' => 'max_assessments',
+            default => 'max_' . $resourceType
+        };
+    }
+
+    private function getResourceCount(string $resourceType): int
+    {
+        return match($resourceType) {
+            'patients' => $this->patients()->count(),
+            'workouts', 'training_plans' => $this->trainingPlans()->count(),
+            'diets' => 0, // TODO: Implementar quando houver relacionamento de dietas
+            'assessments' => $this->assessments()->count(),
+            default => 0
+        };
+    }
+
+    private function getActiveResourceIds(string $resourceType, int $limit): array
+    {
+        return match($resourceType) {
+            'patients' => $this->patients()->orderBy('pacientes.created_at', 'asc')->limit($limit)->pluck('users.id')->toArray(),
+            'workouts', 'training_plans' => $this->trainingPlans()->orderBy('created_at', 'asc')->limit($limit)->pluck('id')->toArray(),
+            'assessments' => $this->assessments()->orderBy('created_at', 'asc')->limit($limit)->pluck('id')->toArray(),
+            default => []
+        };
+    }
+
     public function aiUsage(): HasMany
     {
         return $this->hasMany(AiCreditUsageLog::class);
+    }
+
+    public function getAiCreditsUsedToday(): int
+    {
+        return $this->aiUsage()
+            ->whereDate('created_at', now()->toDateString())
+            ->sum('credits_consumed');
     }
 
     public function getAiCreditsUsedThisMonth(): int
@@ -569,6 +693,11 @@ class User extends Authenticatable
             ->sum('credits_consumed');
     }
 
+    public function getAiCreditsUsedTotal(): int
+    {
+        return $this->aiUsage()->sum('credits_consumed');
+    }
+
     public function getRemainingAiCredits(): int
     {
         return (int) $this->ai_credits;
@@ -577,5 +706,31 @@ class User extends Authenticatable
     public function consumeAiCredit(string $actionType, array $metadata = []): bool
     {
         return app(\App\Services\AiCreditService::class)->consume($this, $actionType, $metadata);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relacionamentos de Representantes (Afiliados)
+    |--------------------------------------------------------------------------
+    */
+
+    public function representative(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'representative_id');
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(User::class, 'representative_id');
+    }
+
+    public function commissions(): HasMany
+    {
+        return $this->hasMany(Commission::class, 'representative_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 }

@@ -1,0 +1,108 @@
+Realizar uma auditoria completa do sistema, analisando todas as funcionalidades existentes.
+
+ANTES DE INICIAR:
+1. Mapear toda a estrutura do sistema:
+   - rotas
+   - telas
+   - módulos
+   - serviços
+   - banco de dados
+
+2. NÃO modificar nada
+3. Apenas analisar e relatar
+
+========================================
+SEPARAÇÃO POR PERFIL DE USUÁRIO
+========================================
+
+Organizar a análise separadamente para:
+
+1. ALUNO
+2. PACIENTE
+3. PROFISSIONAL / CLÍNICA
+4. ADMINISTRATIVO (SUPER ADMIN)
+
+========================================
+PARA CADA PERFIL, LISTAR:
+========================================
+
+1. Funcionalidades existentes:
+- Listar TODAS as funcionalidades encontradas
+
+2. Status de cada funcionalidade:
+- FUNCIONAL ✅
+- PARCIAL ⚠️
+- NÃO FUNCIONAL ❌
+
+3. Problemas encontrados:
+- erros
+- falhas de fluxo
+- telas incompletas
+- integrações quebradas
+
+4. Impacto:
+- baixo
+- médio
+- alto (ex: impede uso ou venda)
+
+5. Prioridade de correção:
+- crítica
+- alta
+- média
+- baixa
+
+========================================
+VALIDAÇÕES OBRIGATÓRIAS
+========================================
+
+Testar e validar:
+
+- Cadastro de usuários
+- Login
+- Fluxo de planos
+- Pagamentos (Mercado Pago)
+- Compra de créditos
+- Navegação entre páginas
+- Painel de cada tipo de usuário
+- Banco de dados (consistência)
+
+========================================
+ANÁLISE DE PRONTIDÃO PARA PRODUÇÃO
+========================================
+
+Ao final, informar:
+
+1. O sistema está pronto para produção?
+   - SIM / NÃO
+
+2. Se NÃO:
+- listar o que impede ir para produção
+
+3. Riscos:
+- segurança
+- financeiro
+- experiência do usuário
+
+========================================
+FORMATO DA RESPOSTA
+========================================
+
+Organizar em:
+
+- ALUNO
+- PACIENTE
+- PROFISSIONAL/CLÍNICA
+- ADMIN
+
+Cada um com:
+- funcionalidades
+- status
+- problemas
+- prioridade
+
+Finalizar com:
+- resumo geral
+- recomendações
+
+OBJETIVO:
+Ter uma visão completa do sistema antes de colocar em produção e iniciar vendas.

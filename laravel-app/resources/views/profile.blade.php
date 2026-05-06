@@ -1,354 +1,554 @@
 @extends('layouts.app', ['navCurrent' => 'profile'])
 
-@section('title', 'Meu Perfil')
+@section('title', 'Meu Perfil — NexShape Pro')
 
 @section('content')
-<div class="profile-header animate-fade-up" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1.5rem; flex-wrap: wrap;">
-    <div class="header-left">
-        <h1 style="margin: 0; font-size: 2.5rem; letter-spacing: -0.02em;">Meu Perfil</h1>
-        <p class="muted" style="margin-top: 0.5rem; font-size: 1.125rem;">Gerencie seus dados físicos, metas e configurações de saúde em um só lugar.</p>
-    </div>
-    <div class="header-right" style="background: var(--surface-glass); padding: 1.5rem 2rem; border-radius: 24px; border: 1px solid var(--border); display: flex; gap: 2rem; align-items: center; box-shadow: var(--shadow-sm); backdrop-filter: blur(8px);">
-        <div class="stat-item" style="text-align: center;">
-            <span class="muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Meta Atual</span>
-            <strong style="font-size: 1.5rem; color: var(--primary);">{!! $u->daily_calorie_target ? $u->daily_calorie_target . ' <small style="font-size: 0.75rem;">kcal</small>' : '—' !!}</strong>
-        </div>
-        <div style="width: 1px; height: 30px; background: var(--border);"></div>
-        <div class="stat-item" style="text-align: center;">
-            <span class="muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Sua Idade</span>
-            <strong style="font-size: 1.5rem;">{!! $age ? $age . ' <small style="font-size: 0.75rem;">anos</small>' : '—' !!}</strong>
-        </div>
-    </div>
-</div>
-
-@if (!empty($notice))
-    <div class="alert alert-success animate-fade-up" style="margin-bottom: 2rem; border-radius: 16px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.25rem;">✅</span> {{ $notice }}
-    </div>
-@endif
-
-@if (!empty($error))
-    <div class="alert alert-error animate-fade-up" style="margin-bottom: 2rem; border-radius: 16px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.25rem;">⚠️</span> {{ $error }}
-    </div>
-@endif
-
-@if ($calPreview !== null)
-    <div class="card animate-fade-up" style="margin-bottom: 2rem; border-radius: 24px; padding: 2rem; border-left: 4px solid var(--primary); background: color-mix(in oklab, var(--primary) 5%, var(--surface));">
-        <h2 style="margin-top:0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-            📊 Prévia da Estimativa
-        </h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
-            <div class="preview-item">
-                <span class="muted" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Taxa Metabólica Basal (TMB)</span>
-                <strong style="font-size: 1.125rem;">{{ (int) round($calPreview['bmr']) }} kcal/dia</strong>
-            </div>
-            <div class="preview-item">
-                <span class="muted" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Gasto Total Estimado (TDEE)</span>
-                <strong style="font-size: 1.125rem;">{{ (int) round($calPreview['tdee']) }} kcal/dia</strong>
-            </div>
-            <div class="preview-item">
-                <span class="muted" style="font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Meta Sugerida</span>
-                <strong style="font-size: 1.125rem; color: var(--primary);">{{ $calPreview['target'] }} kcal/dia</strong>
-            </div>
-        </div>
-        <p class="muted" style="margin-top: 1.25rem; font-size: 0.8rem; font-style: italic;">Valores baseados no seu peso de {{ number_format($latestWeight, 1, ',', '.') }} kg em {{ \Carbon\Carbon::parse($calPreview['weighed_at'])->translatedFormat('d/m/Y') }}.</p>
-    </div>
-@endif
-
-<form method="post" action="{{ route('profile') }}" novalidate class="animate-fade-up">
-    @csrf
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); gap: 2rem;">
-        
-        <!-- CARD: DADOS PESSOAIS -->
-        <div class="card" style="padding: 2.5rem; border-radius: 24px;">
-            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">👤 Dados Pessoais</div>
-            
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="name" style="font-weight: 600; font-size: 0.9rem;">Nome Completo</label>
-                <input id="name" name="name" type="text" required maxlength="120" value="{{ old('name', $u->name) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
-                <span class="muted" style="font-size: 0.8rem; margin-top: 0.5rem; display: block;">Email: {{ $u->email }}</span>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <div class="form-group">
-                    <label for="birth_date" style="font-weight: 600; font-size: 0.9rem;">Nascimento</label>
-                    <input id="birth_date" name="birth_date" type="date" required value="{{ old('birth_date', $u->birth_date) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
-                </div>
-                <div class="form-group">
-                    <label for="sex" style="font-weight: 600; font-size: 0.9rem;">Sexo</label>
-                    <select id="sex" name="sex" required style="padding: 0.75rem 1rem; border-radius: 12px;">
-                        <option value="" @selected(old('sex', $u->sex) === '')>Selecione...</option>
-                        <option value="M" @selected(old('sex', $u->sex) === 'M')>Masculino</option>
-                        <option value="F" @selected(old('sex', $u->sex) === 'F')>Feminino</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group" style="margin-top: 1.5rem;">
-                <label for="height_cm" style="font-weight: 600; font-size: 0.9rem;">Altura (cm)</label>
-                <input id="height_cm" name="height_cm" type="number" min="50" max="260" placeholder="ex.: 175" value="{{ old('height_cm', $u->height_cm) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
-            </div>
-        </div>
-
-        <!-- CARD: COMPOSIÇÃO E ATIVIDADE -->
-        <div class="card" style="padding: 2.5rem; border-radius: 24px;">
-            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚖️ Composição @if(!$isPurePatient) e Atividade @endif</div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                    <label for="current_weight_kg" style="font-weight: 600; font-size: 0.9rem;">Peso Atual (kg)</label>
-                    <input id="current_weight_kg" name="current_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('current_weight_kg', $latestWeight) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.1rem; color: var(--primary);">
-                </div>
-                @if(!$isPurePatient)
-                <div class="form-group">
-                    <label for="target_weight_kg" style="font-weight: 600; font-size: 0.9rem;">Peso Objetivo (kg)</label>
-                    <input id="target_weight_kg" name="target_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('target_weight_kg', $u->target_weight_kg) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.1rem;">
-                </div>
-                @endif
-            </div>
-
-            @if(!$isPurePatient)
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="training_days_per_week" style="font-weight: 600; font-size: 0.9rem;">Frequência de Treino</label>
-                <select id="training_days_per_week" name="training_days_per_week" style="padding: 0.75rem 1rem; border-radius: 12px;">
-                    <option value="" @selected(old('training_days_per_week', $u->training_days_per_week) === '')>Quantos dias por semana?</option>
-                    <option value="1-2" @selected(old('training_days_per_week', $u->training_days_per_week) === '1-2')>1-2 dias na semana</option>
-                    <option value="3-4" @selected(old('training_days_per_week', $u->training_days_per_week) === '3-4')>3-4 dias na semana</option>
-                    <option value="5-6" @selected(old('training_days_per_week', $u->training_days_per_week) === '5-6')>5-6 dias na semana</option>
-                    <option value="all" @selected(old('training_days_per_week', $u->training_days_per_week) === 'all')>Treino todos os dias</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="activity_level" style="font-weight: 600; font-size: 0.9rem;">Nível de Atividade Diário</label>
-                <select id="activity_level" name="activity_level" style="padding: 0.75rem 1rem; border-radius: 12px;">
-                    @foreach ([
-                        'sedentary' => 'Sedentário (Pouco movimento)',
-                        'light' => 'Leve (Exercício ocasional)',
-                        'moderate' => 'Moderado (Ativo regularmente)',
-                        'active' => 'Ativo (Treino intenso diário)',
-                        'very_active' => 'Muito Ativo (Atleta/Trabalho pesado)',
-                    ] as $val => $lab)
-                        <option value="{{ $val }}" @selected(old('activity_level', $u->activity_level ?? 'moderate') === $val)>{{ $lab }}</option>
-                    @endforeach
-                </select>
-            </div>
-            @else
-                <div style="background: var(--surface-glass); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); text-align: center; margin-top: 1rem;">
-                    <p class="muted" style="font-size: 0.85rem;">Torne-se <strong>Aluno</strong> para desbloquear metas de treino e atividade.</p>
-                </div>
-            @endif
-        </div>
-
-        @if(!$isPurePatient)
-        <!-- CARD: METAS E ESTILO DE VIDA -->
-        <div class="card" style="padding: 2.5rem; border-radius: 24px;">
-            <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🎯 Metas de Saúde</div>
-            
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="goal" style="font-weight: 600; font-size: 0.9rem;">Objetivo Principal</label>
-                <select id="goal" name="goal" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 600;">
-                    <option value="lose" @selected(old('goal', $u->goal) === 'lose')>🔥 Perder Peso / Emagrecer</option>
-                    <option value="maintain" @selected(old('goal', $u->goal) === 'maintain')>⚖️ Manter Peso Atual</option>
-                    <option value="gain" @selected(old('goal', $u->goal) === 'gain')>💪 Ganhar Massa Muscular</option>
-                </select>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: start;">
-                <div class="form-group">
-                    <label for="daily_calorie_target" style="font-weight: 600; font-size: 0.9rem;">Meta Calórica Diária (kcal)</label>
-                    <input id="daily_calorie_target" name="daily_calorie_target" type="number" min="500" max="20000" placeholder="ex.: 2200" value="{{ old('daily_calorie_target', $u->daily_calorie_target) }}" style="padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 1.25rem;">
-                </div>
-                <div class="form-group">
-                    <label for="water_target_ml" style="font-weight: 600; font-size: 0.9rem;">Meta Água (ml)</label>
-                    <input id="water_target_ml" name="water_target_ml" type="number" min="500" max="10000" step="100" placeholder="2500" value="{{ old('water_target_ml', $u->water_target_ml) }}" style="padding: 0.75rem 1rem; border-radius: 12px;">
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 1rem;">
-                <label for="climate" style="font-weight: 600; font-size: 0.9rem;">Clima Local</label>
-                <select id="climate" name="climate" style="padding: 0.75rem 1rem; border-radius: 12px;">
-                    <option value="cold" @selected(old('climate', $u->climate) === 'cold')>❄️ Clima Frio</option>
-                    <option value="moderate" @selected(old('climate', $u->climate ?? 'moderate') === 'moderate')>☁️ Clima Agradável</option>
-                    <option value="hot" @selected(old('climate', $u->climate) === 'hot')>☀️ Clima Quente</option>
-                </select>
-            </div>
-        </div>
-        @endif
-
-        <!-- CARD: AUTOMAÇÃO @if($isPurePatient) BLOQUEADA @endif -->
-        <div class="card" style="padding: 2.5rem; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">⚙️ Automação @if(!$isPurePatient) do Cálculo @endif</div>
-                
-                @if(!$isPurePatient)
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <label style="display:flex; align-items:flex-start; gap:1rem; cursor:pointer; padding: 1rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border);">
-                        <input type="checkbox" name="auto_calorie" value="1" style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);" @checked(old('auto_calorie'))>
-                        <span style="font-size: 0.9rem;"><strong>Calcular calorias automaticamente</strong><br><span class="muted" style="font-size: 0.8rem;">Usa peso atual, TMB e nível de atividade.</span></span>
-                    </label>
-                    
-                    <label style="display:flex; align-items:flex-start; gap:1rem; cursor:pointer; padding: 1rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border);">
-                        <input type="checkbox" name="auto_water" value="1" style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary);" @checked(old('auto_water', $u->is_water_target_auto))>
-                        <span style="font-size: 0.9rem;"><strong>Calcular água automaticamente</strong><br><span class="muted" style="font-size: 0.8rem;">Usa peso atual, idade e clima.</span></span>
-                    </label>
-                </div>
-                @else
-                <div style="text-align: center; padding: 2rem; background: var(--surface-glass); border-radius: 20px; border: 1px dashed var(--border);">
-                    <i class="fas fa-lock" style="font-size: 2rem; color: var(--border); margin-bottom: 1rem; display: block;"></i>
-                    <p class="muted" style="font-size: 0.85rem;">As automações de metas são exclusivas para alunos ou gerenciadas pelo seu profissional.</p>
-                </div>
-                @endif
-            </div>
-
-            <div style="margin-top: 2rem;">
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 16px; font-weight: 700; font-size: 1.1rem; box-shadow: var(--shadow-md);">Salvar Alterações</button>
-            </div>
-        </div>
-
-    </div>
-</form>
-
-@if(!$isPurePatient)
-<!-- CARD: CONQUISTAS E TROFÉUS (GAMIFICAÇÃO) -->
-<div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; margin-top: 2rem; border: 2px solid gold; background: linear-gradient(145deg, var(--surface) 0%, rgba(255, 215, 0, 0.05) 100%);">
-    <div class="section-label" style="color: gold; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🏆 Galeria de Conquistas</div>
+<div class="py-10 space-y-12 animate-fade-in-up max-w-[1400px] mx-auto px-6">
     
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.5rem; text-align: center;">
-        @php($myBadges = \App\Services\AchievementService::getList(auth()->id()))
-        @foreach($myBadges as $badge)
-            <div class="badge-item" style="padding: 1rem; border-radius: 20px; background: {{ $badge->unlocked ? 'var(--surface-glass)' : 'rgba(255,255,255,0.02)' }}; border: 1px solid {{ $badge->unlocked ? 'gold' : 'var(--border)' }}; opacity: {{ $badge->unlocked ? '1' : '0.4' }}; transition: all 0.3s ease; filter: {{ $badge->unlocked ? 'none' : 'grayscale(1)' }};" title="{{ $badge->desc }}">
-                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ $badge->icon }}</div>
-                <div style="font-weight: 700; font-size: 0.85rem; color: {{ $badge->unlocked ? 'gold' : 'var(--text)' }};">{{ $badge->name }}</div>
-                <small class="muted" style="font-size: 0.65rem; display: block; margin-top: 0.25rem;">{{ $badge->desc }}</small>
+    <!-- Profile Header Section -->
+    @if($isPurePatient)
+        <!-- HEADER INTEGRADO PARA PACIENTE -->
+        <div class="flex flex-col md:flex-row items-center gap-10 bg-zinc-900 border border-zinc-800 p-12 rounded-[4rem] shadow-3xl relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl"></div>
+            
+            <div class="relative">
+                <div class="w-40 h-40 rounded-[3rem] overflow-hidden border-4 border-zinc-950 shadow-2xl">
+                    <img src="{{ auth()->user()->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&color=10b981&background=09090b&bold=true' }}" class="w-full h-full object-cover">
+                </div>
+                <div class="absolute -bottom-2 -right-2 bg-emerald-500 text-zinc-950 p-3 rounded-2xl shadow-xl border-4 border-zinc-900">
+                    <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                </div>
             </div>
-        @endforeach
-    </div>
-</div>
-@endif
 
-<div class="profile-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); gap: 2rem; margin-top: 2rem; margin-bottom: 4rem;">
-    
-    @if(!$isPurePatient)
-    <!-- CARD: MACROS (PREMIUM GATE) -->
-    <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; position: relative; overflow: hidden;">
-        <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🧪 Macros Personalizados</div>
-        
-        @if ($isPremium)
-            <form method="post" action="{{ route('profile') }}" novalidate>
-                @csrf
-                <input type="hidden" name="profile_action" value="macros">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                    <div class="form-group">
-                        <label for="protein_target_g" style="font-size: 0.8rem;">Proteína (g)</label>
-                        <input id="protein_target_g" name="protein_target_g" type="number" step="0.1" value="{{ old('protein_target_g', $u->protein_target_g) }}" style="padding: 0.5rem; border-radius: 8px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="carbs_target_g" style="font-size: 0.8rem;">Carbo (g)</label>
-                        <input id="carbs_target_g" name="carbs_target_g" type="number" step="0.1" value="{{ old('carbs_target_g', $u->carbs_target_g) }}" style="padding: 0.5rem; border-radius: 8px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="fat_target_g" style="font-size: 0.8rem;">Gordura (g)</label>
-                        <input id="fat_target_g" name="fat_target_g" type="number" step="0.1" value="{{ old('fat_target_g', $u->fat_target_g) }}" style="padding: 0.5rem; border-radius: 8px;">
-                    </div>
+            <div class="flex-1 text-center md:text-left space-y-4">
+                <div class="space-y-1">
+                    <h1 class="text-5xl font-black text-white tracking-tighter uppercase italic leading-none">{{ auth()->user()->name }}</h1>
+                    <p class="text-zinc-500 font-bold uppercase tracking-[0.3em] text-xs">Identidade Clínica Sincronizada</p>
                 </div>
-                <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">Salvar Macros</button>
-            </form>
-        @else
-            <div style="opacity: 0.5; pointer-events: none;">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                    <div style="text-align:center;"><small class="muted">Prot</small><br><strong>{{ $freeMacroPrev['p'] ?? '—' }}g</strong></div>
-                    <div style="text-align:center;"><small class="muted">Carb</small><br><strong>{{ $freeMacroPrev['c'] ?? '—' }}g</strong></div>
-                    <div style="text-align:center;"><small class="muted">Gord</small><br><strong>{{ $freeMacroPrev['f'] ?? '—' }}g</strong></div>
+                <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                    <span class="px-5 py-2 bg-zinc-950 border border-zinc-800 rounded-2xl text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="mail" class="w-3 h-3"></i> {{ auth()->user()->email }}
+                    </span>
+                    <span class="px-5 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-[10px] font-black text-emerald-500 uppercase tracking-widest">Paciente Ativo</span>
                 </div>
             </div>
-            <div class="premium-badge" style="position: absolute; top: 1.5rem; right: 1.5rem; background: gold; color: black; font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 99px; font-weight: 800;">PREMIUM</div>
-            <div style="margin-top: 1rem; padding: 1.25rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border); text-align: center;">
-                <p style="font-size: 0.85rem; margin-bottom: 1rem;">Personalize suas metas de macros por gramas.</p>
-                <a href="{{ route('plano') }}" class="btn btn-sm btn-primary" style="padding: 0.5rem 1.5rem;">Ver Planos</a>
+
+            <div class="bg-zinc-950 border border-zinc-800 p-10 rounded-[3rem] text-center shadow-inner group">
+                <p class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] mb-3 group-hover:text-emerald-500 transition-colors">Estimativa de Bio-Idade</p>
+                <p class="text-6xl font-black text-white tabular-nums tracking-tighter italic leading-none">
+                    {{ $bioAge }} <span class="text-sm text-zinc-700 uppercase not-italic">Anos</span>
+                </p>
             </div>
-        @endif
-    </div>
+        </div>
+    @else
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-4 border-b border-zinc-900">
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-inner">Configurações de Identidade</span>
+                    <span class="text-zinc-700">•</span>
+                    <span class="text-zinc-500 text-xs font-black italic uppercase tracking-tighter">Balanço Biométrico & Segurança</span>
+                </div>
+                <h1 class="text-5xl font-black tracking-tight text-white leading-tight uppercase">Meu <span class="text-emerald-500">Perfil</span></h1>
+                <p class="text-zinc-500 font-medium max-w-xl">Gerencie seus dados físicos, metas e configurações de saúde em um ecossistema sincronizado.</p>
+            </div>
+
+            <div class="flex items-center gap-6 bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-md">
+                <div class="text-center px-4">
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-1">Meta Calórica</p>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <span class="text-3xl font-black text-emerald-500 tabular-nums">{{ $u->daily_calorie_target ?? '—' }}</span>
+                        @if($u->daily_calorie_target) <span class="text-[10px] text-zinc-600 font-bold uppercase">kcal</span> @endif
+                    </div>
+                </div>
+                <div class="w-[1px] h-10 bg-zinc-800"></div>
+                <div class="text-center px-4">
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-1">Bio-Idade</p>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <span class="text-3xl font-black text-white tabular-nums">{{ $bioAge ?? '—' }}</span>
+                        @if($bioAge) <span class="text-[10px] text-zinc-600 font-bold uppercase">anos</span> @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 
-    <!-- CARD: SEGURANÇA -->
-    <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px;">
-        <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🔒 Segurança e Senha</div>
-        
-        <form method="post" action="{{ route('profile') }}" novalidate autocomplete="off">
-            @csrf
-            <input type="hidden" name="profile_action" value="password">
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="current_password" style="font-size: 0.85rem;">Senha Atual</label>
-                <input id="current_password" name="current_password" type="password" required style="padding: 0.5rem 1rem; border-radius: 10px;">
+    <!-- Alert System -->
+    @if (!empty($notice))
+        <div class="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] text-emerald-400 text-xs font-black animate-fade-in flex items-center gap-4 shadow-xl">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-lg">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="new_password" style="font-size: 0.85rem;">Nova Senha</label>
-                    <input id="new_password" name="new_password" type="password" required minlength="8" style="padding: 0.5rem 1rem; border-radius: 10px;">
+            {{ $notice }}
+        </div>
+    @endif
+
+    @if (!empty($error))
+        <div class="p-6 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] text-rose-400 text-xs font-black animate-fade-in flex items-center gap-4 shadow-xl">
+            <div class="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-lg">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            </div>
+            {{ $error }}
+        </div>
+    @endif
+
+    <!-- Calorie Preview Box (Only for Athletes) -->
+    @if ($calPreview !== null && !$isPurePatient)
+        <div class="bg-zinc-900 border border-emerald-500/30 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-all duration-1000"></div>
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-12 bg-emerald-500 text-zinc-950 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i data-lucide="calculator" class="w-6 h-6"></i>
                 </div>
-                <div class="form-group">
-                    <label for="new_password_confirm" style="font-size: 0.85rem;">Confirmar</label>
-                    <input id="new_password_confirm" name="new_password_confirm" type="password" required minlength="8" style="padding: 0.5rem 1rem; border-radius: 10px;">
+                <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Prévia da Estimativa Inteligente</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-inner">
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-2">TMB (Metabolismo Basal)</p>
+                    <p class="text-2xl font-black text-white tabular-nums">{{ (int) round($calPreview['bmr']) }} <span class="text-xs text-zinc-700 uppercase">kcal/dia</span></p>
+                </div>
+                <div class="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 shadow-inner">
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-2">Gasto Total (TDEE)</p>
+                    <p class="text-2xl font-black text-white tabular-nums">{{ (int) round($calPreview['tdee']) }} <span class="text-xs text-zinc-700 uppercase">kcal/dia</span></p>
+                </div>
+                <div class="bg-emerald-500/5 p-6 rounded-2xl border border-emerald-500/20 shadow-inner">
+                    <p class="text-[9px] text-emerald-500 font-black uppercase tracking-widest mb-2">Meta Sugerida Elite</p>
+                    <p class="text-2xl font-black text-emerald-500 tabular-nums">{{ $calPreview['target'] }} <span class="text-xs text-emerald-700 uppercase">kcal/dia</span></p>
                 </div>
             </div>
-            <p class="muted" style="font-size: 0.75rem; margin-top: 1rem; font-style: italic;">
-                A senha deve ter pelo menos 8 caracteres, uma letra maiúscula, um número e um símbolo.
+            <p class="mt-6 text-[10px] text-zinc-600 font-bold uppercase tracking-widest italic">
+                * Valores processados para peso de {{ number_format($latestWeight, 1, ',', '.') }} kg em {{ \Carbon\Carbon::parse($calPreview['weighed_at'])->translatedFormat('d/m/Y') }}.
             </p>
-            <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 1.5rem;">Atualizar Senha</button>
-        </form>
-    </div>
+        </div>
+    @endif
 
-    </div>
-
-    <!-- CARD: PRIVACIDADE E DADOS (LGPD) -->
-    <div class="card animate-fade-up" style="padding: 2.5rem; border-radius: 24px; margin-top: 2rem; margin-bottom: 4rem;">
-        <div class="section-label" style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 1.5rem; display: block;">🛡️ Privacidade e Seus Dados (LGPD)</div>
-        
-        <p class="muted" style="margin-bottom: 1.5rem; font-size: 0.95rem;">Em conformidade com a Lei Geral de Proteção de Dados, você tem total controle sobre suas informações.</p>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1.5rem;">
-            <!-- Portabilidade -->
-            <div style="background: var(--surface-glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem;">Portabilidade de Dados</h4>
-                    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Baixe todos os seus registros (perfil, refeições e treinos) em formato digital (JSON).</p>
+    @if($isPurePatient)
+        <!-- SEÇÃO UNIFICADA: REGISTRO CLÍNICO (PACIENTE) -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[4rem] p-1 shadow-2xl relative overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2">
+                <!-- Coluna 1: Dados Identitários -->
+                <div class="p-12 space-y-10 border-r border-zinc-800/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                            <i data-lucide="fingerprint" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-white uppercase tracking-tighter italic">Dados Identitários</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="space-y-1.5 px-6 py-4 bg-zinc-950/50 rounded-[1.5rem] border border-zinc-900">
+                            <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Nome Completo registrado</p>
+                            <p class="text-base font-black text-white uppercase tracking-widest">{{ $u->name }}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5 px-6 py-4 bg-zinc-950/50 rounded-[1.5rem] border border-zinc-900">
+                                <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Nascimento</p>
+                                <p class="text-base font-black text-white uppercase tracking-widest">{{ \Carbon\Carbon::parse($u->birth_date)->translatedFormat('d/m/Y') }}</p>
+                            </div>
+                            <div class="space-y-1.5 px-6 py-4 bg-zinc-950/50 rounded-[1.5rem] border border-zinc-900">
+                                <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Gênero Bio</p>
+                                <p class="text-base font-black text-white uppercase tracking-widest">{{ $u->sex === 'M' ? 'Masculino' : 'Feminino' }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <a href="{{ route('privacy.download') }}" class="btn btn-outline-primary btn-sm" style="width: 100%;">
-                    <i class="fas fa-file-export me-2"></i> Baixar Meus Dados
-                </a>
+
+                <!-- Coluna 2: Biometria e Selo Audit -->
+                <div class="p-12 space-y-10 bg-zinc-950/20">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-blue-500">
+                            <i data-lucide="activity" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-white uppercase tracking-tighter italic">Métricas Físicas</h3>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="text-center p-8 bg-zinc-950 border border-zinc-900 rounded-[3rem] shadow-inner">
+                            <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest mb-1">Peso Atual</p>
+                            <p class="text-4xl font-black text-emerald-500 tabular-nums italic">{{ number_format($latestWeight, 1, ',', '.') }}<span class="text-sm ml-1 not-italic text-zinc-700">kg</span></p>
+                        </div>
+                        <div class="text-center p-8 bg-zinc-950 border border-zinc-900 rounded-[3rem] shadow-inner">
+                            <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest mb-1">Altura</p>
+                            <p class="text-4xl font-black text-white tabular-nums italic">{{ $u->height_cm }}<span class="text-sm ml-1 not-italic text-zinc-700">cm</span></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-6 p-6 bg-blue-500/5 border border-blue-500/10 rounded-[2rem]">
+                        <div class="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center shadow-inner shrink-0">
+                            <i data-lucide="shield-check" class="w-7 h-7"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs font-black text-white uppercase tracking-tighter italic">Dados Biométricos Auditados</p>
+                            <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest leading-relaxed">
+                                Estas informações são controladas exclusivamente pelo seu profissional de saúde e refletem seu prontuário oficial.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <!-- Esquecimento -->
-            <div style="background: rgba(248, 81, 73, 0.05); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(248, 81, 73, 0.2); display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem; color: #f85149;">Direito ao Esquecimento</h4>
-                    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solicite a exclusão total e definitiva de seus dados de nossos servidores.</p>
+        <!-- SEÇÃO UNIFICADA: GESTÃO E DIREITOS (PACIENTE) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <!-- Segurança -->
+            <div class="bg-zinc-900 border border-zinc-800 p-12 rounded-[4rem] shadow-2xl relative overflow-hidden">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Segurança & Acesso</h3>
                 </div>
-                <form action="{{ route('privacy.request-deletion') }}" method="POST"
-                    data-confirm-delete
-                    data-confirm-title="Solicitar exclusão de dados"
-                    data-confirm-message="Tem certeza? Esta ação enviará um pedido formal de exclusão de dados e não pode ser desfeita após o processamento."
-                    data-confirm-primary-label="Enviar pedido">
+                
+                <form method="post" action="{{ route('profile') }}" novalidate autocomplete="off" class="space-y-6">
                     @csrf
-                    <button type="submit" class="btn btn-outline-danger btn-sm" style="width: 100%;">
-                        <i class="fas fa-trash-alt me-2"></i> Solicitar Exclusão de Dados
-                    </button>
+                    <input type="hidden" name="profile_action" value="password">
+                    <div class="space-y-2">
+                        <label for="current_password" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Senha Atual</label>
+                        <input id="current_password" name="current_password" type="password" required class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm outline-none focus:border-emerald-500 transition-all shadow-inner">
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label for="new_password" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Nova Senha</label>
+                            <input id="new_password" name="new_password" type="password" required minlength="8" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm outline-none focus:border-emerald-500 transition-all shadow-inner">
+                        </div>
+                        <div class="space-y-2">
+                            <label for="new_password_confirm" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Confirmar</label>
+                            <input id="new_password_confirm" name="new_password_confirm" type="password" required minlength="8" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm outline-none focus:border-emerald-500 transition-all shadow-inner">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-5 bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-white hover:bg-zinc-800 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-inner">ATUALIZAR ACESSO</button>
                 </form>
             </div>
 
-            <!-- Bloqueios -->
-            <div style="background: var(--surface-glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
+            <!-- Direitos Digitais (LGPD) -->
+            <div class="bg-zinc-900 border border-zinc-800 p-12 rounded-[4rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
                 <div>
-                    <h4 style="margin: 0 0 0.5rem; font-size: 1.125rem;">Utilizadores Bloqueados</h4>
-                    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Gerencie a lista de pessoas que você bloqueou para não receber mensagens.</p>
+                    <div class="flex items-center gap-4 mb-10">
+                        <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-blue-500">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Direitos Digitais</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <a href="{{ route('privacy.download') }}" class="flex items-center justify-between p-6 bg-zinc-950 border border-zinc-800 rounded-3xl group hover:border-emerald-500/20 transition-all">
+                            <div class="space-y-1">
+                                <p class="text-xs font-black text-white uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Portabilidade de Dados</p>
+                                <p class="text-[9px] text-zinc-600 font-bold uppercase">Exportar registros em JSON</p>
+                            </div>
+                            <i data-lucide="download" class="w-5 h-5 text-zinc-700 group-hover:text-emerald-500 transition-colors"></i>
+                        </a>
+
+                        <div x-data="{ openPurgeModal: false }" class="relative">
+                            <button @click="openPurgeModal = true" class="w-full flex items-center justify-between p-6 bg-rose-500/5 border border-rose-500/10 rounded-3xl group hover:border-rose-500/30 transition-all text-left">
+                                <div class="space-y-1">
+                                    <p class="text-xs font-black text-rose-500 uppercase tracking-widest">Esquecimento Total</p>
+                                    <p class="text-[9px] text-zinc-600 font-bold uppercase">Purga irreversível de dados</p>
+                                </div>
+                                <i data-lucide="trash-2" class="w-5 h-5 text-rose-500/50 group-hover:text-rose-500 transition-colors"></i>
+                            </button>
+
+                            <!-- PURGE MODAL REUTILIZADO -->
+                            <div x-show="openPurgeModal" class="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-zinc-950/95 backdrop-blur-xl" x-cloak>
+                                <div class="bg-zinc-900 border border-rose-500/30 w-full max-w-lg rounded-[3.5rem] p-12 shadow-3xl text-center space-y-8" @click.away="openPurgeModal = false">
+                                    <div class="w-20 h-20 bg-rose-500 text-white rounded-3xl flex items-center justify-center mx-auto shadow-2xl rotate-12">
+                                        <i data-lucide="alert-octagon" class="w-10 h-10"></i>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <h3 class="text-3xl font-black text-white tracking-tighter uppercase italic">Confirmar Exclusão</h3>
+                                        <div class="bg-zinc-950/50 border border-zinc-800 rounded-2xl p-6 text-left space-y-2">
+                                            <p class="text-[9px] text-zinc-600 font-black flex items-center gap-2 uppercase tracking-widest"><i data-lucide="check" class="w-3 h-3 text-rose-500"></i> Laudos e Prontuários</p>
+                                            <p class="text-[9px] text-zinc-600 font-black flex items-center gap-2 uppercase tracking-widest"><i data-lucide="check" class="w-3 h-3 text-rose-500"></i> Registros de Biometria</p>
+                                        </div>
+                                    </div>
+                                    <form action="{{ route('privacy.request-deletion') }}" method="POST" class="grid grid-cols-1 gap-4 pt-4">
+                                        @csrf
+                                        <button type="submit" class="w-full py-6 bg-rose-500 text-white font-black rounded-3xl hover:bg-rose-600 transition-all text-xs uppercase tracking-[0.2em]">CONFIRMAR PURGA</button>
+                                        <button type="button" @click="openPurgeModal = false" class="w-full py-5 text-zinc-500 font-black rounded-3xl hover:text-white transition-all text-[10px] uppercase tracking-widest">CANCELAR</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <a href="{{ route('profile.blocked') }}" class="btn btn-outline-primary btn-sm" style="width: 100%;">
-                    <i class="fas fa-user-slash me-2"></i> Gerir Bloqueios
-                </a>
+
+                <div class="mt-8 pt-6 border-t border-zinc-800/50 text-center">
+                    <p class="text-[8px] text-zinc-700 font-black uppercase tracking-[0.4em]">NexShape Compliance LGPD</p>
+                </div>
             </div>
         </div>
-    </div>
+    @else
+        <!-- ESTRUTURA PARA ATLETA/ADMIN -->
+        <form method="post" action="{{ route('profile') }}" novalidate class="space-y-10">
+            @csrf
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                
+                <!-- CARD: DADOS PESSOAIS -->
+                <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                    <div class="flex items-center gap-4 mb-10">
+                        <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Dados Pessoais</h3>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label for="name" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Nome Completo</label>
+                            <input id="name" name="name" type="text" required maxlength="120" value="{{ old('name', $u->name) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner uppercase tracking-widest">
+                            <p class="text-[9px] text-zinc-700 font-bold uppercase tracking-widest ml-2">ID Sincronizado: {{ $u->email }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label for="birth_date" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Nascimento</label>
+                                <input id="birth_date" name="birth_date" type="date" required value="{{ old('birth_date', $u->birth_date) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner uppercase">
+                            </div>
+                            <div class="space-y-2">
+                                <label for="sex" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Bio-Gênero</label>
+                                <select id="sex" name="sex" required class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xs font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner appearance-none cursor-pointer uppercase tracking-widest">
+                                    <option value="" @selected(old('sex', $u->sex) === '')>Selecione...</option>
+                                    <option value="M" @selected(old('sex', $u->sex) === 'M')>Masculino</option>
+                                    <option value="F" @selected(old('sex', $u->sex) === 'F')>Feminino</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label for="height_cm" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Altura (cm)</label>
+                            <div class="relative">
+                                <input id="height_cm" name="height_cm" type="number" min="50" max="260" placeholder="ex.: 175" value="{{ old('height_cm', $u->height_cm) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner tabular-nums">
+                                <span class="absolute right-6 top-1/2 -translate-y-1/2 text-zinc-700 font-black text-[10px] tracking-widest">CM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD: COMPOSIÇÃO E ATIVIDADE -->
+                <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                    <div class="flex items-center gap-4 mb-10">
+                        <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                            <i data-lucide="activity" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Composição & Atividade</h3>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label for="current_weight_kg" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Peso Atual (kg)</label>
+                                <input id="current_weight_kg" name="current_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('current_weight_kg', $latestWeight) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-emerald-500 text-xl font-black outline-none focus:border-emerald-500 transition-all shadow-inner tabular-nums">
+                            </div>
+                            <div class="space-y-2">
+                                <label for="target_weight_kg" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Peso Objetivo (kg)</label>
+                                <input id="target_weight_kg" name="target_weight_kg" type="number" step="0.1" min="20" max="500" placeholder="0.0" value="{{ old('target_weight_kg', $u->target_weight_kg) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xl font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner tabular-nums">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="activity_level" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Nível de Atividade</label>
+                            <select id="activity_level" name="activity_level" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xs font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner appearance-none cursor-pointer uppercase tracking-widest">
+                                <option value="sedentary" @selected(old('activity_level', $u->activity_level) === 'sedentary')>🚶 Sedentário (Trabalho de Escritório)</option>
+                                <option value="light" @selected(old('activity_level', $u->activity_level) === 'light')>🏃 Leve (1-2x semana)</option>
+                                <option value="moderate" @selected(old('activity_level', $u->activity_level) === 'moderate')>🚴 Moderado (3-5x semana)</option>
+                                <option value="active" @selected(old('activity_level', $u->activity_level) === 'active')>🏋️ Ativo (6-7x semana)</option>
+                                <option value="very_active" @selected(old('activity_level', $u->activity_level) === 'very_active')>🏅 Atleta (Treino Intenso 2x dia)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD: METAS DE SAÚDE -->
+                <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                    <div class="flex items-center gap-4 mb-10">
+                        <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                            <i data-lucide="target" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Metas Estratégicas</h3>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label for="goal" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Objetivo Primário</label>
+                            <select id="goal" name="goal" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xs font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner appearance-none cursor-pointer uppercase tracking-widest">
+                                <option value="lose" @selected(old('goal', $u->goal) === 'lose')>🔥 Perder Peso / Emagrecer</option>
+                                <option value="maintain" @selected(old('goal', $u->goal) === 'maintain')>⚖️ Manter Peso Atual</option>
+                                <option value="gain" @selected(old('goal', $u->goal) === 'gain')>💪 Ganhar Massa Muscular</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label for="daily_calorie_target" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Calorias (kcal)</label>
+                                <input id="daily_calorie_target" name="daily_calorie_target" type="number" min="500" max="20000" placeholder="ex.: 2200" value="{{ old('daily_calorie_target', $u->daily_calorie_target) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xl font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner tabular-nums">
+                            </div>
+                            <div class="space-y-2">
+                                <label for="water_target_ml" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Água (ml)</label>
+                                <input id="water_target_ml" name="water_target_ml" type="number" min="500" max="10000" step="100" placeholder="2500" value="{{ old('water_target_ml', $u->water_target_ml) }}" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xl font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner tabular-nums">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="climate" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Clima Predominante</label>
+                            <select id="climate" name="climate" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xs font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner appearance-none cursor-pointer uppercase tracking-widest">
+                                <option value="cold" @selected(old('climate', $u->climate) === 'cold')>❄️ Clima Frio</option>
+                                <option value="moderate" @selected(old('climate', $u->climate ?? 'moderate') === 'moderate')>☁️ Clima Agradável</option>
+                                <option value="hot" @selected(old('climate', $u->climate) === 'hot')>☀️ Clima Quente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD: AUTOMAÇÃO INTELIGENTE -->
+                <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-4 mb-10">
+                            <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Automação Elite</h3>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <label class="group flex items-center gap-5 p-5 bg-zinc-950 border border-zinc-800 rounded-3xl cursor-pointer hover:border-emerald-500/30 transition-all shadow-inner">
+                                <input type="checkbox" name="auto_calorie" value="1" class="w-6 h-6 bg-zinc-900 border-zinc-800 text-emerald-500 rounded-lg focus:ring-emerald-500/50 accent-emerald-500" @checked(old('auto_calorie'))>
+                                <div class="space-y-1">
+                                    <p class="text-xs font-black text-white uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Cálculo Calórico Automático</p>
+                                    <p class="text-[9px] text-zinc-600 font-bold uppercase">Sincroniza com TMB e nível de atividade.</p>
+                                </div>
+                            </label>
+                            
+                            <label class="group flex items-center gap-5 p-5 bg-zinc-950 border border-zinc-800 rounded-3xl cursor-pointer hover:border-emerald-500/30 transition-all shadow-inner">
+                                <input type="checkbox" name="auto_water" value="1" class="w-6 h-6 bg-zinc-900 border-zinc-800 text-emerald-500 rounded-lg focus:ring-emerald-500/50 accent-emerald-500" @checked(old('auto_water', $u->is_water_target_auto))>
+                                <div class="space-y-1">
+                                    <p class="text-xs font-black text-white uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Cálculo Hídrico Automático</p>
+                                    <p class="text-[9px] text-zinc-600 font-bold uppercase">Ajusta com base no clima e peso biológico.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-10">
+                        <button type="submit" class="w-full py-6 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[11px] uppercase tracking-[0.3em] rounded-3xl transition-all shadow-2xl shadow-emerald-500/20 active:scale-[0.98]">
+                            SALVAR ALTERAÇÕES
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+
+        <!-- Achievements -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden mt-10">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="w-12 h-12 bg-amber-500 text-zinc-950 rounded-2xl flex items-center justify-center shadow-lg">
+                    <i data-lucide="award" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Galeria de Conquistas</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 text-center">
+                @foreach(\App\Services\AchievementService::getList(auth()->id()) as $badge)
+                    <div class="p-4 bg-zinc-950 rounded-3xl border border-zinc-800 {{ $badge->unlocked ? 'opacity-100' : 'opacity-20 grayscale' }}">
+                        <div class="text-3xl mb-2">{{ $badge->icon }}</div>
+                        <p class="text-[8px] font-black text-white uppercase tracking-widest">{{ $badge->name }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Segurança & LGPD para Atleta -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-10">
+            <!-- Segurança -->
+            <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
+                        <i data-lucide="shield-lock" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Segurança & Acesso</h3>
+                </div>
+                <form method="post" action="{{ route('profile') }}" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="profile_action" value="password">
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Senha Atual</label>
+                        <input name="current_password" type="password" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm outline-none focus:border-emerald-500 transition-all shadow-inner">
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Nova Senha</label>
+                            <input name="new_password" type="password" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm outline-none focus:border-emerald-500 transition-all shadow-inner">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Confirmar</label>
+                            <input name="new_password_confirm" type="password" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-sm outline-none focus:border-emerald-500 transition-all shadow-inner">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-5 bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-white hover:bg-zinc-800 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-inner">ROTACIONAR CREDENCIAIS</button>
+                </form>
+            </div>
+
+            <!-- LGPD -->
+            <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-blue-500">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tighter italic">Privacidade (LGPD)</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="{{ route('privacy.download') }}" class="p-6 bg-zinc-950 border border-zinc-800 rounded-3xl text-center group hover:border-emerald-500/20 transition-all">
+                        <i data-lucide="download" class="w-6 h-6 mx-auto mb-4 text-zinc-700 group-hover:text-emerald-500 transition-colors"></i>
+                        <p class="text-[10px] font-black text-white uppercase tracking-widest">Portabilidade</p>
+                    </a>
+                    <button class="p-6 bg-zinc-950 border border-zinc-800 rounded-3xl text-center group hover:border-rose-500/20 transition-all">
+                        <i data-lucide="trash-2" class="w-6 h-6 mx-auto mb-4 text-zinc-700 group-hover:text-rose-500 transition-colors"></i>
+                        <p class="text-[10px] font-black text-white uppercase tracking-widest">Esquecimento</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>
+@endpush
+
+<style>
+    body { 
+        background-color: #080a0f;
+        background-image:
+            radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0, transparent 40%),
+            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0, transparent 40%);
+        background-attachment: fixed;
+    }
+    
+    .animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+        opacity: 0.5;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+    }
+</style>
 @endsection

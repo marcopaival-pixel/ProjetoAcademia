@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="py-10 space-y-12 animate-dashboard-entry max-w-[1700px] mx-auto px-6">
+    <x-plan-over-limit-banner resource="patients" />
     <!-- Header Strategy: Professional Glass Header -->
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-4 border-b border-white/5">
         <div class="space-y-3">
@@ -99,12 +100,20 @@
                     @forelse($patients as $patient)
                     <tr class="group hover:bg-white/[0.02] transition-all">
                         <td class="px-8 py-5">
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-xl bg-{{ $patient['color'] }}-500/10 text-{{ $patient['color'] }}-500 flex items-center justify-center font-black text-sm border border-{{ $patient['color'] }}-500/20 shadow-lg shadow-{{ $patient['color'] }}-500/5">
+                            <div class="flex items-center gap-4 relative">
+                                @if($patient['is_locked'])
+                                    <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)]"></div>
+                                @endif
+                                <div class="w-10 h-10 rounded-xl bg-{{ $patient['color'] }}-500/10 text-{{ $patient['color'] }}-500 flex items-center justify-center font-black text-sm border border-{{ $patient['color'] }}-500/20 shadow-lg shadow-{{ $patient['color'] }}-500/5 {{ $patient['is_locked'] ? 'opacity-50 grayscale' : '' }}">
                                     {{ $patient['initials'] }}
                                 </div>
                                 <div class="flex flex-col">
-                                    <span class="text-white font-bold text-sm group-hover:text-blue-400 transition-colors">{{ $patient['name'] }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-white font-bold text-sm group-hover:text-blue-400 transition-colors {{ $patient['is_locked'] ? 'text-zinc-500' : '' }}">{{ $patient['name'] }}</span>
+                                        @if($patient['is_locked'])
+                                            <span class="px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase tracking-tighter border border-rose-500/20">Bloqueado</span>
+                                        @endif
+                                    </div>
                                     <span class="text-zinc-600 text-[10px] font-medium tracking-tight">ID: #{{ str_pad($patient['id'], 5, '0', STR_PAD_LEFT) }}</span>
                                 </div>
                             </div>

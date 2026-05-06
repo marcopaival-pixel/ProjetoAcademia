@@ -24,9 +24,6 @@ class MessageController extends Controller
             }, 'userOne', 'userTwo'])
             ->get();
 
-        // Filtrar conversas com usuários que me bloquearam (opcional, ou apenas ocultar unread)
-        // Por agora, vamos apenas manter a lista mas impedir novas mensagens.
-
         // Ordenar: primeiro as que têm mensagens (pela data da última), depois as vazias (pela data de criação)
         $conversations = $conversations->sort(function ($a, $b) {
             $dateA = $a->messages->first()?->created_at ?: $a->created_at;
@@ -42,8 +39,14 @@ class MessageController extends Controller
         $search = $request->input('search');
         $currentUser = Auth::user();
 
-        $users = User::where('id', '!=', $currentUser->id)
-            ->when($search, function($query, $search) {
+        // Aluno só vê admins. Admin vê qualquer um (para responder ou iniciar).
+        $query = User::where('id', '!=', $currentUser->id);
+
+        if (!$currentUser->isAdministrator()) {
+            $query->where('is_admin', true);
+        }
+
+        $users = $query->when($search, function($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
             ->get()
@@ -57,29 +60,29 @@ class MessageController extends Controller
 
     public function startConversation(Request $request): RedirectResponse
     {
-        $recipientId = $request->input('user_id');
+        $tipo = $request->input('tipo', Conversation::TIPO_SUPORTE);
         $currentUser = Auth::user();
 
-        if ($recipientId == $currentUser->id) {
-            return redirect()->back()->with('error', 'Você não pode conversar consigo mesmo.');
+        // Se for admin, ele pode estar respondendo a alguém, mas o fluxo principal é aluno -> admin
+        // Se for aluno, o destinatário é um administrador.
+        $admin = User::where('is_admin', true)->first();
+        
+        if (!$admin) {
+            return redirect()->back()->with('error', 'Nenhum administrador disponível no momento.');
         }
 
-        $recipient = User::findOrFail($recipientId);
-        if (!$currentUser->canMessage($recipient)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para iniciar uma conversa com este utilizador. Entre em um grupo comum para liberar a comunicação.');
-        }
-
-        // Verificar se já existe uma conversa entre estes dois usuários
-        $conversation = Conversation::where(function($q) use ($currentUser, $recipientId) {
-            $q->where('user_one_id', $currentUser->id)->where('user_two_id', $recipientId);
-        })->orWhere(function($q) use ($currentUser, $recipientId) {
-            $q->where('user_one_id', $recipientId)->where('user_two_id', $currentUser->id);
-        })->first();
+        // Verificar se já existe uma conversa deste TIPO para este usuário
+        $conversation = Conversation::where('user_one_id', $currentUser->id)
+            ->where('tipo', $tipo)
+            ->whereIn('status', [Conversation::STATUS_ABERTO, Conversation::STATUS_EM_ANDAMENTO])
+            ->first();
 
         if (!$conversation) {
             $conversation = Conversation::create([
                 'user_one_id' => $currentUser->id,
-                'user_two_id' => $recipientId,
+                'user_two_id' => $admin->id,
+                'tipo' => $tipo,
+                'status' => Conversation::STATUS_ABERTO,
             ]);
         }
 

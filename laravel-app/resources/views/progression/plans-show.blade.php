@@ -7,12 +7,6 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
         <div class="space-y-2">
-            <div class="flex items-center gap-3 mb-2">
-                <a href="{{ route('progression.plans.index') }}" class="text-zinc-500 hover:text-blue-400 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Voltar aos Planos
-                </a>
-            </div>
             <h1 class="text-4xl font-black text-white tracking-tight flex items-center gap-3">
                 {{ $plan->name }}
                 @if($plan->plan_label)

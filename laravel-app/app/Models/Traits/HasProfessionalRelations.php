@@ -32,26 +32,18 @@ trait HasProfessionalRelations
      */
     public function canMessage(User $otherUser): bool
     {
-        // Administradores podem falar com qualquer um
-        if ($this->isAdministrator()) {
+        // Administradores podem falar com qualquer um, e qualquer um com administrador
+        if ($this->isAdministrator() || $otherUser->isAdministrator()) {
             return true;
         }
 
-        // Se o destinatário for Suporte ou Financeiro, qualquer um pode falar (inicialmente)
+        // Suporte ou Financeiro via departamento
         if (in_array($otherUser->department, ['support', 'finance'])) {
             return true;
         }
 
-        // Se ambos estiverem no mesmo grupo aprovado, podem falar
-        $sharedGroups = $this->communicationGroups()
-            ->wherePivot('status', 'approved')
-            ->whereHas('users', function($q) use ($otherUser) {
-                $q->where('users.id', $otherUser->id)
-                  ->where('communication_group_user.status', 'approved');
-            })
-            ->exists();
-
-        return $sharedGroups;
+        // Por padrão, não permite chat direto entre usuários comuns (alunos)
+        return false;
     }
 
     public function isSupport(): bool

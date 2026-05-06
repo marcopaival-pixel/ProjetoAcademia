@@ -60,10 +60,11 @@ class RegisterController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255'],
-            'cpf' => ['required', 'string', 'size:11', new CpfValido()],
+            'tipo_acesso' => ['required', 'string', 'in:aluno,professional,manager,representative'],
+            'cpf' => ['required_unless:tipo_acesso,manager', 'nullable', 'string', 'size:11', new CpfValido()],
+            'cnpj' => ['required_if:tipo_acesso,manager', 'nullable', 'string', 'max:18'],
             'password' => ['required', 'confirmed', Password::min(8)],
             'terms' => ['required', 'accepted'],
-            'tipo_acesso' => ['required', 'string', 'in:aluno,professional'],
             // Campos adicionais Profissional
             'profession_id' => ['required_if:tipo_acesso,professional', 'nullable', 'exists:professions,id'],
             'specialty' => ['nullable', 'string', 'max:120'],
@@ -71,8 +72,8 @@ class RegisterController extends Controller
             'company_name' => ['nullable', 'string', 'max:120'],
             // Campos opcionais
             'phone' => ['nullable', 'string', 'max:25'],
-            'birth_date' => ['required', 'date', 'before:today'],
-            'sex' => ['required', 'string', 'in:M,F'],
+            'birth_date' => ['required_unless:tipo_acesso,manager', 'nullable', 'date', 'before:today'],
+            'sex' => ['required_unless:tipo_acesso,manager', 'nullable', 'string', 'in:M,F'],
         ], [
             'email.unique' => 'Este e-mail já possui cadastro no sistema.',
             'cpf.unique' => 'Este CPF já possui cadastro no sistema.',
@@ -121,19 +122,25 @@ class RegisterController extends Controller
                 return $user;
             }
 
+        $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+
             $user = new User();
             $user->fill([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
-                'cpf' => $validated['cpf'],
+                'cpf' => $validated['cpf'] ?? null,
+                'cnpj' => $validated['cnpj'] ?? null,
                 'profile_id' => $role?->id, // Compatibilidade
                 'plan_id' => $freePlan?->id,
-                'status' => 'active',
+                'status' => $profileName === 'representative' ? 'PENDENTE_APROVACAO' : ($verificacaoAtiva ? 'PENDENTE' : 'active'),
                 'onboarding_status' => 'pending',
                 'profile_completion_percentage' => 0,
-                'registration_approval_status' => $profileName === 'professional' ? 'approved' : 'pending',
-                'email_verified_at' => now(), // Verificação suspensa temporariamente
+                'registration_approval_status' => in_array($profileName, ['professional', 'representative']) ? 'pending' : 'approved',
+                'email_verified' => !$verificacaoAtiva,
+                'email_verified_at' => $verificacaoAtiva ? null : now(),
+                'representative_id' => $request->get('representative_id') ?: (session('representative_id') ?: request()->cookie('representative_id')),
+                'is_representative' => $profileName === 'representative',
             ]);
 
             // Vincular à empresa se houver slug na request
@@ -190,8 +197,17 @@ class RegisterController extends Controller
         // Limpar dados de onboarding após o uso
         session()->forget('onboarding_data');
 
-        $request->session()->regenerate();
-        Auth::login($user);
+        // Se a verificação de e-mail estiver ativa, não logamos o usuário ainda se quisermos bloquear o acesso total.
+        // Mas o requisito 7 diz "Bloquear acesso se: status != ATIVO".
+        // Se quisermos que ele possa ver a página de "verifique seu e-mail", ele precisa estar logado ou identificável.
+        // Laravel costuma logar e depois o middleware redireciona.
+        
+        $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+
+        if (!$verificacaoAtiva) {
+            $request->session()->regenerate();
+            Auth::login($user);
+        }
 
         $adminRecipients = User::query()
             ->where(function ($q) {
@@ -214,17 +230,29 @@ class RegisterController extends Controller
             }
         }
 
-        $emailSent = false;
-        /* Verificação suspensa
-        try {
-            $emailSent = app(\App\Services\EmailVerificationService::class)->sendVerificationEmail($user);
-        } catch (\Throwable $e) {
-            Log::error('Cadastro: falha ao enviar e-mail de verificação', [
-                'user_id' => $user->id,
-                'exception' => $e->getMessage(),
-            ]);
+        // Notificar o representante sobre o recebimento do cadastro
+        if ($user->hasRole('representative')) {
+            try {
+                $user->notify(new \App\Notifications\RepresentativeRegistered());
+            } catch (\Throwable $e) {
+                Log::warning('Falha ao notificar representante sobre cadastro recebido', [
+                    'user_id' => $user->id,
+                    'exception' => $e->getMessage(),
+                ]);
+            }
         }
-        */
+
+        $emailSent = false;
+        if ($verificacaoAtiva) {
+            try {
+                $emailSent = app(\App\Services\EmailVerificationService::class)->sendVerificationEmail($user);
+            } catch (\Throwable $e) {
+                Log::error('Cadastro: falha ao enviar e-mail de verificação', [
+                    'user_id' => $user->id,
+                    'exception' => $e->getMessage(),
+                ]);
+            }
+        }
 
         if ($emailSent) {
             session()->flash(
@@ -233,9 +261,17 @@ class RegisterController extends Controller
             );
         }
 
-        $postRegisterRedirect = $user->registration_approval_status === 'approved'
-            ? route($user->hasRole('professional') ? 'professional.dashboard' : 'dashboard')
-            : route('registration.pending');
+        if ($verificacaoAtiva) {
+            $postRegisterRedirect = route('verification.notice', ['email' => $user->email]);
+        } else {
+            if ($user->registration_approval_status === 'approved') {
+                $postRegisterRedirect = route($user->hasRole('professional') ? 'professional.dashboard' : 'dashboard');
+            } else {
+                $postRegisterRedirect = $user->isRepresentativePending() 
+                    ? route('representative.pending') 
+                    : route('registration.pending');
+            }
+        }
 
         if ($request->expectsJson()) {
             return response()->json([

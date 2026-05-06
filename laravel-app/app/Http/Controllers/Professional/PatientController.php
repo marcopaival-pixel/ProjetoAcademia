@@ -123,6 +123,8 @@ class PatientController extends Controller
                 }
             }
 
+            $isOverLimit = auth()->user()->isResourceOverLimit('patients', $user->id);
+
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -135,10 +137,11 @@ class PatientController extends Controller
                 'goal' => $user->profile->goal ?? 'Manutenção',
                 'last_activity' => $user->last_activity_at ? $user->last_activity_at->diffForHumans() : 'Nunca acessou',
                 'last_activity_date' => $user->last_activity_at ? $user->last_activity_at->format('d/m/Y H:i') : '--',
-                'color' => $currentStatus === 'Inativo' ? 'zinc' : ($currentStatus === 'Ativo' ? 'emerald' : 'amber'),
+                'color' => $isOverLimit ? 'rose' : ($currentStatus === 'Inativo' ? 'zinc' : ($currentStatus === 'Ativo' ? 'emerald' : 'amber')),
                 'user_status' => $user->status,
                 'profile_type' => $profileType,
                 'professional_name' => auth()->user()->name,
+                'is_locked' => $isOverLimit,
             ];
         });
 
@@ -158,6 +161,10 @@ class PatientController extends Controller
         // Verifica vínculo profissional
         if (!auth()->user()->patients()->wherePivot('user_id', $patient->id)->exists()) {
             abort(403, 'Acesso não autorizado a este paciente.');
+        }
+
+        if (auth()->user()->isResourceOverLimit('patients', $patient->id)) {
+            return back()->with('error', 'Este paciente está bloqueado por exceder o limite do seu plano atual. Faça upgrade para acessá-lo.');
         }
 
         $user = $patient->load(['profile', 'weightEntries']);
@@ -355,6 +362,10 @@ class PatientController extends Controller
             abort(403, 'Acesso não autorizado a este paciente.');
         }
 
+        if (auth()->user()->isResourceOverLimit('patients', $patient->id)) {
+            return back()->with('error', 'Este paciente está bloqueado por exceder o limite do seu plano atual. Faça upgrade para editá-lo.');
+        }
+
         $patient->load('profile');
 
         return view('professional.patients.edit', compact('patient'));
@@ -364,6 +375,10 @@ class PatientController extends Controller
     {
         if (!auth()->user()->patients()->wherePivot('user_id', $patient->id)->exists()) {
             abort(403, 'Acesso não autorizado a este paciente.');
+        }
+
+        if (auth()->user()->isResourceOverLimit('patients', $patient->id)) {
+            return back()->with('error', 'Este paciente está bloqueado por exceder o limite do seu plano atual. Faça upgrade para editá-lo.');
         }
 
         $validated = $request->validate([

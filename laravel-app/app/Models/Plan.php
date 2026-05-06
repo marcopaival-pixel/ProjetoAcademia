@@ -22,13 +22,15 @@ class Plan extends Model
         'is_active',
         'is_corporate',
         'price_per_professional',
-        'min_professionals'
+        'min_professionals',
+        'commission_rate',
     ];
 
     protected $casts = [
         'is_corporate' => 'boolean',
         'price' => 'decimal:2',
         'price_per_professional' => 'decimal:2',
+        'commission_rate' => 'decimal:2',
     ];
 
     public function planFeatures(): HasMany

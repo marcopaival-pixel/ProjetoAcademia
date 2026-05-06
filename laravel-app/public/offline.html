@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline — NexShape</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { background-color: #06080c; color: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(20, 22, 28, 0.7);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+    <div class="glass-card rounded-[3rem] p-10 max-w-sm w-full text-center space-y-8 animate-pulse">
+        <div class="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto text-blue-500">
+            <i class="fas fa-wifi-slash text-4xl"></i>
+        </div>
+        <div class="space-y-2">
+            <h1 class="text-2xl font-black tracking-tight">Sem Conexão</h1>
+            <p class="text-zinc-500 text-sm font-medium">Verifique sua internet para acessar seu portal clínico NexShape.</p>
+        </div>
+        <button onclick="window.location.reload()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px]">
+            Tentar Novamente
+        </button>
+    </div>
+</body>
+</html>

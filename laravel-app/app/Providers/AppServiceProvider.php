@@ -34,16 +34,16 @@ class AppServiceProvider extends ServiceProvider
         // Aplica as configurações de e-mail do banco de dados (fallback global)
         MailConfigService::apply();
 
-        Event::listen(NotificationSending::class, function (NotificationSending $event) {
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationSending::class, function ($event) {
             if ($event->channel === 'mail' && $event->notifiable instanceof \App\Models\User) {
                 MailConfigService::apply($event->notifiable->academy_company_id);
             }
         });
 
-        Event::listen(NotificationSent::class, [MailNotificationAuditListener::class, 'handleSent']);
-        Event::listen(NotificationFailed::class, [MailNotificationAuditListener::class, 'handleFailed']);
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationSent::class, [MailNotificationAuditListener::class, 'handleSent']);
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationFailed::class, [MailNotificationAuditListener::class, 'handleFailed']);
 
-        View::composer('layouts.app', function ($view) {
+        \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {
             $view->with([
                 'projetoTheme' => Theme::current(),
                 'themeExplicit' => Theme::isExplicit(),
@@ -51,7 +51,18 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        View::composer('partials.admin-sidebar', function ($view) {
+        \Illuminate\Support\Facades\View::composer('partials.topbar', function ($view) {
+            $user = auth()->user();
+            if ($user) {
+                $view->with([
+                    'aiUsageToday' => $user->getAiCreditsUsedToday(),
+                    'aiUsageMonth' => $user->getAiCreditsUsedThisMonth(),
+                    'aiUsageTotal' => $user->getAiCreditsUsedTotal(),
+                ]);
+            }
+        });
+
+        \Illuminate\Support\Facades\View::composer('partials.admin-sidebar', function ($view) {
             $user = auth()->user();
             $map = [];
             if ($user !== null) {
@@ -60,17 +71,17 @@ class AppServiceProvider extends ServiceProvider
             $view->with('adminNavVisible', $map);
         });
 
-        RateLimiter::for('openfoodfacts', function (Request $request) {
+        \Illuminate\Support\Facades\RateLimiter::for('openfoodfacts', function (\Illuminate\Http\Request $request) {
             $uid = (int) ($request->user()?->id ?? 0);
             $per = max(5, (int) config('services.openfoodfacts.max_requests_per_minute', 30));
 
-            return Limit::perMinute($per)->by($uid > 0 ? 'off-'.$uid : 'off-ip-'.$request->ip());
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute($per)->by($uid > 0 ? 'off-'.$uid : 'off-ip-'.$request->ip());
         });
 
-        RateLimiter::for('privacy-download', function (Request $request) {
+        \Illuminate\Support\Facades\RateLimiter::for('privacy-download', function (\Illuminate\Http\Request $request) {
             $uid = (int) ($request->user()?->id ?? 0);
 
-            return Limit::perHour(20)->by($uid > 0 ? 'privacy-u-'.$uid : 'privacy-ip-'.$request->ip());
+            return \Illuminate\Cache\RateLimiting\Limit::perHour(20)->by($uid > 0 ? 'privacy-u-'.$uid : 'privacy-ip-'.$request->ip());
         });
 
         // Feature and Plan Directives
@@ -88,6 +99,11 @@ class AppServiceProvider extends ServiceProvider
             return "<?php if(!auth()->check() || !auth()->user()->hasFeature($feature)): ?>
                 <i class='fas fa-lock ml-2 text-yellow-500' title='Disponível no plano Pro'></i>
             <?php endif; ?>";
+        });
+
+        // Configuração de Segurança para o Laravel Pulse
+        \Illuminate\Support\Facades\Gate::define('viewPulse', function (\App\Models\User $user) {
+            return $user->isAdministrator();
         });
     }
 }

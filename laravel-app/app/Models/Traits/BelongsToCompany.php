@@ -26,8 +26,10 @@ trait BelongsToCompany
                     return;
                 }
 
-                // Se o usuário logado pertence a uma empresa, filtramos os dados por ela
-                if ($user->academy_company_id) {
+                $clinicId = \App\Support\TenantContext::get();
+
+                // Se existe uma clínica no contexto, filtramos os dados por ela
+                if ($clinicId) {
                     $model = $builder->getModel();
                     $tableName = $model->getTable();
                     
@@ -36,11 +38,11 @@ trait BelongsToCompany
                     
                     // Se o modelo explicitamente diz para NÃO filtrar por coluna direta (ex: usar user_id)
                     if ($column === 'user_id') {
-                        $builder->whereHas('user', function ($q) use ($user) {
-                            $q->where('academy_company_id', $user->academy_company_id);
+                        $builder->whereHas('user', function ($q) use ($clinicId) {
+                            $q->where('academy_company_id', $clinicId);
                         });
                     } else {
-                        $builder->where($tableName . '.' . $column, $user->academy_company_id);
+                        $builder->where($tableName . '.' . $column, $clinicId);
                     }
                 }
             });
@@ -48,12 +50,12 @@ trait BelongsToCompany
 
         // Evento de criação para definir automaticamente a empresa
         static::creating(function ($model) {
-            $user = Auth::user();
-            if ($user && $user->academy_company_id) {
+            $clinicId = \App\Support\TenantContext::get();
+            if ($clinicId) {
                 $column = property_exists($model, 'companyColumn') ? $model->companyColumn : 'academy_company_id';
                 
                 if ($column !== 'user_id' && !$model->{$column}) {
-                    $model->{$column} = $user->academy_company_id;
+                    $model->{$column} = $clinicId;
                 }
             }
         });

@@ -2,65 +2,83 @@
 
 @section('title', 'Meus Atestados')
 
+@section('style')
+<style>
+    .glass-card {
+        background: rgba(20, 22, 28, 0.7);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+</style>
+@endsection
+
 @section('content')
-<div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <a href="{{ route('patient.medical-records.index') }}" class="text-zinc-500 hover:text-white flex items-center gap-2 font-bold transition-colors">
-            <i class="fas fa-arrow-left"></i>
-            Voltar ao Prontuário
-        </a>
-        <h1 class="text-2xl font-black text-white">Meus <span class="text-purple-500">Atestados</span></h1>
-    </div>
+<div class="min-h-screen bg-[#06080c] text-white pb-32">
+    <div class="py-10 px-6 max-w-2xl mx-auto">
+        <x-patient.page-header 
+            title="Meus Atestados" 
+            subtitle="Licenças Médicas e Comprovantes" 
+            backUrl="{{ route('patient.medical-records.index') }}"
+            icon="fas fa-file-contract"
+        />
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        @forelse($certificates as $certificate)
-            <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl group">
-                <div class="flex justify-between items-start mb-8">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
-                            <i class="fas fa-file-contract text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-black text-white leading-tight">{{ $certificate->reason }}</h3>
-                            <p class="text-zinc-500 text-xs font-bold">{{ $certificate->date->format('d/m/Y') }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @forelse($certificates as $certificate)
+                <div class="glass-card rounded-[2.5rem] p-8 shadow-2xl group relative overflow-hidden">
+                    <div class="absolute -right-8 -top-8 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full"></div>
+                    
+                    <div class="flex justify-between items-start mb-8 relative z-10">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform shadow-inner">
+                                <i class="fas fa-file-contract text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black text-white leading-tight tracking-tighter uppercase italic">{{ $certificate->reason }}</h3>
+                                <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{{ $certificate->date->format('d/m/Y') }}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="bg-zinc-800/30 rounded-2xl border border-zinc-800 p-6 mb-8">
-                    <div class="flex justify-between items-center">
-                        <div class="text-center">
-                            <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Início</p>
-                            <p class="text-white font-black">{{ $certificate->start_date->format('d/m/Y') }}</p>
-                        </div>
-                        <div class="px-4 text-zinc-700">
-                            <i class="fas fa-chevron-right"></i>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Término</p>
-                            <p class="text-white font-black">{{ $certificate->end_date->format('d/m/Y') }}</p>
+                    <div class="bg-white/5 rounded-[2rem] border border-white/5 p-6 mb-8 relative z-10">
+                        <div class="flex justify-between items-center">
+                            <div class="text-center">
+                                <p class="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Início</p>
+                                <p class="text-white font-black text-xs">{{ $certificate->start_date->format('d/m/Y') }}</p>
+                            </div>
+                            <div class="px-4 text-zinc-800">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Término</p>
+                                <p class="text-white font-black text-xs">{{ $certificate->end_date->format('d/m/Y') }}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex gap-4">
-                    <a href="{{ route('patient.medical-records.certificates.download', $certificate->id) }}" class="flex-1 py-4 bg-purple-600 text-white font-black rounded-2xl text-sm hover:bg-purple-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20">
-                        <i class="fas fa-download"></i> Baixar Documento
-                    </a>
-                    <a href="{{ route('patient.medical-records.certificates.download', $certificate->id) }}" class="px-5 py-4 bg-zinc-800 text-zinc-300 rounded-2xl hover:bg-zinc-700 transition-all">
-                        <i class="fas fa-print"></i>
-                    </a>
+                    <div class="flex gap-3 relative z-10">
+                        <a href="{{ route('patient.medical-records.certificates.download', $certificate->id) }}" class="flex-1 py-4 bg-purple-600 text-white font-black rounded-3xl text-[10px] uppercase tracking-widest hover:bg-purple-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-purple-600/20">
+                            <i class="fas fa-download"></i> Baixar PDF
+                        </a>
+                        <a href="{{ route('patient.medical-records.certificates.download', $certificate->id) }}" class="px-5 py-4 bg-white/5 text-zinc-300 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                            <i class="fas fa-print"></i>
+                        </a>
+                    </div>
                 </div>
-            </div>
-        @empty
-            <div class="md:col-span-2 bg-zinc-900 border border-dashed border-zinc-800 rounded-[2.5rem] p-16 text-center">
-                <p class="text-zinc-500 italic">Nenhum atestado disponível.</p>
-            </div>
-        @endforelse
-    </div>
+            @empty
+                <div class="col-span-full">
+                    <x-patient.empty-state 
+                        icon="fas fa-file-contract" 
+                        title="Sem Atestados" 
+                        description="Nenhum atestado médico ou comprovante de licença foi registrado para você até o momento."
+                    />
+                </div>
+            @endforelse
+        </div>
 
-    <div class="mt-6">
-        {{ $certificates->links() }}
+        <div class="mt-10">
+            {{ $certificates->links() }}
+        </div>
     </div>
 </div>
 @endsection

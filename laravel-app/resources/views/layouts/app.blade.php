@@ -1,7 +1,18 @@
 @php
     $loggedIn = auth()->check();
-    $accentColor = \App\Models\AdminSetting::get('accent_color', '#3d9cf5');
+    $accentColor = \App\Models\AdminSetting::get('accent_color', '#10b981');
     $customLogo = \App\Models\AdminSetting::get('logo_url', '');
+
+    // Lógica do Botão Voltar Global
+    $primaryRoutes = [
+        'dashboard', 'home', 'admin.dashboard', 'patient.portal', 
+        'profile.selection', 'clinic.selector', 'onboarding.welcome', 
+        'onboarding.finish', 'patient.unified.dashboard', 
+        'patient.dashboard.choice', 'patient.professional.selection'
+    ];
+    $currentRouteName = request()->route()?->getName() ?? '';
+    $isPrimaryPage = in_array($currentRouteName, $primaryRoutes) || str_starts_with($currentRouteName, 'onboarding.');
+    $showGlobalBack = $loggedIn && !$isPrimaryPage && !request()->routeIs('verification.notice');
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="{{ $projetoTheme }}">
@@ -9,28 +20,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#0b0e14">
+    <meta name="theme-color" content="#080a0f">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-    <title>@yield('title') — NexShape Arena</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap">
+    <title>@yield('title') — NEX SHAPE PRO</title>
     <script>
         document.documentElement.setAttribute("data-theme", "dark");
     </script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/modern-layout.css') }}?v={{ time() }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/sidebar-toggle.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="{{ asset('js/sidebar-toggle.js') }}" defer></script>
-    <style>
-        :root {
-            --accent: {{ $accentColor }};
-            --accent-dim: {{ $accentColor }}cc; /* Adiciona transparência para o hover */
-            --primary-gradient: linear-gradient(135deg, {{ $accentColor }} 0%, {{ $accentColor }}cc 100%);
-        }
-    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
     @stack('styles')
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
-<body class="{{ request()->is('professional*') ? 'portal-pro' : '' }} {{ request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected') ? 'min-h-screen overflow-x-hidden overflow-y-auto bg-[#0b0e14]' : '' }}">
+@php
+    $activeRole = session('active_role');
+    $user = auth()->user();
+    $experienceClass = 'experience-aluno'; // Default
+    
+    if ($user) {
+        if ($activeRole === 'professional' || ($user->hasRole(['professional', 'instructor', 'manager', 'receptionist', 'supervisor']) && !$activeRole)) {
+            $experienceClass = 'experience-clinica';
+        } elseif ($activeRole === 'paciente' || ($user->hasRole('paciente') && !$activeRole)) {
+            $experienceClass = 'experience-clinica'; // Pacientes também usam a experiência clínica/profissional
+        } elseif ($activeRole === 'aluno' || ($user->hasRole('aluno') && !$activeRole)) {
+            $experienceClass = 'experience-aluno';
+        }
+    }
+@endphp
+<body class="{{ $experienceClass }} {{ request()->is('professional*') ? 'portal-pro' : '' }} {{ request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected') ? 'min-h-screen overflow-x-hidden overflow-y-auto' : '' }}">
     <a class="skip-link" href="#main">Ir para o conteúdo</a>
 
     @if($loggedIn && !request()->routeIs('home') && !request()->routeIs('verification.notice') && !request()->routeIs('registration.pending') && !request()->routeIs('registration.rejected'))
@@ -43,12 +64,18 @@
 
                 @php($activeAnnouncements = \App\Models\Announcement::active())
                 @foreach($activeAnnouncements as $announcement)
-                    <div class="announcement-bar announcement-{{ $announcement->type }}" style="background: {{ $announcement->type == 'danger' ? '#f85149' : ($announcement->type == 'warning' ? '#d29922' : ($announcement->type == 'success' ? '#2ea043' : '#388bfd')) }}; color: white; text-align: center; padding: 0.75rem; font-weight: 600; font-size: 0.875rem;">
+                    <div class="announcement-bar animate-fade-in" style="background: {{ $announcement->type == 'danger' ? '#f43f5e' : ($announcement->type == 'warning' ? '#f59e0b' : ($announcement->type == 'success' ? '#10b981' : '#3b82f6')) }}; color: white; text-align: center; padding: 1rem; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid rgba(255,255,255,0.1);">
                         {{ $announcement->content }}
                     </div>
                 @endforeach
 
+
                 <main id="main" class="content-wrapper">
+                    @if($showGlobalBack && !View::hasSection('no_global_back'))
+                        <div class="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto pt-8">
+                            <x-back-button />
+                        </div>
+                    @endif
                     @yield('content')
                 </main>
             </div>
@@ -58,70 +85,98 @@
             @yield('content')
         </main>
     @else
-        <header class="site-header">
-            <div class="shell header-inner">
-                <a class="logo" href="{{ route('home') }}" style="margin:0;">
-                    <img src="{{ $customLogo ?: asset('images/logo_Academia.png') }}" alt="Logo Academia" class="logo-img" style="height: 58px; width: auto;">
+        <header class="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/70 backdrop-blur-2xl border-b border-zinc-900/50 transition-all duration-500">
+            <div class="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+                <a href="{{ route('home') }}" class="flex items-center gap-4 group">
+                    <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform group-hover:-rotate-6 transition-transform duration-500">
+                        <img src="{{ $customLogo ?: asset('images/logo_Academia.webp') }}" alt="N" class="w-8 h-8 object-contain brightness-0 invert">
+                    </div>
+                    <div class="hidden sm:block">
+                        <span class="text-xl font-black text-white tracking-tighter uppercase italic">NEX <span class="text-emerald-500">SHAPE</span></span>
+                        <p class="text-[8px] text-zinc-500 font-black uppercase tracking-[0.3em] -mt-1">Pro Performance</p>
+                    </div>
                 </a>
                 
-                <button class="nav-toggle" id="menuToggle" aria-label="Abrir menu">
-                    <svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
-                </button>
-
-                <nav class="site-nav" id="siteNav">
-                    <a href="#features">Recursos</a>
-                    <a href="#pricing">Preços</a>
-                    <div class="nav-divider"></div>
-                    <a href="{{ route('login') }}" class="btn btn-sm btn-ghost">Entrar</a>
+                <nav class="hidden md:flex items-center gap-10">
+                    <a href="#features" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Recursos</a>
+                    <a href="#pricing" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Preços</a>
+                    <div class="w-px h-6 bg-zinc-800 mx-2"></div>
+                    <a href="{{ route('login') }}" class="text-[10px] font-black text-zinc-400 hover:text-emerald-500 uppercase tracking-[0.2em] transition-all">Autenticar</a>
+                    <a href="{{ route('register') }}" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-xl shadow-emerald-500/10 active:scale-95">
+                        Começar Agora
+                    </a>
                 </nav>
 
-                <script>
-                    document.getElementById('menuToggle').addEventListener('click', function() {
-                        document.getElementById('siteNav').classList.toggle('is-open');
-                    });
-                </script>
+                <button class="md:hidden w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400" id="menuToggle">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
             </div>
         </header>
 
-        <main id="main" class="shell main-content">
+        <main id="main" class="pt-24 min-h-screen">
             @yield('content')
         </main>
     @endif
 
     @if((!$loggedIn || request()->routeIs('home')) && !request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected'))
-    <footer class="site-footer shell animate-fade-up">
-        <div class="footer-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-            <div class="footer-col">
-                <a class="logo" href="{{ route('home') }}" style="margin:0;">
-                    <img src="{{ asset('images/logo_Rodape.png') }}" alt="Logo Academia" class="logo-img" style="height: 36px; width: auto;">
-                </a>
-                <p class="muted" style="margin-top: 0.5rem;">Sua jornada para um corpo mais saudável e uma mente mais forte começa com o acompanhamento correto.</p>
-            </div>
-            <div class="footer-col">
-                <h4 style="color: var(--text); margin-bottom: 1rem;">Produto</h4>
-                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-                    <li><a href="#features" class="muted">Recursos</a></li>
-                    <li><a href="#pricing" class="muted">Preços</a></li>
-                    <li><a href="{{ route('register') }}" class="muted">Criar conta</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4 style="color: var(--text); margin-bottom: 1rem;">Suporte</h4>
-                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-                    <li><a href="#" class="muted">Central de Ajuda</a></li>
-                    <li><a href="{{ route('legal.privacy') }}" class="muted">Privacidade</a></li>
-                    <li><a href="{{ route('legal.terms') }}" class="muted">Termos de Uso</a></li>
-                    <li><a href="{{ route('legal.cookies') }}" class="muted">Cookies</a></li>
-                </ul>
-            </div>
-            <div class="footer-col" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end;">
-                 <img src="{{ asset('images/logo.png') }}" alt="Desenvolvedor" style="height: 128px; width: auto; filter: opacity(0.95);">
-            </div>
-        </div>
-        
-        <div class="footer-row" style="padding-top: 1rem; border-top: 1px solid var(--border);">
-            <p class="footer-tagline">&copy; {{ date('Y') }} ProjetoAcademia. Todos os direitos reservados.</p>
+    <footer class="bg-[#080a0f] border-t border-zinc-900 pt-24 pb-12 relative overflow-hidden">
+        <!-- Background Ambient Glow -->
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-16 mb-20">
+                <!-- Branding Section -->
+                <div class="md:col-span-4 space-y-8">
+                    <a href="{{ route('home') }}" class="flex items-center gap-4 group">
+                        <span class="text-2xl font-black text-white tracking-tighter uppercase italic">NEX <span class="text-emerald-500">SHAPE</span></span>
+                    </a>
+                    <p class="text-zinc-500 text-sm leading-relaxed font-medium italic">
+                        Sua jornada para o ápice da performance começa com inteligência. Unimos ciência, dados e tecnologia para transformar seu potencial em resultados reais.
+                    </p>
+                    <div class="flex items-center gap-4">
+                        @foreach(['instagram', 'twitter', 'youtube'] as $social)
+                        <a href="#" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/30 transition-all">
+                            <i data-lucide="{{ $social }}" class="w-4 h-4"></i>
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="md:col-span-2 space-y-8">
+                    <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em] italic">Ecossistema</h4>
+                    <ul class="space-y-4">
+                        <li><a href="#features" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Recursos</a></li>
+                        <li><a href="#pricing" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Planos</a></li>
+                        <li><a href="{{ route('register') }}" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Criar Conta</a></li>
+                    </ul>
+                </div>
+
+                <div class="md:col-span-2 space-y-8">
+                    <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em] italic">Jurídico</h4>
+                    <ul class="space-y-4">
+                        <li><button type="button" onclick="window.openLegalProtocol('privacy')" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic outline-none">Privacidade</button></li>
+                        <li><button type="button" onclick="window.openLegalProtocol('terms')" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic outline-none">Termos</button></li>
+                        <li><a href="{{ route('legal.cookies') }}" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Cookies</a></li>
+                    </ul>
+                </div>
+
+                <!-- Paivatech Logo (Preserved as requested) -->
+                <div class="md:col-span-4 flex items-center justify-end">
+                     <img src="{{ asset('images/logo.webp') }}" alt="Logo" class="h-32 w-auto opacity-20 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                </div>
+            </div>
+            
+            <!-- Bottom Bar -->
+            <div class="pt-12 border-t border-zinc-900/50 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <p class="text-zinc-700 text-[10px] font-black uppercase tracking-[0.2em] italic">&copy; {{ date('Y') }} NEX SHAPE PRO. ALL RIGHTS RESERVED.</p>
+                </div>
+                <div class="flex items-center gap-6">
+                    <p class="text-zinc-800 text-[9px] font-black uppercase tracking-[0.4em] italic">PRECISION BY AI NEURAL</p>
+                </div>
+            </div>
         </div>
     </footer>
     @endif
@@ -129,7 +184,35 @@
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
     @stack('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('menuToggle');
+            const siteNav = document.querySelector('header nav');
+            if (menuToggle && siteNav) {
+                menuToggle.addEventListener('click', () => {
+                    siteNav.classList.toggle('hidden');
+                    siteNav.classList.toggle('flex');
+                    siteNav.classList.toggle('flex-col');
+                    siteNav.classList.toggle('absolute');
+                    siteNav.classList.toggle('top-24');
+                    siteNav.classList.toggle('left-0');
+                    siteNav.classList.toggle('right-0');
+                    siteNav.classList.toggle('bg-zinc-950');
+                    siteNav.classList.toggle('p-6');
+                    siteNav.classList.toggle('border-b');
+                    siteNav.classList.toggle('border-zinc-800');
+                });
+            }
+        });
+    </script>
     <script src="{{ asset('js/app.js') }}" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
     <script>
         // Real-time Polling
         @if(auth()->check())
@@ -142,7 +225,6 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    // Update Emails
                     const emailBadge = document.querySelector('.nav-link[href*="internal-email"] .badge');
                     const sidebarEmailBadge = document.querySelector('.nav-link-email.active .badge') || document.querySelector('.nav-link-email[href*="inbox"] .badge');
                     const sidebarMainEmailBadge = document.querySelector('.nav-link[href*="internal-email"] .bg-red-500');
@@ -157,7 +239,6 @@
                         if (sidebarMainEmailBadge) sidebarMainEmailBadge.style.display = 'none';
                     }
 
-                    // Update Messages
                     const sidebarMsgBadge = document.querySelector('.nav-link[href*="/messages"] .bg-blue-500');
                     if (data.messages > 0) {
                         if (sidebarMsgBadge) {
@@ -168,42 +249,41 @@
                         if (sidebarMsgBadge) sidebarMsgBadge.style.display = 'none';
                     }
                 })
-                .catch(err => console.error('Error fetching unread counts:', err));
+                .catch(err => {});
         }
-        setInterval(checkNotifications, 30000); // Check every 30 seconds
+        setInterval(checkNotifications, 30000);
         checkNotifications();
         @endif
     </script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register("{{ asset('sw.js') }}")
-                    .then(reg => console.log('Service Worker registrado!', reg))
-                    .catch(err => console.log('Erro ao registrar SW:', err));
+                navigator.serviceWorker.register("{{ asset('sw.js') }}").catch(err => {});
             });
         }
     </script>
+
     <!-- Premium Upgrade Modal (Global) -->
-    <div id="premiumModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in" style="display: none;">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl animate-dashboard-entry text-center space-y-8">
-            <div class="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-500 shadow-lg shadow-amber-500/10">
-                <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                </svg>
+    <div id="premiumModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-6 bg-zinc-950/90 backdrop-blur-xl animate-fade-in" style="display: none;">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[3.5rem] p-10 shadow-3xl animate-fade-in-up text-center space-y-8 relative overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+            
+            <div class="w-24 h-24 bg-emerald-500 text-zinc-950 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/20 transform -rotate-12">
+                <i data-lucide="crown" class="w-12 h-12"></i>
             </div>
             
             <div class="space-y-3">
-                <h3 class="text-3xl font-black text-white tracking-tight">Recurso <span class="text-amber-500">Premium</span></h3>
-                <p class="text-zinc-500 font-medium">Esta funcionalidade exclusiva faz parte do plano **Performance Elite**. Evolua seu treino com IA e dados avançados.</p>
+                <h3 class="text-4xl font-black text-white tracking-tighter uppercase italic">Protocolo <span class="text-emerald-500">Premium</span></h3>
+                <p class="text-zinc-500 font-medium leading-relaxed">Esta funcionalidade exclusiva faz parte do plano **Performance Elite**. Evolua seu treino com processamento neural e biometria avançada.</p>
             </div>
 
-            <div class="grid grid-cols-1 gap-3">
-                <a href="{{ route('plano') }}" class="w-full py-4 bg-amber-500 text-zinc-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-crown text-xs"></i>
-                    QUERO ME TORNAR PREMIUM
+            <div class="grid grid-cols-1 gap-4 pt-4">
+                <a href="{{ route('plano') }}" class="w-full py-6 bg-emerald-500 text-zinc-950 font-black rounded-3xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-3 shadow-xl text-xs uppercase tracking-[0.2em]">
+                    <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                    ATIVAR ACESSO ELITE
                 </a>
-                <button onclick="document.getElementById('premiumModal').style.display = 'none'" class="w-full py-4 bg-zinc-800 text-zinc-400 font-bold rounded-2xl hover:bg-zinc-700 transition-all">
-                    Talvez mais tarde
+                <button onclick="document.getElementById('premiumModal').style.display = 'none'" class="w-full py-5 bg-zinc-950 border border-zinc-800 text-zinc-600 font-black rounded-3xl hover:text-white transition-all text-[10px] uppercase tracking-widest">
+                    FECHAR
                 </button>
             </div>
         </div>
@@ -211,7 +291,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Interceptor de cliques em botões premium
             document.querySelectorAll('[data-premium-locked]').forEach(el => {
                 el.addEventListener('click', function(e) {
                     if (window.isPremiumUser === false) {
@@ -223,7 +302,6 @@
                 });
             });
 
-            // Fecha modal ao clicar fora
             const modal = document.getElementById('premiumModal');
             if (modal) {
                 modal.addEventListener('click', function(e) {
@@ -242,6 +320,7 @@
         @include('partials.ai-credits-modal')
     @endif
     @include('partials.confirm-delete-modal')
+    @include('partials.legal-modal')
     @include('partials.toast')
     @include('partials.error-modal')
 </body>

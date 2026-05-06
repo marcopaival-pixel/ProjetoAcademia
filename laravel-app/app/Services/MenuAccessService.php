@@ -246,6 +246,13 @@ class MenuAccessService
             'home',
             'theme',
             'report',
+            'profile.selection',
+            'profile.select',
+            'clinic.selector',
+            'clinic.select',
+            'patient.portal',
+            'patient.professional.selection',
+            'patient.professional.select',
         ];
 
         if (in_array($routeName, $exact, true)) {
