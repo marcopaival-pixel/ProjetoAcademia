@@ -365,6 +365,12 @@ class AdminAreaController extends Controller
     public function saveSettings(Request $request)
     {
         foreach ($request->except('_token') as $key => $value) {
+            // Se for uma configuração de sistema (tabela system_settings)
+            if (in_array($key, ['verificacao_email_ativa'])) {
+                \App\Models\SystemSetting::set($key, $value);
+                continue;
+            }
+
             // Se for a senha do e-mail e não estiver vazia, criptografar
             if ($key === 'mail_password' && !empty($value)) {
                 $value = Crypt::encryptString($value);

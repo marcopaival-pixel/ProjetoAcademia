@@ -63,7 +63,7 @@ class ProfileController extends Controller
             $freeMacroPrev = Nutrition::defaultMacroTargetsFromKcal((int) $u->daily_calorie_target);
         }
 
-        $age = ! empty($u->birth_date) ? Nutrition::ageYears((string) $u->birth_date) : null;
+        $bioAge = ! empty($u->birth_date) ? Nutrition::ageYears((string) $u->birth_date) : null;
 
         return view('profile', [
             'u' => $u,
@@ -72,7 +72,7 @@ class ProfileController extends Controller
             'calPreview' => $calPreview,
             'freeMacroPrev' => $freeMacroPrev,
             'latestWeight' => $latestWeightRow ? (float) $latestWeightRow->weight_kg : null,
-            'age' => $age,
+            'bioAge' => $bioAge,
             'notice' => session('notice'),
             'error' => session('error'),
         ]);
@@ -168,13 +168,16 @@ class ProfileController extends Controller
 
         // Persistência em Transação
         DB::transaction(function () use ($user, $data, $autoWater, $isPurePatient) {
-            $user->update(['name' => $data['name']]);
+            // Se for paciente puro, não permitimos alteração de nome nem peso via perfil (apenas consulta)
+            if (!$isPurePatient) {
+                $user->update(['name' => $data['name']]);
 
-            if (!empty($data['current_weight_kg'])) {
-                WeightEntry::updateOrCreate(
-                    ['user_id' => $user->id, 'weighed_at' => date('Y-m-d')],
-                    ['weight_kg' => $data['current_weight_kg']]
-                );
+                if (!empty($data['current_weight_kg'])) {
+                    WeightEntry::updateOrCreate(
+                        ['user_id' => $user->id, 'weighed_at' => date('Y-m-d')],
+                        ['weight_kg' => $data['current_weight_kg']]
+                    );
+                }
             }
 
             $profileUpdate = [

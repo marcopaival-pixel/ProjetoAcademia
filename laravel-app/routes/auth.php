@@ -39,6 +39,10 @@ Route::middleware('guest')->group(function () {
 
     // Google Authentication
     Route::get('/auth/google', [\App\Http\Controllers\Auth\GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+
+    // Acompanhar Cadastro (Público)
+    Route::get('/cadastro/acompanhar', [RegistrationStatusController::class, 'track'])->name('registration.track');
+    Route::post('/cadastro/acompanhar', [RegistrationStatusController::class, 'search'])->name('registration.search');
 });
 
 // Google Callback (External)
@@ -49,6 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::match(['get', 'post'], '/logout', LogoutController::class)->name('logout');
     
     Route::get('/cadastro/pendente', [RegistrationStatusController::class, 'pending'])->name('registration.pending');
+    Route::get('/representante/pendente', [RegistrationStatusController::class, 'representativePending'])->name('representative.pending');
     Route::get('/cadastro/recusado', [RegistrationStatusController::class, 'rejected'])->name('registration.rejected');
 
     Route::get('/verify-email', [VerificationController::class, 'show'])->name('verification.notice');

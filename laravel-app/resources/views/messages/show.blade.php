@@ -1,26 +1,30 @@
 @extends('layouts.app', ['navCurrent' => 'messages'])
 
-@section('title', 'Conversa com ' . $conversation->getOtherUser(auth()->id())->name)
+@section('title', 'Atendimento: ' . $conversation->tipo)
 
 @section('content')
 <div class="max-w-4xl mx-auto h-[calc(100vh-12rem)] flex flex-col animate-dashboard-entry">
     <!-- Chat Header -->
     <div class="bg-zinc-900/50 border border-white/5 backdrop-blur-md p-4 rounded-t-[2rem] flex items-center justify-between mb-1">
         <div class="flex items-center gap-4">
-            <a href="{{ route('messages.index') }}" class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </a>
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black">
-                    {{ substr($conversation->getOtherUser(auth()->id())->name, 0, 1) }}
-                </div>
+                @if($conversation->tipo === 'SUPORTE')
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center text-white font-black">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                @else
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center text-white font-black">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                @endif
                 <div>
-                    <h2 class="text-white font-black leading-tight">{{ $conversation->getOtherUser(auth()->id())->name }}</h2>
+                    <h2 class="text-white font-black leading-tight">Atendimento: {{ $conversation->tipo }}</h2>
                     <div class="flex items-center gap-1.5">
-                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                        <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Online</span>
+                        <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{{ $conversation->status }}</span>
                     </div>
                 </div>
             </div>
@@ -80,7 +84,7 @@
                                 </div>
                                 <div class="px-5 py-3 rounded-2xl transition-all shadow-sm
                                     {{ $isMine 
-                                        ? 'bg-blue-600 text-white rounded-br-none' 
+                                        ? ($conversation->tipo === 'SUPORTE' ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-amber-600 text-white rounded-br-none')
                                         : 'bg-zinc-800 text-zinc-200 rounded-bl-none border border-white/5' }}">
                                     <p class="text-sm font-medium leading-relaxed">{{ $msg->content }}</p>
                                 </div>
@@ -118,7 +122,7 @@
         @else
             <form action="{{ route('messages.store', $conversation) }}" method="POST" class="flex items-end gap-3">
                 @csrf
-                <div class="flex-1 bg-white/5 rounded-2xl border border-white/10 focus-within:border-blue-500/50 transition-all px-4 py-2 flex items-center">
+                <div class="flex-1 bg-white/5 rounded-2xl border border-white/10 focus-within:border-emerald-500/50 transition-all px-4 py-2 flex items-center">
                     <textarea name="content" 
                             rows="1" 
                             placeholder="Digite sua mensagem aqui..." 
@@ -126,7 +130,7 @@
                             class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-zinc-600 text-sm py-2 resize-none"
                             oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'></textarea>
                 </div>
-                <button type="submit" class="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-blue-600/20 group">
+                <button type="submit" class="w-12 h-12 {{ $conversation->tipo === 'SUPORTE' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20' : 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20' }} text-white rounded-2xl flex items-center justify-center transition-all shadow-lg group">
                     <svg class="w-5 h-5 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                     </svg>

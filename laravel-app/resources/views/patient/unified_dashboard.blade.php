@@ -66,18 +66,20 @@
 @endsection
 
 @section('content')
-<div class="min-h-screen bg-[#06080c] relative overflow-hidden pb-40 animate-entry">
+<div class="py-10 space-y-12 animate-entry mx-auto px-4 md:px-6">
     <!-- Background Effects -->
-    <div class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-[var(--brand-primary)] opacity-[0.08] blur-[150px] rounded-full"></div>
-    <div class="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-[var(--brand-accent)] opacity-[0.05] blur-[120px] rounded-full"></div>
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-500/10 blur-[150px] rounded-full"></div>
+        <div class="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full"></div>
+    </div>
 
     <div class="relative z-10 py-10 px-6 max-w-2xl mx-auto space-y-12">
         <!-- Header -->
         <header class="flex flex-col gap-8">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-5">
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[var(--brand-primary)] to-[var(--brand-accent)] flex items-center justify-center text-white font-black text-2xl shadow-2xl relative border border-white/10 group overflow-hidden">
-                        <i class="fas fa-heartbeat"></i>
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-2xl relative border border-white/10 group overflow-hidden">
+                        <i data-lucide="activity" class="w-7 h-7"></i>
                     </div>
                     <div>
                         <h1 class="text-2xl font-black text-white tracking-tighter leading-none mb-1">
@@ -93,7 +95,7 @@
                 
                 <div class="flex gap-2">
                     <a href="{{ route('patient.dashboard.choice') }}" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white hover:border-blue-500/50 transition-all gap-2">
-                        <i class="fas fa-th-large text-xs"></i>
+                        <i data-lucide="layout-grid" class="w-5 h-5"></i>
                     </a>
                 </div>
             </div>
@@ -125,7 +127,7 @@
                         @if($patient->avatar)
                             <img src="{{ asset('storage/' . $patient->avatar) }}" alt="Avatar" class="w-full h-full object-cover">
                         @else
-                            <i class="fas fa-user"></i>
+                            <i data-lucide="user" class="w-10 h-10"></i>
                         @endif
                     </div>
                     
@@ -162,7 +164,7 @@
             <section class="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 <div class="glass-card p-4 rounded-3xl flex flex-col items-center justify-center gap-2 text-center {{ $alerts['workouts'] > 0 ? 'border-amber-500/30' : '' }}">
                     <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                        <i class="fas fa-running"></i>
+                        <i data-lucide="zap" class="w-5 h-5"></i>
                     </div>
                     <div>
                         <span class="block text-white font-black text-sm">{{ $alerts['workouts'] }}</span>
@@ -445,10 +447,12 @@
             <span class="text-[8px] font-black uppercase">Home</span>
         </a>
         
+        @if($summary['has_evolution_data'])
         <a href="{{ route('patient.evolution') }}" class="flex flex-col items-center gap-1 text-zinc-500 hover:text-white transition-colors">
             <i class="fas fa-chart-pie text-xl"></i>
             <span class="text-[8px] font-black uppercase tracking-tighter">Evolução</span>
         </a>
+        @endif
 
         <div class="relative">
             <a href="{{ route('patient.unified.dashboard') }}" class="w-[4.5rem] h-[4.5rem] btn-brand-glow text-white rounded-full flex items-center justify-center -mt-20 border-[6px] border-[#06080c] shadow-2xl relative">

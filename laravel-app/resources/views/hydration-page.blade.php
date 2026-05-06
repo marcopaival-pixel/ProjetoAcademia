@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'NexHydra — Controle de Hidratação Intelinte')
+@section('title', 'NexHydra — Controle de Hidratação Inteligente')
 
 @section('content')
-    <div class="py-10 space-y-12 animate-dashboard-entry max-w-[1700px] mx-auto px-6">
+    <div class="py-10 space-y-12 animate-fade-in-up max-w-[1700px] mx-auto px-6">
         <!-- Header: NexHydra Strategy -->
-        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-4 border-b border-white/5">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-4 border-b border-zinc-900">
             <div class="space-y-3">
                 <div class="flex items-center gap-3">
                     <span
-                        class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-500/20">Equilíbrio
+                        class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Equilíbrio
                         Biológico Ativo</span>
-                    <span class="text-zinc-600">•</span>
-                    <span class="text-zinc-400 text-xs font-bold italic">Monitoramento da Osmolaridade em Tempo Real</span>
+                    <span class="text-zinc-700">•</span>
+                    <span class="text-zinc-500 text-xs font-black italic uppercase tracking-tighter">Monitoramento da Osmolaridade em Tempo Real</span>
                 </div>
-                <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
-                    Nex<span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400">Hydra</span>
+                <h1 class="text-5xl font-black tracking-tight text-white leading-tight uppercase">
+                    Nex<span class="text-emerald-500">Hydra</span>
                 </h1>
                 <p class="text-zinc-500 font-medium max-w-xl">Inteligência aplicada à sua hidratação. Mantenha o equilíbrio
                     celular e maximize sua performance cognitiva e física.</p>
@@ -23,15 +23,8 @@
 
             <div class="flex flex-wrap items-center gap-4">
                 <button onclick="toggleSettingsModal()"
-                    class="group px-6 py-3 bg-zinc-900/60 backdrop-blur-xl text-zinc-400 font-bold rounded-xl border border-white/5 hover:border-blue-500/30 hover:text-white transition-all flex items-center gap-3">
-                    <svg class="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                        </path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
+                    class="group px-6 py-3 bg-zinc-900 text-zinc-400 font-black rounded-xl border border-zinc-800 hover:border-emerald-500/30 hover:text-white transition-all flex items-center gap-3 shadow-xl uppercase text-xs tracking-widest">
+                    <i data-lucide="settings" class="w-4 h-4 transition-transform group-hover:rotate-90"></i>
                     Configurações
                 </button>
             </div>
@@ -42,37 +35,32 @@
             <!-- Tracker Card (Left/Center) -->
             <div class="lg:col-span-12 xl:col-span-5 space-y-10">
                 <div
-                    class="group relative bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-[3.5rem] overflow-hidden shadow-2xl transition-all hover:border-blue-500/30">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none">
+                    class="group relative bg-zinc-900 border border-zinc-800 rounded-[3.5rem] overflow-hidden shadow-2xl transition-all hover:border-emerald-500/30">
+                    <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none">
                     </div>
 
                     <!-- Fluid Animation Chamber -->
                     <div
-                        class="relative h-[400px] bg-zinc-950/50 overflow-hidden flex flex-col items-center justify-center">
+                        class="relative h-[450px] bg-zinc-950 overflow-hidden flex flex-col items-center justify-center shadow-inner">
                         <!-- Dynamic Wave Background -->
                         <div id="hydration-wave"
-                            class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-blue-600 to-blue-400 transition-all duration-1000 ease-in-out opacity-20"
+                            class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-1000 ease-in-out opacity-20 shadow-[0_0_50px_rgba(16,185,129,0.3)]"
                             style="height: 0%">
                             <div
-                                class="absolute top-0 left-0 w-[200%] h-20 bg-blue-400/20 -translate-y-1/2 animate-[wave_6s_linear_infinite] rounded-[40%]">
+                                class="absolute top-0 left-0 w-[200%] h-32 bg-emerald-400/20 -translate-y-1/2 animate-wave-slow rounded-[40%]">
                             </div>
                             <div
-                                class="absolute top-0 left-0 w-[200%] h-20 bg-blue-300/10 -translate-y-1/2 animate-[wave_8s_linear_infinite_reverse] rounded-[45%]">
+                                class="absolute top-0 left-0 w-[200%] h-32 bg-emerald-300/10 -translate-y-1/2 animate-wave-fast rounded-[45%]">
                             </div>
                         </div>
 
                         <!-- HUD Stats -->
-                        <div class="relative z-10 text-center space-y-2">
+                        <div class="relative z-10 text-center space-y-4">
                             <div id="current-percentage"
-                                class="text-8xl font-black text-white tracking-tighter tabular-nums drop-shadow-2xl">0%
+                                class="text-9xl font-black text-white tracking-tighter tabular-nums drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">0%
                             </div>
-                            <div id="current-label" class="text-blue-400 font-black uppercase tracking-[0.3em] text-[10px]">
+                            <div id="current-label" class="bg-zinc-900/80 backdrop-blur-md border border-white/5 px-6 py-2 rounded-full text-emerald-400 font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl">
                                 0ml / 0ml</div>
-                        </div>
-
-                        <!-- Water Bottle Silhouette Overlay (Optional High-End Detail) -->
-                        <div
-                            class="absolute inset-x-0 bottom-0 top-1/4 pointer-events-none opacity-5 border-x-[40px] border-zinc-900 rounded-t-full">
                         </div>
                     </div>
 
@@ -81,21 +69,21 @@
                         <div class="grid grid-cols-4 gap-4">
                             @foreach([['ml' => 200, 'label' => 'Copo'], ['ml' => 300, 'label' => 'Grande'], ['ml' => 500, 'label' => 'Garrafa'], ['ml' => 1000, 'label' => 'Max']] as $btn)
                                 <button onclick="addWater({{ $btn['ml'] }})"
-                                    class="group flex flex-col items-center justify-center p-4 bg-zinc-950/50 border border-white/5 rounded-3xl hover:bg-blue-600 hover:scale-105 transition-all active:scale-95 shadow-lg">
-                                    <span class="text-white font-black text-lg">+{{ $btn['ml'] }}</span>
+                                    class="group flex flex-col items-center justify-center p-6 bg-zinc-950 border border-zinc-800 rounded-3xl hover:bg-emerald-500 hover:scale-105 transition-all active:scale-95 shadow-xl">
+                                    <span class="text-white font-black text-xl group-hover:text-zinc-950 tabular-nums">+{{ $btn['ml'] }}</span>
                                     <span
-                                        class="text-[8px] text-zinc-500 font-black uppercase tracking-widest group-hover:text-white">{{ $btn['label'] }}</span>
+                                        class="text-[9px] text-zinc-600 font-black uppercase tracking-widest group-hover:text-zinc-950 mt-1">{{ $btn['label'] }}</span>
                                 </button>
                             @endforeach
                         </div>
 
                         <div class="relative">
                             <input type="number" id="custom-amount"
-                                class="w-full bg-zinc-950/50 border border-white/5 rounded-[2.5rem] p-6 text-white text-sm font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all placeholder:text-zinc-700 shadow-inner"
-                                placeholder="Volume customizado (ml)...">
+                                class="w-full bg-zinc-950 border border-zinc-800 rounded-[2.5rem] p-6 text-white text-sm font-black focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all placeholder:text-zinc-800 shadow-inner tabular-nums uppercase"
+                                placeholder="VOLUME CUSTOMIZADO (ML)...">
                             <button onclick="addWater(document.getElementById('custom-amount').value)"
-                                class="absolute right-3 top-3 bottom-3 px-6 bg-white text-zinc-900 font-black rounded-3xl hover:bg-blue-400 hover:text-white transition-all active:scale-95 shadow-lg uppercase text-[10px] tracking-widest">
-                                Log
+                                class="absolute right-3 top-3 bottom-3 px-8 bg-emerald-500 text-zinc-950 font-black rounded-3xl hover:bg-emerald-400 transition-all active:scale-95 shadow-xl uppercase text-[10px] tracking-widest">
+                                REGISTRAR
                             </button>
                         </div>
                     </div>
@@ -106,38 +94,37 @@
             <div class="lg:col-span-12 xl:col-span-7 space-y-10">
                 <!-- Bento History Card -->
                 <div
-                    class="bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-[3.5rem] p-10 shadow-2xl space-y-8">
+                    class="bg-zinc-900 border border-zinc-800 rounded-[3.5rem] p-10 shadow-2xl space-y-8">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-white font-black text-2xl tracking-tight">Linha do Tempo Diária
-                                <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">Registros
-                                    Automáticos
-                                    & Manuais</p>
+                        <div class="space-y-1">
+                            <h3 class="text-white font-black text-2xl tracking-tight uppercase italic">Linha do Tempo Diária</h3>
+                            <p class="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Sincronização Hídrica v3.0</p>
                         </div>
                         <span
-                            class="px-4 py-2 bg-white/5 rounded-2xl text-blue-400 text-[10px] font-black uppercase tracking-widest border border-white/10">Hoje,
-                            {{ now()->format('d M') }}</span>
+                            class="px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-2xl text-emerald-500 text-[10px] font-black uppercase tracking-widest shadow-inner">Hoje,
+                            {{ now()->translatedFormat('d M') }}</span>
                     </div>
 
-                    <div id="entries-list" class="space-y-4 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
+                    <div id="entries-list" class="space-y-4 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar">
                         <!-- Dynamic Items -->
                         <div
-                            class="flex items-center justify-center py-20 text-zinc-600 font-black uppercase text-[10px] tracking-[0.2em] italic">
-                            Iniciando sistemas de monitoramento...
+                            class="flex items-center justify-center py-20 text-zinc-800 font-black uppercase text-[10px] tracking-[0.2em] italic animate-pulse">
+                            Iniciando sensores hídricos...
                         </div>
                     </div>
                 </div>
 
                 <!-- Analytics Chart -->
                 <div
-                    class="bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-[3.5rem] p-10 shadow-2xl h-[400px]">
+                    class="bg-zinc-900 border border-zinc-800 rounded-[3.5rem] p-10 shadow-2xl h-[450px]">
                     <div class="flex items-center justify-between mb-8 px-4">
-                        <h3 class="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Análise de Desempenho de
-                            Hidratação
-                            (7D)</h3>
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                            <span class="text-zinc-500 text-[10px] font-black uppercase">Consumo Global</span>
+                        <div class="space-y-1">
+                            <h3 class="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Performance de Hidratação (7D)</h3>
+                            <p class="text-[9px] text-zinc-700 font-bold uppercase">Análise de Balanço Acumulado</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-zinc-950 px-4 py-2 rounded-full border border-zinc-800 shadow-inner">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+                            <span class="text-zinc-500 text-[9px] font-black uppercase tracking-widest">Consumo Global</span>
                         </div>
                     </div>
                     <div class="h-64">
@@ -145,38 +132,38 @@
                     </div>
                 </div>
 
-                <!-- NOVO: Premium Biometric Status Card -->
+                <!-- Premium Biometric Status Card -->
                 <div id="premium-status-container" class="hidden">
-                    <div class="bg-gradient-to-br from-indigo-900/40 to-blue-900/20 backdrop-blur-2xl border border-indigo-500/20 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
-                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all"></div>
+                    <div class="bg-zinc-900 border border-emerald-500/20 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
+                        <div class="absolute -right-10 -top-10 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-all duration-1000"></div>
                         
-                        <div class="flex flex-col md:flex-row items-center gap-10">
+                        <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
                             <div class="relative">
-                                <svg class="w-32 h-32 transform -rotate-90">
-                                    <circle cx="64" cy="64" r="60" stroke="currentColor" stroke-width="8" fill="transparent" class="text-zinc-800" />
-                                    <circle id="status-progress-circle" cx="64" cy="64" r="60" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="377" stroke-dashoffset="377" class="text-blue-500 transition-all duration-1000" />
+                                <svg class="w-32 h-32 transform -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                    <circle cx="64" cy="64" r="60" stroke="currentColor" stroke-width="8" fill="transparent" class="text-zinc-950" />
+                                    <circle id="status-progress-circle" cx="64" cy="64" r="60" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="377" stroke-dashoffset="377" class="text-emerald-500 transition-all duration-1000 shadow-lg" />
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center flex-col">
-                                    <span id="status-percentage" class="text-2xl font-black text-white">0%</span>
+                                    <span id="status-percentage" class="text-3xl font-black text-white tabular-nums">0%</span>
                                 </div>
                             </div>
                             
                             <div class="flex-1 space-y-4 text-center md:text-left">
-                                <div class="flex items-center justify-center md:justify-start gap-2">
-                                    <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">Status Biométrico Pro</span>
-                                    <span id="status-indicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <div class="flex items-center justify-center md:justify-start gap-3">
+                                    <span class="px-3 py-1 bg-emerald-500 text-zinc-950 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/10">Elite Bio-Status</span>
+                                    <span id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                                 </div>
-                                <h3 id="status-title" class="text-3xl font-black text-white leading-tight">Carregando análise...</h3>
-                                <p id="status-description" class="text-zinc-400 text-sm font-medium leading-relaxed">Nossos algoritmos estão processando seu balanço hídrico em tempo real.</p>
+                                <h3 id="status-title" class="text-3xl font-black text-white leading-tight uppercase tracking-tighter">PROCESSANDO...</h3>
+                                <p id="status-description" class="text-zinc-500 text-sm font-medium leading-relaxed italic">"Monitorando seu balanço osmótico para otimizar a recuperação celular."</p>
                                 
                                 <div class="grid grid-cols-2 gap-4 pt-2">
-                                    <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                                        <span class="text-[8px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Esperado Agora</span>
-                                        <span id="status-expected" class="text-xl font-black text-white">0ml</span>
+                                    <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-800 shadow-inner">
+                                        <span class="text-[8px] text-zinc-600 font-black uppercase tracking-widest block mb-1">Esperado Agora</span>
+                                        <span id="status-expected" class="text-xl font-black text-white tabular-nums">0ml</span>
                                     </div>
-                                    <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                                        <span class="text-[8px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Diferença</span>
-                                        <span id="status-diff" class="text-xl font-black text-white">0ml</span>
+                                    <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-800 shadow-inner">
+                                        <span class="text-[8px] text-zinc-600 font-black uppercase tracking-widest block mb-1">Diferença</span>
+                                        <span id="status-diff" class="text-xl font-black text-white tabular-nums">0ml</span>
                                     </div>
                                 </div>
                             </div>
@@ -186,107 +173,82 @@
 
                 <!-- Free Upsell Card -->
                 <div id="free-upsell-container" class="hidden">
-                    <div class="bg-zinc-900/40 border border-dashed border-zinc-800 rounded-[3.5rem] p-12 text-center space-y-6">
-                        <div class="w-16 h-16 bg-zinc-800 rounded-3xl flex items-center justify-center mx-auto text-zinc-600">
-                            <i class="fas fa-lock text-3xl"></i>
+                    <div class="bg-zinc-950 border border-zinc-800 rounded-[3.5rem] p-12 text-center space-y-8 shadow-2xl">
+                        <div class="w-20 h-20 bg-zinc-900 border border-zinc-800 rounded-3xl flex items-center justify-center mx-auto text-zinc-700 shadow-xl">
+                            <i data-lucide="lock" class="w-10 h-10"></i>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-black text-white">Desbloqueie a Curva Biometrica</h3>
-                            <p class="text-zinc-500 text-sm max-w-sm mx-auto">Saiba exatamente se você está adiantado ou atrasado na sua hidratação com base no horário do dia.</p>
+                        <div class="space-y-2">
+                            <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Bio-Status Premium</h3>
+                            <p class="text-zinc-600 text-sm max-w-sm mx-auto font-medium">Saiba se você está adiantado ou atrasado na sua hidratação com base no seu metabolismo hídrico.</p>
                         </div>
-                        <button onclick="document.getElementById('premiumModal').style.display='flex'" class="px-8 py-3 bg-white text-zinc-900 font-black rounded-2xl hover:scale-105 transition-all text-xs uppercase tracking-widest">Seja NexElite</button>
+                        <button onclick="window.location.href='{{ route('plano') }}'" class="px-10 py-4 bg-emerald-500 text-zinc-950 font-black rounded-2xl hover:bg-emerald-400 transition-all text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/10">ATIVAR NEXELITE</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Settings Modal: Cyber Style -->
+    <!-- Settings Modal -->
     <div id="settingsModal"
-        class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6 bg-zinc-950/90 backdrop-blur-xl">
         <div
-            class="bg-zinc-900 border border-white/10 w-full max-w-lg rounded-[3rem] p-10 shadow-3xl animate-dashboard-entry">
+            class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[3.5rem] p-10 shadow-3xl animate-fade-in-up">
             <div class="space-y-10">
-                <div class="flex items-center justify-between border-b border-white/5 pb-6">
-                    <h2 class="text-3xl font-black text-white tracking-tight">NexHydra <span
-                            class="text-blue-500">Config</span></h2>
-                    <button onclick="toggleSettingsModal()" class="text-zinc-500 hover:text-white transition-colors">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l18 18">
-                            </path>
-                        </svg>
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-8">
+                    <div class="space-y-1">
+                        <h2 class="text-3xl font-black text-white tracking-tighter uppercase italic">Nex<span class="text-emerald-500">Hydra</span> Config</h2>
+                        <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Protocolos de ajuste hídrico</p>
+                    </div>
+                    <button onclick="toggleSettingsModal()" class="w-12 h-12 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-600 hover:text-rose-500 transition-all shadow-xl">
+                        <i data-lucide="x" class="w-6 h-6"></i>
                     </button>
                 </div>
 
                 <form id="settings-form" class="space-y-8">
                     <div class="space-y-4">
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Modo de
-                            Cálculo</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 px-3">Algoritmo de Cálculo</label>
                         <select id="target-mode" onchange="toggleManualTarget()"
-                            class="w-full bg-zinc-950 border border-white/5 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/30 transition-all appearance-none cursor-pointer">
-                            <option value="auto">🔥 Inteligente (Baseado em Bio-Métricas)</option>
-                            <option value="manual">⚙️ Manual (Meta Fixa)</option>
+                            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-white font-black outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all appearance-none cursor-pointer uppercase text-xs tracking-widest">
+                            <option value="auto">🔥 INTELIGENTE (BIO-MÉTRICAS)</option>
+                            <option value="manual">⚙️ MANUAL (META FIXA)</option>
                         </select>
                     </div>
 
                     <div id="manual-target-group" class="space-y-4 hidden">
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Meta
-                            Personalizada (ml)</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 px-3">Meta Personalizada (ml)</label>
                         <input type="number" id="manual-target"
-                            class="w-full bg-zinc-950 border border-white/5 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+                            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-white font-black outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all tabular-nums uppercase text-sm"
                             step="100" min="500">
                     </div>
 
                     <div class="space-y-4">
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Ambiente
-                            Térmico</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 px-3">Ambiente Térmico</label>
                         <select id="climate-setting"
-                            class="w-full bg-zinc-950 border border-white/5 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/30 transition-all appearance-none cursor-pointer">
-                            <option value="cold">❄️ Frio (Baixo Gasto Hídrico)</option>
-                            <option value="moderate">🍃 Moderado</option>
-                            <option value="hot">☀️ Quente (Indução de Sede)</option>
+                            class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-white font-black outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all appearance-none cursor-pointer uppercase text-xs tracking-widest">
+                            <option value="cold">❄️ FRIO (BAIXO GASTO)</option>
+                            <option value="moderate">🍃 MODERADO</option>
+                            <option value="hot">☀️ QUENTE (INDUCÃO DE SEDE)</option>
                         </select>
                     </div>
 
                     <div class="pt-6 grid grid-cols-2 gap-4">
                         <button type="button" onclick="toggleSettingsModal()"
-                            class="py-4 bg-zinc-800 text-zinc-400 font-black rounded-2xl hover:bg-zinc-700 transition-all uppercase text-[10px] tracking-widest">Descartar</button>
+                            class="py-5 bg-zinc-950 border border-zinc-800 text-zinc-600 font-black rounded-2xl hover:bg-zinc-800 transition-all uppercase text-[10px] tracking-widest shadow-xl">DESCARTAR</button>
                         <button type="button" onclick="saveSettings()"
-                            class="py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-400 transition-all shadow-xl uppercase text-[10px] tracking-widest">Salvar</button>
+                            class="py-5 bg-emerald-500 text-zinc-950 font-black rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10 uppercase text-[10px] tracking-widest">SALVAR AJUSTES</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <style>
-        @keyframes wave {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(-50%);
-            }
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(59, 130, 246, 0.2);
-        }
-    </style>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+    @endpush
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -326,7 +288,7 @@
                 
                 document.getElementById('status-expected').textContent = expected + 'ml';
                 document.getElementById('status-diff').textContent = (diff > 0 ? '+' : '') + diff + 'ml';
-                document.getElementById('status-diff').className = diff >= 0 ? 'text-xl font-black text-emerald-400' : 'text-xl font-black text-rose-400';
+                document.getElementById('status-diff').className = diff >= 0 ? 'text-xl font-black text-emerald-400 tabular-nums' : 'text-xl font-black text-rose-400 tabular-nums';
                 
                 const statusPerc = Math.min(100, Math.round((actual / expected) * 100)) || 0;
                 document.getElementById('status-percentage').textContent = statusPerc + '%';
@@ -340,17 +302,17 @@
                 const desc = document.getElementById('status-description');
                 
                 if (data.status === 'ahead') {
-                    indicator.className = 'w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]';
+                    indicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] animate-pulse';
                     title.textContent = 'Performance Superior';
-                    desc.textContent = 'Você está acima da curva média biológica. Seu corpo está em estado de máxima refrigeração e transporte de nutrientes.';
+                    desc.textContent = 'Você está acima da curva média biológica. Seu corpo está em estado de máxima refrigeração.';
                 } else if (data.status === 'on_track') {
-                    indicator.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+                    indicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse';
                     title.textContent = 'Equilíbrio Celular';
-                    desc.textContent = 'Sincronização perfeita com o horário do dia. Continue mantendo este ritmo para evitar platôs metabólicos.';
+                    desc.textContent = 'Sincronização perfeita com o horário do dia. Continue mantendo este ritmo para evitar platôs.';
                 } else {
-                    indicator.className = 'w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]';
-                    title.textContent = 'Débito Hídrico Detectado';
-                    desc.textContent = 'Você está atrás da meta prevista para este horário. Beba pelo menos 300ml agora para reestabelecer a osmolaridade.';
+                    indicator.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)] animate-pulse';
+                    title.textContent = 'DÉBITO HÍDRICO!';
+                    desc.textContent = 'Você está atrás da meta prevista para este horário. Beba pelo menos 300ml agora.';
                 }
             } else {
                 document.getElementById('premium-status-container').classList.add('hidden');
@@ -366,28 +328,30 @@
             const list = document.getElementById('entries-list');
             if (data.entries.length === 0) {
                 list.innerHTML = `
-                            <div class="flex flex-col items-center justify-center py-20 text-zinc-600 space-y-4">
-                                <svg class="w-12 h-12 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <p class="font-black uppercase text-[10px] tracking-[0.2em] italic">Zero hídrico hoje. Inicie o suporte.</p>
+                            <div class="flex flex-col items-center justify-center py-20 text-zinc-800 space-y-6">
+                                <i data-lucide="droplet-off" class="w-16 h-16 opacity-10"></i>
+                                <p class="font-black uppercase text-[10px] tracking-[0.3em] italic">Déficit hídrico detectado. Inicie o suporte.</p>
                             </div>
                         `;
+                lucide.createIcons();
             } else {
                 list.innerHTML = data.entries.map(e => `
-                            <div class="flex items-center justify-between p-6 bg-zinc-950/40 border border-white/5 rounded-3xl group transition-all hover:bg-zinc-800">
+                            <div class="flex items-center justify-between p-6 bg-zinc-950 border border-zinc-800 rounded-3xl group transition-all hover:border-emerald-500/20 shadow-inner">
                                 <div class="flex items-center gap-5">
-                                    <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-16 0m16 0v10l-8 4-8-4V7m16 0l-8 4-8-4"></path></svg>
+                                    <div class="w-12 h-12 bg-emerald-500 text-zinc-950 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-xl">
+                                        <i data-lucide="droplets" class="w-6 h-6"></i>
                                     </div>
                                     <div>
-                                        <div class="text-white font-black text-base">+${e.amount_ml}ml</div>
-                                        <div class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">${new Date(e.drank_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${e.source || 'Manual'}</div>
+                                        <div class="text-white font-black text-lg tabular-nums uppercase">+${e.amount_ml}ml</div>
+                                        <div class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-0.5">${new Date(e.drank_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${e.source || 'MANUAL'}</div>
                                     </div>
                                 </div>
-                                <button onclick="deleteEntry(${e.id})" class="p-3 text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all active:scale-95">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                <button onclick="deleteEntry(${e.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-700 hover:text-rose-500 transition-all active:scale-95 shadow-xl opacity-0 group-hover:opacity-100">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         `).join('');
+                lucide.createIcons();
             }
         }
 
@@ -410,7 +374,7 @@
                 })
                 .catch(err => {
                     console.error('Core Trace Error:', err);
-                    alert('Falha crítica na rede. Verifique sua conexão com o NexShape Arena.');
+                    alert('Falha crítica na rede. Verifique sua conexão.');
                 });
         }
 
@@ -421,9 +385,9 @@
                 return;
             }
             window.openNxConfirmDelete({
-                title: 'Purgar registo',
-                message: 'Purgar este registo de bio-balanço? Esta ação não pode ser desfeita.',
-                primaryLabel: 'Purgar',
+                title: 'PURGAR REGISTRO',
+                message: 'Deseja realmente purgar este registro de bio-balanço?',
+                primaryLabel: 'PURGAR',
                 onConfirm: function () { deleteEntryDoFetch(id); }
             });
         }
@@ -443,6 +407,7 @@
         function toggleSettingsModal() {
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) lucide.createIcons();
         }
 
         function toggleManualTarget() {
@@ -465,17 +430,17 @@
                 })
             })
                 .then(async r => {
-                    const data = await r.json().catch(() => ({ success: false, message: 'Estrutura JSON inválida no servidor.' }));
+                    const data = await r.json().catch(() => ({ success: false, message: 'Estrutura JSON inválida.' }));
                     if (r.ok && data.success) {
                         toggleSettingsModal();
                         refreshStatus();
                     } else {
-                        alert('Erro de Configuração: ' + (data.message || 'Falha na resposta do servidor.'));
+                        alert('Erro: ' + (data.message || 'Falha na resposta.'));
                     }
                 })
                 .catch(err => {
                     console.error('Core Sync Error:', err);
-                    alert('Falha total na sincronização hídrica. Verifique se o servidor XAMPP está ativo.');
+                    alert('Falha total na sincronização hídrica.');
                 });
         }
 
@@ -486,12 +451,12 @@
                     const ctx = document.getElementById('hydrationChart').getContext('2d');
                     if (window.myHydrationChart) window.myHydrationChart.destroy();
 
-                    const labels = data.map(d => new Date(d.entry_date).toLocaleDateString('pt-BR', { weekday: 'short' }));
+                    const labels = data.map(d => new Date(d.entry_date).toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase());
                     const values = data.map(d => d.total);
 
-                    const blueGradient = ctx.createLinearGradient(0, 0, 0, 300);
-                    blueGradient.addColorStop(0, '#3b82f6');
-                    blueGradient.addColorStop(1, '#3b82f600');
+                    const emeraldGradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    emeraldGradient.addColorStop(0, '#10b981');
+                    emeraldGradient.addColorStop(1, '#10b98100');
 
                     window.myHydrationChart = new Chart(ctx, {
                         type: 'bar',
@@ -500,8 +465,8 @@
                             datasets: [{
                                 label: 'Consumo Global',
                                 data: values,
-                                backgroundColor: blueGradient,
-                                borderColor: '#3b82f6',
+                                backgroundColor: emeraldGradient,
+                                borderColor: '#10b981',
                                 borderWidth: 2,
                                 borderRadius: 12,
                                 maxBarThickness: 40
@@ -513,22 +478,24 @@
                             plugins: {
                                 legend: { display: false },
                                 tooltip: {
-                                    backgroundColor: '#18181b',
+                                    backgroundColor: '#09090b',
                                     titleFont: { size: 12, weight: '900' },
                                     bodyFont: { size: 10, weight: 'bold' },
                                     padding: 12,
-                                    displayColors: false
+                                    displayColors: false,
+                                    borderColor: '#10b98133',
+                                    borderWidth: 1
                                 }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
-                                    grid: { color: 'rgba(255,255,255,0.03)', borderDash: [5, 5] },
-                                    ticks: { color: '#52525b', font: { size: 9, weight: 'bold' } }
+                                    grid: { color: 'rgba(255,255,255,0.02)', borderDash: [5, 5] },
+                                    ticks: { color: '#3f3f46', font: { size: 9, weight: '900' } }
                                 },
                                 x: {
                                     grid: { display: false },
-                                    ticks: { color: '#52525b', font: { size: 9, weight: 'bold' } }
+                                    ticks: { color: '#3f3f46', font: { size: 9, weight: '900' } }
                                 }
                             }
                         }
@@ -536,4 +503,44 @@
                 });
         }
     </script>
+
+    <style>
+        body {
+            background-color: #080a0f;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0, transparent 40%),
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        @keyframes wave-slow {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        @keyframes wave-fast {
+            from { transform: translateX(-25%); }
+            to { transform: translateX(25%); }
+        }
+
+        .animate-wave-slow { animation: wave-slow 12s linear infinite; }
+        .animate-wave-fast { animation: wave-fast 8s linear infinite; }
+
+        .animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.1); border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.2); }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
 @endsection

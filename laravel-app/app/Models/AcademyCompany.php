@@ -10,6 +10,7 @@ class AcademyCompany extends Model
     protected $fillable = [
         'name',
         'slug',
+        'uuid',
         'logo_path',
         'primary_color',
         'accent_color',

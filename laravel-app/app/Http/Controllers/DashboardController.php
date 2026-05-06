@@ -142,14 +142,13 @@ class DashboardController extends Controller
                 ->join('load_logs as l2', function($join) { $join->on('l1.exercise_id', '=', 'l2.exercise_id')->on('l1.user_id', '=', 'l2.user_id')->on('l1.log_date', '>', 'l2.log_date'); })
                 ->where('l1.user_id', $uid)->where('l1.log_date', '>=', now()->subDays(30))
                 ->select('l1.exercise_id', 'l1.log_date')->groupBy('l1.exercise_id', 'l1.log_date')
-                ->havingRaw('MAX(l1.weight_kg / (1.0278 - 0.0278 * l1.reps_done)) > MAX(l2.weight_kg / (1.0278 - 0.0278 * l2.reps_done))')
+                ->havingRaw('MAX(l1.one_rm) > MAX(l2.one_rm)')
                 ->count();
 
             $latestAssessment = BodyAssessment::where('user_id', $uid)->whereNotNull('bf_percent')->orderByDesc('assessment_date')->first();
             $topExercisePR = LoadLog::where('load_logs.user_id', $uid)
                 ->join('exercises_catalog', 'load_logs.exercise_id', '=', 'exercises_catalog.id')
                 ->select('load_logs.*', 'exercises_catalog.name as exercise_name')
-                ->selectRaw('(load_logs.weight_kg / (1.0278 - 0.0278 * load_logs.reps_done)) as one_rm')
                 ->orderByDesc('one_rm')->first();
 
             $neuralPrediction = ($isPremium && $topExercisePR) ? ProgressionService::suggestLoad($uid, $topExercisePR->exercise_id, (float)$topExercisePR->weight_kg, $topExercisePR->reps_done) : null;

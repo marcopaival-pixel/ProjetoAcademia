@@ -25,12 +25,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\EnsureRegistrationApproved::class,
             \App\Http\Middleware\EnsureEmailIsVerified::class,
+            \App\Http\Middleware\TenantMiddleware::class, // Adicionado aqui para contexto global
             \App\Http\Middleware\ProfileCompletionMiddleware::class,
             \App\Http\Middleware\UpdateLastActivity::class,
             \App\Http\Middleware\EnsureHasProfessionalLink::class,
             \App\Http\Middleware\CheckRouteMenuAccess::class,
             \App\Http\Middleware\EnforcePatientReadOnly::class,
+            \App\Http\Middleware\CheckMaintenanceMode::class,
+            \App\Http\Middleware\CheckReadOnlyMode::class,
             \App\Http\Middleware\HandleClinicImpersonation::class,
+            \App\Http\Middleware\RepresentativeTrackingMiddleware::class,
         ]);
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
@@ -56,6 +60,15 @@ return Application::configure(basePath: dirname(__DIR__))
             // Com a BD em baixo, SystemError::create() também falha — regista só no ficheiro.
             if ($e instanceof \Illuminate\Database\QueryException) {
                 \Illuminate\Support\Facades\Log::error('[sql] '.$e->getMessage());
+                app(\App\Services\Operations\OperationalAlertService::class)->sendEmergencyEmail(
+                    'Urgente: banco de dados indisponível',
+                    'Falha de conexão/consulta ao banco detectada durante uma requisição HTTP.',
+                    [
+                        'url' => request()->fullUrl(),
+                        'method' => request()->method(),
+                        'error' => $e->getMessage(),
+                    ]
+                );
 
                 return;
             }
@@ -70,7 +83,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) return;
 
                 \App\Models\SystemError::create([
-                    'user_id' => auth()->check() ? auth()->id() : null,
+                    'user_id' => \Illuminate\Support\Facades\Auth::check() ? \Illuminate\Support\Facades\Auth::id() : null,
                     'type' => $type,
                     'url' => request()->fullUrl(),
                     'method' => request()->method(),
@@ -80,11 +93,36 @@ return Application::configure(basePath: dirname(__DIR__))
                     'ip' => request()->ip(),
                     'user_agent' => request()->userAgent(),
                 ]);
+
+                if ($type === 'system') {
+                    app(\App\Services\Operations\OperationalAlertService::class)->sendEmergencyEmail(
+                        'Urgente: erro interno no sistema',
+                        'Erro interno detectado durante uma requisição HTTP.',
+                        [
+                            'url' => request()->fullUrl(),
+                            'method' => request()->method(),
+                            'error' => $e->getMessage(),
+                        ]
+                    );
+                }
             } catch (\Throwable $loggingError) {
                 // Log de emergência caso a gravação no Banco falhe
                 file_put_contents(storage_path('logs/system_logging_failure.log'), 
                     date('Y-m-d H:i:s') . ' - Erro ao gravar log: ' . $loggingError->getMessage() . PHP_EOL, 
                     FILE_APPEND);
             }
+        });
+
+        $exceptions->render(function (\Illuminate\Database\QueryException $e) {
+            if (app()->runningInConsole()) return null;
+
+            return response()->view('errors.db-down', [], 503);
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            if ($e->getStatusCode() == 500) {
+                return response()->view('errors.500', [], 500);
+            }
+            return null;
         });
     })->create();

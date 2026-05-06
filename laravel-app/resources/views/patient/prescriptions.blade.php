@@ -42,7 +42,7 @@
             </div>
             
             @forelse($trainings as $training)
-            <div class="glass-card p-6 rounded-[2.5rem] flex items-center gap-5 border-l-4 border-l-[var(--brand-primary)]">
+            <a href="{{ route('progression.plans.show', $training->id) }}" class="glass-card p-6 rounded-[2.5rem] flex items-center gap-5 border-l-4 border-l-[var(--brand-primary)] hover:scale-[1.02] transition-all">
                 <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-[var(--brand-primary)]">
                     <i class="fas fa-dumbbell"></i>
                 </div>
@@ -50,14 +50,16 @@
                     <h4 class="text-sm font-black text-white italic uppercase tracking-wider">{{ $training->name }}</h4>
                     <p class="text-[9px] font-bold text-zinc-500 uppercase">Criado em {{ $training->created_at->format('d/m/Y') }}</p>
                 </div>
-                <button class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white">
+                <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400">
                     <i class="fas fa-arrow-right text-xs"></i>
-                </button>
-            </div>
+                </div>
+            </a>
             @empty
-            <div class="glass-card p-8 rounded-3xl text-center border-dashed border-white/5 bg-transparent">
-                <p class="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Nenhum treino prescrito no momento.</p>
-            </div>
+            <x-patient.empty-state 
+                icon="fas fa-dumbbell" 
+                title="Sem Treinos" 
+                description="Seu plano de treinamento personalizado será exibido aqui assim que for prescrito pelo seu treinador."
+            />
             @endforelse
         </section>
 
@@ -69,7 +71,7 @@
             </div>
             
             @forelse($diets as $diet)
-            <div class="glass-card p-6 rounded-[2.5rem] flex items-center gap-5 border-l-4 border-l-[var(--brand-accent)]">
+            <a href="{{ route('nutrition.index', ['tab' => 'diary']) }}" class="glass-card p-6 rounded-[2.5rem] flex items-center gap-5 border-l-4 border-l-[var(--brand-accent)] hover:scale-[1.02] transition-all">
                 <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-[var(--brand-accent)]">
                     <i class="fas fa-utensils"></i>
                 </div>
@@ -77,14 +79,16 @@
                     <h4 class="text-sm font-black text-white italic uppercase tracking-wider">{{ $diet->name ?? 'Dieta Personalizada' }}</h4>
                     <p class="text-[9px] font-bold text-zinc-500 uppercase">Última atualização: {{ $diet->updated_at->format('d/m/Y') }}</p>
                 </div>
-                <button class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white">
+                <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400">
                     <i class="fas fa-arrow-right text-xs"></i>
-                </button>
-            </div>
+                </div>
+            </a>
             @empty
-            <div class="glass-card p-8 rounded-3xl text-center border-dashed border-white/5 bg-transparent">
-                <p class="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Nenhuma dieta prescrita no momento.</p>
-            </div>
+            <x-patient.empty-state 
+                icon="fas fa-utensils" 
+                title="Sem Dieta" 
+                description="Sua estratégia nutricional e diário alimentar estarão disponíveis assim que seu nutricionista liberar o plano."
+            />
             @endforelse
         </section>
     </div>

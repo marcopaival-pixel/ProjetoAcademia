@@ -37,12 +37,54 @@ class RegistrationStatusController extends Controller
         if ($user->isAdministrator()) {
             return redirect()->route('admin.dashboard');
         }
-        if ($user->registration_approval_status !== 'rejected') {
+        if ($user->registration_approval_status !== 'rejected' && $user->status !== 'RECUSADO') {
             return redirect()->route(
-                $user->registration_approval_status === 'pending' ? 'registration.pending' : 'dashboard'
+                $user->isRegistrationPending() ? 'registration.pending' : 'dashboard'
             );
         }
 
         return view('auth.registration-rejected');
+    }
+
+    public function representativePending(): View|RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return redirect()->route('login');
+        }
+        
+        if ($user->isActive()) {
+            return redirect()->route('representative.dashboard');
+        }
+
+        if (! $user->isRepresentativePending()) {
+             return redirect()->route($user->isRegistrationPending() ? 'registration.pending' : 'dashboard');
+        }
+
+        return view('auth.representative-pending');
+    }
+
+    public function track(): View
+    {
+        return view('auth.registration-track');
+    }
+
+    public function search(\Illuminate\Http\Request $request): View
+    {
+        $request->validate([
+            'search' => 'required|string',
+        ]);
+
+        $search = $request->input('search');
+        $normalizedSearch = \App\Support\Cpf::normalize($search);
+
+        $user = \App\Models\User::where('email', $search)
+            ->orWhere('cpf', $normalizedSearch)
+            ->first();
+
+        return view('auth.registration-track', [
+            'user' => $user,
+            'search' => $search
+        ]);
     }
 }

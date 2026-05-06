@@ -75,15 +75,30 @@ class AssessmentController extends Controller
             'heart_rate' => 'nullable|integer',
         ]);
 
-        $data['user_id'] = Auth::id();
+        $patientId = Auth::id();
+        $isProfessional = Auth::user()->hasRole(['professional', 'instructor', 'supervisor']);
         
-        if (!empty($data['professional_id'])) {
-            $data['status'] = 'pending';
-            $data['created_by'] = 'patient';
+        if ($isProfessional && $request->filled('patient_id')) {
+            // Verifica se o profissional tem vínculo com o paciente
+            if (Auth::user()->patients()->wherePivot('user_id', $request->patient_id)->exists()) {
+                $patientId = $request->patient_id;
+                $data['created_by'] = 'professional';
+                $data['professional_id'] = Auth::id();
+                $data['status'] = 'approved';
+            } else {
+                return back()->with('error', 'Acesso negado a este paciente.');
+            }
         } else {
-            $data['status'] = 'approved';
-            $data['created_by'] = 'patient';
+            if (!empty($data['professional_id'])) {
+                $data['status'] = 'pending';
+                $data['created_by'] = 'patient';
+            } else {
+                $data['status'] = 'approved';
+                $data['created_by'] = 'patient';
+            }
         }
+        
+        $data['user_id'] = $patientId;
 
         $assessment = BodyAssessment::create($data);
 
@@ -123,18 +138,32 @@ class AssessmentController extends Controller
             }
         }
 
+        if ($isProfessional && $request->filled('patient_id')) {
+            return redirect()->route('professional.patients.show', $patientId)->with('success', 'Avaliação física registrada com sucesso!');
+        }
+
         return redirect()->route('assessments.index')->with('success', 'Avaliação física registrada com sucesso!');
     }
 
     public function show(BodyAssessment $assessment): View
     {
         if ($assessment->user_id !== Auth::id()) abort(403);
+
+        if (Auth::user()->isResourceOverLimit('assessments', $assessment->id)) {
+            return redirect()->route('assessments.index')->with('error', 'Esta avaliação está bloqueada por exceder o limite do seu plano atual. Faça upgrade para acessá-la.');
+        }
+
         return view('assessments.show', compact('assessment'));
     }
 
     public function destroy(BodyAssessment $assessment)
     {
         if ($assessment->user_id !== Auth::id()) abort(403);
+
+        if (Auth::user()->isResourceOverLimit('assessments', $assessment->id)) {
+            return back()->with('error', 'Esta avaliação está bloqueada por exceder o limite do seu plano atual. Faça upgrade para gerenciá-la.');
+        }
+
         $assessment->delete();
         return back()->with('success', 'Avaliação removida.');
     }

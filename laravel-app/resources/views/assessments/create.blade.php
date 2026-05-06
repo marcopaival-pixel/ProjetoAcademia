@@ -3,144 +3,100 @@
 @section('title', 'Nova Avaliação Física')
 
 @section('content')
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="glass-card p-4 p-md-5">
-                <h2 class="text-gradient mb-4">Nova Avaliação Física</h2>
-
-                <form action="{{ route('assessments.store') }}" method="POST">
-                    @csrf
-                    
-                    <div class="row g-4">
-                        <!-- Seção: Info Básica -->
-                        <div class="col-12">
-                            <h5 class="text-primary border-bottom border-secondary pb-2 mb-3">Informações Gerais</h5>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-bold">Data da Avaliação</label>
-                                    <input type="date" name="assessment_date" class="form-control glass-input" value="{{ date('Y-m-d') }}" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-bold">Peso Corporal (kg)</label>
-                                    <input type="number" step="0.1" name="weight_kg" class="form-control glass-input" placeholder="0.0">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label text-muted small fw-bold">Gordura (BF %)</label>
-                                    <input type="number" step="0.1" name="bf_percent" class="form-control glass-input" placeholder="0">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label text-muted small fw-bold">Músculo (%)</label>
-                                    <input type="number" step="0.1" name="muscle_percent" class="form-control glass-input" placeholder="0">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-bold">Enviar para Profissional</label>
-                                    <select name="professional_id" class="form-select glass-input">
-                                        <option value="">Apenas registro pessoal</option>
-                                        @foreach($professionals as $pro)
-                                            <option value="{{ $pro->id }}">{{ $pro->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-bold">Pressão Arterial</label>
-                                    <input type="text" name="blood_pressure" class="form-control glass-input" placeholder="120/80">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-bold">Freq. Cardíaca (bpm)</label>
-                                    <input type="number" name="heart_rate" class="form-control glass-input" placeholder="70">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Seção: Tronco -->
-                        <div class="col-md-6">
-                            <h5 class="text-primary border-bottom border-secondary pb-2 mb-3">Tronco</h5>
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Pescoço (cm)</label>
-                                    <input type="number" step="0.1" name="neck" class="form-control glass-input">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Tórax (cm)</label>
-                                    <input type="number" step="0.1" name="chest" class="form-control glass-input">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Cintura (cm)</label>
-                                    <input type="number" step="0.1" name="waist" class="form-control glass-input">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Abdômen (cm)</label>
-                                    <input type="number" step="0.1" name="abdomen" class="form-control glass-input">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label text-muted small fw-bold">Quadril (cm)</label>
-                                    <input type="number" step="0.1" name="hips" class="form-control glass-input">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Seção: Membros Superiores -->
-                        <div class="col-md-6">
-                            <h5 class="text-primary border-bottom border-secondary pb-2 mb-3">Membros Superiores</h5>
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Braço Esq. (cm)</label>
-                                    <input type="number" step="0.1" name="bicep_l" class="form-control glass-input">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Braço Dir. (cm)</label>
-                                    <input type="number" step="0.1" name="bicep_r" class="form-control glass-input">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Antebraço Esq. (cm)</label>
-                                    <input type="number" step="0.1" name="forearm_l" class="form-control glass-input">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">Antebraço Dir. (cm)</label>
-                                    <input type="number" step="0.1" name="forearm_r" class="form-control glass-input">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Seção: Membros Inferiores -->
-                        <div class="col-12">
-                            <h5 class="text-primary border-bottom border-secondary pb-2 mb-3">Membros Inferiores</h5>
-                            <div class="row g-3">
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label text-muted small fw-bold">Coxa Esq. (cm)</label>
-                                    <input type="number" step="0.1" name="thigh_l" class="form-control glass-input">
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label text-muted small fw-bold">Coxa Dir. (cm)</label>
-                                    <input type="number" step="0.1" name="thigh_r" class="form-control glass-input">
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label text-muted small fw-bold">Panturrilha Esq. (cm)</label>
-                                    <input type="number" step="0.1" name="calf_l" class="form-control glass-input">
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label text-muted small fw-bold">Panturrilha Dir. (cm)</label>
-                                    <input type="number" step="0.1" name="calf_r" class="form-control glass-input">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label text-muted small fw-bold">Anotações / Observações</label>
-                            <textarea name="notes" rows="3" class="form-control glass-input" placeholder="Sentiu alguma diferença? Novo protocolo?"></textarea>
-                        </div>
-
-                        <div class="col-12 pt-3">
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary px-5">Salvar Avaliação</button>
-                                <a href="{{ route('assessments.index') }}" class="btn btn-ghost">Cancelar</a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+<div class="py-10 max-w-4xl mx-auto px-4 animate-fade-in-up">
+    <!-- Header Strategy -->
+    <div class="flex items-center gap-4 mb-10">
+        <a href="{{ route('assessments.index') }}" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-emerald-500/50 transition-all">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Nova <span class="text-emerald-500">Avaliação</span></h1>
+            <p class="text-zinc-500 text-sm font-medium">Registre suas métricas e acompanhe sua evolução real.</p>
         </div>
     </div>
+
+    <form action="{{ route('assessments.store') }}" method="POST">
+        @csrf
+        
+        <div class="space-y-12">
+            <!-- Seção: Info Básica -->
+            <x-premium-card title="Informações Gerais" icon="info" iconColor="emerald">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <x-premium-input label="Data" name="assessment_date" type="date" value="{{ date('Y-m-d') }}" required />
+                    <x-premium-input label="Peso (kg)" name="weight_kg" type="number" step="0.1" placeholder="0.0" icon="weight" />
+                    <x-premium-input label="Gordura (BF %)" name="bf_percent" type="number" step="0.1" placeholder="0" icon="percent" />
+                    <x-premium-input label="Músculo (%)" name="muscle_percent" type="number" step="0.1" placeholder="0" icon="activity" />
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Enviar para Profissional</label>
+                        <select name="professional_id" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none">
+                            <option value="">Apenas registro pessoal</option>
+                            @foreach($professionals as $pro)
+                                <option value="{{ $pro->id }}">{{ $pro->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <x-premium-input label="Pressão Arterial" name="blood_pressure" placeholder="120/80" icon="heart" />
+                    <x-premium-input label="Freq. Cardíaca (bpm)" name="heart_rate" type="number" placeholder="70" icon="zap" />
+                </div>
+            </x-premium-card>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Seção: Tronco -->
+                <x-premium-card title="Tronco" icon="user" iconColor="emerald">
+                    <div class="grid grid-cols-2 gap-6">
+                        <x-premium-input label="Pescoço (cm)" name="neck" type="number" step="0.1" />
+                        <x-premium-input label="Tórax (cm)" name="chest" type="number" step="0.1" />
+                        <x-premium-input label="Cintura (cm)" name="waist" type="number" step="0.1" />
+                        <x-premium-input label="Abdômen (cm)" name="abdomen" type="number" step="0.1" />
+                        <div class="col-span-2">
+                            <x-premium-input label="Quadril (cm)" name="hips" type="number" step="0.1" />
+                        </div>
+                    </div>
+                </x-premium-card>
+
+                <!-- Seção: Membros Superiores -->
+                <x-premium-card title="Membros Superiores" icon="armchair" iconColor="emerald">
+                    <div class="grid grid-cols-2 gap-6">
+                        <x-premium-input label="Braço Esq. (cm)" name="bicep_l" type="number" step="0.1" />
+                        <x-premium-input label="Braço Dir. (cm)" name="bicep_r" type="number" step="0.1" />
+                        <x-premium-input label="Antebraço Esq. (cm)" name="forearm_l" type="number" step="0.1" />
+                        <x-premium-input label="Antebraço Dir. (cm)" name="forearm_r" type="number" step="0.1" />
+                    </div>
+                </x-premium-card>
+            </div>
+
+            <!-- Seção: Membros Inferiores -->
+            <x-premium-card title="Membros Inferiores" icon="leg" iconColor="emerald">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <x-premium-input label="Coxa Esq. (cm)" name="thigh_l" type="number" step="0.1" />
+                    <x-premium-input label="Coxa Dir. (cm)" name="thigh_r" type="number" step="0.1" />
+                    <x-premium-input label="Panturrilha Esq. (cm)" name="calf_l" type="number" step="0.1" />
+                    <x-premium-input label="Panturrilha Dir. (cm)" name="calf_r" type="number" step="0.1" />
+                </div>
+            </x-premium-card>
+
+            <x-premium-card title="Anotações" icon="message-square" iconColor="emerald">
+                <textarea name="notes" rows="4" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all" placeholder="Sentiu alguma diferença? Novo protocolo?"></textarea>
+            </x-premium-card>
+
+            <div class="flex flex-col sm:flex-row items-center gap-4 pt-6">
+                <x-premium-button type="submit" variant="primary" size="lg" class="w-full sm:w-auto px-12">
+                    SALVAR AVALIAÇÃO
+                </x-premium-button>
+                <x-premium-button variant="secondary" size="lg" class="w-full sm:w-auto px-12" href="{{ route('assessments.index') }}">
+                    CANCELAR
+                </x-premium-button>
+            </div>
+        </div>
+    </form>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>
+@endpush
 @endsection

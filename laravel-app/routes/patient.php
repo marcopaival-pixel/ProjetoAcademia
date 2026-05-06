@@ -50,6 +50,7 @@ Route::middleware([
     Route::get('/medical-records/reports', [PortalController::class, 'medicalReports'])->name('medical-records.reports');
     Route::get('/medical-records/reports/{report}/download', [PortalController::class, 'downloadReport'])->name('medical-records.reports.download');
     Route::get('/medical-records/prescriptions', [PortalController::class, 'medicalPrescriptions'])->name('medical-records.prescriptions');
+    Route::get('/medical-records/prescriptions/{prescription}/download', [PortalController::class, 'downloadPrescription'])->name('medical-records.prescriptions.download');
     Route::get('/medical-records/certificates', [PortalController::class, 'medicalCertificates'])->name('medical-records.certificates');
     Route::get('/medical-records/certificates/{certificate}/download', [PortalController::class, 'downloadCertificate'])->name('medical-records.certificates.download');
     Route::get('/export-laudo', [PortalController::class, 'exportLaudo'])->name('export-laudo');
@@ -73,6 +74,10 @@ Route::middleware([
     // Financeiro / Assinatura
     Route::prefix('subscription')->name('subscription.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Student\SubscriptionController::class, 'index'])->name('index');
+        Route::get('/plans', [\App\Http\Controllers\Student\SubscriptionController::class, 'plans'])->name('plans');
+        Route::get('/checkout/{plan}', [\App\Http\Controllers\Student\SubscriptionController::class, 'checkout'])->name('checkout');
+        Route::post('/process', [\App\Http\Controllers\Student\SubscriptionController::class, 'processPayment'])->name('process');
+        
         Route::post('/update-payment', [\App\Http\Controllers\Student\SubscriptionController::class, 'updatePaymentMethod'])->name('update-payment');
         Route::post('/change-plan', [\App\Http\Controllers\Student\SubscriptionController::class, 'changePlan'])->name('change-plan');
         Route::post('/cancel', [\App\Http\Controllers\Student\SubscriptionController::class, 'cancel'])->name('cancel');

@@ -63,6 +63,28 @@ class ExerciseController extends Controller
         $sumMin = (int) ($sumRow->dm ?? 0);
         $sumBurn = (int) ($sumRow->bk ?? 0);
 
+        // Calcular Streak
+        $streak = 0;
+        $checkDate = now();
+        while (true) {
+            $hasEntry = DB::table('exercise_entries')
+                ->where('user_id', $uid)
+                ->where('entry_date', $checkDate->format('Y-m-d'))
+                ->exists();
+            
+            if ($hasEntry) {
+                $streak++;
+                $checkDate = $checkDate->subDay();
+            } else {
+                // Se hoje não tem nada, tenta ontem
+                if ($streak === 0 && $checkDate->isToday()) {
+                    $checkDate = $checkDate->subDay();
+                    continue;
+                }
+                break;
+            }
+        }
+
         return view('exercise', [
             'date' => $date,
             'rows' => $rows,
@@ -71,6 +93,7 @@ class ExerciseController extends Controller
             'editRow' => $editRow,
             'notice' => $notice,
             'isPremium' => $user->hasPremiumAccess(),
+            'streak' => $streak,
             'error' => session('error'),
         ]);
     }

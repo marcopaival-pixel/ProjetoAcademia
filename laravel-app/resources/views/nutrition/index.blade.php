@@ -311,51 +311,69 @@
 
 <div x-data="nutritionHub" class="py-8 space-y-8 animate-fade-in max-w-[1400px] mx-auto px-4">
     <!-- Futuristic Tab Navigation -->
-    <!-- Futuristic Tab Navigation -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-1">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-900 pb-1">
         <div class="flex items-center gap-4">
             <a href="{{ route('nutrition.index', ['tab' => 'dashboard', 'date' => $date]) }}" 
-               class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'dashboard' ? 'text-blue-500' : 'text-zinc-500 hover:text-zinc-300' }}">
+               class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'dashboard' ? 'text-emerald-500' : 'text-zinc-500 hover:text-zinc-300' }}">
                Dashboard
                @if($tab === 'dashboard')
-                   <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 rounded-t-full shadow-[0_-4px_12px_rgba(59,130,246,0.5)]"></div>
+                   <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
                @endif
             </a>
             <a href="{{ route('nutrition.index', ['tab' => 'diary', 'date' => $date]) }}" 
-               class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'diary' ? 'text-blue-500' : 'text-zinc-500 hover:text-zinc-300' }}">
+               class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'diary' ? 'text-emerald-500' : 'text-zinc-500 hover:text-zinc-300' }}">
                Diário Alimentar
                @if($tab === 'diary')
-                   <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 rounded-t-full shadow-[0_-4px_12px_rgba(59,130,246,0.5)]"></div>
+                   <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
                @endif
             </a>
             <a href="{{ route('nutrition.index', ['tab' => 'stacks', 'date' => $date]) }}" 
-               class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'stacks' ? 'text-blue-500' : 'text-zinc-500 hover:text-zinc-300' }}">
+               class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'stacks' ? 'text-emerald-500' : 'text-zinc-500 hover:text-zinc-300' }}">
                Smart Stack
                @if($tab === 'stacks')
-                   <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 rounded-t-full shadow-[0_-4px_12px_rgba(59,130,246,0.5)]"></div>
+                   <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
                @endif
             </a>
         </div>
 
-        <div class="flex items-center bg-zinc-900/50 backdrop-blur-xl p-1.5 rounded-2xl border border-white/5 shadow-2xl mb-2 md:mb-0">
-            <a href="{{ route('nutrition.index', ['tab' => $tab, 'date' => date('Y-m-d', strtotime($date . ' -1 day'))]) }}" class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                <i class="fas fa-chevron-left text-xs"></i>
+        <!-- High-Performance Weekly Navigator -->
+        <div class="flex items-center gap-3 bg-zinc-900/30 p-1 rounded-[2.5rem] border border-zinc-800/50 shadow-inner">
+            <a href="{{ route('nutrition.index', ['tab' => $tab, 'date' => date('Y-m-d', strtotime($date . ' -1 day'))]) }}" 
+               class="w-10 h-10 flex items-center justify-center text-zinc-500 hover:bg-emerald-500 hover:text-zinc-950 rounded-full transition-all">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </a>
-            
-            <label class="relative cursor-pointer px-6 text-center min-w-[160px] group/cal-global">
+
+            <div class="flex items-center gap-2 overflow-hidden px-2">
+                @php
+                    $pivot = \Carbon\Carbon::parse($date);
+                    $start = $pivot->copy()->subDays(2);
+                @endphp
+                @for($i = 0; $i < 5; $i++)
+                    @php
+                        $day = $start->copy()->addDays($i);
+                        $isCurrent = $day->isSameDay($pivot);
+                        $isToday = $day->isToday();
+                    @endphp
+                    <a href="{{ route('nutrition.index', ['tab' => $tab, 'date' => $day->format('Y-m-d')]) }}" 
+                       class="flex flex-col items-center justify-center min-w-[50px] h-14 rounded-2xl transition-all {{ $isCurrent ? 'bg-emerald-500 text-zinc-950 shadow-lg scale-105' : 'hover:bg-white/5 text-zinc-500' }}">
+                        <span class="text-[7px] font-black uppercase tracking-widest">{{ $day->translatedFormat('D') }}</span>
+                        <span class="text-sm font-black">{{ $day->format('d') }}</span>
+                    </a>
+                @endfor
+            </div>
+
+            <div class="relative group">
                 <input type="date" value="{{ $date }}" 
                        onchange="window.location.href = '{{ route('nutrition.index', ['tab' => $tab]) }}&date=' + this.value"
                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                <div class="flex items-center justify-center gap-2">
-                    <i class="fas fa-calendar-alt text-[10px] text-blue-500 group-hover/cal-global:scale-110 transition-transform"></i>
-                    <p class="text-white font-black text-xs uppercase tracking-widest">
-                        {{ date('d/m/Y', strtotime($date)) }}
-                    </p>
+                <div class="w-10 h-10 flex items-center justify-center bg-zinc-950 border border-zinc-800 rounded-full text-emerald-500 group-hover:border-emerald-500/50 transition-all shadow-xl">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
                 </div>
-            </label>
+            </div>
 
-            <a href="{{ route('nutrition.index', ['tab' => $tab, 'date' => date('Y-m-d', strtotime($date . ' + 1 day'))]) }}" class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                <i class="fas fa-chevron-right text-xs"></i>
+            <a href="{{ route('nutrition.index', ['tab' => $tab, 'date' => date('Y-m-d', strtotime($date . ' + 1 day'))]) }}" 
+               class="w-10 h-10 flex items-center justify-center text-zinc-500 hover:bg-emerald-500 hover:text-zinc-950 rounded-full transition-all">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
             </a>
         </div>
     </div>
@@ -374,43 +392,43 @@
             $percF = (int)min((($selectedDateSums->f ?? 0) / ($targetF ?: 1)) * 100, 100);
         @endphp
         
-        <div class="bg-zinc-900/40 border border-white/5 p-5 rounded-3xl relative overflow-hidden group">
+        <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl relative overflow-hidden group shadow-xl">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Calorias</span>
                 <span class="text-xs font-black text-white">{{ number_format($selectedDateSums->cal ?? 0, 0) }} / {{ number_format($targetKcal, 0) }} kcal</span>
             </div>
-            <div class="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000" style="width: {{ $percCal }}%"></div>
+            <div class="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000 rounded-full" style="width: {{ $percCal }}%"></div>
             </div>
         </div>
 
-        <div class="bg-zinc-900/40 border border-white/5 p-5 rounded-3xl">
+        <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl shadow-xl">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest text-rose-400">Proteínas</span>
                 <span class="text-xs font-black text-white">{{ number_format($selectedDateSums->p ?? 0, 0) }} / {{ number_format($targetP, 0) }}g</span>
             </div>
-            <div class="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                <div class="h-full bg-rose-500 transition-all duration-1000" style="width: {{ $percP }}%"></div>
+            <div class="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="h-full bg-rose-500 transition-all duration-1000 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.3)]" style="width: {{ $percP }}%"></div>
             </div>
         </div>
 
-        <div class="bg-zinc-900/40 border border-white/5 p-5 rounded-3xl">
+        <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl shadow-xl">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest text-blue-400">Carboidratos</span>
+                <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest text-emerald-400">Carboidratos</span>
                 <span class="text-xs font-black text-white">{{ number_format($selectedDateSums->c ?? 0, 0) }} / {{ number_format($targetC, 0) }}g</span>
             </div>
-            <div class="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-400 transition-all duration-1000" style="width: {{ $percC }}%"></div>
+            <div class="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="h-full bg-emerald-400 transition-all duration-1000 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.3)]" style="width: {{ $percC }}%"></div>
             </div>
         </div>
 
-        <div class="bg-zinc-900/40 border border-white/5 p-5 rounded-3xl">
+        <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-3xl shadow-xl">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest text-amber-400">Gorduras</span>
                 <span class="text-xs font-black text-white">{{ number_format($selectedDateSums->f ?? 0, 0) }} / {{ number_format($targetF, 0) }}g</span>
             </div>
-            <div class="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                <div class="h-full bg-amber-500 transition-all duration-1000" style="width: {{ $percF }}%"></div>
+            <div class="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="h-full bg-amber-500 transition-all duration-1000 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)]" style="width: {{ $percF }}%"></div>
             </div>
         </div>
     </div>
@@ -418,76 +436,73 @@
     <!-- Header Clean -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-5">
-            <a href="{{ route('patient.reports.index') }}" class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-zinc-500 border border-white/5 hover:text-white transition-all" title="Voltar ao Hub">
-                <i class="fas fa-chevron-left"></i>
+            <a href="{{ route('patient.reports.index') }}" class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-zinc-500 border border-zinc-800 hover:text-white hover:border-emerald-500/50 transition-all shadow-xl" title="Voltar ao Hub">
+                <i data-lucide="chevron-left" class="w-6 h-6"></i>
             </a>
             <div>
-                <h1 class="text-3xl font-black text-white">Central de Nutrição</h1>
+                <h1 class="text-4xl font-black text-white tracking-tighter uppercase">Central de <span class="text-emerald-500">Nutrição</span></h1>
                 <p class="text-zinc-500 text-sm mt-1">Gestão inteligente de metas e balanço calórico.</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <button @click="runAudit()" class="px-5 py-2.5 bg-purple-600/10 text-purple-400 font-bold text-xs rounded-xl border border-purple-500/20 hover:bg-purple-600 hover:text-white transition-all flex items-center gap-2">
-                <i class="fas fa-microscope text-[10px]"></i>
-                Auditoria IA
-            </button>
-            <button @click="goalModalOpen = true" class="px-5 py-2.5 bg-blue-600 text-white font-black text-xs rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/10">
-                Ajustar Estratégia
-            </button>
+            <x-premium-button variant="secondary" icon="microscope" size="sm" @click="runAudit()">
+                AUDITORIA IA
+            </x-premium-button>
+            <x-premium-button variant="primary" icon="settings" size="sm" @click="goalModalOpen = true">
+                AJUSTAR ESTRATÉGIA
+            </x-premium-button>
         </div>
     </div>
 
     @if(session('success'))
-        <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-bold animate-fade-in">
+        <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs font-bold animate-fade-in flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
             {{ session('success') }}
         </div>
     @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
         <!-- Column 1: Metabolic & Consistency -->
         <div class="space-y-8">
-            <!-- Metabolic Analysis -->
-            <div class="bg-zinc-900/40 border border-white/5 rounded-3xl p-6">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl">
                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                     Análise Metabólica
                 </h3>
 
                 @if($stats['ok'])
                 <div class="space-y-6">
                     <div>
-                        <span class="text-[10px] text-zinc-600 font-bold uppercase block mb-1">Taxa Basal (TMB)</span>
-                        <p class="text-xl font-black text-white">{{ number_format($stats['bmr'], 0, ',', '.') }} <small class="text-zinc-500 text-[10px]">kcal</small></p>
+                        <span class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Taxa Basal (TMB)</span>
+                        <p class="text-xl font-black text-white tracking-tight">{{ number_format($stats['bmr'], 0, ',', '.') }} <small class="text-zinc-600 text-[10px]">kcal</small></p>
                     </div>
                     <div>
-                        <span class="text-[10px] text-zinc-600 font-bold uppercase block mb-1">Gasto Total (TDEE)</span>
-                        <p class="text-xl font-black text-amber-500">{{ number_format($stats['tdee'], 0, ',', '.') }} <small class="text-zinc-600 text-[10px]">kcal</small></p>
+                        <span class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Gasto Total (TDEE)</span>
+                        <p class="text-xl font-black text-emerald-500 tracking-tight">{{ number_format($stats['tdee'], 0, ',', '.') }} <small class="text-zinc-600 text-[10px]">kcal</small></p>
                     </div>
-                    <div class="pt-6 border-t border-white/5">
-                        <span class="text-[10px] text-blue-400 font-black uppercase block mb-1">Meta Diária</span>
-                        <p class="text-3xl font-black text-white tracking-tight">{{ number_format($targetKcal, 0, ',', '.') }} <small class="text-zinc-500 text-xs italic font-normal">kcal</small></p>
+                    <div class="pt-6 border-t border-zinc-800">
+                        <span class="text-[10px] text-emerald-400 font-black uppercase block mb-1 tracking-widest">Meta Diária</span>
+                        <p class="text-3xl font-black text-white tracking-tighter">{{ number_format($targetKcal, 0, ',', '.') }} <small class="text-zinc-600 text-xs italic font-normal">kcal</small></p>
                     </div>
                 </div>
                 @else
-                <div class="p-4 bg-zinc-950/50 rounded-2xl border border-white/5 text-zinc-500 text-[10px] italic">
+                <div class="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 text-zinc-500 text-[10px] italic">
                     {{ $stats['message'] }}
                 </div>
                 @endif
             </div>
 
-            <!-- Consistency Card -->
-            <div class="bg-zinc-900/40 border border-white/5 rounded-3xl p-6">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl">
                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-6">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     Consistência Semanal
                 </h3>
                 <div class="text-center py-2">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
-                        <span class="text-2xl font-black text-emerald-400">{{ $consistencyCount }}<small class="text-xs">/7</small></span>
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/5 border border-emerald-500/20 mb-4 shadow-inner">
+                        <span class="text-3xl font-black text-emerald-400">{{ $consistencyCount }}<small class="text-zinc-600 text-xs">/7</small></span>
                     </div>
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase">Dias no alvo</p>
-                    <p class="text-xs text-zinc-400 mt-2">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Dias no alvo</p>
+                    <p class="text-xs text-zinc-400 mt-2 font-medium">
                         @if($consistencyCount >= 6) Excelente disciplina!
                         @elseif($consistencyCount >= 4) Boa constância.
                         @else Foco no objetivo! @endif
@@ -498,19 +513,18 @@
 
         <!-- Column 2 & 3: Main Charts -->
         <div class="lg:col-span-2 space-y-8">
-            <!-- Calorie Trend Chart -->
-            <div class="bg-zinc-900/20 border border-white/5 rounded-3xl p-6">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
                 <div class="flex items-center justify-between mb-8">
                     <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         Tendência de Calorias (15 dias)
                     </h3>
                     <div class="flex items-center gap-3">
                         <span class="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500">
-                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Real
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Real
                         </span>
                         <span class="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500">
-                            <span class="w-2 h-2 rounded-full border border-dashed border-zinc-500"></span> Meta
+                            <span class="w-2 h-2 rounded-full border border-dashed border-zinc-600"></span> Meta
                         </span>
                     </div>
                 </div>
@@ -519,9 +533,8 @@
                 </div>
             </div>
 
-            <!-- Macro Distribution with Donut -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="bg-zinc-900/20 border border-white/5 rounded-3xl p-6">
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
                     <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-8">
                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                         Distribuição de Macros
@@ -533,19 +546,19 @@
                     </div>
                 </div>
 
-                <div class="bg-zinc-900/20 border border-white/5 rounded-3xl p-6 flex flex-col justify-center">
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl flex flex-col justify-center">
                     <div class="space-y-6">
                         @foreach([
                             ['label' => 'Proteínas', 'val' => $macroTargets['p'], 'color' => '#fb7185', 'icon' => 'P'],
-                            ['label' => 'Carbo', 'val' => $macroTargets['c'], 'color' => '#60a5fa', 'icon' => 'C'],
+                            ['label' => 'Carbo', 'val' => $macroTargets['c'], 'color' => '#34d399', 'icon' => 'C'],
                             ['label' => 'Gorduras', 'val' => $macroTargets['f'], 'color' => '#fbbf24', 'icon' => 'G']
                         ] as $m)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <span class="w-6 h-6 rounded bg-zinc-950 flex items-center justify-center text-[10px] font-black" style="color: {{ $m['color'] }}; border: 1px solid {{ $m['color'] }}40;">{{ $m['icon'] }}</span>
-                                <span class="text-xs font-bold text-zinc-400">{{ $m['label'] }}</span>
+                                <span class="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center text-[10px] font-black" style="color: {{ $m['color'] }}; border: 1px solid {{ $m['color'] }}20;">{{ $m['icon'] }}</span>
+                                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ $m['label'] }}</span>
                             </div>
-                            <span class="text-sm font-black text-white">{{ $m['val'] ?? '—' }}g</span>
+                            <span class="text-lg font-black text-white tabular-nums">{{ $m['val'] ?? '—' }}g</span>
                         </div>
                         @endforeach
                     </div>
@@ -555,57 +568,61 @@
 
         <!-- Column 4: Water & Insights -->
         <div class="space-y-8">
-            <!-- Water Intake -->
-            <div class="bg-zinc-900/40 border border-white/5 rounded-3xl p-6">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-8">
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     Hidratação
                 </h3>
                 <div class="relative flex flex-col items-center">
                     @php 
                         $waterPerc = (int)min(($waterToday / ($waterTarget ?: 2500)) * 100, 100);
                     @endphp
-                    <div class="w-32 h-32 rounded-full border-4 border-zinc-800 flex flex-col items-center justify-center overflow-hidden relative">
-                        <div class="absolute bottom-0 left-0 w-full transition-all duration-1000 bg-blue-500/40" style="height: {{ $waterPerc }}%"></div>
-                        <span class="relative z-10 text-xl font-black text-white">{{ number_format($waterToday / 1000, 1) }}L</span>
-                        <span class="relative z-10 text-[10px] text-zinc-500 font-bold uppercase">de {{ number_format($waterTarget / 1000, 1) }}L</span>
+                    <div class="w-36 h-36 rounded-full border-4 border-zinc-800 flex flex-col items-center justify-center overflow-hidden relative shadow-inner">
+                        <div class="absolute bottom-0 left-0 w-full transition-all duration-1000 bg-emerald-500/20 backdrop-blur-sm" style="height: {{ $waterPerc }}%"></div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center relative z-10">
+                            <span class="text-2xl font-black text-white tracking-tight tabular-nums">{{ number_format($waterToday / 1000, 1) }}L</span>
+                            <span class="text-[9px] text-zinc-500 font-black uppercase tracking-widest mt-1">de {{ number_format($waterTarget / 1000, 1) }}L</span>
+                        </div>
                     </div>
-                    <div class="flex gap-2 mt-6 w-full">
-                        <button @click="addWaterInHub(250)" class="flex-1 py-3 bg-blue-600/10 hover:bg-blue-600 hover:text-white border border-blue-500/20 rounded-2xl text-[10px] font-black text-blue-400 transition-all active:scale-95">
+                    <div class="flex gap-2 mt-8 w-full">
+                        <button @click="addWaterInHub(250)" class="flex-1 py-4 bg-emerald-500/5 hover:bg-emerald-500 hover:text-zinc-950 border border-emerald-500/20 rounded-2xl text-[10px] font-black text-emerald-400 transition-all active:scale-95 shadow-lg">
                             +250ml
                         </button>
-                        <button @click="addWaterInHub(500)" class="flex-1 py-3 bg-blue-600/10 hover:bg-blue-600 hover:text-white border border-blue-500/20 rounded-2xl text-[10px] font-black text-blue-400 transition-all active:scale-95">
+                        <button @click="addWaterInHub(500)" class="flex-1 py-4 bg-emerald-500/5 hover:bg-emerald-500 hover:text-zinc-950 border border-emerald-500/20 rounded-2xl text-[10px] font-black text-emerald-400 transition-all active:scale-95 shadow-lg">
                             +500ml
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Insights Card -->
-            <div class="bg-zinc-900/40 border border-white/5 rounded-3xl p-6">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     Insights Nutricionais
                 </h3>
-                <div class="space-y-4">
+                <div class="space-y-6">
                     @php
                         $diffAverages = ($averages->cal ?? 0) - $targetKcal;
                     @endphp
-                    <div class="flex gap-3">
-                        <i class="fas fa-lightbulb text-purple-400 mt-1"></i>
-                        <p class="text-xs text-zinc-400">
+                    <div class="flex gap-4">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <i data-lucide="lightbulb" class="w-4 h-4 text-emerald-500"></i>
+                        </div>
+                        <p class="text-xs text-zinc-400 leading-relaxed font-medium">
                             @if(abs($diffAverages) < 100)
-                                Balanço excelente! Você está quase idêntico à sua meta.
+                                Balanço <span class="text-emerald-400 font-bold tracking-tight">excelente</span>! Você está quase idêntico à sua meta.
                             @elseif($diffAverages > 0)
-                                Consumo médio está {{ number_format($diffAverages) }} kcal acima da meta. 
+                                Consumo médio está <span class="text-rose-400 font-bold">{{ number_format($diffAverages) }} kcal</span> acima da meta. 
                             @else
-                                Consumo médio está {{ number_format(abs($diffAverages)) }} kcal abaixo da meta.
+                                Consumo médio está <span class="text-amber-400 font-bold">{{ number_format(abs($diffAverages)) }} kcal</span> abaixo da meta.
                             @endif
                         </p>
                     </div>
-                    <div class="flex gap-3">
-                        <i class="fas fa-info-circle text-blue-400 mt-1"></i>
-                        <p class="text-xs text-zinc-400">
+                    <div class="flex gap-4">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <i data-lucide="info" class="w-4 h-4 text-emerald-400"></i>
+                        </div>
+                        <p class="text-xs text-zinc-400 leading-relaxed font-medium">
                             @if(in_array($currentGoal, ['lose', 'lose_aggressive']))
                                 Priorize alimentos com baixa densidade calórica e alto volume.
                             @elseif($currentGoal == 'gain')
@@ -623,138 +640,131 @@
             </div>
         </div>
     </div>
+    @endif
 
-    <!-- NexShape Advanced Ecosystem -->
+    @if($tab === 'stacks')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- NexShape AI: Meal Suggester -->
-        <div class="bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group">
+        <!-- AI Suggester -->
+        <div class="bg-gradient-to-br from-emerald-600/10 to-zinc-900 border border-zinc-800 rounded-[2rem] p-8 relative overflow-hidden group shadow-2xl">
             <div class="relative z-10">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-3">
-                        <span class="p-2 bg-blue-500 rounded-lg shadow-lg shadow-blue-500/20">
-                            <i class="fas fa-robot text-xs text-white"></i>
+                <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
+                        <span class="p-2.5 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20">
+                            <i data-lucide="bot" class="w-4 h-4 text-zinc-950"></i>
                         </span>
                         NexShape AI — Sugestão Inteligente
                     </h3>
-                    <span class="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-blue-400 uppercase tracking-widest border border-white/5">Beta</span>
+                    <span class="px-3 py-1 bg-emerald-500/10 rounded-full text-[10px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/20">Elite IA</span>
                 </div>
 
-                <div class="space-y-6">
-                    <p class="text-zinc-400 text-sm leading-relaxed">
-                        Detectamos que você ainda tem <strong>{{ number_format($remaining->cal) }} kcal</strong> disponíveis para hoje. 
+                <div class="space-y-8">
+                    <p class="text-zinc-400 text-sm leading-relaxed font-medium">
+                        Detectamos que você ainda tem <strong class="text-white">{{ number_format($remaining->cal) }} kcal</strong> disponíveis para hoje. 
                         Para otimizar seu resultado, sugerimos a ingestão de:
                     </p>
                     
                     <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-zinc-950/40 p-4 rounded-2xl border border-white/5">
-                            <span class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Proteínas</span>
-                            <p class="text-xl font-black text-rose-400">{{ number_format($remaining->p) }}g</p>
+                        <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 shadow-inner text-center">
+                            <span class="text-[9px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Proteínas</span>
+                            <p class="text-xl font-black text-rose-400 tabular-nums">{{ number_format($remaining->p) }}g</p>
                         </div>
-                        <div class="bg-zinc-950/40 p-4 rounded-2xl border border-white/5">
-                            <span class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Carbos</span>
-                            <p class="text-xl font-black text-blue-400">{{ number_format($remaining->c) }}g</p>
+                        <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 shadow-inner text-center">
+                            <span class="text-[9px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Carbos</span>
+                            <p class="text-xl font-black text-emerald-400 tabular-nums">{{ number_format($remaining->c) }}g</p>
                         </div>
-                        <div class="bg-zinc-950/40 p-4 rounded-2xl border border-white/5">
-                            <span class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Gorduras</span>
-                            <p class="text-xl font-black text-amber-400">{{ number_format($remaining->f) }}g</p>
+                        <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 shadow-inner text-center">
+                            <span class="text-[9px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Gorduras</span>
+                            <p class="text-xl font-black text-amber-400 tabular-nums">{{ number_format($remaining->f) }}g</p>
                         </div>
                     </div>
 
-                    <button @click="generateMeal()" 
-                            class="w-full py-4 bg-white text-zinc-950 font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-3">
-                        <span x-show="!loadingMeal">Gerar Cardápio Sugerido</span>
+                    <x-premium-button variant="primary" size="lg" class="w-full" @click="generateMeal()">
+                        <span x-show="!loadingMeal">GERAR CARDÁPIO SUGERIDO</span>
                         <span x-show="loadingMeal" class="flex items-center gap-2">
                             <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Processando...
+                            PROCESSANDO...
                         </span>
-                        <i x-show="!loadingMeal" class="fas fa-chevron-right text-[10px]"></i>
-                    </button>
+                    </x-premium-button>
                 </div>
             </div>
         </div>
-    @endif
 
-    @if($tab === 'stacks')
-        <!-- Smart Stack — Suplementação Evoluída -->
-        <div class="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8">
+        <!-- Smart Stacks -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl">
             <div class="flex items-center justify-between mb-8">
-                <div class="flex items-center gap-3">
-                    <span class="p-2 bg-emerald-500 rounded-lg shadow-lg shadow-emerald-500/20">
-                        <i class="fas fa-layer-group text-xs text-zinc-900"></i>
+                <div class="flex items-center gap-4">
+                    <span class="p-2.5 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20">
+                        <i data-lucide="layers" class="w-4 h-4 text-zinc-950"></i>
                     </span>
                     <div>
-                        <h3 class="text-sm font-black text-white uppercase tracking-wider">Smart Stack</h3>
-                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Suplementação Inteligente</p>
+                        <h3 class="text-xs font-black text-white uppercase tracking-widest">Smart Stack</h3>
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Suplementação Inteligente</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button @click="getAISuggestion()" class="px-3 py-1.5 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase rounded-xl border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2">
-                        <i class="fas fa-magic"></i> IA
+                    <button @click="getAISuggestion()" class="px-3 py-2 bg-emerald-500/5 text-emerald-400 text-[10px] font-black uppercase rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950 transition-all flex items-center gap-2 shadow-lg">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i> IA
                     </button>
-                    <button @click="stackModalOpen = true" class="w-8 h-8 flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">
-                        <i class="fas fa-plus text-xs"></i>
+                    <button @click="stackModalOpen = true" class="w-10 h-10 flex items-center justify-center bg-zinc-950 border border-zinc-800 text-emerald-500 rounded-xl hover:border-emerald-500/50 transition-all shadow-xl">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="space-y-6">
+            <div class="space-y-4">
                 @forelse($stacks as $stack)
-                <div class="bg-zinc-950/40 border border-white/5 rounded-3xl overflow-hidden group/stack">
-                    <div class="p-5 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-emerald-500/5 to-transparent">
+                <div class="bg-zinc-950 border border-zinc-900 rounded-3xl overflow-hidden group/stack shadow-inner">
+                    <div class="p-5 flex items-center justify-between border-b border-zinc-900 bg-gradient-to-r from-emerald-500/5 to-transparent">
                         <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                                <i class="fas fa-box-tissue"></i>
+                            <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-lg">
+                                <i data-lucide="package" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h4 class="text-sm font-black text-white">{{ $stack->name }}</h4>
-                                <div class="flex items-center gap-3 mt-0.5">
-                                    <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase rounded">{{ $stack->goal ?? 'Saúde' }}</span>
-                                    <span class="text-[9px] text-zinc-500 font-bold uppercase">{{ $stack->supplements->count() }} itens</span>
+                                <h4 class="text-sm font-black text-white tracking-tight">{{ $stack->name }}</h4>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase rounded tracking-widest">{{ $stack->goal ?? 'Saúde' }}</span>
+                                    <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">{{ $stack->supplements->count() }} itens</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="text-right mr-2">
-                                <p class="text-[9px] text-zinc-600 font-black uppercase">Adesão</p>
-                                <p class="text-xs font-black text-white">{{ $stack->adherence_rate }}%</p>
-                            </div>
-                            <button @click="selectedStackId = {{ $stack->id }}; supplementModalOpen = true; supplementSearch = ''; showCatalog = false" title="Adicionar Suplemento" class="w-8 h-8 rounded-lg bg-zinc-900 border border-white/5 text-zinc-500 hover:text-white transition-all">
-                                <i class="fas fa-plus text-[10px]"></i>
+                        <div class="flex items-center gap-2">
+                            <button @click="selectedStackId = {{ $stack->id }}; supplementModalOpen = true; supplementSearch = ''; showCatalog = false" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-emerald-500/50 transition-all">
+                                <i data-lucide="plus" class="w-3 h-3"></i>
                             </button>
-                            <button @click='selectedStackId = {{ $stack->id }}; selectedStack = {!! json_encode($stack, JSON_HEX_APOS) !!}; editStackModalOpen = true' title="Editar Stack" class="w-8 h-8 rounded-lg bg-zinc-900 border border-white/5 text-zinc-500 hover:text-blue-400 transition-all">
-                                <i class="fas fa-edit text-[10px]"></i>
+                            <button @click='selectedStackId = {{ $stack->id }}; selectedStack = {!! json_encode($stack, JSON_HEX_APOS) !!}; editStackModalOpen = true' class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-emerald-400 transition-all">
+                                <i data-lucide="edit-3" class="w-3 h-3"></i>
                             </button>
                             <form method="POST" action="{{ route('smart-stacks.destroy', $stack->id) }}" class="inline" onsubmit="return confirm('Deseja excluir permanentemente este Smart Stack?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" title="Excluir Stack" class="w-8 h-8 rounded-lg bg-zinc-900 border border-white/5 text-zinc-500 hover:text-rose-500 transition-all">
-                                    <i class="fas fa-trash text-[10px]"></i>
+                                <button type="submit" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-rose-500 transition-all">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i>
                                 </button>
                             </form>
                         </div>
                     </div>
                     
-                    <div class="p-2 space-y-2">
+                    <div class="p-2 space-y-1">
                         @foreach($stack->supplements as $sup)
-                        <div class="flex items-center justify-between p-3 bg-white/2 hover:bg-white/5 rounded-2xl transition-all">
+                        <div class="flex items-center justify-between p-3 bg-zinc-900/30 hover:bg-zinc-900/60 rounded-2xl transition-all group/item">
                             <div class="flex items-center gap-4">
-                                <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-white/5 flex items-center justify-center">
-                                    <i class="fas fa-prescription-bottle text-[10px] text-zinc-600"></i>
+                                <div class="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-900 flex items-center justify-center">
+                                    <i data-lucide="pill" class="w-3 h-3 text-zinc-700 group-hover/item:text-emerald-500 transition-colors"></i>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-bold text-white">{{ $sup->name }}</p>
-                                    <p class="text-[9px] text-zinc-500 uppercase font-black">{{ $sup->dosage }}{{ $sup->unit }} &bull; {{ $sup->time_of_day }}</p>
+                                    <p class="text-xs font-bold text-white tracking-tight">{{ $sup->name }}</p>
+                                    <p class="text-[9px] text-zinc-600 uppercase font-black tracking-widest mt-0.5">{{ $sup->dosage }}{{ $sup->unit }} &bull; {{ $sup->time_of_day }}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button @click="takeSupplement({{ $sup->id }}); $el.classList.add('bg-emerald-500', 'text-zinc-900')" 
-                                        class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 text-zinc-500 hover:text-zinc-900 transition-all @if($sup->last_taken_at && $sup->last_taken_at->isToday()) bg-emerald-500 text-zinc-900 border-emerald-500 @endif">
-                                    <i class="fas fa-check text-[9px]"></i>
+                                <button @click="takeSupplement({{ $sup->id }}); $el.classList.add('bg-emerald-500', 'text-zinc-950')" 
+                                        class="w-7 h-7 rounded-full border border-zinc-800 flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 text-zinc-600 hover:text-zinc-950 transition-all @if($sup->last_taken_at && $sup->last_taken_at->isToday()) bg-emerald-500 text-zinc-950 border-emerald-500 @endif shadow-lg">
+                                    <i data-lucide="check" class="w-3 h-3"></i>
                                 </button>
                                 <button type="button" 
                                         @click='confirmDelete("{{ route('smart-stacks.remove-supplement', $sup->id) }}", {!! json_encode($sup->name, JSON_HEX_APOS) !!})'
-                                        class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center hover:bg-rose-500 hover:border-rose-500 text-zinc-500 hover:text-white transition-all" title="Remover">
-                                    <i class="fas fa-times text-[9px]"></i>
+                                        class="w-7 h-7 rounded-full border border-zinc-800 flex items-center justify-center hover:bg-rose-500 hover:border-rose-500 text-zinc-600 hover:text-white transition-all shadow-lg">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
                                 </button>
                             </div>
                         </div>
@@ -762,138 +772,103 @@
                     </div>
                 </div>
                 @empty
-                    @if($supplements->isEmpty())
-                    <div class="text-center py-12 border-2 border-dashed border-white/5 rounded-[2.5rem]">
-                        <div class="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                            <i class="fas fa-pills text-zinc-800 text-xl"></i>
-                        </div>
-                        <p class="text-xs text-zinc-500 font-black uppercase tracking-widest">Nenhum stack configurado</p>
-                        <p class="text-[10px] text-zinc-700 mt-2 max-w-[200px] mx-auto italic">Otimize sua rotina com Stacks inteligentes para diferentes fases do dia.</p>
-                        <button @click="stackModalOpen = true" class="mt-6 px-6 py-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">Criar Primeiro Stack</button>
-                    </div>
-                    @endif
-                @endforelse
-
-                @if($supplements->isNotEmpty())
-                <div class="pt-4 mt-4 border-t border-white/5">
-                    <p class="text-[10px] text-zinc-600 font-black uppercase mb-4 pl-1">Suplementos Avulsos</p>
-                    <div class="space-y-3">
-                        @foreach($supplements as $sup)
-                        <div class="flex items-center justify-between p-4 bg-zinc-950/30 rounded-2xl border border-white/5">
-                            <div class="flex items-center gap-4">
-                                <div class="w-9 h-9 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center">
-                                    <i class="fas fa-capsules text-zinc-600"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-white">{{ $sup->name }}</p>
-                                    <p class="text-[9px] text-zinc-500 uppercase font-black">{{ $sup->dosage }}{{ $sup->unit }}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button @click="takeSupplement({{ $sup->id }}); $el.classList.add('bg-emerald-500', 'text-zinc-900')" 
-                                        class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 text-zinc-500 hover:text-zinc-900 transition-all @if($sup->last_taken_at && $sup->last_taken_at->isToday()) bg-emerald-500 text-zinc-900 border-emerald-500 @endif">
-                                    <i class="fas fa-check text-[10px]"></i>
-                                </button>
-                                <button type="button" 
-                                        @click='confirmDelete("{{ route('supplements.destroy', $sup->id) }}", {!! json_encode($sup->name, JSON_HEX_APOS) !!})'
-                                        class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-rose-500 hover:border-rose-500 text-zinc-500 hover:text-white transition-all" title="Remover">
-                                    <i class="fas fa-times text-[10px]"></i>
-                                </button>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
+                <div class="text-center py-12 border-2 border-dashed border-zinc-800 rounded-[2rem]">
+                    <i data-lucide="pills" class="w-8 h-8 text-zinc-800 mx-auto mb-4"></i>
+                    <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Nenhum stack configurado</p>
+                    <button @click="stackModalOpen = true" class="mt-6 px-6 py-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950 transition-all shadow-lg">CRIAR STACK</button>
                 </div>
-                @endif
+                @endforelse
             </div>
         </div>
+    </div>
     @endif
 
     @if($tab === 'diary')
-        <!-- Diary Tab Content -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pb-20 animate-fade-in">
-        <!-- Date Navigation Header -->
-        <div class="lg:col-span-12 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
+        <!-- Timeline Header -->
+        <div class="lg:col-span-12 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-zinc-900">
              <div>
-                <h2 class="text-xl font-black text-white tracking-tight">Timeline Alimentar</h2>
+                <h2 class="text-2xl font-black text-white tracking-tighter uppercase">Timeline <span class="text-emerald-500">Alimentar</span></h2>
                 <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Registros de {{ date('d/m/Y', strtotime($date)) }}</p>
              </div>
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-6 bg-zinc-900/50 p-4 rounded-3xl border border-zinc-800 shadow-2xl">
                  <div class="text-right">
-                    <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Saldo do Dia</p>
-                    <p class="text-lg font-black {{ ($targetKcal - ($selectedDateSums->cal ?? 0)) < 0 ? 'text-rose-500' : 'text-emerald-500' }}">
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Saldo do Dia</p>
+                    <p class="text-xl font-black tabular-nums {{ ($targetKcal - ($selectedDateSums->cal ?? 0)) < 0 ? 'text-rose-500' : 'text-emerald-500' }}">
                         {{ number_format($targetKcal - ($selectedDateSums->cal ?? 0), 0) }} kcal
                     </p>
                  </div>
-                 <div class="h-10 w-px bg-white/5"></div>
+                 <div class="h-10 w-px bg-zinc-800"></div>
                  <div class="flex flex-col gap-1">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                        <span class="text-[9px] text-zinc-400 font-bold uppercase">{{ number_format($selectedDateSums->p ?? 0, 0) }}g P</span>
+                    <div class="flex items-center gap-3">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]"></span>
+                        <span class="text-[10px] text-zinc-400 font-black uppercase tabular-nums">{{ number_format($selectedDateSums->p ?? 0, 0) }}g P</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <span class="text-[9px] text-zinc-400 font-bold uppercase">{{ number_format($selectedDateSums->c ?? 0, 0) }}g C</span>
+                    <div class="flex items-center gap-3">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
+                        <span class="text-[10px] text-zinc-400 font-black uppercase tabular-nums">{{ number_format($selectedDateSums->c ?? 0, 0) }}g C</span>
                     </div>
                  </div>
             </div>
         </div>
 
-        <!-- Timeline -->
+        <!-- Meals Timeline -->
         <div class="lg:col-span-8 space-y-8">
             @foreach(['breakfast', 'lunch', 'dinner', 'snack', 'other'] as $mtype)
                 @php
                     $mealRows = $diaryRows->where('meal_type', $mtype);
                     $mealCal = $mealRows->sum('calories');
-                    $icons = ['breakfast' => '☀️', 'lunch' => '🍲', 'dinner' => '🌙', 'snack' => '🍎', 'other' => '☕'];
+                    $icons = ['breakfast' => 'sun', 'lunch' => 'utensils', 'dinner' => 'moon', 'snack' => 'apple', 'other' => 'coffee'];
                 @endphp
-                <div class="group relative bg-zinc-900/20 border border-white/5 rounded-[2.5rem] overflow-hidden transition-all hover:bg-zinc-900/40">
-                    <div class="p-6 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-blue-900/5 to-transparent">
+                <div class="group relative bg-zinc-900 border border-zinc-800 rounded-[2rem] overflow-hidden transition-all hover:border-emerald-500/20 shadow-xl">
+                    <div class="p-6 flex items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-emerald-500/5 to-transparent">
                         <div class="flex items-center gap-4">
-                            <span class="text-2xl">{{ $icons[$mtype] }}</span>
+                            <div class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-lg">
+                                <i data-lucide="{{ $icons[$mtype] }}" class="w-5 h-5"></i>
+                            </div>
                             <div>
-                                <h3 class="text-lg font-black text-white tracking-tight">{{ $mealLabels[$mtype] }}</h3>
-                                <div class="flex items-center gap-3 mt-0.5">
-                                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{{ $mealRows->count() }} Itens</span>
-                                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">{{ $mealCal }} Kcal</span>
+                                <h3 class="text-lg font-black text-white tracking-tight uppercase">{{ $mealLabels[$mtype] }}</h3>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">{{ $mealRows->count() }} Itens</span>
+                                    <span class="text-[9px] text-emerald-500 font-black uppercase tracking-widest">{{ $mealCal }} Kcal</span>
                                 </div>
                             </div>
                         </div>
-                        <button @click="openRepeatModal('{{ $mtype }}')" class="mr-6 px-3 py-1.5 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase rounded-lg border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all">
-                            <i class="fas fa-redo-alt mr-1"></i> Repetir
+                        <button @click="openRepeatModal('{{ $mtype }}')" class="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950 transition-all shadow-lg flex items-center gap-2">
+                            <i data-lucide="repeat" class="w-3 h-3"></i> Repetir
                         </button>
                     </div>
                     
-                    <div class="divide-y divide-white/5">
+                    <div class="divide-y divide-zinc-900/50">
                         @forelse($mealRows as $row)
-                        <div class="p-6 flex items-center justify-between group/item hover:bg-white/5 transition-all">
+                        <div class="p-6 flex items-center justify-between group/item hover:bg-zinc-950/50 transition-all">
                             <div class="flex-1">
-                                <h4 class="text-sm font-bold text-white group-hover/item:text-blue-400 transition-colors">{{ $row->food_name }}</h4>
-                                <div class="flex items-center gap-3 text-[10px] text-zinc-500 mt-1">
+                                <h4 class="text-sm font-bold text-white group-hover/item:text-emerald-400 transition-colors">{{ $row->food_name }}</h4>
+                                <div class="flex items-center gap-3 text-[10px] text-zinc-600 mt-1 uppercase font-black tracking-widest">
                                     <span>{{ $row->amount }} {{ $row->unit }}</span>
-                                    <span class="w-1 h-1 bg-zinc-700 rounded-full"></span>
-                                    <span class="font-bold text-zinc-400">{{ $row->calories }} kcal</span>
+                                    <span class="w-1 h-1 bg-zinc-800 rounded-full"></span>
+                                    <span class="text-zinc-500">{{ $row->calories }} kcal</span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 opacity-0 group-hover/item:opacity-100 transition-all">
-                                <a href="{{ route('nutrition.index', ['tab' => 'diary', 'date' => $date, 'edit' => $row->id]) }}" class="w-8 h-8 bg-zinc-800 text-zinc-500 hover:text-blue-400 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-edit text-[10px]"></i>
+                            <div class="flex items-center gap-2 opacity-0 group-hover/item:opacity-100 transition-all scale-95 group-hover/item:scale-100">
+                                <a href="{{ route('nutrition.index', ['tab' => 'diary', 'date' => $date, 'edit' => $row->id]) }}" class="w-9 h-9 bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-emerald-400 hover:border-emerald-400/50 rounded-xl flex items-center justify-center transition-all shadow-lg">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
                                 </a>
                                 <form method="POST" action="{{ route('diary') }}" data-confirm-delete>
                                     @csrf
                                     <input type="hidden" name="action" value="delete_food">
                                     <input type="hidden" name="entry_date" value="{{ $date }}">
                                     <input type="hidden" name="food_id" value="{{ $row->id }}">
-                                    <button type="submit" class="w-8 h-8 bg-zinc-800 text-zinc-500 hover:text-rose-500 rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-trash text-[10px]"></i>
+                                    <button type="submit" class="w-9 h-9 bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-rose-500 hover:border-rose-500/50 rounded-xl flex items-center justify-center transition-all shadow-lg">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </form>
                             </div>
                         </div>
                         @empty
-                        <div class="py-10 text-center">
-                            <p class="text-zinc-700 text-[10px] font-black uppercase tracking-widest italic">Nenhum registro para esta refeição</p>
+                        <div class="py-12 text-center opacity-40 italic">
+                            <p class="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Nenhum registro</p>
                         </div>
                         @endforelse
                     </div>
@@ -901,87 +876,69 @@
             @endforeach
         </div>
 
-        <!-- Side Form (MELHORIAS 2, 3, 4, 5, 6, 7) -->
+        <!-- Right Sidebar Form -->
         <div class="lg:col-span-4 space-y-8">
-            <div class="bg-zinc-900/60 border border-white/10 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                <header class="mb-8 flex items-center justify-between">
+            <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                <header class="mb-10 flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-black text-white">{{ $editRow ? 'Editar Alimento' : 'Adicionar Alimento' }}</h3>
-                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Lançamento Inteligente</p>
+                        <h3 class="text-lg font-black text-white uppercase tracking-tighter">{{ $editRow ? 'Editar Registro' : 'Lançar Alimento' }}</h3>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Smart Engine Integration</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button type="button" @click="$dispatch('open-scanner')" title="Escanear Código de Barras" class="w-10 h-10 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white transition-all flex items-center justify-center border border-white/5 relative group">
-                            <i class="fas fa-barcode"></i>
-                            @if(!$isPremium) <i class="fas fa-lock absolute -top-1 -right-1 text-[8px] text-amber-500 bg-zinc-900 p-0.5 rounded-full"></i> @endif
+                        <button type="button" @click="$dispatch('open-scanner')" class="w-11 h-11 rounded-xl bg-zinc-950 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all flex items-center justify-center border border-zinc-800 shadow-xl group">
+                            <i data-lucide="barcode" class="w-5 h-5"></i>
                         </button>
-                        <button type="button" @click="$dispatch('open-photo')" title="Registrar por Foto" class="w-10 h-10 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white transition-all flex items-center justify-center border border-white/5 relative group">
-                            <i class="fas fa-camera"></i>
-                            @if(!$isPremium) <i class="fas fa-lock absolute -top-1 -right-1 text-[8px] text-amber-500 bg-zinc-900 p-0.5 rounded-full"></i> @endif
+                        <button type="button" @click="$dispatch('open-photo')" class="w-11 h-11 rounded-xl bg-zinc-950 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all flex items-center justify-center border border-zinc-800 shadow-xl group">
+                            <i data-lucide="camera" class="w-5 h-5"></i>
                         </button>
                     </div>
                 </header>
 
-                <!-- Natural Language Input (MELHORIA 5) -->
-                <div class="mb-6 @if(!$isPremium) opacity-50 pointer-events-none @endif">
+                <!-- Natural Language -->
+                <div class="mb-8 group">
                     <div class="relative">
-                        <textarea x-model="aiInput" placeholder="Ex: Comi 2 ovos e pão integral..." 
-                                  class="w-full bg-zinc-950/30 border border-white/5 rounded-2xl p-4 text-xs text-white outline-none focus:ring-1 focus:ring-purple-500/50 resize-none h-20 transition-all"></textarea>
+                        <textarea x-model="aiInput" placeholder="Ex: Almoço de hoje foi 200g de frango e salada..." 
+                                  class="w-full bg-zinc-950 border border-zinc-800 rounded-3xl p-5 text-sm text-white outline-none focus:border-emerald-500/50 resize-none h-28 transition-all shadow-inner"></textarea>
                         <button @click="processAI()" 
-                                class="absolute bottom-3 right-3 p-2 bg-purple-600 text-white rounded-lg text-[10px] font-black uppercase hover:bg-purple-500 transition-all disabled:opacity-50"
+                                class="absolute bottom-4 right-4 p-3 bg-emerald-500 text-zinc-950 rounded-2xl text-[10px] font-black uppercase hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-xl"
                                 :disabled="!aiInput || isProcessingAI">
-                            <span x-show="!isProcessingAI">Registrar</span>
-                            <i x-show="isProcessingAI" class="fas fa-spinner animate-spin"></i>
+                            <span x-show="!isProcessingAI">PROCESSAR</span>
+                            <i x-show="isProcessingAI" data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
                         </button>
                     </div>
-                    @if(!$isPremium)
-                    <div class="mt-2 flex items-center gap-2 text-[9px] text-amber-500 font-bold uppercase tracking-widest">
-                        <i class="fas fa-lock"></i> Disponível no plano Pro
-                    </div>
-                    @endif
                 </div>
 
-                <div class="h-px bg-white/5 mb-6"></div>
+                <div class="h-px bg-zinc-800 mb-8"></div>
 
-                <form method="POST" action="{{ route('diary') }}" class="space-y-5">
+                <form method="POST" action="{{ route('diary') }}" class="space-y-6">
                     @csrf
                     <input type="hidden" name="entry_date" value="{{ $date }}">
                     @if($editRow) <input type="hidden" name="food_edit_id" value="{{ $editRow->id }}"> @endif
 
-                    <div class="space-y-4">
-                        <!-- Search with Preview (MELHORIA 3) -->
-                        <div class="space-y-1.5 relative">
-                            <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest pl-1">Buscar Alimento</label>
-                            <input type="text" name="food_name" x-model="searchQuery" @input.debounce.300ms="searchFood()"
-                                   placeholder="Digite para buscar..."
-                                   class="w-full bg-zinc-950/50 border border-white/5 rounded-xl p-3.5 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500/50" required>
-                            
-                            <!-- Search Results Preview -->
-                            <div x-show="searchResults.length > 0" 
-                                 class="absolute z-50 top-full left-0 w-full mt-2 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto animate-fade-in"
-                                 @click.away="searchResults = []">
-                                <template x-for="product in searchResults" :key="product.code">
-                                    <button type="button" @click="selectProduct(product.code)" 
-                                            class="w-full p-4 flex items-center justify-between hover:bg-white/5 border-b border-white/5 transition-all text-left">
-                                        <div>
-                                            <p class="text-xs font-bold text-white" x-text="product.name"></p>
-                                            <p class="text-[9px] text-zinc-500 uppercase font-black" x-text="product.brands"></p>
-                                        </div>
-                                        <i class="fas fa-plus text-[10px] text-blue-500"></i>
-                                    </button>
-                                </template>
-                            </div>
+                    <div class="space-y-6">
+                        <x-premium-input label="Buscar Alimento" name="food_name" x-model="searchQuery" @input.debounce.300ms="searchFood()" placeholder="Busque no banco de dados..." required />
+                        
+                        <!-- Search Preview -->
+                        <div x-show="searchResults.length > 0" 
+                             class="absolute z-50 left-8 right-8 mt-2 bg-zinc-900 border border-zinc-800 rounded-[2rem] shadow-2xl overflow-hidden max-h-72 overflow-y-auto animate-fade-in"
+                             @click.away="searchResults = []">
+                            <template x-for="product in searchResults" :key="product.code">
+                                <button type="button" @click="selectProduct(product.code)" 
+                                        class="w-full p-5 flex items-center justify-between hover:bg-emerald-500/5 border-b border-zinc-800/50 transition-all text-left group">
+                                    <div>
+                                        <p class="text-xs font-bold text-white group-hover:text-emerald-400" x-text="product.name"></p>
+                                        <p class="text-[9px] text-zinc-600 uppercase font-black tracking-widest mt-1" x-text="product.brands"></p>
+                                    </div>
+                                    <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-500 opacity-40 group-hover:opacity-100 transition-all"></i>
+                                </button>
+                            </template>
                         </div>
 
-                        <!-- Unit Selector & Amount (MELHORIA 2) -->
                         <div class="grid grid-cols-2 gap-4">
+                            <x-premium-input label="Qtde" name="amount" type="number" x-model="amount" />
                             <div class="space-y-1.5">
-                                <label class="block text-[10px] text-zinc-500 font-bold uppercase tracking-widest pl-1">Quantidade</label>
-                                <input type="number" name="amount" x-model="amount"
-                                    class="w-full bg-zinc-950 border border-white/5 rounded-xl p-3.5 text-white text-sm outline-none">
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="block text-[10px] text-zinc-500 font-bold uppercase tracking-widest pl-1">Unidade</label>
-                                <select name="unit" x-model="unit" class="w-full bg-zinc-950 border border-white/5 rounded-xl p-3.5 text-white text-xs outline-none appearance-none">
+                                <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-2 px-1">Unidade</label>
+                                <select name="unit" x-model="unit" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-white text-sm font-medium outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
                                     <template x-for="(label, key) in unitLabels" :key="key">
                                         <option :value="key" x-text="label"></option>
                                     </template>
@@ -989,64 +946,53 @@
                             </div>
                         </div>
 
-                        <!-- Real-time Macro Preview (MELHORIA 3) -->
-                        <template x-if="selectedFood">
-                            <div class="bg-blue-600/5 border border-blue-500/20 rounded-2xl p-4 animate-fade-in">
-                                <p class="text-[9px] text-blue-400 font-black uppercase tracking-widest mb-3">Preview Nutricional</p>
-                                <div class="grid grid-cols-4 gap-2 text-center">
-                                    <div>
-                                        <p class="text-xs font-black text-white" x-text="currentMacros.kcal"></p>
-                                        <p class="text-[8px] text-zinc-500 uppercase font-bold">Kcal</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-black text-rose-400" x-text="currentMacros.p + 'g'"></p>
-                                        <p class="text-[8px] text-zinc-500 uppercase font-bold">Prot</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-black text-blue-400" x-text="currentMacros.c + 'g'"></p>
-                                        <p class="text-[8px] text-zinc-500 uppercase font-bold">Carb</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-black text-amber-400" x-text="currentMacros.f + 'g'"></p>
-                                        <p class="text-[8px] text-zinc-500 uppercase font-bold">Gord</p>
-                                    </div>
-                                </div>
-                                <!-- Hidden inputs for form submission -->
-                                <input type="hidden" name="calories" :value="selectedFood.energy_kcal">
-                                <input type="hidden" name="p_g" :value="selectedFood.protein_g">
-                                <input type="hidden" name="c_g" :value="selectedFood.carbohydrates_g">
-                                <input type="hidden" name="f_g" :value="selectedFood.fat_g">
-                                
-                                <button type="button" @click="selectedFood = null; searchQuery = ''" class="w-full mt-4 text-[9px] text-zinc-500 font-black uppercase hover:text-white transition-colors">
-                                    Limpar Seleção
-                                </button>
+                        <!-- Real-time Macro Preview -->
+                        <div x-show="selectedFood" class="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-6 animate-fade-in shadow-inner">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Preview Nutricional</p>
+                                <button type="button" @click="selectedFood = null; searchQuery = ''" class="text-[9px] text-zinc-600 font-black uppercase hover:text-rose-500 transition-colors">Limpar</button>
                             </div>
-                        </template>
-
-                        <!-- Manual Inputs (Fallback) -->
-                        <template x-if="!selectedFood">
-                            <div class="space-y-4 animate-fade-in">
-                                 <div class="space-y-1.5">
-                                    <label class="block text-[10px] text-zinc-500 font-bold uppercase tracking-widest pl-1">Calorias (kcal p/ 100g)</label>
-                                    <input type="number" name="calories" value="{{ old('calories', $editRow->calories ?? '') }}" 
-                                        class="w-full bg-zinc-950 text-white font-black border border-white/5 rounded-xl p-3.5 outline-none">
+                            <div class="grid grid-cols-4 gap-4 text-center">
+                                <div>
+                                    <p class="text-sm font-black text-white tabular-nums" x-text="currentMacros.kcal"></p>
+                                    <p class="text-[8px] text-zinc-600 uppercase font-bold tracking-widest">Kcal</p>
                                 </div>
-                                 <div class="grid grid-cols-3 gap-2">
-                                     @foreach([['p', 'Proteína'], ['c', 'Carbo'], ['f', 'Gordura']] as $macro)
-                                     <div class="space-y-1.5">
-                                         <label class="block text-[9px] text-zinc-600 font-bold uppercase tracking-widest text-center">{{ $macro[1] }}</label>
-                                         <input type="number" step="0.1" name="{{ $macro[0] }}_g" value="{{ old($macro[0].'_g', $editRow->{$macro[0].'_g'} ?? '') }}" 
-                                                class="w-full bg-zinc-950 border border-white/5 rounded-xl p-2 text-center text-white text-xs outline-none">
-                                     </div>
-                                     @endforeach
+                                <div>
+                                    <p class="text-sm font-black text-rose-400 tabular-nums" x-text="currentMacros.p"></p>
+                                    <p class="text-[8px] text-zinc-600 uppercase font-bold tracking-widest">Prot</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-black text-emerald-400 tabular-nums" x-text="currentMacros.c"></p>
+                                    <p class="text-[8px] text-zinc-600 uppercase font-bold tracking-widest">Carb</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-black text-amber-400 tabular-nums" x-text="currentMacros.f"></p>
+                                    <p class="text-[8px] text-zinc-600 uppercase font-bold tracking-widest">Gord</p>
+                                </div>
+                            </div>
+                            <input type="hidden" name="calories" :value="selectedFood.energy_kcal">
+                            <input type="hidden" name="p_g" :value="selectedFood.protein_g">
+                            <input type="hidden" name="c_g" :value="selectedFood.carbohydrates_g">
+                            <input type="hidden" name="f_g" :value="selectedFood.fat_g">
+                        </div>
+
+                        <!-- Manual Fallback -->
+                        <div x-show="!selectedFood" class="space-y-6 animate-fade-in">
+                             <x-premium-input label="Calorias (kcal p/ 100g)" name="calories" type="number" value="{{ old('calories', $editRow->calories ?? '') }}" />
+                             <div class="grid grid-cols-3 gap-3">
+                                 @foreach([['p', 'Prot', 'rose'], ['c', 'Carb', 'emerald'], ['f', 'Gord', 'amber']] as $macro)
+                                 <div class="space-y-2">
+                                     <label class="block text-[9px] text-zinc-600 font-black uppercase tracking-widest text-center">{{ $macro[1] }} (g)</label>
+                                     <input type="number" step="0.1" name="{{ $macro[0] }}_g" value="{{ old($macro[0].'_g', $editRow->{$macro[0].'_g'} ?? '') }}" 
+                                            class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-center text-white text-xs font-black outline-none focus:border-{{ $macro[2] }}-500/50 shadow-inner">
                                  </div>
-                            </div>
-                        </template>
+                                 @endforeach
+                             </div>
+                        </div>
 
-                        <!-- Meal Type (MELHORIA 11 - Automatic selection) -->
-                        <div class="space-y-1.5">
-                            <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest pl-1">Refeição</label>
-                            <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-3 px-1">Refeição</label>
+                            <div class="grid grid-cols-2 gap-3">
                                 @php
                                     $currentHour = now()->hour;
                                     $defaultMeal = 'other';
@@ -1058,7 +1004,7 @@
                                 @foreach($mealLabels as $val => $txt)
                                 <label class="cursor-pointer">
                                     <input type="radio" name="meal_type" value="{{ $val }}" class="peer hidden" {{ ($editRow->meal_type ?? $defaultMeal) === $val ? 'checked' : '' }}>
-                                    <div @click="loadFavorites('{{ $val }}')" class="py-2 text-center rounded-lg bg-zinc-950 border border-white/5 text-[9px] font-black uppercase text-zinc-500 peer-checked:bg-blue-600 peer-checked:text-white transition-all">
+                                    <div @click="loadFavorites('{{ $val }}')" class="py-3 text-center rounded-2xl bg-zinc-950 border border-zinc-800 text-[9px] font-black uppercase text-zinc-600 peer-checked:bg-emerald-500 peer-checked:text-zinc-950 peer-checked:border-emerald-500 shadow-xl transition-all active:scale-95">
                                         {{ $txt }}
                                     </div>
                                 </label>
@@ -1066,92 +1012,81 @@
                             </div>
                         </div>
 
-                        <!-- Favorites (MELHORIA 4) -->
-                        <div class="pt-4 space-y-3" x-init="loadFavorites('{{ $defaultMeal }}')">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest pl-1">⭐ Favoritos do Horário</label>
-                                <span x-show="loadingFavorites" class="fas fa-spinner animate-spin text-zinc-500 text-[10px]"></span>
+                        <!-- Favorites -->
+                        <div class="pt-4" x-init="loadFavorites('{{ $defaultMeal }}')">
+                            <div class="flex items-center justify-between mb-4">
+                                <label class="block text-[10px] text-zinc-600 font-black uppercase tracking-widest px-1">⭐ Favoritos Recentes</label>
+                                <i x-show="loadingFavorites" data-lucide="loader-2" class="w-3 h-3 animate-spin text-zinc-700"></i>
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <template x-for="fav in favorites" :key="fav.food_name">
                                     <button type="button" @click="selectedFood = {energy_kcal: fav.calories, protein_g: fav.protein_g, carbohydrates_g: fav.carbs_g, fat_g: fav.fat_g, name: fav.food_name}; searchQuery = fav.food_name; unit = fav.unit || 'un'"
-                                            class="px-3 py-1.5 bg-white/5 border border-white/5 rounded-full text-[10px] font-bold text-zinc-400 hover:bg-blue-600/10 hover:text-blue-400 hover:border-blue-500/30 transition-all">
+                                            class="px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-full text-[9px] font-black uppercase text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all shadow-xl">
                                         <span x-text="fav.food_name"></span>
                                     </button>
-                                </template>
-                                <template x-if="favorites.length === 0 && !loadingFavorites">
-                                    <p class="text-[9px] text-zinc-700 italic">Continue registrando para ver seus favoritos.</p>
                                 </template>
                             </div>
                         </div>
                     </div>
 
-                    <div class="pt-4">
-                        <button type="submit" class="w-full py-4 bg-white text-zinc-900 font-black rounded-2xl hover:bg-blue-500 hover:text-white transition-all uppercase text-[10px] tracking-widest shadow-xl active:scale-95">
-                            {{ $editRow ? 'Atualizar Alimento' : 'Confirmar Lançamento' }}
-                        </button>
+                    <div class="pt-6">
+                        <x-premium-button variant="primary" size="lg" type="submit" class="w-full">
+                            {{ $editRow ? 'ATUALIZAR REGISTRO' : 'CONFIRMAR LANÇAMENTO' }}
+                        </x-premium-button>
                         
                         @if($editRow)
-                            <a href="{{ route('nutrition.index', ['tab' => 'diary', 'date' => $date]) }}" class="block text-center mt-4 text-zinc-600 text-[9px] font-black uppercase tracking-widest hover:text-white">Cancelar Edição</a>
+                            <a href="{{ route('nutrition.index', ['tab' => 'diary', 'date' => $date]) }}" class="block text-center mt-6 text-zinc-600 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Cancelar Edição</a>
                         @endif
                     </div>
                 </form>
             </div>
 
-            <!-- Hydration Card (MELHORIA 10) -->
-            <div class="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-6">
-                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]"></span>
-                    Hidratação — Controle Água
+            <!-- Side Hydration Card -->
+            <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-2xl shadow-emerald-500/5">
+                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-8">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                    Hidratação Express
                 </h3>
                 <div class="flex flex-col items-center">
-                    <p class="text-2xl font-black text-white mb-4">{{ number_format($waterToday / 1000, 1) }}L / <small class="text-zinc-500 text-sm italic">{{ number_format($waterTarget / 1000, 1) }}L</small></p>
+                    <p class="text-3xl font-black text-white tracking-tighter tabular-nums mb-2">{{ number_format($waterToday / 1000, 1) }}L</p>
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-8 italic">Meta: {{ number_format($waterTarget / 1000, 1) }}L</p>
                     <div class="flex gap-2 w-full">
                         @foreach([250, 500, 1000] as $ml)
-                        <button @click="addWaterInHub({{ $ml }})" class="flex-1 py-3 bg-zinc-950 border border-white/5 rounded-xl text-[10px] font-black text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-lg active:scale-95">
+                        <button @click="addWaterInHub({{ $ml }})" class="flex-1 py-4 bg-zinc-950 border border-zinc-800 rounded-2xl text-[9px] font-black text-emerald-500 hover:bg-emerald-500 hover:text-zinc-950 transition-all shadow-xl active:scale-95">
                             +{{ $ml >= 1000 ? '1L' : $ml.'ml' }}
                         </button>
                         @endforeach
                     </div>
                 </div>
             </div>
-
-            @if(!$isPremium)
-            <!-- Upgrade Pro Card (MELHORIA 12) -->
-            <div class="bg-gradient-to-br from-amber-600/20 to-rose-600/20 border border-amber-500/30 p-6 rounded-[2.5rem] text-center">
-                <i class="fas fa-crown text-amber-500 text-2xl mb-3"></i>
-                <h4 class="text-sm font-black text-white mb-2">Desbloqueie o Poder da IA</h4>
-                <p class="text-[10px] text-zinc-400 mb-4 uppercase font-bold tracking-widest">Scanner, Foto, Voz e Mais</p>
-                <a href="{{ route('plano') }}" class="inline-block px-6 py-3 bg-amber-500 text-zinc-900 font-black text-[10px] uppercase rounded-xl hover:bg-amber-400 transition-all">Fazer Upgrade</a>
-            </div>
-            @endif
         </div>
-
     </div>
     @endif
 
-    <!-- Modal Strategy (AlpineJS) -->
+    <!-- Modals Section -->
+    <!-- Goal Adjustment Modal -->
     <div x-show="goalModalOpen" 
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in"
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
          style="display: none;"
          @keydown.escape.window="goalModalOpen = false">
-        
         <div class="absolute inset-0" @click="goalModalOpen = false"></div>
-        
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl animate-dashboard-entry">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between">
-                <h5 class="text-white font-black text-xl">Ajustar Estratégia</h5>
-                <button @click="goalModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between">
+                <div>
+                    <h5 class="text-white font-black text-2xl uppercase tracking-tighter">Ajustar <span class="text-emerald-500">Estratégia</span></h5>
+                    <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Recalculando seu caminho para o sucesso</p>
+                </div>
+                <button @click="goalModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
             <form action="{{ route('nutrition.update-goal') }}" method="POST">
                 @csrf
-                <div class="p-8 space-y-8">
+                <div class="p-10 space-y-10">
                     <div class="space-y-4">
-                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-2">Objetivo Primário</label>
-                        <select name="goal" class="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/30 transition-all appearance-none cursor-pointer">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Objetivo Primário</label>
+                        <select name="goal" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-white font-black outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer shadow-inner">
                             @foreach(\App\Models\UserProfile::getAvailableGoals() as $slug => $data)
                                 <option value="{{ $slug }}" {{ $currentGoal == $slug ? 'selected' : '' }}>
                                     {{ $data['label'] }}
@@ -1161,18 +1096,18 @@
                     </div>
 
                     <div class="space-y-4">
-                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-2">Distribuição de Macros (Split)</label>
-                        <div class="grid grid-cols-1 gap-3">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Distribuição de Macros (Split)</label>
+                        <div class="grid grid-cols-1 gap-4">
                             @foreach([
-                                ['split' => 'cutting', 'label' => '🥩 High Protein (Preservação)', 'desc' => 'Foco em saciedade e massa magra.'],
-                                ['split' => 'bulking', 'label' => '🍝 High Carb (Energia)', 'desc' => 'Foco em performance e volume.'],
-                                ['split' => 'maintenance', 'label' => '🥗 Equilibrado (Saúde)', 'desc' => 'Proporções padrão NexShape.']
+                                ['split' => 'cutting', 'label' => '🥩 High Protein', 'desc' => 'Máxima preservação de massa magra.'],
+                                ['split' => 'bulking', 'label' => '🍝 High Carb', 'desc' => 'Foco em performance e volume muscular.'],
+                                ['split' => 'maintenance', 'label' => '🥗 Equilibrado', 'desc' => 'Proporções otimizadas NexShape.']
                             ] as $s)
                             <label class="relative group cursor-pointer">
                                 <input type="radio" name="split" value="{{ $s['split'] }}" class="peer hidden" {{ $s['split'] == 'maintenance' ? 'checked' : '' }}>
-                                <div class="p-4 rounded-2xl bg-zinc-950 border border-white/5 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all group-hover:border-white/20">
-                                    <p class="text-white text-sm font-black peer-checked:text-white transition-colors">{{ $s['label'] }}</p>
-                                    <p class="text-[10px] text-zinc-500 mt-1 peer-checked:text-blue-200 transition-colors">{{ $s['desc'] }}</p>
+                                <div class="p-5 rounded-3xl bg-zinc-950 border border-zinc-800 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 shadow-xl transition-all hover:border-emerald-500/30">
+                                    <p class="text-white text-sm font-black peer-checked:text-zinc-950 transition-colors uppercase tracking-tight">{{ $s['label'] }}</p>
+                                    <p class="text-[10px] text-zinc-600 mt-1 peer-checked:text-zinc-900 font-bold transition-colors">{{ $s['desc'] }}</p>
                                 </div>
                             </label>
                             @endforeach
@@ -1180,560 +1115,169 @@
                     </div>
                 </div>
 
-                <div class="p-8 bg-zinc-950/50 border-t border-white/5 flex flex-col md:flex-row gap-4">
-                    <button type="button" @click="goalModalOpen = false" class="flex-1 py-4 bg-zinc-800 text-zinc-400 font-black rounded-2xl hover:bg-zinc-700 transition-all uppercase text-[10px] tracking-widest">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/10 uppercase text-[10px] tracking-widest">
-                        Salvar Estratégia
-                    </button>
+                <div class="p-10 bg-zinc-950/50 border-t border-zinc-800 flex gap-4">
+                    <x-premium-button variant="secondary" class="flex-1" type="button" @click="goalModalOpen = false">CANCELAR</x-premium-button>
+                    <x-premium-button variant="primary" class="flex-1" type="submit">SALVAR ESTRATÉGIA</x-premium-button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Add Supplement -->
-    <div x-show="supplementModalOpen" 
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="supplementModalOpen = false">
-        
-        <div class="absolute inset-0" @click="supplementModalOpen = false"></div>
-        
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-dashboard-entry">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between">
-                <h5 class="text-white font-black text-xl">Novo Suplemento</h5>
-                <button @click="supplementModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            
-            <form action="{{ route('supplements.store') }}" method="POST">
-                @csrf
-                <div class="p-8 space-y-6">
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-2">Nome do Suplemento</label>
-                        <input type="text" name="name" required placeholder="Ex: Creatina Creapure" class="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-2">Dose</label>
-                            <input type="text" name="dosage" placeholder="Ex: 5" class="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-2">Unidade</label>
-                            <select name="unit" class="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none appearance-none">
-                                <option value="g">Grama (g)</option>
-                                <option value="caps">Cápsula</option>
-                                <option value="ml">ML</option>
-                                <option value="scoop">Scoop</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-2">Momento do Dia</label>
-                        <input type="text" name="time_of_day" placeholder="Ex: Pós-treino ou 08:00" class="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
-                    </div>
-                </div>
-
-                <div class="p-8 bg-zinc-950/50 border-t border-white/5 flex gap-4">
-                    <button type="submit" class="w-full py-4 bg-emerald-500 text-zinc-900 font-black rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10 uppercase text-[10px] tracking-widest">
-                        Adicionar ao Stack
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Suggestion Result -->
+    <!-- AI Suggestion Result Modal -->
     <div x-show="suggestionModalOpen" 
-         class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md animate-fade-in"
+         class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-2xl animate-fade-in"
          style="display: none;"
          @keydown.escape.window="suggestionModalOpen = false">
-        
         <div class="absolute inset-0" @click="suggestionModalOpen = false"></div>
-        
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-dashboard-entry">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between bg-zinc-900/50">
-                <h5 class="text-white font-black text-xl flex items-center gap-3">
-                    <i class="fas fa-magic text-blue-400"></i>
-                    Sugestão NexShape AI
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between bg-emerald-500/5">
+                <h5 class="text-white font-black text-2xl uppercase tracking-tighter flex items-center gap-4">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-emerald-500"></i>
+                    NexShape AI Suggestion
                 </h5>
-                <button @click="suggestionModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            
-            <div class="p-8 max-h-[70vh] overflow-y-auto">
-                <div x-show="loadingMeal" class="flex flex-col items-center justify-center py-12 space-y-4">
-                    <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                    <p class="text-zinc-500 text-xs font-black uppercase tracking-widest">Consultando Especialista IA...</p>
-                </div>
-                
-                <div x-show="!loadingMeal" class="prose prose-invert max-w-none">
-                    <div class="bg-zinc-950/50 rounded-3xl p-6 border border-white/5 leading-relaxed text-zinc-300 whitespace-pre-line" x-text="mealSuggestion"></div>
-                </div>
-            </div>
-
-            <div class="p-8 bg-zinc-950/50 border-t border-white/5 flex gap-4">
-                <button @click="suggestionModalOpen = false" class="w-full py-4 bg-zinc-800 text-white font-black rounded-2xl hover:bg-zinc-700 transition-all uppercase text-[10px] tracking-widest">
-                    Fechar
-                </button>
-                <button @click="adoptSuggestedMeal()" class="w-full py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/10 uppercase text-[10px] tracking-widest">
-                    Adotar Refeição
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Audit Result -->
-    <div x-show="auditModalOpen" 
-         class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="auditModalOpen = false">
-        
-        <div class="absolute inset-0" @click="auditModalOpen = false"></div>
-        
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-3xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-dashboard-entry">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between bg-purple-600/5">
-                <h5 class="text-white font-black text-xl flex items-center gap-3">
-                    <i class="fas fa-award text-purple-400"></i>
-                    Auditoria Nutricional Semanal
-                </h5>
-                <button @click="auditModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            
-            <div class="p-10 max-h-[70vh] overflow-y-auto">
-                <div x-show="loadingAudit" class="flex flex-col items-center justify-center py-12 space-y-6">
-                    <div class="relative w-20 h-20">
-                        <div class="absolute inset-0 border-4 border-purple-500/10 rounded-full"></div>
-                        <div class="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-white font-black uppercase text-sm tracking-widest mb-1 animate-pulse">Auditando Histórico</p>
-                        <p class="text-zinc-500 text-[10px] uppercase font-bold">Processando dados dos últimos 7 dias...</p>
-                    </div>
-                </div>
-                
-                <div x-show="!loadingAudit" class="prose prose-invert max-w-none">
-                    <div class="space-y-6">
-                        <div class="bg-zinc-950/40 rounded-3xl p-8 border border-white/5 leading-relaxed text-zinc-300 whitespace-pre-line text-sm italic" x-text="auditResult"></div>
-                        
-                        <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
-                            <p class="text-[10px] text-purple-400 font-black uppercase tracking-widest text-center">Relatório gerado exclusivamente para {{ auth()->user()->name }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-8 bg-zinc-950/50 border-t border-white/5">
-                <button @click="auditModalOpen = false" class="w-full py-4 bg-zinc-800 text-white font-black rounded-2xl hover:bg-zinc-700 transition-all uppercase text-[10px] tracking-widest">
-                    Entendido, vamos evoluir!
-                </button>
-            </div>
-        </div>
-    </div>
-    <!-- Modal Repeat Meal (MELHORIA 1) -->
-    <div x-show="repeatModalOpen" 
-         class="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="repeatModalOpen = false">
-        
-        <div class="absolute inset-0" @click="repeatModalOpen = false"></div>
-        
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between bg-blue-600/5">
-                <h5 class="text-white font-black text-lg flex items-center gap-3 uppercase tracking-widest">
-                    <i class="fas fa-redo-alt text-blue-400"></i>
-                    Repetir Refeição
-                </h5>
-                <button @click="repeatModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            
-            <form action="{{ route('nutrition.api.repeat-meal') }}" method="POST">
-                @csrf
-                <input type="hidden" name="meal_type" :value="repeatMealType">
-                <input type="hidden" name="target_date" value="{{ $date }}">
-                
-                <div class="p-8 space-y-6">
-                    <p class="text-xs text-zinc-400">Selecione a origem da refeição para copiar todos os alimentos e macros para hoje.</p>
-                    
-                    <div class="space-y-3">
-                        @foreach([
-                            ['source' => 'yesterday', 'label' => 'Ontem', 'icon' => 'calendar-day'],
-                            ['source' => 'last', 'label' => 'Última Vez', 'icon' => 'history'],
-                            ['source' => 'specific', 'label' => 'Dia Específico', 'icon' => 'calendar-alt']
-                        ] as $opt)
-                        <label class="relative cursor-pointer group">
-                            <input type="radio" name="source" value="{{ $opt['source'] }}" x-model="repeatSource" class="peer hidden">
-                            <div class="flex items-center gap-4 p-4 rounded-2xl bg-zinc-950 border border-white/5 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all">
-                                <i class="fas fa-{{ $opt['icon'] }} text-zinc-500 peer-checked:text-white"></i>
-                                <span class="text-sm font-bold text-white">{{ $opt['label'] }}</span>
-                            </div>
-                        </label>
-                        @endforeach
-                    </div>
-
-                    <div x-show="repeatSource === 'specific'" class="space-y-2 animate-fade-in">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Data de Origem</label>
-                        <input type="date" name="date" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none">
-                    </div>
-                </div>
-
-                <div class="p-8 bg-zinc-950/50 border-t border-white/5">
-                    <button type="submit" class="w-full py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/10 uppercase text-[10px] tracking-widest">
-                        Copiar Refeição
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <!-- Modal Criar Smart Stack -->
-    <div x-show="stackModalOpen" 
-         class="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="stackModalOpen = false">
-        <div class="absolute inset-0" @click="stackModalOpen = false"></div>
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between bg-emerald-600/5">
-                <h5 class="text-white font-black text-lg flex items-center gap-3 uppercase tracking-widest">
-                    <i class="fas fa-layer-group text-emerald-400"></i>
-                    Novo Smart Stack
-                </h5>
-                <button @click="stackModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            <form action="{{ route('smart-stacks.store') }}" method="POST">
-                @csrf
-                <div class="p-8 space-y-5">
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Nome do Stack</label>
-                        <input type="text" name="name" placeholder="Ex: Protocolo Manhã" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500/50" required>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Objetivo</label>
-                            <select name="goal" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none appearance-none">
-                                <option value="saude">Saúde & Bem-estar</option>
-                                <option value="hipertrofia">Hipertrofia</option>
-                                <option value="emagrecimento">Emagrecimento</option>
-                                <option value="performance">Performance</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Responsável</label>
-                            <select name="responsible_type" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none appearance-none">
-                                <option value="ia">NexShape AI</option>
-                                <option value="profissional">Profissional</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Notas / Instruções</label>
-                        <textarea name="notes" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none h-24 resize-none"></textarea>
-                    </div>
-                </div>
-                <div class="p-8 bg-zinc-950/50 border-t border-white/5">
-                    <button type="submit" class="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20">
-                        Criar Smart Stack
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Editar Smart Stack -->
-    <div x-show="editStackModalOpen" 
-         class="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="editStackModalOpen = false"
-         x-cloak>
-        <div class="absolute inset-0" @click="editStackModalOpen = false"></div>
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between bg-blue-600/5">
-                <h5 class="text-white font-black text-lg flex items-center gap-3 uppercase tracking-widest">
-                    <i class="fas fa-edit text-blue-400"></i>
-                    Editar Smart Stack
-                </h5>
-                <button @click="editStackModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            <form :action="`/smart-stacks/${selectedStackId}`" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="p-8 space-y-5">
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Nome do Stack</label>
-                        <input type="text" name="name" :value="selectedStack ? selectedStack.name : ''" placeholder="Ex: Protocolo Manhã" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:ring-1 focus:ring-blue-500/50" required>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Objetivo</label>
-                            <select name="goal" :value="selectedStack ? selectedStack.goal : ''" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none appearance-none">
-                                <option value="saude">Saúde & Bem-estar</option>
-                                <option value="hipertrofia">Hipertrofia</option>
-                                <option value="emagrecimento">Emagrecimento</option>
-                                <option value="performance">Performance</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Status</label>
-                            <select name="status" :value="selectedStack ? selectedStack.status : ''" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none appearance-none">
-                                <option value="ativo">Ativo</option>
-                                <option value="pausado">Pausado</option>
-                                <option value="concluído">Concluído</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Notas / Instruções</label>
-                        <textarea name="notes" :value="selectedStack ? selectedStack.notes : ''" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none h-24 resize-none" x-text="selectedStack ? selectedStack.notes : ''"></textarea>
-                    </div>
-                </div>
-                <div class="p-8 bg-zinc-950/50 border-t border-white/5">
-                    <button type="submit" class="w-full py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all uppercase text-[10px] tracking-widest shadow-lg shadow-blue-600/20">
-                        Atualizar Smart Stack
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Adicionar Suplemento (Evoluído) -->
-    <div x-show="supplementModalOpen" 
-         class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="supplementModalOpen = false">
-        <div class="absolute inset-0" @click="supplementModalOpen = false"></div>
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between">
-                <h5 class="text-white font-black text-lg flex items-center gap-3 uppercase tracking-widest">
-                    <i class="fas fa-pills text-emerald-400"></i>
-                    Adicionar ao Stack
-                </h5>
-                <button @click="supplementModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
-                </button>
-            </div>
-            <form :action="selectedStackId ? `/smart-stacks/${selectedStackId}/supplements` : '{{ route('supplements.store') }}'" method="POST">
-                @csrf
-                <div class="p-8 space-y-4">
-                    <div class="space-y-1.5 relative">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Suplemento / Substância</label>
-                        <input type="text" 
-                               name="name" 
-                               x-model="supplementSearch" 
-                               @input.debounce.300ms="searchSupplement()"
-                               placeholder="Ex: Creatina Monohidratada" 
-                               class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500/50" 
-                               required 
-                               autocomplete="off">
-                        
-                        <!-- Catalog Search Results -->
-                        <div x-show="showCatalog" 
-                             class="absolute z-50 left-0 right-0 top-full mt-2 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
-                             style="display: none;"
-                             @click.away="showCatalog = false">
-                            <template x-for="item in catalogResults" :key="item.id">
-                                <button type="button" 
-                                        @click="selectFromCatalog(item)"
-                                        class="w-full p-4 text-left hover:bg-white/[0.05] border-b border-white/5 last:border-0 transition-colors">
-                                    <div class="flex items-center justify-between">
-                                        <p class="text-sm font-bold text-white" x-text="item.name"></p>
-                                        <span class="text-[9px] text-zinc-500 font-black uppercase" x-text="item.category"></span>
-                                    </div>
-                                    <p class="text-[9px] text-emerald-500 font-bold mt-1" x-text="item.default_dosage + item.default_unit + ' (Sugestão)'" x-show="item.default_dosage"></p>
-                                </button>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Dose</label>
-                            <input type="text" name="dosage" placeholder="5" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Unidade</label>
-                            <select name="unit" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none appearance-none">
-                                <option value="g">g (gramas)</option>
-                                <option value="mg">mg</option>
-                                <option value="caps">cápsula(s)</option>
-                                <option value="ml">ml</option>
-                                <option value="scoop">scoop</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Horário</label>
-                            <input type="text" name="time_of_day" placeholder="Ex: Pós-treino" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Frequência</label>
-                            <select name="frequency" class="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white text-sm outline-none appearance-none">
-                                <option value="diario">Diário</option>
-                                <option value="pre_treino">Pré-Treino</option>
-                                <option value="pos_treino">Pós-Treino</option>
-                                <option value="em_jejum">Em Jejum</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-8 bg-zinc-950/50 border-t border-white/5">
-                    <button type="submit" class="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all uppercase text-[10px] tracking-widest">
-                        Salvar Suplemento
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Sugestão IA -->
-    <div x-show="aiStackModalOpen" 
-         class="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-zinc-950/95 backdrop-blur-3xl animate-fade-in"
-         style="display: none;"
-         @keydown.escape.window="aiStackModalOpen = false">
-        <div class="absolute inset-0" @click="aiStackModalOpen = false"></div>
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl">
-            <div class="p-8 border-b border-white/5 flex items-center justify-between bg-blue-600/5">
-                <h5 class="text-white font-black text-xl flex items-center gap-3">
-                    <i class="fas fa-magic text-blue-400"></i>
-                    NexShape AI Recommendation
-                </h5>
-                <button @click="aiStackModalOpen = false" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l18 18"></path></svg>
+                <button @click="suggestionModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
             <div class="p-10 max-h-[60vh] overflow-y-auto">
-                <div x-show="aiStackLoading" class="flex flex-col items-center justify-center py-12">
-                    <div class="w-16 h-16 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-                    <p class="text-white font-black uppercase text-xs tracking-[0.3em] animate-pulse">Cruzando dados de Biohacking...</p>
+                <div x-show="loadingMeal" class="flex flex-col items-center justify-center py-12 space-y-6">
+                    <div class="w-16 h-16 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+                    <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest animate-pulse">Consultando Engenharia Dietética IA...</p>
                 </div>
-
-                <div x-show="!aiStackLoading && aiStackSuggestion" class="space-y-8 animate-fade-in">
-                    <div class="text-center">
-                        <h4 class="text-2xl font-black text-white italic" x-text="aiStackSuggestion ? aiStackSuggestion.stack_name : ''"></h4>
-                        <p class="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-2" x-text="aiStackSuggestion ? 'Objetivo: ' + aiStackSuggestion.goal : ''"></p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <template x-for="sup in (aiStackSuggestion ? aiStackSuggestion.supplements : [])" :key="sup.name">
-                            <div class="p-6 bg-zinc-950/50 border border-white/5 rounded-[2rem] group hover:border-blue-500/30 transition-all">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h5 class="text-white font-black text-sm" x-text="sup.name"></h5>
-                                    <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-[9px] font-black rounded uppercase" x-text="sup.dosage + sup.unit"></span>
-                                </div>
-                                <p class="text-xs text-zinc-500 leading-relaxed" x-text="sup.observations"></p>
-                                <div class="flex gap-4 mt-4">
-                                    <span class="text-[9px] text-zinc-600 font-bold uppercase" x-text="'Horário: ' + sup.time_of_day"></span>
-                                    <span class="text-[9px] text-zinc-600 font-bold uppercase" x-text="'Frequência: ' + sup.frequency"></span>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="p-6 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
-                        <p class="text-[10px] text-amber-500/70 font-bold leading-relaxed">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Atenção: Estas sugestões são baseadas em algoritmos de IA. Sempre consulte um profissional de saúde antes de iniciar qualquer suplementação.
-                        </p>
-                    </div>
+                
+                <div x-show="!loadingMeal" class="prose prose-emerald max-w-none">
+                    <div class="bg-zinc-950 p-8 rounded-[2rem] border border-zinc-800 leading-relaxed text-zinc-400 text-sm italic whitespace-pre-line shadow-inner" x-text="mealSuggestion"></div>
                 </div>
             </div>
 
-            <div class="p-8 bg-zinc-950/50 border-t border-white/5 flex gap-4">
-                <button @click="aiStackModalOpen = false" class="flex-1 py-4 bg-zinc-800 text-white font-black rounded-2xl hover:bg-zinc-700 transition-all uppercase text-[10px] tracking-widest">
-                    Fechar
-                </button>
-                <button @click="adoptAISuggestion()" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all uppercase text-[10px] tracking-widest shadow-lg shadow-blue-600/20">
-                    Adotar Este Smart Stack
-                </button>
+            <div class="p-10 bg-zinc-950/50 border-t border-zinc-800 flex gap-4">
+                <x-premium-button variant="secondary" class="flex-1" @click="suggestionModalOpen = false">FECHAR</x-premium-button>
+                <x-premium-button variant="primary" class="flex-1" @click="adoptSuggestedMeal()">ADOTAR REFEIÇÃO</x-premium-button>
             </div>
         </div>
     </div>
-    <!-- Modal Confirmação de Exclusão Premium -->
+
+    <!-- AI Audit Modal -->
+    <div x-show="auditModalOpen" 
+         class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-2xl animate-fade-in"
+         style="display: none;"
+         @keydown.escape.window="auditModalOpen = false">
+        <div class="absolute inset-0" @click="auditModalOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between bg-emerald-500/5">
+                <h5 class="text-white font-black text-2xl uppercase tracking-tighter flex items-center gap-4">
+                    <i data-lucide="microscope" class="w-6 h-6 text-emerald-500"></i>
+                    Weekly Performance Audit
+                </h5>
+                <button @click="auditModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-10 max-h-[60vh] overflow-y-auto">
+                <div x-show="loadingAudit" class="flex flex-col items-center justify-center py-16 space-y-8">
+                    <div class="relative w-24 h-24">
+                        <div class="absolute inset-0 border-4 border-emerald-500/5 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-white font-black uppercase text-base tracking-widest mb-2 animate-pulse">Auditando Bio-indicadores</p>
+                        <p class="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Calculando desvios e padrões dos últimos 7 dias...</p>
+                    </div>
+                </div>
+                
+                <div x-show="!loadingAudit" class="prose prose-emerald max-w-none">
+                    <div class="bg-zinc-950 p-10 rounded-[2.5rem] border border-zinc-800 leading-relaxed text-zinc-400 text-sm italic whitespace-pre-line shadow-inner" x-text="auditResult"></div>
+                </div>
+            </div>
+
+            <div class="p-10 bg-zinc-950/50 border-t border-zinc-800">
+                <x-premium-button variant="primary" class="w-full" @click="auditModalOpen = false">ENTENDIDO, VAMOS EVOLUIR</x-premium-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
     <div x-show="confirmDeleteModalOpen" 
-         class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-zinc-950/95 backdrop-blur-2xl animate-fade-in"
+         class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-zinc-950/95 backdrop-blur-3xl animate-fade-in"
          style="display: none;"
          x-cloak>
         <div class="absolute inset-0" @click="confirmDeleteModalOpen = false"></div>
-        <div class="relative bg-zinc-900 border border-white/10 w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="p-8 text-center">
-                <div class="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
-                    <i class="fas fa-trash-alt text-2xl"></i>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 text-center">
+                <div class="w-24 h-24 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-8 border border-rose-500/20 shadow-lg">
+                    <i data-lucide="trash-2" class="w-8 h-8"></i>
                 </div>
-                <h3 class="text-white font-black text-xl mb-2">Confirmar Exclusão</h3>
-                <p class="text-zinc-400 text-sm leading-relaxed mb-8">
-                    Tem certeza que deseja remover <strong class="text-white italic" x-text="deleteItemName"></strong> do seu protocolo? Esta ação não pode ser desfeita.
+                <h3 class="text-white font-black text-2xl mb-4 tracking-tighter uppercase">Confirmar Exclusão</h3>
+                <p class="text-zinc-500 text-sm leading-relaxed mb-10 font-medium">
+                    Tem certeza que deseja remover <strong class="text-white" x-text="deleteItemName"></strong>? Esta ação é irreversível.
                 </p>
                 
-                <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-4">
                     <form :action="deleteActionUrl" method="POST">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="w-full py-4 bg-rose-600 text-white font-black rounded-2xl hover:bg-rose-500 transition-all uppercase text-[10px] tracking-widest shadow-lg shadow-rose-600/20">
-                            Sim, Remover Agora
-                        </button>
+                        <x-premium-button variant="primary" class="w-full !bg-rose-600 !border-rose-500 hover:!bg-rose-500" type="submit">REMOVER PERMANENTEMENTE</x-premium-button>
                     </form>
-                    <button @click="confirmDeleteModalOpen = false" class="w-full py-4 bg-zinc-800 text-white font-black rounded-2xl hover:bg-zinc-700 transition-all uppercase text-[10px] tracking-widest">
-                        Cancelar
-                    </button>
+                    <x-premium-button variant="secondary" class="w-full" @click="confirmDeleteModalOpen = false">CANCELAR</x-premium-button>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 
+@push('scripts')
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+
     // Calorie Trend Chart
     const trendEl = document.getElementById('calorieTrendChart');
     if (trendEl) {
         const trendCtx = trendEl.getContext('2d');
         new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($historyData->map(fn($d) => \Carbon\Carbon::parse($d->entry_date)->format('d/m'))) !!},
-            datasets: [{
-                label: 'Real',
-                data: {!! json_encode($historyData->pluck('total_cal')) !!},
-                borderColor: '#3b82f6',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true,
-                backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                pointRadius: 0,
-                pointHoverRadius: 4
-            }, {
-                label: 'Meta',
-                data: Array({{ (int)$historyData->count() }}).fill({{ (int)$targetKcal }}),
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                pointRadius: 0,
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    grid: { color: 'rgba(255, 255, 255, 0.02)' },
-                    ticks: { color: '#52525b', font: { size: 9 } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#52525b', font: { size: 9 } }
+            type: 'line',
+            data: {
+                labels: {!! json_encode($historyData->map(fn($d) => \Carbon\Carbon::parse($d->entry_date)->format('d/m'))) !!},
+                datasets: [{
+                    label: 'Real',
+                    data: {!! json_encode($historyData->pluck('total_cal')) !!},
+                    borderColor: '#10b981',
+                    borderWidth: 4,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                    pointRadius: 4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#0c0f16',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Meta',
+                    data: Array({{ (int)$historyData->count() ?: 1 }}).fill({{ (int)$targetKcal }}),
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.02)', drawBorder: false },
+                        ticks: { color: '#52525b', font: { size: 10, weight: 'bold' }, padding: 10 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#52525b', font: { size: 10, weight: 'bold' }, padding: 10 }
+                    }
                 }
             }
         });
@@ -1744,32 +1288,45 @@
     if (donutEl) {
         const donutCtx = donutEl.getContext('2d');
         new Chart(donutCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Proteínas', 'Carbos', 'Gorduras'],
-            datasets: [{
-                data: [{{ (int)($macroTargets['p'] ?? 0) }}, {{ (int)($macroTargets['c'] ?? 0) }}, {{ (int)($macroTargets['f'] ?? 0) }}],
-                backgroundColor: ['#fb7185', '#60a5fa', '#fbbf24'],
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '80%',
-            plugins: { legend: { display: false } }
-        }
-    });
+            type: 'doughnut',
+            data: {
+                labels: ['Proteínas', 'Carbos', 'Gorduras'],
+                datasets: [{
+                    data: [{{ (int)($macroTargets['p'] ?? 0) }}, {{ (int)($macroTargets['c'] ?? 0) }}, {{ (int)($macroTargets['f'] ?? 0) }}],
+                    backgroundColor: ['#f43f5e', '#10b981', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 15,
+                    borderRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '82%',
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0c0f16',
+                        titleFont: { size: 12, weight: 'black' },
+                        bodyFont: { size: 12, weight: 'bold' },
+                        padding: 15,
+                        displayColors: false,
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
     }
-
-    // addWaterInHub removido daqui (duplicado e agora centralizado no x-data)
 </script>
+@endpush
 
 <style>
     body { background-color: #0c0f16; }
     [x-cloak] { display: none !important; }
     .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+    .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection

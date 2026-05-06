@@ -12,7 +12,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HydrationController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PublicProposalController;
-use App\Http\Controllers\Support\KBController as SupportKbController;
+use App\Http\Controllers\KnowledgeBaseController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NutritionController;
 use App\Http\Controllers\OnboardingController;
@@ -41,6 +41,9 @@ use Illuminate\Support\Facades\Route;
  * - routes/mercado_pago.php  : Checkout e Webhooks Financeiros.
  */
 
+// 0. Monitoramento e Saúde
+Route::get('/health', [App\Http\Controllers\HealthCheckController::class, 'index'])->name('health.check');
+
 // 1. Home e Páginas Públicas
 Route::get('/', HomeController::class)->name('home');
 
@@ -52,17 +55,25 @@ Route::get(
 Route::get('/legal/privacy-policy', [PrivacyController::class, 'privacyPolicy'])->name('legal.privacy');
 Route::get('/legal/terms-of-use', [PrivacyController::class, 'termsOfUse'])->name('legal.terms');
 Route::get('/legal/cookies', [PrivacyController::class, 'cookiePolicy'])->name('legal.cookies');
-Route::get('/legal/download-data', [PrivacyController::class, 'downloadMyData'])->name('privacy.download');
-Route::post('/legal/account-deletion', [PrivacyController::class, 'requestAccountDeletion'])->name('privacy.request-deletion');
+Route::middleware('auth')->group(function () {
+    Route::get('/legal/download-data', [PrivacyController::class, 'downloadMyData'])->name('privacy.download');
+    Route::post('/legal/account-deletion', [PrivacyController::class, 'requestAccountDeletion'])->name('privacy.request-deletion');
+});
 
 Route::post('/theme', ThemeController::class)->name('theme');
 
-// Base de conhecimento (área pública)
-Route::prefix('kb')->name('kb.')->group(function () {
-    Route::get('/', [SupportKbController::class, 'index'])->name('index');
-    Route::get('/search', [SupportKbController::class, 'search'])->name('search');
-    Route::get('/category/{category}', [SupportKbController::class, 'category'])->name('category');
-    Route::get('/{slug}', [SupportKbController::class, 'article'])->name('article');
+/** Página Meu Plano / Checkout Premium (Acessível publicamente) */
+Route::get('/plano', \App\Http\Controllers\PlanoController::class)->name('plano');
+
+// Fluxo de Checkout Modular
+Route::get('/checkout/{plan}', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+
+// Base de conhecimento (Central de Ajuda)
+Route::middleware(['auth'])->prefix('kb')->name('kb.')->group(function () {
+    Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
+    Route::get('/{slug}', [KnowledgeBaseController::class, 'show'])->name('show');
 });
 
 // Proposta comercial pública (token)
@@ -98,17 +109,18 @@ require __DIR__.'/mercado_pago.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/professional.php';
 require __DIR__.'/patient.php';
+require __DIR__.'/representative.php';
 
 // 5. App Core (Rotas Autenticadas Comuns)
 Route::middleware(['auth'])->group(function () {
 
-    /** Página Meu Plano / Checkout Premium */
-    Route::get('/plano', \App\Http\Controllers\PlanoController::class)->name('plano');
 
+    // Dashboard e Busca
     // Dashboard e Busca
     Route::middleware('permission:portal.access')->group(function () {
         Route::match(['get', 'post'], '/dashboard', [DashboardController::class, 'show'])->name('dashboard');
         Route::get('/global-search', [SearchController::class, 'search'])->name('global.search');
+        Route::get('/global-search/suggestions', [SearchController::class, 'suggestions'])->name('global.search.suggestions');
         Route::get('/muscles/search', [App\Http\Controllers\TrainingPlanController::class, 'searchMuscles'])->name('muscles.search');
     });
 
@@ -122,6 +134,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/selection', [\App\Http\Controllers\Auth\ProfileSelectionController::class, 'index'])->name('selection');
         Route::post('/select', [\App\Http\Controllers\Auth\ProfileSelectionController::class, 'select'])->name('select');
     });
+
+    // Seleção de Clínica (Tenant Context)
+    Route::get('/clinic-selection', [\App\Http\Controllers\Auth\ClinicSelectionController::class, 'index'])->name('clinic.selector');
+    Route::post('/clinic-select', [\App\Http\Controllers\Auth\ClinicSelectionController::class, 'select'])->name('clinic.select');
 
 
 
@@ -139,7 +155,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/report', ReportController::class)->name('report');
     Route::get('/validate-report', [\App\Http\Controllers\ReportValidationController::class, 'validate'])->name('report.validate');
     Route::get('/export', ExportController::class)->name('export');
-    Route::get('/calendar', function() { return view('errors.coming-soon'); })->name('calendar');
+    Route::get('/calendar', [App\Http\Controllers\StudentCalendarController::class, 'index'])->name('calendar');
 
     // Onboarding
     Route::prefix('onboarding')->name('onboarding.')->group(function () {
@@ -161,6 +177,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/send', [ChatController::class, 'sendMessage'])->name('send');
             Route::get('/history', [ChatController::class, 'getHistory'])->name('history');
             Route::post('/clear', [ChatController::class, 'clearHistory'])->name('clear');
+            Route::post('/execute-action', [ChatController::class, 'executeAction'])->name('execute-action');
             
             // Nova Consulta Inteligente (Biblioteca)
             Route::post('/smart-query', [\App\Http\Controllers\SmartQueryController::class, 'query'])->name('smart-query');
@@ -180,6 +197,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [BodyAnalysisController::class, 'index'])->name('index');
         Route::post('/store', [BodyAnalysisController::class, 'store'])->name('store');
         Route::get('/compare', [BodyAnalysisController::class, 'compare'])->name('compare');
+    });
+
+    // Módulo de Créditos (Geral)
+    Route::prefix('credits')->name('credits.')->group(function () {
+        Route::get('/buy', [\App\Http\Controllers\CreditoController::class, 'buy'])->name('buy');
+        Route::post('/checkout', [\App\Http\Controllers\CreditoController::class, 'checkout'])->name('checkout');
+        Route::get('/success/{compra}', [\App\Http\Controllers\CreditoController::class, 'success'])->name('success');
+        Route::get('/pending/{compra}', [\App\Http\Controllers\CreditoController::class, 'pending'])->name('pending');
     });
 
     // Notificações e Mensagens Internas

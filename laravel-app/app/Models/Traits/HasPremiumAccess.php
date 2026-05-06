@@ -6,14 +6,36 @@ use DateTimeImmutable;
 
 trait HasPremiumAccess
 {
+    /**
+     * Cache estático para evitar múltiplas consultas ao BD na mesma requisição.
+     */
+    protected ?bool $isPremiumCache = null;
+
     public function isPremiumActive(): bool
     {
-        // Administradores e Profissionais têm acesso total
-        if ($this->isAdministrator() || $this->hasRole('professional')) {
-            return true;
+        if ($this->isPremiumCache !== null) {
+            return $this->isPremiumCache;
         }
 
-        // 1. Verificar Assinatura Corporativa (B2B)
+        // Administradores e Profissionais têm acesso total
+        if ($this->is_admin || $this->hasRole('professional')) {
+            return $this->isPremiumCache = true;
+        }
+
+        // 1. Verificar nova estrutura de Assinatura (SaaS Premium)
+        $subscription = $this->relationLoaded('currentSubscription') ? $this->currentSubscription : $this->currentSubscription()->first();
+        if ($subscription) {
+            if ($subscription->status === \App\Models\Subscription::STATUS_FIN_ATIVO) {
+                return $this->isPremiumCache = true;
+            }
+            
+            // Se houver uma assinatura mas não estiver ATIVA, bloqueamos explicitamente
+            if (in_array($subscription->status, [\App\Models\Subscription::STATUS_FIN_PENDENTE, \App\Models\Subscription::STATUS_FIN_AGUARDANDO, \App\Models\Subscription::STATUS_FIN_RECUSADO])) {
+                return $this->isPremiumCache = false;
+            }
+        }
+
+        // 2. Verificar Assinatura Corporativa (B2B)
         if ($this->academy_company_id) {
             $company = $this->academyCompany;
             if ($company) {
@@ -27,32 +49,28 @@ trait HasPremiumAccess
                     ->exists();
                 
                 if ($corporateSub) {
-                    return true;
+                    return $this->isPremiumCache = true;
                 }
             }
         }
 
-        // 2. Novo sistema de planos (PRO)
-        $activePlan = $this->activePlan;
-        if ($activePlan && trim(strtoupper($activePlan->plan->name)) === 'PRO') {
-            return true;
-        }
-
-        // Fallback para plan_id direto no usuário (Plano 2 = PRO)
-        if ($this->plan_id == 2) {
-            return true;
+        // 3. Sistema de planos (PRO) - Legado ou Alunos
+        $activePlan = $this->relationLoaded('activePlan') ? $this->activePlan : $this->activePlan()->first();
+        
+        if ($activePlan && trim(strtoupper($activePlan->plan->name)) === 'PRO' && $activePlan->status === 'active') {
+            return $this->isPremiumCache = true;
         }
 
         // Legado (campo is_premium direto no users)
         if ($this->is_premium) {
             $exp = $this->premium_expires_at;
             if ($exp === null) {
-                return true;
+                return $this->isPremiumCache = true;
             }
-            return $exp >= now();
+            return $this->isPremiumCache = ($exp >= now());
         }
 
-        return false;
+        return $this->isPremiumCache = false;
     }
 
     /**

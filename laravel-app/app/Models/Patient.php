@@ -4,65 +4,55 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Str;
 
 class Patient extends Model
 {
-    use Traits\BelongsToCompany;
-
-    protected $table = 'pacientes';
-    protected $companyColumn = 'empresa_id';
+    // Removendo 'pacientes' legada se as migrações novas forem aplicadas
+    protected $table = 'patients';
 
     protected $fillable = [
-        'user_id',
-        'profissional_id',
-        'data_cadastro',
-        'status',
-        'empresa_id'
+        'uuid',
+        'name',
+        'cpf',
+        'email',
+        'birth_date',
+        'gender',
+        'user_id'
     ];
 
     protected $casts = [
-        'data_cadastro' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'birth_date' => 'date',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function professional(): BelongsTo
+    public function organizations(): BelongsToMany
     {
-        return $this->belongsTo(User::class, 'profissional_id');
+        return $this->belongsToMany(Organization::class, 'organization_patient')
+            ->withPivot('internal_code')
+            ->withTimestamps();
     }
 
-    public function academyCompany(): BelongsTo
-    {
-        return $this->belongsTo(AcademyCompany::class, 'empresa_id');
-    }
-
+    /**
+     * Registros clínicos vinculados a este paciente.
+     * Importante: Devem sempre ser filtrados pelo organization_id ativo.
+     */
     public function evolutions()
     {
-        return $this->hasMany(MedicalEvolution::class, 'patient_id', 'user_id');
-    }
-
-    public function reports()
-    {
-        return $this->hasMany(MedicalReport::class, 'patient_id', 'user_id');
-    }
-
-    public function prescriptions()
-    {
-        return $this->hasMany(MedicalPrescription::class, 'patient_id', 'user_id');
-    }
-
-    public function certificates()
-    {
-        return $this->hasMany(MedicalCertificate::class, 'patient_id', 'user_id');
-    }
-
-    public function histories()
-    {
-        return $this->hasMany(MedicalHistory::class, 'patient_id', 'user_id');
+        return $this->hasMany(MedicalEvolution::class, 'patient_id');
     }
 }

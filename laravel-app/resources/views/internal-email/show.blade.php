@@ -4,7 +4,6 @@
 
 @section('toolbar-left')
     <div class="d-flex align-items-center gap-3">
-        <a href="{{ route('internal-email.inbox') }}" class="btn btn-sm btn-link text-muted p-0" title="Voltar"><i class="fas fa-arrow-left"></i></a>
         <div class="d-flex gap-2">
             @if($message->excluded_at_sender || $message->excluded_at_receiver)
                 <form action="{{ route('internal-email.restore', $message) }}" method="POST" class="m-0">

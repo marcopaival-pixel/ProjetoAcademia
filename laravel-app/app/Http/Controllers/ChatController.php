@@ -13,7 +13,10 @@ use Illuminate\View\View;
 
 class ChatController extends Controller
 {
-    public function __construct(private AIChatService $aiService) {}
+    public function __construct(
+        private \App\Services\AdvancedAgentService $aiService,
+        private \App\Services\AgentActionDispatcher $actionDispatcher
+    ) {}
     
     /**
      * Exibir a página do NexBot
@@ -101,10 +104,10 @@ class ChatController extends Controller
             })
             ->toArray();
 
-        // Chamar IA
-        $aiResponse = $this->aiService->chat(
+        // Chamar IA Avançada
+        $aiResponse = $this->aiService->process(
+            $user,
             $validated['message'],
-            $userMetrics,
             $conversationHistory
         );
 
@@ -115,22 +118,26 @@ class ChatController extends Controller
             ], 500);
         }
 
+        $assistantMessage = $aiResponse['response'];
+        $action = $aiResponse['action'];
+
         // Salvar resposta da IA no histórico do usuário
         AIChat::create([
             'user_id' => $user->id,
             'role' => 'assistant',
-            'message' => $aiResponse['message'],
+            'message' => $assistantMessage,
         ]);
 
         // 3. Salvar resposta na Biblioteca Inteligente para uso futuro global
         $libraryService->salvarRespostaIA([
-            'message' => $aiResponse['message'],
+            'message' => $assistantMessage,
             'titulo' => $validated['message'],
         ], 'CHAT', 'GERAL', $validated['message']);
 
         return response()->json([
             'ok' => true,
-            'message' => $aiResponse['message'],
+            'message' => $assistantMessage,
+            'action' => $action, // Retorna a ação para o frontend processar
             'chat_quota' => $this->chatQuotaPayload($user),
         ]);
     }
@@ -181,6 +188,36 @@ class ChatController extends Controller
         AIChat::where('user_id', $user->id)->delete();
 
         return response()->json(['ok' => true, 'message' => 'Histórico limpo']);
+    }
+
+    /**
+     * Executar uma ação estruturada gerada pela IA após confirmação do usuário
+     */
+    public function executeAction(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['ok' => false, 'error' => 'Não autenticado'], 401);
+        }
+
+        $validated = $request->validate([
+            'action' => 'required|array',
+            'action.acao' => 'required|string',
+            'action.dados' => 'nullable|array',
+        ]);
+
+        $result = $this->actionDispatcher->dispatch($user, $validated['action']);
+
+        if ($result['ok']) {
+            // Salva um log da ação no chat para feedback visual
+            AIChat::create([
+                'user_id' => $user->id,
+                'role' => 'assistant',
+                'message' => "✅ **Ação Executada:** " . ($result['message'] ?? 'Sucesso.'),
+            ]);
+        }
+
+        return response()->json($result);
     }
 
     /**

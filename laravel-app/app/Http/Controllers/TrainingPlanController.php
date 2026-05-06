@@ -221,6 +221,10 @@ class TrainingPlanController extends Controller
     {
         $this->authorize('view', $plan);
         
+        if (Auth::user()->isResourceOverLimit('workouts', $plan->id)) {
+            return redirect()->route('progression.plans.index')->with('error', 'Este plano de treino está bloqueado por exceder o limite do seu plano atual. Faça upgrade para acessá-lo.');
+        }
+
         $plan->load('exercises.catalogExercise', 'exercises.sets');
         return view('progression.plans-show', compact('plan'));
     }
@@ -228,6 +232,10 @@ class TrainingPlanController extends Controller
     public function edit(TrainingPlan $plan)
     {
         $this->authorize('update', $plan);
+
+        if (Auth::user()->isResourceOverLimit('workouts', $plan->id)) {
+            return redirect()->route('progression.plans.index')->with('error', 'Este plano de treino está bloqueado por exceder o limite do seu plano atual. Faça upgrade para editá-lo.');
+        }
         
         $plan->load('exercises.catalogExercise', 'exercises.sets');
         $catalog = ExerciseCatalog::where('is_active', true)->with('muscles')->get()->groupBy('muscle_group');
@@ -238,6 +246,10 @@ class TrainingPlanController extends Controller
     {
         $this->authorize('update', $plan);
         $user = Auth::user();
+
+        if ($user->isResourceOverLimit('workouts', $plan->id)) {
+            return redirect()->route('progression.plans.index')->with('error', 'Este plano de treino está bloqueado por exceder o limite do seu plano atual. Faça upgrade para editá-lo.');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
@@ -307,6 +319,10 @@ class TrainingPlanController extends Controller
     public function duplicate(TrainingPlan $plan)
     {
         $this->authorize('view', $plan);
+
+        if (Auth::user()->isResourceOverLimit('workouts', $plan->id)) {
+            return redirect()->route('progression.plans.index')->with('error', 'Este plano de treino está bloqueado por exceder o limite do seu plano atual. Faça upgrade para duplicá-lo.');
+        }
 
         $newPlan = $plan->replicate();
         $newPlan->name = $plan->name . ' (Cópia)';

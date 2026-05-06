@@ -8,7 +8,10 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\MercadoPagoSubscription;
 use App\Models\MercadoPagoCredit;
+use App\Models\Subscription;
+use App\Models\Payment;
 use App\Models\FinancialLog;
+use App\Models\Commission;
 use App\Services\FinancialLogService;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -241,6 +244,10 @@ class MercadoPagoService
             $packageId = (int) str_replace('ai_credits:', '', $plan);
             $package = \App\Models\AiCreditPackage::find($packageId);
             $expected = $package ? (float) $package->price : 0.0;
+        } elseif (str_starts_with($plan, 'credits:')) {
+            $compraId = (int) str_replace('credits:', '', $plan);
+            $compra = \App\Models\CreditoCompra::find($compraId);
+            $expected = $compra ? (float) $compra->valor : 0.0;
         } else {
             $expected = $plan === 'yearly' ? $prices['yearly'] : ($isPatientOnly ? $prices['patient_monthly'] : $prices['monthly']);
         }
@@ -286,22 +293,29 @@ class MercadoPagoService
             } elseif (preg_match('/^ai_credits:(\d+):(\d+)$/', $ref, $m)) {
                 $userId = (int) $m[1];
                 $plan = 'ai_credits:'.$m[2];
+            } elseif (preg_match('/^credits:(\d+)$/', $ref, $m)) {
+                $compraId = (int) $m[1];
+                $compra = \App\Models\CreditoCompra::find($compraId);
+                if ($compra) {
+                    $userId = $compra->user_id;
+                    $plan = "credits:{$compraId}";
+                }
             }
         }
         
-        if ($userId === null || $userId < 1 || ($plan !== 'monthly' && $plan !== 'yearly' && !str_starts_with($plan, 'ai_credits:'))) {
+        if ($userId === null || $userId < 1 || ($plan !== 'monthly' && $plan !== 'yearly' && !str_starts_with($plan, 'ai_credits:') && !str_starts_with($plan, 'credits:'))) {
             return null;
         }
 
         return ['user_id' => $userId, 'plan' => $plan];
     }
 
-    public function premiumExtendUser(int $userId, string $plan): void
+    public function premiumExtendUser(int $userId, string $plan): ?Subscription
     {
         $user = User::find($userId);
         if (! $user) {
             Log::error('[MercadoPagoService] premiumExtendUser: usuário não encontrado.', ['user_id' => $userId]);
-            return;
+            return null;
         }
 
         $base = new DateTimeImmutable('now');
@@ -323,11 +337,16 @@ class MercadoPagoService
         $user->premium_expires_at = $newExp->format('Y-m-d H:i:s');
         $user->save();
 
+        // Atualizar ou criar Assinatura no novo formato
+        $subscription = $this->updateSubscriptionStatus($userId, $plan, Subscription::STATUS_FIN_ATIVO);
+
         // Garantir que o usuário tenha o papel de "aluno"
         $alunoRole = Role::where('name', 'aluno')->first();
         if ($alunoRole) {
             $user->roles()->syncWithoutDetaching([$alunoRole->id]);
         }
+
+        return $subscription;
     }
 
     /**
@@ -341,15 +360,47 @@ class MercadoPagoService
             return ['ok' => false, 'message' => 'Sem id de pagamento.'];
         }
         $status = isset($payment['status']) ? (string) $payment['status'] : '';
-        if ($status !== 'approved') {
-            return ['ok' => false, 'message' => 'Status não aprovado: '.$status];
-        }
         $cur = isset($payment['currency_id']) ? (string) $payment['currency_id'] : '';
         if ($cur !== '' && $cur !== 'BRL') {
             return ['ok' => false, 'message' => 'Moeda inesperada.'];
         }
 
         $parsed = $this->extractUserAndPlan($payment);
+        
+        // Mapeamento de status do Mercado Pago para o nosso sistema
+        $mappedStatus = match($status) {
+            'approved' => Subscription::STATUS_FIN_ATIVO,
+            'pending', 'in_process' => Subscription::STATUS_FIN_AGUARDANDO,
+            'rejected', 'cancelled' => Subscription::STATUS_FIN_RECUSADO,
+            default => Subscription::STATUS_FIN_PENDENTE
+        };
+
+        if ($parsed === null) {
+            return ['ok' => false, 'message' => 'Metadata/external_reference/preapproval inválidos.'];
+        }
+
+        $userId = $parsed['user_id'];
+        $plan = $parsed['plan'];
+        $amt = (float) $payment['transaction_amount'];
+
+        // Sempre registrar o pagamento (independente de estar aprovado ou não) para histórico
+        Payment::updateOrCreate(
+            ['gateway_id' => (string) $id],
+            [
+                'user_id' => $userId,
+                'gateway' => 'mercadopago',
+                'amount' => $amt,
+                'currency' => $cur !== '' ? $cur : 'BRL',
+                'status' => $mappedStatus,
+                'payload' => $payment,
+            ]
+        );
+
+        // Se não estiver aprovado, apenas atualizamos o status da assinatura e retornamos
+        if ($status !== 'approved') {
+            $this->updateSubscriptionStatus($userId, $plan, $mappedStatus, $id);
+            return ['ok' => true, 'message' => 'Status do pagamento atualizado para: '.$status];
+        }
         $couponId = null;
         if ($parsed === null) {
             $preId = isset($payment['preapproval_id']) ? (string) $payment['preapproval_id'] : '';
@@ -393,7 +444,7 @@ class MercadoPagoService
             DB::table('mercadopago_payment_credits')->insert([
                 'mp_payment_id' => $mpId,
                 'user_id' => $userId,
-                'plan_code' => str_starts_with($plan, 'ai_credits:') ? 'ai_credits' : $plan,
+                'plan_code' => (str_starts_with($plan, 'ai_credits:') || str_starts_with($plan, 'credits:')) ? 'credits' : $plan,
                 'transaction_amount' => $amt,
                 'currency_id' => $cur !== '' ? $cur : 'BRL',
                 'coupon_id' => $couponId,
@@ -406,7 +457,20 @@ class MercadoPagoService
                 }
             }
 
+            // Registrar na nova tabela de pagamentos para auditoria
+            $paymentModel = Payment::create([
+                'user_id' => $userId,
+                'gateway' => 'mercadopago',
+                'gateway_id' => (string) $id,
+                'amount' => $amt,
+                'currency' => $cur !== '' ? $cur : 'BRL',
+                'status' => Subscription::STATUS_FIN_ATIVO,
+                'payload' => $payment,
+            ]);
+
             $user = User::find($userId);
+            $subscriptionModel = null;
+
             if (str_starts_with($plan, 'ai_credits:')) {
                 $packageId = (int) str_replace('ai_credits:', '', $plan);
                 $package = \App\Models\AiCreditPackage::find($packageId);
@@ -416,8 +480,25 @@ class MercadoPagoService
                         'mp_payment_id' => $mpId
                     ]);
                 }
+            } elseif (str_starts_with($plan, 'credits:')) {
+                $compraId = (int) str_replace('credits:', '', $plan);
+                $compra = \App\Models\CreditoCompra::find($compraId);
+                if ($compra && $compra->status === 'PENDENTE' && $user) {
+                    $compra->update(['status' => 'PAGO', 'gateway_id' => (string) $id]);
+                    $user->increment('creditos', $compra->quantidade);
+                    
+                    // Manter compatibilidade com ai_credits se a coluna existir
+                    if (\Schema::hasColumn('users', 'ai_credits')) {
+                        $user->increment('ai_credits', $compra->quantidade);
+                    }
+                }
             } else {
-                $this->premiumExtendUser($userId, $plan);
+                $subscriptionModel = $this->premiumExtendUser($userId, $plan);
+            }
+
+            // Processar comissão se houver representante
+            if ($user) {
+                $this->processRepresentativeCommission($user, $paymentModel, $subscriptionModel);
             }
 
             FinancialLogService::log([
@@ -431,6 +512,77 @@ class MercadoPagoService
 
             return ['ok' => true, 'message' => 'Crédito aplicado com sucesso.'];
         });
+    }
+
+    /**
+     * Processa a comissão do representante, se existir.
+     */
+    private function processRepresentativeCommission(User $user, Payment $payment, ?Subscription $subscription = null): void
+    {
+        $representativeId = $user->representative_id;
+        if (!$representativeId) {
+            return;
+        }
+
+        // Determinar a taxa de comissão
+        $rate = 0.00;
+        if ($subscription && $subscription->plan) {
+            $rate = $subscription->plan->commission_rate;
+        }
+
+        // Se a taxa for 0, podemos ter uma taxa global padrão (ex: 10%)
+        if ($rate <= 0) {
+            $rate = (float) config('projeto.default_commission_rate', 10.00);
+        }
+
+        if ($rate <= 0) {
+            return;
+        }
+
+        $commissionAmount = ($payment->amount * $rate) / 100;
+
+        Commission::create([
+            'representative_id' => $representativeId,
+            'user_id' => $user->id,
+            'payment_id' => $payment->id,
+            'subscription_id' => $subscription?->id,
+            'base_amount' => $payment->amount,
+            'commission_rate' => $rate,
+            'commission_amount' => $commissionAmount,
+            'status' => Commission::STATUS_PENDENTE,
+            'available_at' => now()->addDays(7), // Janela de segurança de 7 dias (garantia)
+            'notes' => 'Comissão gerada automaticamente via pagamento ' . $payment->gateway_id,
+        ]);
+
+        Log::info('[Representative] Comissão gerada.', [
+            'representative_id' => $representativeId,
+            'user_id' => $user->id,
+            'amount' => $commissionAmount
+        ]);
+    }
+
+    /**
+     * Atualiza ou cria o registro de assinatura com o status correto.
+     */
+    public function updateSubscriptionStatus(int $userId, string $planCode, string $status, ?string $gatewayId = null): Subscription
+    {
+        $plan = \App\Models\Plan::where('name', $planCode)->first();
+        if (!$plan) {
+            // Tentar encontrar por slug ou outro campo se necessário
+            $plan = \App\Models\Plan::where('type', $planCode === 'yearly' ? 'student' : 'student')->first(); 
+        }
+
+        return Subscription::updateOrCreate(
+            ['user_id' => $userId, 'status' => $status !== Subscription::STATUS_FIN_CANCELADO ? $status : 'any'], // Simplificação
+            [
+                'plan_id' => $plan ? $plan->id : 1,
+                'status' => $status,
+                'gateway_id' => $gatewayId,
+                'gateway_type' => 'mercadopago',
+                'start_date' => now(),
+                'end_date' => $planCode === 'yearly' ? now()->addYear() : now()->addMonth(),
+            ]
+        );
     }
 
     public function iso8601Mp(DateTimeImmutable $dt): string

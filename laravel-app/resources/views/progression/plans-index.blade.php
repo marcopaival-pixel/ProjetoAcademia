@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="space-y-8 animate-fade-in py-8 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
+    <x-plan-over-limit-banner resource="workouts" />
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
         <div class="space-y-2">
@@ -71,7 +72,19 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         @forelse($plans as $plan)
-            <div class="group bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-blue-500/30 transition-all duration-300 flex flex-col">
+            @php
+                $isLocked = Auth::user()->isResourceOverLimit('workouts', $plan->id);
+            @endphp
+            <div class="group bg-zinc-900/40 backdrop-blur-3xl border {{ $isLocked ? 'border-rose-500/30 shadow-[0_0_50px_rgba(244,63,94,0.1)]' : 'border-white/5 shadow-2xl hover:border-blue-500/30' }} rounded-[2.5rem] overflow-hidden transition-all duration-300 flex flex-col relative">
+                @if($isLocked)
+                    <div class="absolute inset-0 bg-zinc-950/40 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8 text-center pointer-events-none">
+                        <div class="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center border border-rose-500/30 mb-4 shadow-lg shadow-rose-500/20">
+                            <i class="fas fa-lock text-xl"></i>
+                        </div>
+                        <h4 class="text-white font-black uppercase tracking-widest text-xs">Acesso Bloqueado</h4>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-2 max-w-[150px]">Este treino excedeu o limite do seu plano gratuito.</p>
+                    </div>
+                @endif
                 <div class="p-8 flex-1 space-y-6">
                     <div class="flex justify-between items-start gap-4">
                         <div>

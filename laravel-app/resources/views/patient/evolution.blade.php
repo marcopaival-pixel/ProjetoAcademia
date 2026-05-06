@@ -34,9 +34,7 @@
         <!-- Header -->
         <header class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="{{ route('patient.reports.index') }}" class="w-10 h-10 rounded-xl glass-card flex items-center justify-center text-zinc-400">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
+                <div class="w-1"></div> <!-- Spacer for alignment -->
                 <div>
                     <h1 class="text-xl font-black tracking-tighter uppercase italic">Hub de Evolução</h1>
                     <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Acompanhe sua transformação</p>
@@ -47,10 +45,6 @@
                 <button onclick="generateShareCard()" class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all" title="Compartilhar Resultados">
                     <i class="fas fa-share-alt"></i>
                 </button>
-                <a href="{{ route('body-analysis.index') }}" class="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400">
-                    <i class="fas fa-robot text-xs"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Análise IA</span>
-                </a>
             </div>
         </header>
 
@@ -334,12 +328,11 @@
                 </div>
                 @endforeach
             @else
-                <div class="glass-card p-12 rounded-[3rem] text-center space-y-4">
-                    <div class="w-20 h-20 bg-zinc-900 rounded-full mx-auto flex items-center justify-center text-zinc-700">
-                        <i class="fas fa-weight text-3xl"></i>
-                    </div>
-                    <p class="text-zinc-500 text-xs font-bold px-6">Nenhuma avaliação física registrada ainda.</p>
-                </div>
+                <x-patient.empty-state 
+                    icon="fas fa-weight" 
+                    title="Sem Evolução" 
+                    description="Sua jornada de transformação ainda não possui registros. Realize sua primeira avaliação física com o profissional para visualizar seu progresso."
+                />
             @endif
         </div>
     </div>

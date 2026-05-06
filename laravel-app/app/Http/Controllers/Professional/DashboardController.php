@@ -188,6 +188,9 @@ class DashboardController extends Controller
         $professionalCode = $professional->professional_code;
         $qrCodeUrl = $professional->getProfessionalQrCodeUrl();
 
+        // 6. Verificação de Prontidão (Readiness Checklist)
+        $readiness = app(\App\Services\ProfessionalReadinessService::class)->getReadinessStatus($professional);
+
         return view('professional.dashboard', compact(
             'stats', 
             'tasks', 
@@ -198,7 +201,8 @@ class DashboardController extends Controller
             'qrCodeUrl',
             'todayAppointments',
             'nextAppointments',
-            'birthdayPatients'
+            'birthdayPatients',
+            'readiness'
         ));
     }
 }

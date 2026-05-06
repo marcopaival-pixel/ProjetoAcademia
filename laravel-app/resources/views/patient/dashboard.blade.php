@@ -54,10 +54,12 @@
 @endsection
 
 @section('content')
-<div class="min-h-screen bg-[#06080c] relative overflow-hidden pb-40 animate-entry">
-    <!-- Background Effects -->
-    <div class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-[var(--brand-primary)] opacity-[0.08] blur-[150px] rounded-full"></div>
-    <div class="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-[var(--brand-accent)] opacity-[0.05] blur-[120px] rounded-full"></div>
+<div class="py-10 space-y-12 animate-entry mx-auto px-4 md:px-6">
+    <!-- Background Effects (Now integrated with body background but enhanced) -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-500/10 blur-[150px] rounded-full"></div>
+        <div class="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full"></div>
+    </div>
 
     <div class="relative z-10 py-10 px-6 max-w-lg mx-auto space-y-10">
         <!-- Header -->
@@ -66,9 +68,9 @@
                 @if($branding['logo_url'])
                     <img src="{{ $branding['logo_url'] }}" alt="Logo" class="h-12 w-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                 @else
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[var(--brand-primary)] to-[var(--brand-accent)] flex items-center justify-center text-white font-black text-2xl shadow-2xl relative border border-white/10 group overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-2xl relative border border-white/10 group overflow-hidden">
                         <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <span class="drop-shadow-lg">{{ substr($branding['clinic_name'], 0, 1) }}</span>
+                        <i data-lucide="stethoscope" class="w-7 h-7"></i>
                     </div>
                 @endif
                 <div>
@@ -92,11 +94,11 @@
                         <span class="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Trocar</span>
                     </a>
                 @endif
-                <a href="{{ route('patient.messages') }}" class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-[var(--brand-primary)] transition-all">
-                    <i class="fas fa-comment-alt text-sm"></i>
+                <a href="{{ route('patient.messages') }}" class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-blue-500 transition-all">
+                    <i data-lucide="mail" class="w-5 h-5"></i>
                 </a>
                 <button class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white transition-all">
-                    <i class="fas fa-bell text-sm"></i>
+                    <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
             </div>
         </header>
@@ -125,14 +127,14 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4 pt-2">
-                        <a href="{{ route('patient.export-laudo') }}" class="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">
-                            <i class="fas fa-file-pdf mr-1"></i> Baixar Laudo
-                        </a>
-                        <a href="{{ route('patient.access-logs') }}" class="px-4 py-2 bg-zinc-800/50 text-zinc-400 text-[9px] font-black uppercase tracking-widest rounded-xl border border-white/5 hover:bg-zinc-800 hover:text-white transition-all">
-                            <i class="fas fa-shield-alt mr-1"></i> Histórico
-                        </a>
-                    </div>
+                        <div class="flex items-center gap-4 pt-2">
+                            <a href="{{ route('patient.export-laudo') }}" class="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">
+                                <i data-lucide="file-text" class="w-3 h-3 mr-1 inline"></i> Baixar Laudo
+                            </a>
+                            <a href="{{ route('patient.access-logs') }}" class="px-4 py-2 bg-zinc-800/50 text-zinc-400 text-[9px] font-black uppercase tracking-widest rounded-xl border border-white/5 hover:bg-zinc-800 hover:text-white transition-all">
+                                <i data-lucide="shield-check" class="w-3 h-3 mr-1 inline"></i> Histórico
+                            </a>
+                        </div>
                 </div>
                 
                 <div class="relative w-28 h-28 flex items-center justify-center">
@@ -192,32 +194,34 @@
         <section class="grid grid-cols-2 gap-6">
             <!-- Plano de Tratamento -->
             <a href="{{ route('patient.treatment-plan') }}" class="glass-card p-6 rounded-[2.5rem] flex flex-col items-center gap-4 hover:scale-105 transition-transform group">
-                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-[var(--brand-primary)]">
-                    <i class="fas fa-file-medical text-2xl"></i>
+                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-blue-500 shadow-lg shadow-blue-500/10">
+                    <i data-lucide="clipboard-list" class="w-7 h-7"></i>
                 </div>
                 <span class="text-[10px] font-black text-white uppercase tracking-widest text-center">Plano de Tratamento</span>
             </a>
 
+            @if($summary['has_evolution_data'])
             <!-- Evolução -->
             <a href="{{ route('patient.evolution') }}" class="glass-card p-6 rounded-[2.5rem] flex flex-col items-center gap-4 hover:scale-105 transition-transform group">
-                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-emerald-500">
-                    <i class="fas fa-chart-line text-2xl"></i>
+                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-emerald-500 shadow-lg shadow-emerald-500/10">
+                    <i data-lucide="trending-up" class="w-7 h-7"></i>
                 </div>
                 <span class="text-[10px] font-black text-white uppercase tracking-widest text-center">Minha Evolução</span>
             </a>
+            @endif
 
             <!-- Prescrições -->
             <a href="{{ route('patient.prescriptions') }}" class="glass-card p-6 rounded-[2.5rem] flex flex-col items-center gap-4 hover:scale-105 transition-transform group">
-                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-amber-500">
-                    <i class="fas fa-clipboard-list text-2xl"></i>
+                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10">
+                    <i data-lucide="pill" class="w-7 h-7"></i>
                 </div>
                 <span class="text-[10px] font-black text-white uppercase tracking-widest text-center">Prescrições</span>
             </a>
 
             <!-- Documentos -->
             <a href="{{ route('patient.documents') }}" class="glass-card p-6 rounded-[2.5rem] flex flex-col items-center gap-4 hover:scale-105 transition-transform group">
-                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-blue-400">
-                    <i class="fas fa-folder-open text-2xl"></i>
+                <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-400/10">
+                    <i data-lucide="folder" class="w-7 h-7"></i>
                 </div>
                 <span class="text-[10px] font-black text-white uppercase tracking-widest text-center">Documentos</span>
             </a>
@@ -246,10 +250,12 @@
             <span class="text-[8px] font-black uppercase">Home</span>
         </a>
         
+        @if($summary['has_evolution_data'])
         <a href="{{ route('patient.evolution') }}" class="flex flex-col items-center gap-1 text-zinc-500 hover:text-white transition-colors">
             <i class="fas fa-chart-pie text-xl"></i>
             <span class="text-[8px] font-black uppercase tracking-tighter">Bio</span>
         </a>
+        @endif
 
         <div class="relative">
             <a href="{{ route('patient.agenda') }}" class="w-[4.5rem] h-[4.5rem] btn-brand-glow text-white rounded-full flex items-center justify-center -mt-20 border-[6px] border-[#06080c] shadow-2xl relative group overflow-hidden">

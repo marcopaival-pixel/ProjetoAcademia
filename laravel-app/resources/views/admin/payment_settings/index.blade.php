@@ -22,6 +22,32 @@
             </div>
         @endif
     </header>
+    
+    <!-- Global Status Control -->
+    <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden mb-8">
+        <div class="flex items-center justify-between flex-wrap gap-6">
+            <div class="flex items-center gap-6">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white italic tracking-tight">Status Global do Faturamento</h3>
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Habilite ou desabilite a cobrança obrigatória de planos no sistema</p>
+                </div>
+            </div>
+            <form action="{{ route('admin.settings.payments.toggle-global') }}" method="POST">
+                @csrf
+                <label class="relative inline-flex items-center cursor-pointer group/toggle">
+                    <input type="checkbox" name="pagamento_ativo" class="sr-only peer" onchange="this.form.submit()" {{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'checked' : '' }}>
+                    <div class="w-16 h-9 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+                    <div class="ml-4 flex flex-col">
+                        <span class="text-[10px] font-black text-white uppercase tracking-widest">{{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'Faturamento Ativo' : 'Acesso Liberado' }}</span>
+                        <span class="text-[8px] font-bold {{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'text-emerald-500' : 'text-zinc-500' }} uppercase tracking-tighter">{{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'Gateway Obrigatório' : 'Auto-Ativação de Planos' }}</span>
+                    </div>
+                </label>
+            </form>
+        </div>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Sidebar: Gateway Selection -->

@@ -15,14 +15,28 @@ class CheckActiveSubscription
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->hasPremiumAccess()) {
+        $user = $request->user();
+
+        if (!$user || !$user->hasPremiumAccess()) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Você precisa de uma assinatura ativa para usar esta funcionalidade.'
+                    'message' => 'Sua assinatura ainda não foi confirmada ou está inativa.'
                 ], 403);
             }
 
-            return redirect()->route('dashboard')->with('error', 'Esta funcionalidade está disponível apenas para usuários com assinatura ativa.');
+            // Verificar se existe uma assinatura pendente para mostrar mensagem personalizada
+            $subscription = $user ? $user->subscriptions()->latest()->first() : null;
+            $message = 'Esta funcionalidade está disponível apenas para usuários com assinatura ativa.';
+            
+            if ($subscription) {
+                if ($subscription->status === \App\Models\Subscription::STATUS_FIN_PENDENTE || $subscription->status === \App\Models\Subscription::STATUS_FIN_AGUARDANDO) {
+                    $message = 'Sua assinatura ainda não foi confirmada pelo gateway de pagamento. Assim que recebermos a confirmação, seu acesso será liberado automaticamente.';
+                } elseif ($subscription->status === \App\Models\Subscription::STATUS_FIN_RECUSADO) {
+                    $message = 'Seu último pagamento foi recusado. Por favor, verifique seus dados de pagamento ou tente outro cartão.';
+                }
+            }
+
+            return redirect()->route('plano')->with('warning', $message);
         }
 
         return $next($request);

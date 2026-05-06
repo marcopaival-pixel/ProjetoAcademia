@@ -16,7 +16,14 @@ class Subscription extends Model
     const STATUS_EXPIRED = 'expired';
     const STATUS_BLOCKED = 'blocked';
 
-    // Status padronizados sugeridos pelo usuário
+    // Status padronizados sugeridos pelo usuário (SaaS Premium)
+    const STATUS_FIN_PENDENTE = 'PENDENTE';
+    const STATUS_FIN_AGUARDANDO = 'AGUARDANDO';
+    const STATUS_FIN_ATIVO = 'ATIVO';
+    const STATUS_FIN_RECUSADO = 'RECUSADO';
+    const STATUS_FIN_CANCELADO = 'CANCELADO';
+
+    // Compatibilidade com código legado
     const FIN_ATIVO = 'ATIVO';
     const FIN_PENDENTE = 'PENDENTE';
     const FIN_ATRASADO = 'ATRASADO';
@@ -27,6 +34,8 @@ class Subscription extends Model
         'user_id', 
         'academy_company_id',
         'plan_id', 
+        'gateway_id',
+        'gateway_type',
         'start_date', 
         'end_date', 
         'status', 
@@ -82,9 +91,14 @@ class Subscription extends Model
         return $this->hasMany(SubscriptionLog::class);
     }
 
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function isActive(): bool
     {
-        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_CANCELLED_SCHEDULED, self::FIN_ATIVO]) && 
+        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_CANCELLED_SCHEDULED, self::FIN_ATIVO, self::STATUS_FIN_ATIVO]) && 
                ($this->end_date === null || $this->end_date->isFuture() || $this->end_date->isToday());
     }
 

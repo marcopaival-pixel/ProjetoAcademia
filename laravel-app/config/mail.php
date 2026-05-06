@@ -137,6 +137,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Alerta operacional emergencial
+    |--------------------------------------------------------------------------
+    |
+    | Usado por falhas críticas quando a base de dados pode estar indisponível.
+    |
+    */
+    'operational_alert' => [
+        'address' => env('OPERATIONAL_ALERT_EMAIL', env('ADMIN_EMAIL')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Proteção contra envio duplicado (mesmo utilizador / tipo / assunto)
     |--------------------------------------------------------------------------
     */
