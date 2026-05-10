@@ -22,6 +22,7 @@ Route::middleware(['auth'])->prefix('professional')->name('professional.')->grou
     Route::get('/link/{code}', [ProfessionalSearchController::class, 'show'])->name('link');
 
     Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/evolution', [\App\Http\Controllers\Professional\EvolutionController::class, 'index'])->name('evolution.index');
 
     // Gestão de Pacientes
     Route::prefix('patients')->name('patients.')->group(function () {

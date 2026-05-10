@@ -47,6 +47,15 @@ Route::get('/health', [App\Http\Controllers\HealthCheckController::class, 'index
 // 1. Home e Páginas Públicas
 Route::get('/', HomeController::class)->name('home');
 
+// MODO DEMONSTRAÇÃO
+Route::prefix('demo')->name('demo.')->group(function () {
+    Route::get('/start', [App\Http\Controllers\DemoController::class, 'start'])->name('start');
+    Route::get('/stop', [App\Http\Controllers\DemoController::class, 'stop'])->name('stop');
+    Route::post('/reset', [App\Http\Controllers\DemoController::class, 'reset'])->name('reset');
+    Route::post('/switch', [App\Http\Controllers\DemoController::class, 'switchProfile'])->name('switch');
+});
+
+
 Route::get(
     '/'.trim((string) config('pdf.validation_path_segment', 'validar-documento'), '/').'/{codigo}',
     [DocumentValidationController::class, 'show']
@@ -104,6 +113,7 @@ foreach ($legacyRedirects as $file => $target) {
 }
 
 // 4. Inclusão de Módulos Específicos
+Route::post('/payment/webhook/{gateway}', \App\Http\Controllers\Payment\WebhookController::class)->name('payment.webhook');
 require __DIR__.'/auth.php';
 require __DIR__.'/mercado_pago.php';
 require __DIR__.'/admin.php';
@@ -111,7 +121,16 @@ require __DIR__.'/professional.php';
 require __DIR__.'/patient.php';
 require __DIR__.'/representative.php';
 
-// 5. App Core (Rotas Autenticadas Comuns)
+// 5. Marketing Banner API (Público/Autenticado)
+Route::post('/api/marketing/banners/{banner}/view', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackView'])->name('api.marketing.banners.view');
+Route::post('/api/marketing/banners/{banner}/click', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackClick'])->name('api.marketing.banners.click');
+Route::post('/api/marketing/banners/{banner}/dismiss', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackDismiss'])->name('api.marketing.banners.dismiss');
+
+// Legado App Banner
+Route::post('/api/marketing/app-banner/lead', [App\Http\Controllers\Admin\AppBannerController::class, 'registerLead'])->name('api.marketing.app-banner.lead');
+Route::post('/api/marketing/app-banner/metric', [App\Http\Controllers\Admin\AppBannerController::class, 'trackMetric'])->name('api.marketing.app-banner.metric');
+
+// 6. App Core (Rotas Autenticadas Comuns)
 Route::middleware(['auth'])->group(function () {
 
 
@@ -168,6 +187,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/api/update', [OnboardingController::class, 'update'])->name('api.update');
         Route::post('/api/skip', [OnboardingController::class, 'skip'])->name('api.skip');
         Route::post('/api/complete', [OnboardingController::class, 'complete'])->name('api.complete');
+    });
+
+    // Novo Onboarding Premium SaaS
+    Route::prefix('onboarding-premium')->name('onboarding-premium.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PremiumOnboardingController::class, 'index'])->name('index');
+        Route::post('/start', [\App\Http\Controllers\PremiumOnboardingController::class, 'start'])->name('start');
+        Route::get('/step/{step}', [\App\Http\Controllers\PremiumOnboardingController::class, 'showStep'])->name('step');
+        Route::post('/step/{step}', [\App\Http\Controllers\PremiumOnboardingController::class, 'saveStep'])->name('step.save');
+        Route::get('/finish', [\App\Http\Controllers\PremiumOnboardingController::class, 'finish'])->name('finish');
     });
 
     // IA & NexBot
@@ -232,5 +260,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Support\TrainingController::class, 'index'])->name('index');
         Route::get('/module/{module}', [\App\Http\Controllers\Support\TrainingController::class, 'showModule'])->name('module');
         Route::get('/module/{module}/lesson/{lesson}', [\App\Http\Controllers\Support\TrainingController::class, 'showLesson'])->name('lesson');
+    });
+    // Comunidade Social NexShape
+    Route::prefix('community')->name('community.')->group(function () {
+        Route::get('/', [App\Http\Controllers\CommunityController::class, 'index'])->name('index');
+        Route::post('/post', [App\Http\Controllers\CommunityController::class, 'store'])->name('store');
+        Route::post('/react/{type}/{id}', [App\Http\Controllers\CommunityController::class, 'react'])->name('react');
+        Route::post('/post/{post}/comment', [App\Http\Controllers\CommunityController::class, 'comment'])->name('comment');
     });
 });

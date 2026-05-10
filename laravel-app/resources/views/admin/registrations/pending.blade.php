@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-            <h2 class="text-2xl font-black text-white tracking-tight">Novos cadastros</h2>
+            <h2 class="text-xl font-bold text-white tracking-tight">Novos cadastros</h2>
             <p class="text-zinc-500 text-xs mt-1 font-bold uppercase tracking-widest">Aceite ou recuse pedidos de acesso de alunos</p>
         </div>
         @php($pendingCount = \App\Models\User::where('registration_approval_status', 'pending')->where('is_admin', false)->count())

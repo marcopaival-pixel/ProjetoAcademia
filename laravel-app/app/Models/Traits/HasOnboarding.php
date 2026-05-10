@@ -52,6 +52,6 @@ trait HasOnboarding
 
     public function isOnboardingPending(): bool
     {
-        return $this->onboarding_status === 'pending' && $this->profile_completion_percentage < 100;
+        return $this->onboarding_status !== 'completed' && $this->profile_completion_percentage < 100;
     }
 }

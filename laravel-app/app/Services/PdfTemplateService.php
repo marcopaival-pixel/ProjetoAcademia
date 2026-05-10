@@ -145,8 +145,6 @@ class PdfTemplateService
             font-size: 42px;
             font-weight: bold;
             color: #94a3b8;
-            opacity: 0.12;
-            transform: rotate(-32deg);
             z-index: 0;
             pointer-events: none;
         }
@@ -198,16 +196,28 @@ HTML;
         if ($watermark === null || $watermark === []) {
             return '';
         }
-        $opacity = isset($watermark['opacity']) ? max(0.02, min(1.0, (float) $watermark['opacity'])) : 0.12;
+        
+        $opacity = isset($watermark['opacity']) ? max(0.01, min(1.0, (float) $watermark['opacity'])) : 0.12;
+        $rotate = isset($watermark['rotate']) ? (int) $watermark['rotate'] : -32;
+        $scale = isset($watermark['scale']) ? (float) $watermark['scale'] : 1.0;
+        
         $text = isset($watermark['text']) ? (string) $watermark['text'] : '';
         $text = $text !== '' ? $this->interpolate($text, $merged) : '';
+        
         $imagePath = $watermark['image_path'] ?? null;
         $imgUri = is_string($imagePath) && $imagePath !== '' ? $this->logoDataUri($imagePath) : null;
 
-        $style = 'opacity:'.e((string) $opacity).';';
+        $style = sprintf(
+            'opacity: %f; transform: rotate(%ddeg) scale(%f);',
+            $opacity,
+            $rotate,
+            $scale
+        );
+
         if ($text !== '') {
             return '<div class="pdf-watermark-layer" style="'.$style.'">'.e($text).'</div>';
         }
+        
         if ($imgUri !== null) {
             return '<div class="pdf-watermark-layer" style="'.$style.'"><img src="'.e($imgUri).'" alt="" /></div>';
         }

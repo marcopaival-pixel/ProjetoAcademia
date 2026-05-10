@@ -152,62 +152,68 @@
             </button>
         </div>
 
-        <!-- User Profile Section -->
-        <div class="flex items-center gap-4">
-            @if(auth()->user()->roles->count() > 1)
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-950 border border-zinc-900 text-zinc-600 hover:text-emerald-500 hover:border-emerald-500/20 transition-all shadow-inner">
-                    <span class="text-[9px] font-black uppercase tracking-widest">{{ session('active_role', 'Perfil') }}</span>
-                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" :class="open ? 'rotate-180' : ''"></i>
-                </button>
-                
-                <div x-show="open" @click.away="open = false" 
-                     class="absolute right-0 mt-3 w-48 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-3xl overflow-hidden z-[200] animate-fade-in-up p-2 space-y-1">
-                    @foreach(auth()->user()->roles as $role)
-                        <form action="{{ route('profile.select') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="role" value="{{ $role->name }}">
-                            <button type="submit" class="w-full text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all {{ session('active_role') == $role->name ? 'bg-emerald-500 text-zinc-950 shadow-lg' : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
-                                {{ $role->label }}
-                            </button>
-                        </form>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
-            <div class="flex items-center gap-4 group cursor-pointer shrink-0" onclick="window.location.href='{{ route('profile') }}'">
-                <div class="text-right hidden sm:block min-w-0 max-w-[120px] lg:max-w-[200px]">
-                    <p class="text-xs font-black text-white tracking-tight uppercase group-hover:text-emerald-500 transition-colors truncate" title="{{ auth()->user()?->name }}">{{ auth()->user()?->name }}</p>
-                    <p class="text-[9px] text-zinc-700 font-black uppercase tracking-[0.2em] mt-0.5 truncate">{{ auth()->user()->isAdministrator() ? 'Systems Administrator' : (auth()->user()->roles()->where('name', session('active_role'))->first()?->label ?? (auth()->user()->roles->first()?->label ?? 'User')) }}</p>
-                </div>
-                <div class="relative">
-                    <div class="w-12 h-12 rounded-2xl overflow-hidden border-2 border-zinc-900 group-hover:border-{{ $isClinica ? 'blue-500/50' : 'emerald-500/50' }} transition-all shadow-2xl">
+        <!-- Perfil do Usuário (Apenas Mobile/Tablet) -->
+        <div class="flex items-center gap-4 lg:hidden">
+            <div class="relative" x-data="{ openMobileUser: false }">
+                <button @click="openMobileUser = !openMobileUser" class="relative group">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-zinc-900 group-hover:border-{{ $isClinica ? 'blue-500/50' : 'emerald-500/50' }} transition-all shadow-lg">
                         <img src="{{ auth()->user()?->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()?->name ?? 'User').'&color='.($isClinica ? '3b82f6' : '10b981').'&background=09090b&bold=true' }}" alt="Avatar" class="w-full h-full object-cover">
                     </div>
-                    <span class="absolute -bottom-1 -right-1 w-4 h-4 {{ $isClinica ? 'bg-blue-500' : 'bg-emerald-500' }} border-4 border-zinc-950 rounded-full shadow-lg"></span>
+                    <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 {{ $isClinica ? 'bg-blue-500' : 'bg-emerald-500' }} border-4 border-zinc-950 rounded-full shadow-lg"></span>
+                </button>
+                
+                <form action="{{ route('logout') }}" method="post" class="lg:hidden ml-2">
+                    @csrf
+                    <button type="submit" class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg" title="Sair">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <!-- Dropdown Mobile -->
+                <div x-show="openMobileUser" 
+                     @click.away="openMobileUser = false"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     class="absolute right-0 mt-3 w-64 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-3xl overflow-hidden z-[500] p-2 space-y-1">
+                    
+                    <div class="px-4 py-3 border-b border-zinc-900 mb-1 text-right">
+                        <p class="text-[10px] font-black text-white uppercase tracking-widest truncate">{{ auth()->user()?->name }}</p>
+                        <p class="text-[8px] text-zinc-600 font-bold uppercase tracking-[0.2em] mt-1">{{ session('active_role', 'Usuário') }}</p>
+                    </div>
+
+                    <a href="{{ route('profile') }}" class="flex items-center justify-end gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-900 hover:text-white transition-all">
+                        Meu Perfil <i data-lucide="user" class="w-4 h-4"></i>
+                    </a>
+
+                    @if(auth()->user()->roles->count() > 1)
+                        <div class="px-4 py-2 mt-2 mb-1 text-right">
+                            <span class="text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em]">Alternar Perfil</span>
+                        </div>
+                        @foreach(auth()->user()->roles as $role)
+                            <form action="{{ route('profile.select') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="role" value="{{ $role->name }}">
+                                <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ session('active_role') == $role->name ? ($isClinica ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-zinc-950') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
+                                    @if(session('active_role') == $role->name) <i data-lucide="check" class="w-3 h-3"></i> @else <span></span> @endif
+                                    {{ $role->label }}
+                                </button>
+                            </form>
+                        @endforeach
+                    @endif
+
+                    <div class="border-t border-zinc-900 mt-2 pt-2">
+                        <form action="{{ route('logout') }}" method="post">
+                            @csrf
+                            <button type="submit" class="w-full flex items-center justify-end gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/10 transition-all">
+                                Encerrar Sessão <i data-lucide="log-out" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
 
-        @if(auth()->user()?->is_admin)
-        <div class="flex items-center gap-4 border-l border-zinc-900 pl-6 ml-2">
-            @if(request()->is('admin*'))
-                @php($pendingRegsTop = \App\Models\User::where('registration_approval_status', 'pending')->where('is_admin', false)->count())
-                <a href="{{ route('admin.registrations.pending') }}" class="relative w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 hover:bg-amber-500 hover:text-zinc-950 transition-all shadow-lg shadow-amber-500/5" title="Cadastros pendentes">
-                    <i data-lucide="user-plus" class="w-5 h-5"></i>
-                    @if($pendingRegsTop > 0)
-                        <span class="absolute -top-1.5 -right-1.5 min-w-[1.2rem] h-[1.2rem] flex items-center justify-center rounded-lg bg-amber-500 text-zinc-950 text-[9px] font-black shadow-lg">{{ $pendingRegsTop > 9 ? '9+' : $pendingRegsTop }}</span>
-                    @endif
-                </a>
-            @else
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-zinc-950 transition-all shadow-lg shadow-amber-500/5 group" title="Painel Admin">
-                    <i data-lucide="shield-check" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Admin</span>
-                </a>
-            @endif
-        </div>
-        @endif
     </div>
 </header>
 

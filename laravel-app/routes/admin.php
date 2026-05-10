@@ -33,6 +33,8 @@ use App\Http\Controllers\Admin\TenantBackupController;
 use App\Http\Controllers\Admin\BulkImportController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\RepresentativeAdminController;
+use App\Http\Controllers\Admin\AppBannerController;
+use App\Http\Controllers\Admin\CommunityModerationController;
 use App\Http\Controllers\OmniChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +61,7 @@ Route::prefix('admin')->group(function () {
         Route::delete('/users/{user}', [AdminAreaController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::get('/lgpd/export-user/{user}', [AdminAreaController::class, 'exportUserFullData'])->name('admin.lgpd.export-user');
         Route::post('/users/{user}/reset-password', [AdminAreaController::class, 'resetUserPassword'])->name('admin.security.reset-password');
+        Route::post('/users/{user}/reset-and-email', [AdminAreaController::class, 'generateAndSendNewPassword'])->name('admin.security.reset-and-email');
         Route::post('/users/{user}/send-reset-link', [AdminAreaController::class, 'sendResetEmail'])->name('admin.security.send-reset-link');
         Route::post('/users/{user}/resend-verification', [AdminAreaController::class, 'resendVerificationEmail'])->name('admin.users.resend-verification');
 
@@ -98,10 +101,11 @@ Route::prefix('admin')->group(function () {
         });
 
         // Configurações Financeiras (Gateways)
-        Route::get('/payment-settings', [PaymentSettingController::class, 'index'])->name('admin.settings.payments');
-        Route::post('/payment-settings', [PaymentSettingController::class, 'store'])->name('admin.settings.payments.store');
-        Route::post('/payment-settings/test', [PaymentSettingController::class, 'testConnection'])->name('admin.settings.payments.test');
-        Route::post('/payment-settings/toggle-global', [PaymentSettingController::class, 'toggleGlobal'])->name('admin.settings.payments.toggle-global');
+        Route::get('/settings/payments', [PaymentSettingController::class, 'index'])->name('admin.settings.payments');
+        Route::post('/settings/payments', [PaymentSettingController::class, 'store'])->name('admin.settings.payments.store');
+        Route::post('/settings/payments/test', [PaymentSettingController::class, 'testConnection'])->name('admin.settings.payments.test');
+        Route::post('/settings/payments/toggle', [PaymentSettingController::class, 'toggleGlobal'])->name('admin.settings.payments.toggle-global');
+        Route::get('/settings/payments/webhooks', [PaymentSettingController::class, 'webhooks'])->name('admin.settings.payments.webhooks');
 
         // Gestão de Planos
         Route::prefix('plans')->name('admin.plans.')->group(function () {
@@ -180,6 +184,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/settings', [AdminAreaController::class, 'settings'])->name('admin.settings');
         Route::post('/settings', [AdminAreaController::class, 'saveSettings'])->name('admin.settings.store');
         Route::post('/settings/test-email', [AdminAreaController::class, 'testEmail'])->name('admin.settings.test');
+        Route::post('/settings/test-ai', [AdminAreaController::class, 'testAi'])->name('admin.settings.test-ai');
+        Route::post('/settings/test-whatsapp', [AdminAreaController::class, 'testWhatsApp'])->name('admin.settings.test-whatsapp');
         Route::get('/monitoring', [AdminAreaController::class, 'monitoring'])->name('admin.monitoring');
         Route::get('/ai-monitoring', [AdminAreaController::class, 'aiMonitoring'])->name('admin.ai.monitoring');
         
@@ -187,6 +193,19 @@ Route::prefix('admin')->group(function () {
         Route::prefix('operations')->name('admin.operations.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'index'])->name('index');
             Route::post('/update', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'update'])->name('update');
+            Route::post('/restart-workers', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'restartWorkers'])->name('restart-workers');
+            Route::post('/clear-queue', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'clearQueue'])->name('clear-queue');
+            Route::post('/retry-failed', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'retryFailed'])->name('retry-failed');
+            Route::post('/flush-failed', [\App\Http\Controllers\Admin\OperationsDashboardController::class, 'flushFailed'])->name('flush-failed');
+        });
+        
+        // Gestor de Tarefas (Kanban)
+        Route::prefix('kanban')->name('admin.kanban.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\KanbanController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\KanbanController::class, 'store'])->name('store');
+            Route::post('/{task}/status', [\App\Http\Controllers\Admin\KanbanController::class, 'updateStatus'])->name('update-status');
+            Route::put('/{task}', [\App\Http\Controllers\Admin\KanbanController::class, 'update'])->name('update');
+            Route::delete('/{task}', [\App\Http\Controllers\Admin\KanbanController::class, 'destroy'])->name('destroy');
         });
         
         // Gestão de Backups
@@ -215,6 +234,18 @@ Route::prefix('admin')->group(function () {
         Route::prefix('omnichannel')->group(function () {
             Route::get('/', fn() => view('admin.omnichannel'))->name('admin.omnichannel');
             Route::get('/bots', [OmniChatController::class, 'bots'])->name('admin.omnichannel.bots');
+            Route::post('/bots', [OmniChatController::class, 'storeBot'])->name('admin.omnichannel.bots.store');
+            Route::put('/bots/{bot}', [OmniChatController::class, 'updateBot'])->name('admin.omnichannel.bots.update');
+            Route::delete('/bots/{bot}', [OmniChatController::class, 'destroyBot'])->name('admin.omnichannel.bots.destroy');
+
+            // Gestão de Passos (Steps)
+            Route::post('/bots/{bot}/steps', [OmniChatController::class, 'storeStep'])->name('admin.omnichannel.steps.store');
+            Route::put('/steps/{step}', [OmniChatController::class, 'updateStep'])->name('admin.omnichannel.steps.update');
+            Route::delete('/steps/{step}', [OmniChatController::class, 'destroyStep'])->name('admin.omnichannel.steps.destroy');
+
+            // Gestão de Opções (Options)
+            Route::post('/steps/{step}/options', [OmniChatController::class, 'storeOption'])->name('admin.omnichannel.options.store');
+            Route::delete('/options/{option}', [OmniChatController::class, 'destroyOption'])->name('admin.omnichannel.options.destroy');
             Route::prefix('api')->group(function () {
                 Route::get('/conversations', [OmniChatController::class, 'activeConversations'])->name('omni.conversations');
                 Route::get('/conversations/{id}/messages', [OmniChatController::class, 'getHistory'])->name('omni.messages');
@@ -420,6 +451,33 @@ Route::prefix('admin')->group(function () {
             Route::get('/paciente/{user}/vincular', [\App\Http\Controllers\Admin\RegistrationController::class, 'vincularProfissional'])->name('paciente.vincular');
             Route::post('/paciente/{user}/vincular', [\App\Http\Controllers\Admin\RegistrationController::class, 'storeVinculo'])->name('paciente.vincular.store');
             Route::delete('/paciente/{user}/vincular/{professional}', [\App\Http\Controllers\Admin\RegistrationController::class, 'removeVinculo'])->name('paciente.vincular.remove');
+        });
+
+        // Marketing
+        Route::prefix('marketing')->name('admin.marketing.')->group(function () {
+            // Legado (opcional manter por compatibilidade se necessário, mas aqui vou expandir)
+            Route::get('/app-banner', [AppBannerController::class, 'index'])->name('app-banner.index');
+            Route::post('/app-banner', [AppBannerController::class, 'update'])->name('app-banner.update');
+            Route::get('/app-banner/leads', [AppBannerController::class, 'leads'])->name('app-banner.leads');
+
+            // Novo Sistema de Banners
+            Route::prefix('banners')->name('banners.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'store'])->name('store');
+                Route::get('/{banner}/edit', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'edit'])->name('edit');
+                Route::post('/{banner}/update', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'update'])->name('update');
+                Route::delete('/{banner}', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'destroy'])->name('destroy');
+                Route::post('/{banner}/toggle', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'toggleStatus'])->name('toggle');
+            });
+        });
+
+        // Moderação da Comunidade
+        Route::prefix('community')->name('admin.community.')->group(function () {
+            Route::get('/', [CommunityModerationController::class, 'index'])->name('index');
+            Route::post('/post/{post}/status', [CommunityModerationController::class, 'updatePostStatus'])->name('post.status');
+            Route::post('/report/{report}/resolve', [CommunityModerationController::class, 'resolveReport'])->name('report.resolve');
+            Route::post('/sticker', [CommunityModerationController::class, 'storeSticker'])->name('sticker.store');
         });
     });
 });

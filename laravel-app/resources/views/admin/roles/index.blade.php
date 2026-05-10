@@ -4,7 +4,7 @@
 <div class="p-6">
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-3xl font-black bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
                 Perfis e Permissões
             </h1>
             <p class="text-gray-400 mt-1 uppercase text-[10px] font-black tracking-widest">Controle de acesso granular do sistema</p>
@@ -53,7 +53,7 @@
 
                 <div class="flex items-center justify-between pt-6 border-t border-white/10">
                     <div class="flex flex-col">
-                        <span class="text-2xl font-black text-white leading-none">{{ $role->users_count }}</span>
+                        <span class="text-xl font-bold text-white leading-none">{{ $role->users_count }}</span>
                         <span class="text-[9px] text-gray-500 uppercase font-black mt-1">Usuários</span>
                     </div>
                     <div class="flex flex-col items-end">

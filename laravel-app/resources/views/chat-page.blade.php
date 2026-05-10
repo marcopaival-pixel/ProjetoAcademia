@@ -352,7 +352,14 @@ function nexBot() {
 
         formatMessage(text) {
             if (!text) return '';
-            return text
+            
+            // Definitive XSS Protection: Escape all HTML by default
+            const div = document.createElement('div');
+            div.textContent = text;
+            let sanitized = div.innerHTML;
+            
+            // Re-apply safe formatting tokens
+            return sanitized
                 .replace(/\*\*(.*?)\*\*/g, '<strong class="text-emerald-500 font-black">$1</strong>')
                 .replace(/\n/g, '<br>')
                 .replace(/\|/g, '&nbsp;'); 

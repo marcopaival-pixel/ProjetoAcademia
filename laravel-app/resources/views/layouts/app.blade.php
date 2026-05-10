@@ -28,8 +28,10 @@
         document.documentElement.setAttribute("data-theme", "dark");
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/sidebar-toggle.js'])
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @stack('styles')
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -134,9 +136,9 @@
                         Sua jornada para o ápice da performance começa com inteligência. Unimos ciência, dados e tecnologia para transformar seu potencial em resultados reais.
                     </p>
                     <div class="flex items-center gap-4">
-                        @foreach(['instagram', 'twitter', 'youtube'] as $social)
-                        <a href="#" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/30 transition-all">
-                            <i data-lucide="{{ $social }}" class="w-4 h-4"></i>
+                        @foreach(['instagram', 'x-twitter', 'youtube'] as $social)
+                        <a href="#" class="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-100 hover:text-zinc-950 hover:bg-emerald-500 hover:border-emerald-500 transition-all duration-300 group shadow-lg">
+                            <i class="fa-brands fa-{{ $social }} text-xl group-hover:scale-110 transition-transform"></i>
                         </a>
                         @endforeach
                     </div>
@@ -205,7 +207,11 @@
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script src="{{ asset('js/demo-tour.js') }}"></script>
     <script src="{{ asset('js/app.js') }}" defer></script>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
@@ -310,6 +316,9 @@
                     }
                 });
             }
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
         
         window.isPremiumUser = {{ auth()->check() && auth()->user()->hasPremiumAccess() ? 'true' : 'false' }};
@@ -323,5 +332,6 @@
     @include('partials.legal-modal')
     @include('partials.toast')
     @include('partials.error-modal')
+    <x-demo-badge />
 </body>
 </html>

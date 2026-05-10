@@ -4,6 +4,15 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto pb-20">
+    <div class="mb-8 flex items-center justify-between">
+        <a href="{{ route('admin.registrations.index') }}" class="inline-flex items-center gap-3 text-zinc-500 hover:text-white transition-all group">
+            <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-all">
+                <i class="fas fa-chevron-left text-sm"></i>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest">Voltar para o Menu</span>
+        </a>
+    </div>
+
     <form action="{{ route('admin.registrations.professional-unico.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
         @csrf
         

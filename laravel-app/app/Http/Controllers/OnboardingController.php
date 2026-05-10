@@ -372,14 +372,14 @@ class OnboardingController extends Controller
 
         try {
             $validated = $request->validate([
-                'birth_date' => 'required|date',
-                'sex' => 'required|string|in:M,F',
-                'height_cm' => 'required|integer|min:50|max:250',
-                'weight_kg' => 'required|numeric|min:20|max:500',
+                'birth_date' => 'nullable|date',
+                'sex' => 'nullable|string|in:M,F',
+                'height_cm' => 'nullable|integer|min:50|max:250',
+                'weight_kg' => 'nullable|numeric|min:20|max:500',
                 'activity_level' => 'nullable|string',
-                'goal' => 'required|string|in:lose,lose_aggressive,recomp,maintain,gain,performance',
-                'target_weight_kg' => 'required|numeric|min:20|max:500',
-                'training_days_per_week' => 'required|integer|min:0|max:7',
+                'goal' => 'nullable|string|in:lose,lose_aggressive,recomp,maintain,gain,performance',
+                'target_weight_kg' => 'nullable|numeric|min:20|max:500',
+                'training_days_per_week' => 'nullable|integer|min:0|max:7',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Illuminate\Support\Facades\Log::warning('Onboarding Validation Failed', ['user_id' => auth()->id(), 'errors' => $e->errors()]);

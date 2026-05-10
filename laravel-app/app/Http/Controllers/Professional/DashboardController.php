@@ -96,33 +96,30 @@ class DashboardController extends Controller
             ];
         }
 
-        // Alerta: Paciente Inativo (sem logs há 3 dias)
-        $inactiveAlerts = $professional->patients()
-            ->where('last_activity_at', '<', now()->subDays(3))
-            ->where('last_activity_at', '>=', now()->subDays(10))
-            ->limit(2)
+        // Alerta: NexBot Coach (Alertas de Alunos)
+        $studentAlerts = \App\Models\HealthAlert::whereIn('user_id', $professional->patients()->pluck('users.id'))
+            ->where('is_read', false)
+            ->with('user')
+            ->latest()
+            ->limit(5)
             ->get();
-        
-        foreach($inactiveAlerts as $ia) {
+
+        foreach($studentAlerts as $alert) {
             $tasks[] = [
-                'id' => uniqid(),
-                'type' => 'engagement',
-                'msg' => explode(' ', $ia->name)[0] . ' não registra atividades há 3 dias. Envie um incentivo!',
-                'priority' => 'high'
+                'id' => 'alert_' . $alert->id,
+                'type' => $alert->type, // inactivity, no_evolution, etc.
+                'msg' => explode(' ', $alert->user->name)[0] . ': ' . $alert->message,
+                'priority' => $alert->severity // danger, warning, info
             ];
         }
 
-        // 4. Seção de Pacientes Recentes (Aderência)
+        // 4. Seção de Pacientes Recentes (Aderência e Saúde)
         $recentPatients = $professional->patients()->with(['profile'])
-            ->withCount(['foodEntries' => function($q) {
-                $q->where('entry_date', '>=', now()->subDays(7));
-            }])
             ->orderBy('users.id', 'desc')
             ->limit(5)
             ->get()
             ->map(function($user) {
-                $logsCount = $user->food_entries_count;
-                $engagement = min(100, $logsCount * 7.14); // 2 logs por dia = 100% aprox
+                $engagement = min(100, $user->last_activity_at ? 100 : 0); // Simplificado
                 
                 $nameParts = explode(' ', $user->name);
                 $initials = collect($nameParts)->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('');
@@ -133,8 +130,9 @@ class DashboardController extends Controller
                     'bio' => ($user->profile?->goal ?? 'Performance') . ' • ' . ($user->profile?->sex ?? 'Bio'),
                     'status' => $engagement > 70 ? 'Excelente' : ($engagement > 40 ? 'Regular' : 'Inativo'),
                     'engage' => (int)$engagement,
+                    'health_score' => $user->health_score ?? 0,
                     'initials' => strtoupper($initials),
-                    'color' => $engagement > 75 ? 'from-emerald-500 to-teal-500' : ($engagement > 35 ? 'from-amber-500 to-orange-500' : 'from-rose-500 to-red-600')
+                    'color' => ($user->health_score ?? 0) > 75 ? 'from-emerald-500 to-teal-500' : (($user->health_score ?? 0) > 35 ? 'from-amber-500 to-orange-500' : 'from-rose-500 to-red-600')
                 ];
             });
 

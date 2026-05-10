@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentSetting;
 use App\Models\AdminLog;
+use App\Models\AdminSetting;
+use App\Models\PaymentWebhookLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class PaymentSettingController extends Controller
 {
@@ -26,15 +29,24 @@ class PaymentSettingController extends Controller
         $validated = $request->validate([
             'gateway' => 'required|string|in:mercadopago,pagseguro,asaas,stripe',
             'environment' => 'required|in:sandbox,production',
+            'client_id' => 'nullable|string',
+            'client_secret' => 'nullable|string',
             'public_key' => 'nullable|string',
             'access_token' => 'nullable|string',
             'webhook_secret' => 'nullable|string',
+            'webhook_url' => 'nullable|url',
+            'timeout' => 'required|integer|min:5|max:120',
+            'priority' => 'required|integer|min:1',
             'enable_credit_card' => 'boolean',
             'enable_pix' => 'boolean',
             'enable_boleto' => 'boolean',
             'boleto_expiration_days' => 'required|integer|min:1',
             'pix_expiration_minutes' => 'required|integer|min:1',
             'status' => 'required|in:active,inactive',
+            'penalty_percent' => 'required|numeric|min:0',
+            'interest_percent' => 'required|numeric|min:0',
+            'discount_percent' => 'required|numeric|min:0',
+            'tolerance_days' => 'required|integer|min:0',
         ]);
 
         // If this gateway is being set to active, set others to inactive
@@ -81,9 +93,6 @@ class PaymentSettingController extends Controller
         try {
             switch ($gateway) {
                 case 'mercadopago':
-                    // Example: check if access token is valid via MP API
-                    // $response = Http::withToken($setting->access_token)->get('https://api.mercadopago.com/v1/payment_methods');
-                    // $success = $response->successful();
                     $success = !empty($setting->access_token); 
                     break;
                 case 'stripe':
@@ -112,8 +121,7 @@ class PaymentSettingController extends Controller
 
     public function toggleGlobal(Request $request)
     {
-        $current = AdminSetting::isTrue('pagamento_ativo', true);
-        $newValue = !$current;
+        $newValue = $request->has('pagamento_ativo');
         
         AdminSetting::set('pagamento_ativo', $newValue ? 'true' : 'false');
 
@@ -122,9 +130,15 @@ class PaymentSettingController extends Controller
             'action' => 'toggle_global_payment',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'payload' => ['active' => $active],
+            'payload' => ['active' => $newValue],
         ]);
 
-        return redirect()->back()->with('success', 'Status de faturamento global atualizado!');
+        return redirect()->route('admin.settings.payments')->with('success', 'Status de faturamento global atualizado!');
+    }
+
+    public function webhooks()
+    {
+        $logs = PaymentWebhookLog::orderBy('created_at', 'desc')->paginate(50);
+        return view('admin.payment_settings.webhooks', compact('logs'));
     }
 }

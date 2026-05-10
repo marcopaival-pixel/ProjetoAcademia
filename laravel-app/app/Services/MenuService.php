@@ -47,13 +47,13 @@ class MenuService
                     'dashboard', 'patients', 'exercise', 'diary', 'assessments', 'calendar', 'report',
                     'messages', 'presence', 'plano', 'profile', 'nutrition', 'weight', 'hydration',
                     'chat', 'leaderboard', 'active-rest', 'evolution', 'trophies', 'body-analysis', 
-                    'patient.professionals.search'
+                    'patient.professionals.search', 'community'
                 ],
                 'aluno' => [
                     'profile', 'progression.plans', 'diary', 'assessments', 'calendar', 'plano',
                     'export', 'messages', 'presence', 'nutrition', 'weight',
                     'hydration', 'chat', 'leaderboard', 'active-rest', 'exercise', 'evolution', 
-                    'trophies', 'body-analysis', 'patient.professionals.search', 'report'
+                    'trophies', 'body-analysis', 'patient.professionals.search', 'report', 'community'
                 ],
                 'paciente' => [
                     'patient.unified.dashboard', 'patient.portal', 'profile', 'plano', 'report'
@@ -169,165 +169,15 @@ class MenuService
     private function buildAccordionMenuGroups(User $user, bool $isPremium): array
     {
         $groups = [];
+        $activeRole = session('active_role');
+        $isAdmin = $user->isAdministrator();
 
-        // 1. Portal do Profissional (Prioridade para Profissionais)
-        if ($user->isAdministrator() || $user->hasRole(['professional', 'instructor', 'supervisor'])) {
-            $groups[] = [
-                'id' => 'professional_portal',
-                'label' => 'Portal do Profissional',
-                'icon' => 'fas fa-user-tie',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'pro_dashboard', 'label' => 'Dashboard', 'route' => 'professional.dashboard', 'icon' => 'fas fa-th-large'],
-                    ['name' => 'patients', 'label' => 'Pacientes', 'route' => 'professional.patients.index', 'icon' => 'fas fa-users'],
-                    ['name' => 'exercise', 'label' => 'Treinos', 'route' => 'exercise', 'icon' => 'fas fa-dumbbell'],
-                    ['name' => 'plans', 'label' => 'Progressão (Planos)', 'route' => 'progression.plans.index', 'icon' => 'fas fa-layer-group'],
-                    ['name' => 'charts', 'label' => 'Gráficos', 'route' => 'progression.charts', 'icon' => 'fas fa-chart-line', 'premium' => true],
-                    ['name' => 'nutrition', 'label' => 'Nutrição', 'route' => 'nutrition.index', 'icon' => 'fas fa-utensils'],
-                    ['name' => 'assessments', 'label' => 'Avaliações', 'route' => 'assessments.index', 'icon' => 'fas fa-clipboard-check'],
-                    ['name' => 'weight', 'label' => 'Peso', 'route' => 'weight', 'icon' => 'fas fa-weight'],
-                    ['name' => 'hydration', 'label' => 'Hidratação', 'route' => 'hydration.index', 'icon' => 'fas fa-tint'],
-
-                    ['name' => 'calendar', 'label' => 'Agenda', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-alt'],
-                    ['name' => 'medical_records', 'label' => 'Prontuário / Laudos', 'route' => 'professional.patients.index', 'icon' => 'fas fa-file-medical-alt'],
-                    ['name' => 'report', 'label' => 'Relatórios', 'route' => 'professional.reports.index', 'icon' => 'fas fa-file-pdf'],
-                    ['name' => 'ai_wizard', 'label' => 'IA Wizard', 'route' => 'professional.ai-wizard.index', 'icon' => 'fas fa-magic', 'premium' => true],
-                    ['name' => 'ai_credits', 'label' => 'Saldo de IA', 'route' => 'ai-credits.dashboard', 'icon' => 'fas fa-coins'],
-                    ['name' => 'ai_templates', 'label' => 'Meus Templates (IA)', 'route' => 'professional.templates.index', 'icon' => 'fas fa-file-code'],
-                    ['name' => 'branding', 'label' => 'Branding', 'route' => 'professional.branding', 'icon' => 'fas fa-id-card', 'premium' => true],
-                ], $isPremium),
-            ];
-        }
-
-        // 2. Painel do Aluno (Resumo de Treino e Saúde)
-        if ($user->hasRole('aluno') || $user->isAdministrator()) {
-            $alunoItems = [
-                ['name' => 'dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'fas fa-th-large'],
-                ['name' => 'chat', 'label' => 'Chat IA', 'route' => 'chat.page', 'icon' => 'fas fa-robot', 'premium' => true],
-            ];
-
-            $groups[] = [
-                'id' => 'aluno_panel',
-                'label' => 'Painel do Aluno',
-                'icon' => 'fas fa-running',
-                'items' => $this->prepareItems($user, $alunoItems, $isPremium),
-            ];
-
-            // Subgrupos de Treino e Saúde (Continuam dentro do escopo Aluno)
-            $trainingItems = [
-                ['name' => 'progression.plans', 'label' => 'Meus Treinos', 'route' => 'progression.plans.index', 'icon' => 'fas fa-clipboard-list'],
-                ['name' => 'exercise', 'label' => 'Registro de Treino', 'route' => 'exercise', 'icon' => 'fas fa-history'],
-                ['name' => 'active-rest', 'label' => 'Descanso Ativo', 'route' => 'active-rest.index', 'icon' => 'fas fa-leaf', 'premium' => true],
-            ];
-
-            if ($user->isAdministrator() || $user->professionals()->exists()) {
-                $trainingItems[] = ['name' => 'calendar', 'label' => 'Agenda de Treino', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-alt'];
-            }
-
-            $groups[] = [
-                'id' => 'training',
-                'label' => 'Treinamento',
-                'icon' => 'fas fa-dumbbell',
-                'items' => $this->prepareItems($user, $trainingItems, $isPremium),
-            ];
-
-            $groups[] = [
-                'id' => 'nutrition_health',
-                'label' => 'Nutrição e Saúde',
-                'icon' => 'fas fa-heartbeat',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'nutrition', 'label' => 'Hub de Nutrição', 'route' => 'nutrition.index', 'icon' => 'fas fa-utensils'],
-                    ['name' => 'weight', 'label' => 'Peso Corporal', 'route' => 'weight', 'icon' => 'fas fa-weight-hanging'],
-                    ['name' => 'hydration', 'label' => 'Hidratação', 'route' => 'hydration.index', 'icon' => 'fas fa-tint'],
-                ], $isPremium),
-            ];
-
-            $groups[] = [
-                'id' => 'my_progress',
-                'label' => 'Meu Progresso',
-                'icon' => 'fas fa-chart-line',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'report', 'label' => 'Relatórios', 'route' => 'patient.reports.index', 'icon' => 'fas fa-file-invoice'],
-                    ['name' => 'progression.charts', 'label' => 'Evolução de Força', 'route' => 'progression.charts', 'icon' => 'fas fa-dumbbell', 'premium' => true],
-                    ['name' => 'evolution', 'label' => 'Galeria de Fotos', 'route' => 'evolution.index', 'icon' => 'fas fa-images'],
-                    ['name' => 'assessments', 'label' => 'Evolução Corporal', 'route' => 'assessments.index', 'icon' => 'fas fa-clipboard-check'],
-                    ['name' => 'body-analysis', 'label' => 'Análise Corporal (IA)', 'route' => 'body-analysis.index', 'icon' => 'fas fa-brain', 'premium' => true],
-                    ['name' => 'leaderboard', 'label' => 'Ranking Geral', 'route' => 'leaderboard.index', 'icon' => 'fas fa-trophy', 'premium' => true],
-                    ['name' => 'trophies', 'label' => 'Conquistas', 'route' => 'trophies.index', 'icon' => 'fas fa-medal', 'premium' => true],
-                ], $isPremium),
-            ];
-
-            if ($user->hasRole(['aluno']) || $user->isAdministrator()) {
-                $groups[] = [
-                    'id' => 'user_account',
-                    'label' => 'Sua Conta',
-                    'icon' => 'fas fa-user-cog',
-                    'items' => $this->prepareItems($user, [
-                        ['name' => 'profile', 'label' => 'Meu Perfil', 'route' => 'profile', 'icon' => 'fas fa-user-circle'],
-                        ['name' => 'ai_credits', 'label' => 'Saldo de IA', 'route' => 'ai-credits.dashboard', 'icon' => 'fas fa-coins'],
-                        ['name' => 'subscription', 'label' => 'Financeiro & Plano', 'route' => 'patient.subscription.index', 'icon' => 'fas fa-wallet'],
-                        ['name' => 'link_professional', 'label' => 'Buscar Profissional', 'route' => 'patient.professionals.search', 'icon' => 'fas fa-user-plus'],
-                    ], $isPremium),
-                ];
-            }
-        }
-        // 3. Painel do Paciente (Prescrições e Acompanhamento Profissional)
-        if ($user->hasRole('paciente') || $user->isAdministrator()) {
-            $patientItems = [
-                ['name' => 'patient.unified.dashboard', 'label' => 'Meu Painel de Saúde', 'route' => 'patient.unified.dashboard', 'icon' => 'fas fa-heartbeat'],
-                ['name' => 'patient_reports', 'label' => 'Prontuário / Laudos', 'route' => 'patient.medical-records.index', 'icon' => 'fas fa-file-medical-alt'],
-            ];
-
-            if (!$user->hasRole('aluno')) {
-                $patientItems[] = ['name' => 'patient_plans', 'label' => 'Planos e Assinaturas', 'route' => 'patient.plans.index', 'icon' => 'fas fa-crown'];
-            }
-
-            $groups[] = [
-                'id' => 'patient_panel',
-                'label' => 'Painel do Paciente',
-                'icon' => 'fas fa-user-md',
-                'items' => $this->prepareItems($user, $patientItems, $isPremium),
-            ];
-        }
-
-        // 3. Recepção
-        if ($user->isAdministrator() || $user->hasRole(['receptionist', 'manager'])) {
-            $groups[] = [
-                'id' => 'reception',
-                'label' => 'Menu da Recepção',
-                'icon' => 'fas fa-concierge-bell',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'recep_dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'fas fa-home'],
-                    ['name' => 'user_registration', 'label' => 'Cadastro de Usuário', 'route' => 'dashboard', 'icon' => 'fas fa-user-plus'],
-                    ['name' => 'presence', 'label' => 'Controle de Presença', 'route' => 'dashboard', 'icon' => 'fas fa-id-card'],
-                    ['name' => 'calendar', 'label' => 'Agenda Geral', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-day'],
-                    ['name' => 'clinic_settings', 'label' => 'Gestão da Clínica', 'route' => 'admin.clinic.settings', 'icon' => 'fas fa-building'],
-                    ['name' => 'clinic_protocols', 'label' => 'Protocolos Padrão', 'route' => 'admin.clinic.protocols.index', 'icon' => 'fas fa-notes-medical'],
-                    ['name' => 'clinic_billing', 'label' => 'Faturamento/Assinatura', 'route' => 'admin.clinic.billing', 'icon' => 'fas fa-credit-card'],
-                ], $isPremium),
-            ];
-        }
-
-        // 4. Portal do Representante
-        if ($user->isAdministrator() || $user->is_representative) {
-            $groups[] = [
-                'id' => 'representative_portal',
-                'label' => 'Portal do Representante',
-                'icon' => 'fas fa-handshake',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'rep_dashboard', 'label' => 'Dashboard', 'route' => 'representative.dashboard', 'icon' => 'fas fa-chart-pie'],
-                    ['name' => 'rep_commissions', 'label' => 'Minhas Comissões', 'route' => 'representative.commissions', 'icon' => 'fas fa-dollar-sign'],
-                    ['name' => 'rep_referrals', 'label' => 'Minhas Indicações', 'route' => 'representative.referrals', 'icon' => 'fas fa-users'],
-                    ['name' => 'rep_withdraw', 'label' => 'Resgates e Saques', 'route' => 'representative.withdraw.form', 'icon' => 'fas fa-wallet'],
-                ], $isPremium),
-            ];
-        }
-
-        // 5. Admin
-        if ($user->isAdministrator()) {
+        // 1. Painel Administrativo / Governança (Prioritário para Admin ou se active_role == admin)
+        if ($isAdmin && (!$activeRole || $activeRole === 'admin' || $activeRole === 'gestor')) {
             $groups[] = [
                 'id' => 'administration',
                 'label' => 'Menu de Administração',
-                'icon' => 'fas fa-tools',
+                'icon' => 'fas fa-user-shield',
                 'items' => $this->prepareItems($user, [
                     ['name' => 'admin_dashboard', 'label' => 'Painel Admin', 'route' => 'admin.dashboard', 'icon' => 'fas fa-shield-alt'],
                     ['name' => 'users_manage', 'label' => 'Gestão de Usuários', 'route' => 'admin.users', 'icon' => 'fas fa-users-cog'],
@@ -337,40 +187,107 @@ class MenuService
                     ['name' => 'billing_credits', 'label' => 'Cobrança / Créditos', 'route' => 'admin.billing.credits', 'icon' => 'fas fa-credit-card'],
                     ['name' => 'finance_mgmt', 'label' => 'Gestão de Cobrança', 'route' => 'admin.financial.management', 'icon' => 'fas fa-file-invoice-dollar'],
                     ['name' => 'report_sys', 'label' => 'Relatórios Globais', 'route' => 'admin.financial.reports', 'icon' => 'fas fa-chart-pie'],
+                    ['name' => 'marketing_banners', 'label' => 'Marketing: Banners', 'route' => 'admin.marketing.banners.index', 'icon' => 'fas fa-ad'],
                 ], $isPremium),
             ];
         }
 
-        // 5. Atendimento & Ajuda
-        if ($user) {
-            $supportItems = [
-                ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'fas fa-life-ring'],
-                ['name' => 'help_center', 'label' => 'Base de Conhecimento', 'route' => 'kb.index', 'icon' => 'fas fa-book'],
-                ['name' => 'manual', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'fas fa-graduation-cap'],
-                ['name' => 'community', 'label' => 'Comunidade NexShape', 'route' => 'groups.index', 'icon' => 'fas fa-users'],
-                ['name' => 'sys_status', 'label' => 'Status do Sistema', 'route' => 'system.status', 'icon' => 'fas fa-signal'],
-                ['name' => 'legal_terms', 'label' => 'Termos & Privacidade', 'route' => 'legal.terms', 'icon' => 'fas fa-shield-alt'],
-            ];
-
-            // Filtro específico para o perfil Paciente
-            if ($user->hasRole('paciente') && !$user->isAdministrator()) {
-                $supportItems = [
-                    ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'fas fa-life-ring'],
-                    ['name' => 'legal_terms', 'label' => 'Termos & Privacidade', 'route' => 'legal.terms', 'icon' => 'fas fa-shield-alt'],
-                ];
-            }
-
+        // 2. Menu da Recepção / Clínica (Para recepção, gestor ou admin explorando)
+        if (($user->hasRole(['receptionist', 'manager']) && (!$activeRole || in_array($activeRole, ['receptionist', 'manager', 'gestor']))) || ($isAdmin && $activeRole === 'admin')) {
+             // Admin vê recepção mesmo em 'admin' mode por ser parte da gestão clínica
             $groups[] = [
-                'id' => 'support',
-                'label' => 'Atendimento & Ajuda',
-                'icon' => 'fas fa-headset',
-                'items' => $this->prepareItems($user, $supportItems, $isPremium),
+                'id' => 'reception',
+                'label' => 'Menu da Recepção',
+                'icon' => 'fas fa-concierge-bell',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'recep_dashboard', 'label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'fas fa-home'],
+                    ['name' => 'user_registration', 'label' => 'Cadastro de Usuário', 'route' => 'admin.registrations.index', 'icon' => 'fas fa-user-plus'],
+                    ['name' => 'presence', 'label' => 'Controle de Presença', 'route' => 'admin.users', 'icon' => 'fas fa-id-card'],
+                    ['name' => 'calendar', 'label' => 'Agenda Geral', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-day'],
+                    ['name' => 'clinic_settings', 'label' => 'Gestão da Clínica', 'route' => 'admin.clinic.settings', 'icon' => 'fas fa-building'],
+                    ['name' => 'clinic_protocols', 'label' => 'Protocolos Padrão', 'route' => 'admin.clinic.protocols.index', 'icon' => 'fas fa-notes-medical'],
+                    ['name' => 'clinic_billing', 'label' => 'Faturamento/Assinatura', 'route' => 'admin.clinic.billing', 'icon' => 'fas fa-credit-card'],
+                ], $isPremium),
             ];
         }
 
+        // 3. Portal do Profissional (Profissional, instrutor ou admin explorando)
+        if (($user->hasRole(['professional', 'instructor']) && (!$activeRole || $activeRole === 'professional')) || ($isAdmin && $activeRole === 'professional')) {
+            $groups[] = [
+                'id' => 'professional',
+                'label' => 'Portal do Profissional',
+                'icon' => 'fas fa-user-md',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'prof_dashboard', 'label' => 'Painel de Controle', 'route' => 'professional.dashboard', 'icon' => 'fas fa-tachometer-alt'],
+                    ['name' => 'prof_agenda', 'label' => 'Minha Agenda', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-alt'],
+                    ['name' => 'prof_patients', 'label' => 'Meus Pacientes', 'route' => 'professional.patients.index', 'icon' => 'fas fa-user-friends'],
+                    ['name' => 'prof_library', 'label' => 'Biblioteca de Exercícios', 'route' => 'exercise.catalog', 'icon' => 'fas fa-book-medical'],
+                    ['name' => 'prof_protocols', 'label' => 'Protocolos de Treino', 'route' => 'progression.plans.index', 'icon' => 'fas fa-dumbbell'],
+                    ['name' => 'prof_assessments', 'label' => 'Avaliações Físicas', 'route' => 'assessments.index', 'icon' => 'fas fa-file-medical-alt'],
+                ], $isPremium),
+            ];
+        }
+
+        // 4. Painel do Aluno / Atleta (Aluno ou admin explorando)
+        if (($user->hasRole('aluno') && (!$activeRole || $activeRole === 'aluno')) || ($isAdmin && $activeRole === 'aluno')) {
+            $groups[] = [
+                'id' => 'athlete',
+                'label' => 'Painel do Aluno',
+                'icon' => 'fas fa-dumbbell',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'fas fa-th-large'],
+                    ['name' => 'training', 'label' => 'Meus Treinos', 'route' => 'progression.plans.index', 'icon' => 'fas fa-running'],
+                    ['name' => 'diet', 'label' => 'Dieta & Nutrição', 'route' => 'diary', 'icon' => 'fas fa-utensils'],
+                    ['name' => 'evolution', 'label' => 'Minha Evolução', 'route' => 'evolution.index', 'icon' => 'fas fa-chart-line'],
+                    ['name' => 'community', 'label' => 'Comunidade NexShape', 'route' => 'community.index', 'icon' => 'fas fa-users'],
+                    ['name' => 'assessments', 'label' => 'Avaliações', 'route' => 'body-analysis.index', 'icon' => 'fas fa-heartbeat'],
+                    ['name' => 'profile', 'label' => 'Meu Perfil', 'route' => 'profile', 'icon' => 'fas fa-user-circle'],
+                ], $isPremium),
+            ];
+        }
+
+        // 5. Painel do Paciente (Paciente ou admin explorando)
+        if (($user->hasRole('paciente') && (!$activeRole || $activeRole === 'paciente')) || ($isAdmin && $activeRole === 'paciente')) {
+            $groups[] = [
+                'id' => 'patient',
+                'label' => 'Painel do Paciente',
+                'icon' => 'fas fa-user-injured',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'patient_dashboard', 'label' => 'Visão Geral', 'route' => 'patient.unified.dashboard', 'icon' => 'fas fa-hospital-user'],
+                    ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'fas fa-file-medical'],
+                    ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'fas fa-file-invoice'],
+                    ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'fas fa-calendar-check'],
+                ], $isPremium),
+            ];
+        }
+
+        // 6. Portal do Representante
+        if ($user->hasRole('representative') && (!$activeRole || $activeRole === 'representative')) {
+            $groups[] = [
+                'id' => 'representative',
+                'label' => 'Portal do Representante',
+                'icon' => 'fas fa-handshake',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'rep_dashboard', 'label' => 'Minhas Vendas', 'route' => 'representative.dashboard', 'icon' => 'fas fa-chart-bar'],
+                    ['name' => 'rep_clients', 'label' => 'Meus Clientes', 'route' => 'representative.referrals', 'icon' => 'fas fa-users'],
+                ], $isPremium),
+            ];
+        }
+
+        // 7. Atendimento & Ajuda
+        $groups[] = [
+            'id' => 'support',
+            'label' => 'Suporte e Ajuda',
+            'icon' => 'fas fa-question-circle',
+            'items' => $this->prepareItems($user, [
+                ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'fas fa-life-ring'],
+                ['name' => 'kb_index', 'label' => 'Ajuda', 'route' => 'kb.index', 'icon' => 'fas fa-book'],
+                ['name' => 'legal_terms', 'label' => 'Privacidade', 'route' => 'legal.terms', 'icon' => 'fas fa-shield-alt'],
+            ], $isPremium),
+        ];
+
         return $groups;
     }
-
 
     /**
      * Garante no máximo um item ativo; em empate (mesma rota em vários links), mantém o primeiro na ordem do menu.

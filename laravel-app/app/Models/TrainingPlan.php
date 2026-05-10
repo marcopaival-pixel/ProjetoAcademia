@@ -30,6 +30,7 @@ class TrainingPlan extends Model
         'is_template',
         'total_volume',
         'muscles_worked',
+        'created_by_ai',
     ];
 
     protected $casts = [
@@ -37,6 +38,7 @@ class TrainingPlan extends Model
         'muscles_worked' => 'array',
         'is_active' => 'boolean',
         'is_template' => 'boolean',
+        'created_by_ai' => 'boolean',
     ];
 
     public function user(): BelongsTo
