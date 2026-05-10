@@ -63,6 +63,13 @@
                 <div class="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-500 shadow-xl">
                     <i data-lucide="user" class="w-5 h-5"></i>
                 </div>
+                
+                <form action="{{ route('logout') }}" method="POST" class="ml-2">
+                    @csrf
+                    <button type="submit" class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-zinc-950 transition-all shadow-lg" title="Sair">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </form>
             </div>
         </header>
 

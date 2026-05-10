@@ -59,9 +59,58 @@
                 </div>
             </div>
 
+            <!-- NexBot Coach Feed -->
+            <div class="lg:col-span-1 space-y-4">
+                <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                    NexBot Coach Feed
+                </h3>
+                <div class="space-y-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+                    @php
+                        $alerts = \App\Models\HealthAlert::where('user_id', auth()->id())->latest()->take(5)->get();
+                    @endphp
+                    @forelse($alerts as $alert)
+                        <div class="p-4 rounded-2xl bg-zinc-900 border {{ $alert->severity === 'danger' ? 'border-red-500/20' : ($alert->severity === 'warning' ? 'border-amber-500/20' : 'border-blue-500/20') }} flex gap-4 animate-fade-in-up">
+                            <div class="w-10 h-10 rounded-xl {{ $alert->severity === 'danger' ? 'bg-red-500/10 text-red-500' : ($alert->severity === 'warning' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500') }} flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="{{ $alert->severity === 'danger' ? 'alert-triangle' : ($alert->severity === 'warning' ? 'zap' : 'info') }}" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-zinc-300 leading-relaxed">{{ $alert->message }}</p>
+                                <span class="text-[8px] text-zinc-600 font-black uppercase mt-1 block">{{ $alert->created_at->diffForHumans() }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="py-12 text-center border-2 border-dashed border-zinc-800 rounded-3xl">
+                            <i data-lucide="shield-check" class="w-8 h-8 text-zinc-800 mx-auto mb-2"></i>
+                            <p class="text-xs text-zinc-600 font-bold uppercase">Tudo em dia!</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
             <!-- Quick Metrics & Status -->
             <div class="space-y-8">
                 <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl">
+                    <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-8">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                        Status de Saúde IA
+                    </h3>
+                    <div class="flex items-center gap-6 mb-8">
+                        <div class="relative w-20 h-20">
+                            <svg class="w-full h-full transform -rotate-90">
+                                <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent" class="text-zinc-800" />
+                                <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent" class="text-emerald-500" stroke-dasharray="{{ 226 * ((auth()->user()->health_score ?? 50) / 100) }} 226" />
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-xl font-black text-white">{{ auth()->user()->health_score ?? '--' }}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">NexShape Score</div>
+                            <div class="text-sm font-bold text-white">Excelente Progresso!</div>
+                        </div>
+                    </div>
+
                     <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2 mb-8">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                         Última Composição

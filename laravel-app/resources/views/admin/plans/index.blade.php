@@ -4,7 +4,7 @@
 <div class="p-6" x-data="{ selectedPlan: null }">
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-3xl font-black bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
                 Gestão de Planos de Assinatura
             </h1>
             <p class="text-gray-400 mt-1 uppercase text-[10px] font-black tracking-widest">Configure os níveis de acesso e preços do sistema</p>
@@ -65,17 +65,17 @@
                 
                 <div class="flex items-baseline gap-1 mb-6">
                     <span class="text-gray-400 text-xs font-bold uppercase">R$</span>
-                    <span class="text-4xl font-black text-white leading-none">{{ number_format($plan->price, 2, ',', '.') }}</span>
+                    <span class="text-2xl font-bold text-white leading-none">{{ number_format($plan->price, 2, ',', '.') }}</span>
                     <span class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">/mês</span>
                 </div>
 
                 <div class="flex items-center justify-between pt-6 border-t border-white/10 mt-auto">
                     <div class="flex flex-col">
-                        <span class="text-2xl font-black text-white leading-none">{{ $plan->plan_features_count }}</span>
+                        <span class="text-xl font-bold text-white leading-none">{{ $plan->plan_features_count }}</span>
                         <span class="text-[9px] text-gray-500 uppercase font-black mt-1">Funcionalidades</span>
                     </div>
                     <div class="flex flex-col text-right">
-                        <span class="text-2xl font-black text-blue-400 leading-none">{{ $plan->ai_credits }}</span>
+                        <span class="text-xl font-bold text-blue-400 leading-none">{{ $plan->ai_credits }}</span>
                         <span class="text-[9px] text-gray-500 uppercase font-black mt-1">Créditos IA</span>
                     </div>
                 </div>
@@ -109,7 +109,7 @@
                         <i class="fas fa-crown"></i>
                     </div>
                     <div>
-                        <h2 class="text-3xl font-black text-white tracking-tight" x-text="selectedPlan?.name"></h2>
+                        <h2 class="text-2xl font-bold text-white tracking-tight" x-text="selectedPlan?.name"></h2>
                         <div class="flex gap-2 items-center mt-1">
                             <span class="text-[10px] text-blue-400 font-black uppercase tracking-widest" x-text="selectedPlan?.type"></span>
                             <span class="w-1 h-1 rounded-full bg-zinc-700"></span>

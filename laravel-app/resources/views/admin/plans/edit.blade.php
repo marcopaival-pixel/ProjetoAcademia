@@ -110,6 +110,51 @@
                 </div>
             </div>
 
+            <!-- Advanced Settings (Corporate & Trial) -->
+            <div class="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 space-y-8 md:col-span-2">
+                <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                    <div class="w-8 h-8 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 text-sm border border-amber-500/20">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    Configurações Avançadas
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div>
+                        <label class="block text-xs font-black text-gray-500 mb-3 uppercase tracking-widest ml-1">Período de Teste (Dias)</label>
+                        <input type="number" name="trial_days" value="{{ old('trial_days', $plan->trial_days ?? 0) }}" required
+                            class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all">
+                        <p class="text-[9px] text-gray-600 mt-2 ml-2 italic">0 = Sem trial</p>
+                    </div>
+
+                    <div class="flex flex-col justify-center">
+                        <label class="flex items-center gap-4 cursor-pointer group p-3 rounded-2xl border border-white/[0.03] hover:bg-white/[0.03] transition-all">
+                            <input type="checkbox" name="is_corporate" id="is_corporate" value="1" class="hidden peer" {{ old('is_corporate', $plan->is_corporate) ? 'checked' : '' }} onchange="toggleCorporateFields(this.checked)">
+                            <div class="w-6 h-6 rounded-lg border-2 border-white/10 flex items-center justify-center peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all">
+                                <i class="fas fa-check text-white text-[10px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                            </div>
+                            <div>
+                                <span class="block text-gray-300 font-bold text-sm">Plano Corporativo</span>
+                                <span class="block text-gray-500 text-[10px]">Cobrança por profissional adicional</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="corporate-fields" class="{{ old('is_corporate', $plan->is_corporate) ? '' : 'hidden' }} space-y-6 md:col-span-1 border-l border-white/5 pl-8">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Preço p/ Profissional Extra</label>
+                            <input type="number" step="0.01" name="price_per_professional" value="{{ old('price_per_professional', $plan->price_per_professional) }}"
+                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Mínimo de Profissionais</label>
+                            <input type="number" name="min_professionals" value="{{ old('min_professionals', $plan->min_professionals) }}"
+                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Features -->
             <div class="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 md:col-span-2">
                 <h3 class="text-xl font-bold text-white flex items-center gap-3 mb-8">
@@ -158,6 +203,17 @@
         </div>
     </form>
 </div>
+
+<script>
+    function toggleCorporateFields(checked) {
+        const fields = document.getElementById('corporate-fields');
+        if (checked) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    }
+</script>
 
 <style>
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }

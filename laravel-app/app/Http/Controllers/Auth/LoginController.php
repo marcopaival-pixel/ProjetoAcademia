@@ -59,6 +59,13 @@ class LoginController extends Controller
             ]);
         }
 
+        // 0. Verificação de validade de senha temporária (Reset Forçado)
+        if ($user->force_password_change && $user->temp_password_expires_at && $user->temp_password_expires_at->isPast()) {
+            throw ValidationException::withMessages([
+                'email' => 'Esta senha temporária expirou (24h). Solicite um novo reset ao administrador.',
+            ]);
+        }
+
         // Se passou pelos filtros de credenciais, logamos o usuário para iniciar a sessão
         Auth::login($user, $request->boolean('remember'));
 
@@ -70,6 +77,12 @@ class LoginController extends Controller
             // e o redirecionamento abaixo garante que ele veja a instrução imediatamente.
             return redirect()->route('verification.notice', ['email' => $user->email])
                 ->with('error', 'Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.');
+        }
+
+        // 1.5 Redirecionamento para troca de senha obrigatória
+        if ($user->force_password_change) {
+            return redirect()->route('password.change.force')
+                ->with('warning', 'Sua senha foi resetada pelo administrador. Você deve definir uma nova senha agora.');
         }
 
         // 2. Bloqueio por status da conta (Bloqueado)

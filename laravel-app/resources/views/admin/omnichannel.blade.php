@@ -39,7 +39,7 @@
     <!-- List Column -->
     <div class="omni-sidebar">
         <div class="omni-sidebar-header">
-            <h3 class="text-white font-black text-2xl tracking-tighter">Central <span class="text-blue-500">Nex</span></h3>
+            <h3 class="text-white font-bold text-xl tracking-tight">Central <span class="text-blue-500">Nex</span></h3>
             <div class="flex items-center gap-2 mt-4">
                 <div id="api-status" class="w-2 h-2 rounded-full bg-gray-600"></div>
                 <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest" id="status-text">Conectando Workspace...</span>
@@ -59,7 +59,7 @@
         <div class="omni-chat-header" id="chat-header">
             <div class="flex flex-col">
                 <span class="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Aguardando Seleção</span>
-                <h3 class="text-white font-black text-xl">Workspace NexCentral</h3>
+                <h3 class="text-white font-bold text-lg">Workspace NexCentral</h3>
             </div>
             <div class="flex items-center gap-4">
                  <a href="{{ route('admin.omnichannel.bots') }}" class="p-3 bg-white/5 hover:bg-white/10 text-zinc-400 rounded-2xl transition-all border border-white/5">
@@ -74,7 +74,7 @@
                     <i class="fas fa-comments text-4xl"></i>
                 </div>
                 <div>
-                    <h4 class="text-white font-black text-xl">Atendimento Multicanal</h4>
+                    <h4 class="text-white font-bold text-lg">Atendimento Multicanal</h4>
                     <p class="text-xs font-medium text-zinc-500 max-w-[250px] mx-auto mt-2 leading-relaxed">Centralize WhatsApp, Widget e direct em um único workspace profissional.</p>
                 </div>
             </div>
@@ -95,7 +95,7 @@
     <div class="omni-right-panel" id="customer-panel">
         <div class="text-center">
             <div class="customer-avatar" id="c-avatar">?</div>
-            <h3 class="text-white font-black text-2xl tracking-tight mb-1" id="c-name">Paciente</h3>
+            <h3 class="text-white font-bold text-xl tracking-tight mb-1" id="c-name">Paciente</h3>
             <p class="text-blue-500 text-[10px] font-black uppercase tracking-[0.2em]" id="c-status">Offline</p>
         </div>
 

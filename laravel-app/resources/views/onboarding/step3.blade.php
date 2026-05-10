@@ -1,42 +1,93 @@
-@extends('layouts.onboarding')
+@extends('layouts.onboarding-premium')
 
-@section('title', 'Passo 3: Atividade — NexShape')
-@section('step_number', '03/08')
-@section('back_route', route('onboarding.step2'))
+@section('title', 'Contato')
+@section('step_title', 'Canais de Atendimento')
+@section('step_description', 'Como seus clientes e nossa equipe podem entrar em contato com você?')
 
-@section('onboarding_content')
-<div class="space-y-8 animate-fade-up">
-    <header class="space-y-4">
-        <h2 class="text-4xl font-black text-white tracking-tight leading-tight">Qual seu nível de atividade?</h2>
-        <p class="text-zinc-400 text-base font-medium">Seja honesto. Isso é crucial para o cálculo do seu TDEE.</p>
-    </header>
+@section('content')
+<form action="{{ route('onboarding-premium.step.save', 3) }}" method="POST" class="space-y-12">
+    @csrf
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Telefone Fixo -->
+        <div class="space-y-3" x-data="{ 
+            phone: '{{ old('phone', $company->phone ?? '') }}',
+            mask() {
+                let v = this.phone.replace(/\D/g, '');
+                v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+                v = v.replace(/(\d)(\d{4})$/, '$1-$2');
+                this.phone = v.substring(0, 15);
+            }
+        }">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Telefone Principal</label>
+            <div class="relative">
+                <i class="fas fa-phone absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600"></i>
+                <input type="text" name="phone" x-model="phone" @input="mask()"
+                    placeholder="(00) 0000-0000"
+                    class="w-full input-premium pl-14">
+            </div>
+        </div>
 
-    <form action="{{ route('onboarding.step3.save') }}" method="POST" class="space-y-4">
-        @csrf
+        <!-- WhatsApp -->
+        <div class="space-y-3" x-data="{ 
+            whatsapp: '{{ old('whatsapp', $company->whatsapp ?? '') }}',
+            mask() {
+                let v = this.whatsapp.replace(/\D/g, '');
+                v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+                v = v.replace(/(\d)(\d{4})$/, '$1-$2');
+                this.whatsapp = v.substring(0, 15);
+            }
+        }">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">WhatsApp</label>
+            <div class="relative">
+                <i class="fab fa-whatsapp absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500"></i>
+                <input type="text" name="whatsapp" x-model="whatsapp" @input="mask()" required
+                    placeholder="(00) 90000-0000"
+                    class="w-full input-premium pl-14">
+            </div>
+        </div>
+
+        <!-- E-mail Comercial -->
         <div class="space-y-3">
-            @foreach([
-                'Não muito ativo' => 'Trabalho sentado, pouco exercício.',
-                'Levemente ativo' => 'Exercício leve 1-3 dias/semana.',
-                'Ativo' => 'Exercício moderado 3-5 dias/semana.',
-                'Bastante ativo' => 'Exercício intenso 6-7 dias/semana.'
-            ] as $level => $desc)
-                <label class="group relative cursor-pointer block">
-                    <input type="radio" name="activity_level" value="{{ $level }}" class="peer sr-only" required>
-                    <div class="p-5 bg-white/5 border-2 border-white/10 rounded-2xl transition-all duration-300 group-hover:bg-white/10 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10">
-                        <div class="flex flex-col">
-                            <span class="text-lg font-bold text-white">{{ $level }}</span>
-                            <span class="text-sm text-zinc-500">{{ $desc }}</span>
-                        </div>
-                    </div>
-                </label>
-            @endforeach
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">E-mail Comercial</label>
+            <div class="relative">
+                <i class="fas fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600"></i>
+                <input type="email" name="email" value="{{ old('email', $company->responsible_email ?? '') }}" required
+                    placeholder="contato@suaempresa.com"
+                    class="w-full input-premium pl-14">
+            </div>
         </div>
 
-        <div class="pt-8">
-            <button type="submit" class="w-full py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] uppercase tracking-widest text-sm transform hover:-translate-y-1">
-                Avançar
-            </button>
+        <!-- Site / Landing Page -->
+        <div class="space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Site / Landing Page</label>
+            <div class="relative">
+                <i class="fas fa-globe absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600"></i>
+                <input type="url" name="website" value="{{ old('website', $company->website ?? '') }}"
+                    placeholder="https://www.seusite.com"
+                    class="w-full input-premium pl-14">
+            </div>
         </div>
-    </form>
-</div>
+
+        <!-- Instagram -->
+        <div class="md:col-span-2 space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Instagram</label>
+            <div class="relative">
+                <i class="fab fa-instagram absolute left-5 top-1/2 -translate-y-1/2 text-pink-500"></i>
+                <input type="text" name="instagram" value="{{ old('instagram', $company->instagram ?? '') }}"
+                    placeholder="@seuusuario"
+                    class="w-full input-premium pl-14">
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <a href="{{ route('onboarding-premium.step', 2) }}" class="text-zinc-500 hover:text-white font-bold transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Voltar
+        </a>
+        <button type="submit" class="btn-premium w-full sm:w-auto flex items-center justify-center gap-3">
+            Continuar para Endereço <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
 @endsection

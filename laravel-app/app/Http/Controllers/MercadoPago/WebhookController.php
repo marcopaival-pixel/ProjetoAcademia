@@ -132,7 +132,7 @@ class WebhookController extends Controller
 
         if ($preapprovalNotifyId !== null && $preapprovalNotifyId !== '') {
             try {
-                $result = $mp->syncPreapprovalWebhook($token, $preapprovalNotifyId);
+                $result = $mp->syncPreapprovalWebhook($preapprovalNotifyId);
                 if (! $result['ok']) {
                     Log::warning('[mp_webhook] preapproval '.$preapprovalNotifyId.': '.$result['message']);
 
@@ -151,7 +151,7 @@ class WebhookController extends Controller
             return response('ok', 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
-        $payRes = $mp->fetchPayment($token, $paymentId);
+        $payRes = $mp->fetchPayment($paymentId);
         if (! $payRes['ok']) {
             Log::warning('[mp_webhook] fetch payment '.$paymentId.': '.$payRes['error']);
 

@@ -45,6 +45,14 @@ class UserProfile extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'profile_completed_at',
+        'physical_level',
+        'experience_level',
+        'training_location',
+        'cardio_frequency',
+        'sleep_hours',
+        'nutrition_quality',
+        'available_daily_time_mins',
+        'fitness_notes',
     ];
 
     protected function casts(): array
@@ -65,6 +73,9 @@ class UserProfile extends Model
             'uses_medication' => 'boolean',
             'has_allergy' => 'boolean',
             'profile_completed_at' => 'datetime',
+            'sleep_hours' => 'integer',
+            'nutrition_quality' => 'integer',
+            'available_daily_time_mins' => 'integer',
         ];
     }
 

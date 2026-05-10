@@ -74,6 +74,9 @@
     </div>
 
     <div class="relative z-10 py-10 px-6 max-w-2xl mx-auto space-y-12">
+        <!-- App Promotion Banner -->
+        <x-marketing.promo-banner />
+
         <!-- Header -->
         <header class="flex flex-col gap-8">
             <div class="flex items-center justify-between">
@@ -94,9 +97,15 @@
                 </div>
                 
                 <div class="flex gap-2">
-                    <a href="{{ route('patient.dashboard.choice') }}" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white hover:border-blue-500/50 transition-all gap-2">
+                    <a href="{{ route('patient.dashboard.choice') }}" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white hover:border-blue-500/50 transition-all gap-2" title="Escolher Dashboard">
                         <i data-lucide="layout-grid" class="w-5 h-5"></i>
                     </a>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/50 transition-all" title="Encerrar Sessão">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
 

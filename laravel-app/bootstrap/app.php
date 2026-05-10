@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'mp/webhook',
             'mp_webhook.php',
+            'payment/webhook/*',
             'logout',
             'admin/logout',
             'omni/webhook',
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\EnsureRegistrationApproved::class,
             \App\Http\Middleware\EnsureEmailIsVerified::class,
+            \App\Http\Middleware\EnsurePasswordIsNotForced::class,
             \App\Http\Middleware\TenantMiddleware::class, // Adicionado aqui para contexto global
             \App\Http\Middleware\ProfileCompletionMiddleware::class,
             \App\Http\Middleware\UpdateLastActivity::class,
@@ -35,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\CheckReadOnlyMode::class,
             \App\Http\Middleware\HandleClinicImpersonation::class,
             \App\Http\Middleware\RepresentativeTrackingMiddleware::class,
+            \App\Http\Middleware\EnsureDemoSafety::class,
         ]);
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,

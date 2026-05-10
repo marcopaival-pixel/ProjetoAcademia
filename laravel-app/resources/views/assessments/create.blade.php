@@ -76,8 +76,67 @@
                 </div>
             </x-premium-card>
 
-            <x-premium-card title="Anotações" icon="message-square" iconColor="emerald">
-                <textarea name="notes" rows="4" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all" placeholder="Sentiu alguma diferença? Novo protocolo?"></textarea>
+            <x-premium-card title="Objetivos e Rotina" icon="target" iconColor="emerald">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <x-premium-input label="Peso Desejado (kg)" name="target_weight_kg" type="number" step="0.1" value="{{ auth()->user()->profile->target_weight_kg ?? '' }}" icon="target" />
+                    
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Nível Físico</label>
+                        <select name="physical_level" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none">
+                            <option value="beginner" {{ (auth()->user()->profile->physical_level ?? '') == 'beginner' ? 'selected' : '' }}>Iniciante</option>
+                            <option value="intermediate" {{ (auth()->user()->profile->physical_level ?? '') == 'intermediate' ? 'selected' : '' }}>Intermediário</option>
+                            <option value="advanced" {{ (auth()->user()->profile->physical_level ?? '') == 'advanced' ? 'selected' : '' }}>Avançado</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Local de Treino</label>
+                        <select name="training_location" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none">
+                            <option value="gym" {{ (auth()->user()->profile->training_location ?? '') == 'gym' ? 'selected' : '' }}>Academia</option>
+                            <option value="home" {{ (auth()->user()->profile->training_location ?? '') == 'home' ? 'selected' : '' }}>Casa</option>
+                            <option value="outdoor" {{ (auth()->user()->profile->training_location ?? '') == 'outdoor' ? 'selected' : '' }}>Ar Livre</option>
+                        </select>
+                    </div>
+
+                    <x-premium-input label="Horas de Sono" name="sleep_hours" type="number" value="{{ auth()->user()->profile->sleep_hours ?? '' }}" icon="moon" />
+                    <x-premium-input label="Qualidade Alimentação (1-10)" name="nutrition_quality" type="number" min="1" max="10" value="{{ auth()->user()->profile->nutrition_quality ?? '' }}" icon="utensils" />
+                    <x-premium-input label="Tempo Disponível (min/dia)" name="available_daily_time_mins" type="number" value="{{ auth()->user()->profile->available_daily_time_mins ?? '' }}" icon="clock" />
+                </div>
+            </x-premium-card>
+
+            <x-premium-card title="Anotações e Restrições" icon="message-square" iconColor="emerald">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Restrições Médicas / Lesões</label>
+                        <textarea name="fitness_notes" rows="3" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all" placeholder="Ex: Hérnia de disco, Labirintite, etc.">{{ auth()->user()->profile->fitness_notes ?? '' }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Observações da Avaliação</label>
+                        <textarea name="notes" rows="3" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all" placeholder="Sentiu alguma diferença? Novo protocolo?"></textarea>
+                    </div>
+                </div>
+            </x-premium-card>
+
+            <x-premium-card title="Inteligência NexShape" icon="sparkles" iconColor="emerald">
+                <div class="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+                    <div class="flex-shrink-0">
+                        <input type="checkbox" name="generate_ai_training" id="generate_ai_training" class="w-6 h-6 rounded-lg bg-zinc-950 border-zinc-800 text-emerald-500 focus:ring-emerald-500/20 transition-all">
+                    </div>
+                    <div class="flex-1">
+                        <label for="generate_ai_training" class="text-sm font-bold text-white block">Gerar Plano de Treino via IA</label>
+                        <p class="text-[10px] text-zinc-500 uppercase tracking-widest">O NexBot criará um treino personalizado baseado nesta avaliação.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 mt-4">
+                    <div class="flex-shrink-0">
+                        <input type="checkbox" name="generate_ai_meal_plan" id="generate_ai_meal_plan" class="w-6 h-6 rounded-lg bg-zinc-950 border-zinc-800 text-emerald-500 focus:ring-emerald-500/20 transition-all">
+                    </div>
+                    <div class="flex-1">
+                        <label for="generate_ai_meal_plan" class="text-sm font-bold text-white block">Gerar Sugestões Alimentares via IA</label>
+                        <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Receba sugestões de refeições ajustadas às suas novas metas.</p>
+                    </div>
+                </div>
             </x-premium-card>
 
             <div class="flex flex-col sm:flex-row items-center gap-4 pt-6">

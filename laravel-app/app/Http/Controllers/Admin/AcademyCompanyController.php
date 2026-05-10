@@ -142,6 +142,9 @@ class AcademyCompanyController extends Controller
             'name' => ['required', 'string', 'max:191'],
             'legal_name' => ['nullable', 'string', 'max:191'],
             'tax_id' => ['nullable', 'string', 'max:64'],
+            'mercadopago_user_id' => ['nullable', 'string', 'max:100'],
+            'platform_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+            'platform_fee_fixed' => ['nullable', 'numeric', 'min:0'],
             'watermark_text' => ['nullable', 'string', 'max:120'],
             'watermark_opacity' => ['nullable', 'numeric', 'between:0.02,1'],
         ]);
@@ -164,6 +167,9 @@ class AcademyCompanyController extends Controller
             'name' => $data['name'],
             'legal_name' => $data['legal_name'] ?? null,
             'tax_id' => $data['tax_id'] ?? null,
+            'mercadopago_user_id' => $data['mercadopago_user_id'] ?? null,
+            'platform_fee_percent' => $data['platform_fee_percent'] ?? 10.00,
+            'platform_fee_fixed' => $data['platform_fee_fixed'] ?? 0.00,
             'pdf_settings' => $pdfSettings !== [] ? $pdfSettings : null,
         ]);
 

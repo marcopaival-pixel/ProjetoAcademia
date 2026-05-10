@@ -38,7 +38,7 @@
     x-transition:leave="transition ease-in duration-100"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
-    class="fixed bottom-5 right-5 z-[9999] max-w-sm w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-4 backdrop-blur-xl pointer-events-auto"
+    class="fixed bottom-5 right-5 z-[100000] max-w-sm w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-4 backdrop-blur-xl pointer-events-auto"
     style="display: none;"
 >
     <div class="flex items-center gap-4">

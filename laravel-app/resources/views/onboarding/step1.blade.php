@@ -1,32 +1,78 @@
-@extends('layouts.app')
+@extends('layouts.onboarding-premium')
 
-@extends('layouts.onboarding')
+@section('title', 'Tipo de Conta')
+@section('step_title', 'Como deseja utilizar o NexShape?')
+@section('step_description', 'Selecione o perfil que melhor se adapta às suas necessidades para personalizarmos sua experiência.')
 
-@section('title', 'Passo 1: Nome — NexShape')
-@section('step_number', '01/08')
-@section('back_route', route('onboarding.welcome'))
+@section('content')
+<form action="{{ route('onboarding-premium.start') }}" method="POST" id="onboarding-form" x-data="{ selected: '{{ old('account_type', '') }}' }">
+    @csrf
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Aluno -->
+        <label class="card-type group relative p-8 rounded-[32px] glass glass-hover transition-all overflow-hidden" 
+               :class="selected === 'aluno' ? 'selected' : ''"
+               @click="selected = 'aluno'">
+            <input type="radio" name="account_type" value="aluno" class="hidden" required :checked="selected === 'aluno'">
+            <div class="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                <i class="fas fa-user-graduate text-4xl text-blue-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Aluno / Paciente</h3>
+            <p class="text-zinc-400 text-sm leading-relaxed">Acesso individual para treinos, dietas e acompanhamento de saúde pessoal.</p>
+            <div class="mt-6 flex items-center text-blue-400 text-xs font-bold uppercase tracking-widest">
+                Começar agora <i class="fas fa-chevron-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </label>
 
-@section('onboarding_content')
-<div class="space-y-8 animate-fade-up">
-    <header class="space-y-4">
-        <h2 class="text-4xl font-black text-white tracking-tight leading-tight">Como podemos te chamar?</h2>
-        <p class="text-zinc-400 text-base font-medium">Isso nos ajuda a personalizar sua experiência.</p>
-    </header>
+        <!-- Profissional -->
+        <label class="card-type group relative p-8 rounded-[32px] glass glass-hover transition-all overflow-hidden"
+               :class="selected === 'profissional' ? 'selected' : ''"
+               @click="selected = 'profissional'">
+            <input type="radio" name="account_type" value="profissional" class="hidden" :checked="selected === 'profissional'">
+            <div class="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                <i class="fas fa-user-md text-4xl text-emerald-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Profissional</h3>
+            <p class="text-zinc-400 text-sm leading-relaxed">Para personal trainers e profissionais de saúde que atendem seus próprios alunos.</p>
+            <div class="mt-6 flex items-center text-emerald-400 text-xs font-bold uppercase tracking-widest">
+                Gerenciar alunos <i class="fas fa-chevron-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </label>
 
-    <form action="{{ route('onboarding.step1.save') }}" method="POST" class="space-y-10">
-        @csrf
-        <div class="group relative">
-            <input type="text" name="name" id="name" required placeholder="Seu nome ou apelido"
-                value="{{ old('name', Session::get('onboarding_data.name')) }}"
-                class="w-full bg-white/5 border-b-2 border-white/10 py-6 px-0 text-3xl font-bold text-white placeholder-zinc-700 focus:outline-none focus:border-blue-500 transition-all duration-300">
-            <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 group-focus-within:w-full transition-all duration-500"></div>
-        </div>
+        <!-- Clínica -->
+        <label class="card-type group relative p-8 rounded-[32px] glass glass-hover transition-all overflow-hidden"
+               :class="selected === 'clinica' ? 'selected' : ''"
+               @click="selected = 'clinica'">
+            <input type="radio" name="account_type" value="clinica" class="hidden" :checked="selected === 'clinica'">
+            <div class="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                <i class="fas fa-clinic-medical text-4xl text-purple-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Clínica / Academia</h3>
+            <p class="text-zinc-400 text-sm leading-relaxed">Gestão multi-unidade, multi-profissional e controle administrativo completo.</p>
+            <div class="mt-6 flex items-center text-purple-400 text-xs font-bold uppercase tracking-widest">
+                Solução Enterprise <i class="fas fa-chevron-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </label>
 
-        <div class="pt-6">
-            <button type="submit" class="w-full py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] uppercase tracking-widest text-sm transform hover:-translate-y-1">
-                Próximo Passo
-            </button>
-        </div>
-    </form>
-</div>
+        <!-- Franquia -->
+        <label class="card-type group relative p-8 rounded-[32px] glass glass-hover transition-all overflow-hidden"
+               :class="selected === 'franquia' ? 'selected' : ''"
+               @click="selected = 'franquia'">
+            <input type="radio" name="account_type" value="franquia" class="hidden" :checked="selected === 'franquia'">
+            <div class="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                <i class="fas fa-sitemap text-4xl text-amber-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Franquia</h3>
+            <p class="text-zinc-400 text-sm leading-relaxed">Controle centralizado de múltiplas marcas, unidades e faturamento consolidado.</p>
+            <div class="mt-6 flex items-center text-amber-400 text-xs font-bold uppercase tracking-widest">
+                Gestão de Rede <i class="fas fa-chevron-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        </label>
+    </div>
+
+    <div class="mt-16 flex justify-end">
+        <button type="submit" class="btn-premium flex items-center gap-3" :disabled="!selected">
+            Confirmar Seleção <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
 @endsection

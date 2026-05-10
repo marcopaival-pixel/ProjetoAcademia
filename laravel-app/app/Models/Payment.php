@@ -13,6 +13,8 @@ class Payment extends Model
         'gateway',
         'gateway_id',
         'amount',
+        'fee_amount',
+        'net_amount',
         'currency',
         'status',
         'payload',
@@ -21,6 +23,8 @@ class Payment extends Model
     protected $casts = [
         'payload' => 'array',
         'amount' => 'decimal:2',
+        'fee_amount' => 'decimal:2',
+        'net_amount' => 'decimal:2',
     ];
 
     public function user(): BelongsTo

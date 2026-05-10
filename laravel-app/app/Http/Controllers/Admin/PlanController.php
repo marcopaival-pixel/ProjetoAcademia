@@ -33,6 +33,10 @@ class PlanController extends Controller
             'max_assessments' => 'required|integer|min:0',
             'max_patients' => 'required|integer|min:0',
             'max_professionals' => 'required|integer|min:0',
+            'is_corporate' => 'boolean',
+            'price_per_professional' => 'nullable|numeric|min:0',
+            'min_professionals' => 'nullable|integer|min:1',
+            'trial_days' => 'required|integer|min:0',
             'features' => 'required|array',
             'features.*' => 'string'
         ]);
@@ -48,7 +52,11 @@ class PlanController extends Controller
             'max_assessments' => $validated['max_assessments'],
             'max_patients' => $validated['max_patients'],
             'max_professionals' => $validated['max_professionals'],
-            'status' => 'active',
+            'is_corporate' => $request->has('is_corporate'),
+            'price_per_professional' => $validated['price_per_professional'] ?? 0,
+            'min_professionals' => $validated['min_professionals'] ?? 1,
+            'trial_days' => $validated['trial_days'],
+            'is_active' => true,
         ]);
 
         foreach ($validated['features'] as $feature) {
@@ -77,6 +85,10 @@ class PlanController extends Controller
             'max_assessments' => 'required|integer|min:0',
             'max_patients' => 'required|integer|min:0',
             'max_professionals' => 'required|integer|min:0',
+            'is_corporate' => 'boolean',
+            'price_per_professional' => 'nullable|numeric|min:0',
+            'min_professionals' => 'nullable|integer|min:1',
+            'trial_days' => 'required|integer|min:0',
             'features' => 'required|array',
             'features.*' => 'string'
         ]);
@@ -92,6 +104,10 @@ class PlanController extends Controller
             'max_assessments' => $validated['max_assessments'],
             'max_patients' => $validated['max_patients'],
             'max_professionals' => $validated['max_professionals'],
+            'is_corporate' => $request->has('is_corporate'),
+            'price_per_professional' => $validated['price_per_professional'] ?? 0,
+            'min_professionals' => $validated['min_professionals'] ?? 1,
+            'trial_days' => $validated['trial_days'],
         ]);
 
         // Sincronizar features (abordagem simples: deleta e recria)

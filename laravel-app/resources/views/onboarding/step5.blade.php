@@ -1,58 +1,82 @@
-@extends('layouts.onboarding')
+@extends('layouts.onboarding-premium')
 
-@section('title', 'Passo 5: Medidas — NexShape')
-@section('step_number', '05/08')
-@section('back_route', route('onboarding.step4'))
+@section('title', 'Administrador')
+@section('step_title', 'Conta de Administrador')
+@section('step_description', 'Crie as credenciais de acesso para o gestor principal da conta.')
 
-@section('onboarding_content')
-<div class="space-y-10 animate-fade-up">
-    <header class="space-y-4">
-        <h2 class="text-4xl font-black text-white tracking-tight leading-tight">Suas Medidas</h2>
-        <p class="text-zinc-400 text-base font-medium">Estes dados são a base para o nosso cálculo metabólico.</p>
-    </header>
+@section('content')
+<form action="{{ route('onboarding-premium.step.save', 5) }}" method="POST" class="space-y-12" x-data="{
+    password: '',
+    confirm: '',
+    get strength() {
+        if (this.password.length === 0) return 0;
+        let s = 0;
+        if (this.password.length > 8) s += 25;
+        if (/[A-Z]/.test(this.password)) s += 25;
+        if (/[0-9]/.test(this.password)) s += 25;
+        if (/[^A-Za-z0-9]/.test(this.password)) s += 25;
+        return s;
+    },
+    get strengthColor() {
+        if (this.strength < 50) return 'bg-red-500';
+        if (this.strength < 75) return 'bg-yellow-500';
+        return 'bg-emerald-500';
+    }
+}">
+    @csrf
+    
+    <div class="space-y-8">
+        <!-- Nome do Admin -->
+        <div class="space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Nome Completo</label>
+            <input type="text" name="name" required
+                placeholder="Ex: Dr. João Silva"
+                class="w-full input-premium">
+        </div>
 
-    <form action="{{ route('onboarding.step5.save') }}" method="POST" class="space-y-12">
-        @csrf
-        
-        <div class="space-y-10">
-            <!-- Altura -->
+        <!-- E-mail do Admin -->
+        <div class="space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">E-mail de Acesso</label>
+            <input type="email" name="email" required
+                placeholder="admin@suaempresa.com"
+                class="w-full input-premium">
+            <p class="text-[10px] text-zinc-600 px-1">Este será o e-mail de login definitivo.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Senha -->
             <div class="space-y-3">
-                <label for="height" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Qual sua altura? (cm)</label>
-                <div class="relative group">
-                    <input type="number" name="height" id="height" step="1" required placeholder="175"
-                        class="w-full bg-white/5 border-b-2 border-white/10 py-4 px-0 text-4xl font-black text-white focus:outline-none focus:border-blue-500 transition-all appearance-none">
-                    <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-500 group-focus-within:w-full transition-all duration-500"></div>
+                <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Senha</label>
+                <input type="password" name="password" x-model="password" required
+                    placeholder="••••••••"
+                    class="w-full input-premium">
+                
+                <!-- Força da Senha -->
+                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-2">
+                    <div class="h-full transition-all duration-500" :class="strengthColor" :style="`width: ${strength}%`"></div>
                 </div>
+                <p class="text-[10px] text-zinc-600 px-1">Mínimo 8 caracteres, letras, números e símbolos.</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-8">
-                <!-- Peso Atual -->
-                <div class="space-y-3">
-                    <label for="weight" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Peso Atual (kg)</label>
-                    <div class="relative group">
-                        <input type="number" name="weight" id="weight" step="0.1" required placeholder="70.0"
-                            class="w-full bg-white/5 border-b-2 border-white/10 py-4 px-0 text-3xl font-black text-white focus:outline-none focus:border-emerald-500 transition-all appearance-none">
-                        <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 group-focus-within:w-full transition-all duration-500"></div>
-                    </div>
-                </div>
-
-                <!-- Peso Desejado -->
-                <div class="space-y-3">
-                    <label for="target_weight" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Peso Desejado</label>
-                    <div class="relative group">
-                        <input type="number" name="target_weight" id="target_weight" step="0.1" required placeholder="65.0"
-                            class="w-full bg-white/5 border-b-2 border-white/10 py-4 px-0 text-3xl font-black text-white focus:outline-none focus:border-blue-400 transition-all appearance-none">
-                        <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-focus-within:w-full transition-all duration-500"></div>
-                    </div>
-                </div>
+            <!-- Confirmação -->
+            <div class="space-y-3">
+                <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Confirmar Senha</label>
+                <input type="password" name="password_confirmation" x-model="confirm" required
+                    placeholder="••••••••"
+                    class="w-full input-premium"
+                    :class="password !== confirm && confirm !== '' ? 'border-red-500/50' : ''">
+                <p x-show="password !== confirm && confirm !== ''" class="text-[10px] text-red-400 px-1 mt-2">As senhas não coincidem.</p>
             </div>
         </div>
+    </div>
 
-        <div class="pt-4">
-            <button type="submit" class="w-full py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] uppercase tracking-widest text-sm transform hover:-translate-y-1">
-                Calcular Plano
-            </button>
-        </div>
-    </form>
-</div>
+    <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <a href="{{ route('onboarding-premium.step', 4) }}" class="text-zinc-500 hover:text-white font-bold transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Voltar
+        </a>
+        <button type="submit" class="btn-premium w-full sm:w-auto flex items-center justify-center gap-3" :disabled="strength < 50 || password !== confirm">
+            Continuar para Ajustes <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
 @endsection

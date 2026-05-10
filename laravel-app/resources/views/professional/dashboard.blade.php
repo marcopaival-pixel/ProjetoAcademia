@@ -4,6 +4,9 @@
 
 @section('content')
 <div class="py-10 space-y-12 animate-dashboard-entry mx-auto px-4 md:px-6" x-data="{ showFinance: true }">
+    <!-- App Promotion Banner -->
+    <x-marketing.promo-banner />
+
     <!-- Quick Actions Bar (New Tool) -->
     <div class="flex flex-wrap items-center gap-4 p-4 bg-zinc-900/60 backdrop-blur-2xl rounded-3xl border border-white/5 shadow-2xl overflow-x-auto no-scrollbar">
         <span class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] px-4 border-r border-white/5 mr-2">Ações Rápidas</span>
@@ -22,6 +25,9 @@
         </a>
         <a href="{{ route('assessments.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
             <i data-lucide="clipboard-check" class="w-4 h-4"></i> AVALIAÇÃO
+        </a>
+        <a href="{{ route('professional.evolution.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-emerald-400 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-emerald-500/10 shadow-lg shadow-emerald-500/5">
+            <i data-lucide="line-chart" class="w-4 h-4"></i> HUB EVOLUÇÃO
         </a>
         <a href="{{ route('kb.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-emerald-400 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-emerald-500/10">
             <i data-lucide="help-circle" class="w-4 h-4"></i> CENTRAL DE AJUDA
@@ -241,7 +247,8 @@
                         <thead>
                             <tr class="text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] border-b border-white/5">
                                 <th class="pb-6">PACIENTE</th>
-                                <th class="pb-6">BIO-STATUS / EVOLUÇÃO</th>
+                                <th class="pb-6">SAÚDE & ENGAJAMENTO</th>
+                                <th class="pb-6">STATUS</th>
                                 <th class="pb-6">PRONTUÁRIO</th>
                             </tr>
                         </thead>
@@ -260,15 +267,26 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="space-y-3 w-48">
-                                        <div class="flex justify-between items-end">
-                                            <span class="text-[9px] font-black text-zinc-500 uppercase">{{ $p['status'] }}</span>
-                                            <span class="text-sm font-black text-white">{{ $p['engage'] }}%</span>
+                                    <div class="flex items-center gap-8">
+                                        <div class="flex flex-col">
+                                            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Health Score</span>
+                                            <span class="text-xl font-black text-white italic tracking-tighter">{{ $p['health_score'] }}%</span>
                                         </div>
-                                        <div class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
-                                            <div class="h-full bg-gradient-to-r {{ $p['color'] }} rounded-full" style="width: {{ $p['engage'] }}%"></div>
+                                        <div class="space-y-2 w-32">
+                                            <div class="flex justify-between items-end">
+                                                <span class="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Engage</span>
+                                                <span class="text-[10px] font-black text-white">{{ $p['engage'] }}%</span>
+                                            </div>
+                                            <div class="h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                                                <div class="h-full bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]" style="width: {{ $p['engage'] }}%"></div>
+                                            </div>
                                         </div>
                                     </div>
+                                </td>
+                                <td>
+                                    <span class="px-3 py-1 rounded-lg {{ $p['health_score'] > 70 ? 'bg-emerald-500/10 text-emerald-500' : ($p['health_score'] > 40 ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500') }} text-[9px] font-black uppercase tracking-widest border {{ $p['health_score'] > 70 ? 'border-emerald-500/20' : ($p['health_score'] > 40 ? 'border-amber-500/20' : 'border-rose-500/20') }}">
+                                        {{ $p['status'] }}
+                                    </span>
                                 </td>
                                 <td class="text-right pr-6">
                                     <div class="flex gap-2 justify-end">
@@ -304,7 +322,7 @@
                         @foreach($tasks as $task)
                         <div class="p-6 bg-white/10 backdrop-blur-md rounded-[2.5rem] border border-white/10 hover:bg-white/20 transition-all cursor-pointer text-left group/task">
                             <div class="flex gap-5">
-                                <div class="mt-1.5 w-3 h-3 rounded-full shrink-0 @if($task['priority'] == 'critical') bg-red-400 animate-ping @elseif($task['priority'] == 'high') bg-orange-400 @else bg-cyan-400 @endif shadow-[0_0_10px_rgba(34,211,238,0.5)]"></div>
+                                <div class="mt-1.5 w-3 h-3 rounded-full shrink-0 {{ $task['priority'] === 'danger' ? 'bg-red-400 animate-ping' : ($task['priority'] === 'warning' ? 'bg-amber-400' : 'bg-blue-400') }} shadow-lg"></div>
                                 <div>
                                     <p class="text-sm font-black leading-tight group-hover/task:text-emerald-200 transition-colors">{{ $task['msg'] }}</p>
                                     @if(isset($task['type']))

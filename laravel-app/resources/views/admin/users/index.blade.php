@@ -22,7 +22,7 @@
                 </div>
                 <div>
                     <span class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em]">{{ $s['l'] }}</span>
-                    <p class="text-2xl font-black text-white leading-none mt-1 uppercase italic tracking-tighter">{{ $s['v'] }}</p>
+                    <p class="text-xl font-bold text-white leading-none mt-1 tracking-tight">{{ $s['v'] }}</p>
                 </div>
             </div>
         </div>
@@ -42,11 +42,20 @@
                 <input type="hidden" name="role" value="{{ request('role') }}">
             @endif
             <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                <div class="md:col-span-4 space-y-3">
+                <div class="md:col-span-3 space-y-3">
                     <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Pesquisar Identidade</label>
                     <div class="relative group">
                         <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 w-4 h-4 group-focus-within:text-emerald-500 transition-colors"></i>
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Nome, E-mail ou ID..." 
+                            class="w-full bg-zinc-950/50 border border-white/5 p-4 pl-12 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all shadow-inner">
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 space-y-3">
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Filtrar por CPF</label>
+                    <div class="relative group">
+                        <i data-lucide="credit-card" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 w-4 h-4 group-focus-within:text-emerald-500 transition-colors"></i>
+                        <input type="text" name="cpf" value="{{ request('cpf') }}" placeholder="000.000.000-00" x-mask="999.999.999-99"
                             class="w-full bg-zinc-950/50 border border-white/5 p-4 pl-12 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all shadow-inner">
                     </div>
                 </div>
@@ -70,30 +79,53 @@
                     </select>
                 </div>
 
-                <div class="md:col-span-3 flex gap-3">
-                    <button type="submit" class="flex-1 bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase tracking-[0.25em] py-4 rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 italic">Processar Filtros</button>
+                <div class="md:col-span-2 flex gap-3">
+                    <button type="submit" class="flex-1 bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase tracking-[0.25em] py-4 rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 italic">Filtrar</button>
                     <a href="{{ route('admin.users', ['role' => request('role')]) }}" class="w-14 bg-zinc-950 border border-white/5 flex items-center justify-center rounded-2xl text-zinc-600 hover:text-white transition-all shadow-inner">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </a>
                 </div>
             </div>
 
-            <!-- Professional Sub-filters -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5 animate-fade-in" x-show="selectedProfile == '4'" x-cloak>
-                <div class="space-y-2">
-                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Profissão Específica</label>
-                    <select name="profession_id" x-model="selectedProfession" class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all appearance-none">
-                        <option value="">Todas as Profissões</option>
+            <!-- Advanced Filters Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 pt-6 border-t border-white/5">
+                <div class="space-y-3">
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Objetivo do Aluno</label>
+                    <select name="goal" class="w-full bg-zinc-950/50 border border-white/5 p-4 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
+                        <option value="">Todos os Objetivos</option>
+                        @foreach($goals as $key => $goal)
+                            <option value="{{ $key }}" {{ request('goal') === $key ? 'selected' : '' }}>{{ $goal['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Faixa Etária</label>
+                    <select name="age_range" class="w-full bg-zinc-950/50 border border-white/5 p-4 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
+                        <option value="">Todas as Idades</option>
+                        <option value="0-18" {{ request('age_range') === '0-18' ? 'selected' : '' }}>Até 18 anos</option>
+                        <option value="19-30" {{ request('age_range') === '19-30' ? 'selected' : '' }}>19 a 30 anos</option>
+                        <option value="31-45" {{ request('age_range') === '31-45' ? 'selected' : '' }}>31 a 45 anos</option>
+                        <option value="46-60" {{ request('age_range') === '46-60' ? 'selected' : '' }}>46 a 60 anos</option>
+                        <option value="60+" {{ request('age_range') === '60+' ? 'selected' : '' }}>Acima de 60 anos</option>
+                    </select>
+                </div>
+
+                <!-- Professional Sub-filters (Inline if Professional profile selected) -->
+                <div class="space-y-3" x-show="selectedProfile == '4'" x-cloak>
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Profissão</label>
+                    <select name="profession_id" x-model="selectedProfession" class="w-full bg-zinc-950/50 border border-white/5 p-4 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
+                        <option value="">Todas</option>
                         @foreach($professions as $prof)
                             <option value="{{ $prof->id }}">{{ $prof->name }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="space-y-2">
-                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Especialidade</label>
-                    <select name="specialty" x-model="selectedSpecialty" class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all appearance-none">
-                        <option value="">Todas as Especialidades</option>
+                <div class="space-y-3" x-show="selectedProfile == '4'" x-cloak>
+                    <label class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-1 italic">Especialidade</label>
+                    <select name="specialty" x-model="selectedSpecialty" class="w-full bg-zinc-950/50 border border-white/5 p-4 rounded-2xl text-white text-xs font-bold uppercase tracking-widest outline-none focus:border-emerald-500/50 transition-all appearance-none shadow-inner">
+                        <option value="">Todas</option>
                         <template x-for="s in specialties.filter(item => !selectedProfession || item.profession_id == selectedProfession)" :key="s.id">
                             <option :value="s.nome" x-text="s.nome" :selected="selectedSpecialty == s.nome"></option>
                         </template>
@@ -107,7 +139,7 @@
     <div class="bg-zinc-900/40 border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
         <div class="p-8 border-b border-white/5 flex items-center justify-between bg-zinc-950/20">
             <div>
-                <h2 class="text-xl font-black text-white tracking-tight">
+                <h2 class="text-lg font-bold text-white tracking-tight">
                     @if($currentRole == 'aluno') Base de Dados de Alunos
                     @elseif($currentRole == 'paciente') Lista de Pacientes Clínicos
                     @elseif($currentRole == 'professional') Corpo Docente / Profissionais
@@ -154,7 +186,7 @@
                         <div class="bg-zinc-900 border border-white/10 w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden" @click.away="!isImporting && (showImport = false)">
                             <div class="p-8 border-b border-white/5 flex items-center justify-between">
                                 <div>
-                                    <h3 class="text-2xl font-black text-white tracking-tight" x-text="title"></h3>
+                                    <h3 class="text-xl font-bold text-white tracking-tight" x-text="title"></h3>
                                     <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-1">Sincronização em massa via CSV</p>
                                 </div>
                                 <button @click="showImport = false" x-show="!isImporting" class="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white">
@@ -336,9 +368,24 @@
                             </td>
                             <td class="px-8 py-6">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('admin.users.edit', $u->id) }}" class="w-10 h-10 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-xl">
+                                    <a href="{{ route('admin.users.edit', $u->id) }}" class="w-10 h-10 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-xl" title="Editar Perfil">
                                         <i class="fas fa-edit text-xs"></i>
                                     </a>
+
+                                    @if($u->id !== auth()->id() && !$u->is_admin)
+                                        @php
+                                            $isUserFullyActive = ($u->status === 'active' && $u->isEmailVerified() && $u->registration_approval_status === 'approved');
+                                        @endphp
+                                        <form action="{{ route('admin.users.toggle-status', $u->id) }}" method="POST" class="inline-flex">
+                                            @csrf
+                                            <button type="submit" 
+                                                title="{{ $isUserFullyActive ? 'Bloquear Acesso' : 'Desbloquear / Liberar Acesso Total' }}"
+                                                class="w-10 h-10 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-center transition-all shadow-xl {{ $isUserFullyActive ? 'text-zinc-500 hover:bg-red-600 hover:text-white hover:border-red-600' : 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-600 hover:text-white' }}">
+                                                <i class="fas {{ $isUserFullyActive ? 'fa-user-slash' : 'fa-user-check' }} text-xs"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     <a href="{{ route('admin.security.index') }}?user_id={{ $u->id }}" title="Segurança / Reset de Senha" class="w-10 h-10 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all shadow-xl">
                                         <i class="fas fa-key text-xs"></i>
                                     </a>

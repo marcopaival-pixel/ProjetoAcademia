@@ -5,7 +5,7 @@
 @section('content')
 <div class="space-y-10">
     <div class="text-center space-y-4 max-w-2xl mx-auto">
-        <h3 class="text-white font-black text-3xl">Quase lá!</h3>
+        <h3 class="text-white font-bold text-xl">Quase lá!</h3>
         <p class="text-zinc-500">
             Preparamos uma série de guias rápidos para garantir que sua equipe tire o máximo proveito do NexShape. 
             Recomendamos assistir aos vídeos abaixo.

@@ -4,6 +4,15 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto py-8">
+    <div class="mb-8">
+        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-3 text-zinc-500 hover:text-white transition-all group">
+            <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-400 transition-all">
+                <i class="fas fa-chevron-left text-sm"></i>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest">Voltar para o Dashboard</span>
+        </a>
+    </div>
+
     <div class="flex flex-col gap-2 mb-8">
         <h2 class="text-zinc-400 text-sm font-medium uppercase tracking-widest">Selecione o tipo de registro</h2>
         <p class="text-zinc-500 text-sm">Escolha o perfil adequado para o novo usuário do sistema.</p>

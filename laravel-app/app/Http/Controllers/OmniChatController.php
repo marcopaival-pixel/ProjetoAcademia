@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OmniBot;
+use App\Models\OmniBotStep;
+use App\Models\OmniBotOption;
 use App\Models\OmniConversation;
 use App\Models\OmniMessage;
 use App\Services\OmniChatService;
@@ -110,6 +113,107 @@ class OmniChatController extends Controller
      */
     public function bots()
     {
-        return view('admin.omnichannel-bots');
+        $bots = OmniBot::with(['steps.options'])->get();
+        return view('admin.omnichannel-bots', compact('bots'));
+    }
+
+    /**
+     * Cria um novo bot
+     */
+    public function storeBot(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'whatsapp_phone' => 'nullable|string|max:20',
+            'is_active' => 'boolean',
+            'out_of_office_message' => 'nullable|string',
+            'business_hours' => 'nullable|array',
+        ]);
+
+        $bot = OmniBot::create([
+            'company_id' => 1,
+            'name' => $validated['name'],
+            'whatsapp_phone' => $validated['whatsapp_phone'],
+            'is_active' => $validated['is_active'] ?? true,
+            'out_of_office_message' => $validated['out_of_office_message'] ?? null,
+            'business_hours' => $validated['business_hours'] ?? null,
+        ]);
+
+        return back()->with('success', 'Bot criado com sucesso!');
+    }
+
+    public function updateBot(Request $request, OmniBot $bot)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'whatsapp_phone' => 'nullable|string|max:20',
+            'is_active' => 'boolean',
+            'out_of_office_message' => 'nullable|string',
+            'business_hours' => 'nullable|array',
+        ]);
+
+        $bot->update($validated);
+
+        return back()->with('success', 'Bot atualizado com sucesso!');
+    }
+
+    public function destroyBot(OmniBot $bot)
+    {
+        $bot->delete();
+        return back()->with('success', 'Bot removido com sucesso!');
+    }
+
+    // Step Management
+    public function storeStep(Request $request, OmniBot $bot)
+    {
+        $validated = $request->validate([
+            'label' => 'required|string|max:100',
+            'type' => 'required|in:message,menu,question,transfer',
+            'content' => 'required|string',
+            'is_start' => 'boolean',
+            'next_step_id' => 'nullable|exists:omni_bot_steps,id',
+        ]);
+
+        $bot->steps()->create($validated);
+        return back()->with('success', 'Passo criado com sucesso!');
+    }
+
+    public function updateStep(Request $request, OmniBotStep $step)
+    {
+        $validated = $request->validate([
+            'label' => 'required|string|max:100',
+            'type' => 'required|in:message,menu,question,transfer',
+            'content' => 'required|string',
+            'is_start' => 'boolean',
+            'next_step_id' => 'nullable|exists:omni_bot_steps,id',
+        ]);
+
+        $step->update($validated);
+        return back()->with('success', 'Passo atualizado!');
+    }
+
+    public function destroyStep(OmniBotStep $step)
+    {
+        $step->delete();
+        return back()->with('success', 'Passo removido!');
+    }
+
+    // Option Management
+    public function storeOption(Request $request, OmniBotStep $step)
+    {
+        $validated = $request->validate([
+            'trigger_value' => 'required|string|max:50',
+            'label' => 'required|string|max:100',
+            'destination_step_id' => 'required|exists:omni_bot_steps,id',
+        ]);
+
+        $step->options()->create($validated);
+        return back()->with('success', 'Opção adicionada!');
+    }
+
+    public function destroyOption(OmniBotOption $option)
+    {
+        $option->delete();
+        return back()->with('success', 'Opção removida!');
     }
 }

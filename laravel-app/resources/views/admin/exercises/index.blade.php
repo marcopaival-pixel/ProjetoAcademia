@@ -10,7 +10,7 @@
         <div class="xl:col-span-1">
             <div class="bg-zinc-900/60 backdrop-blur-3xl border border-white/10 p-10 rounded-[3rem] shadow-2xl sticky top-32">
                 <header class="mb-10">
-                    <h3 class="text-2xl font-black text-white tracking-tight italic">Novo Item</h3>
+                    <h3 class="text-base font-bold text-white tracking-tight">Novo Item</h3>
                     <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Expansão do Banco de Dados</p>
                 </header>
 
@@ -70,7 +70,7 @@
             <div class="bg-zinc-900/40 border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
                 <header class="p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-zinc-950/20">
                     <div>
-                        <h2 class="text-xl font-black text-white tracking-tight italic">Catálogo NexShape</h2>
+                        <h2 class="text-lg font-bold text-white tracking-tight">Catálogo de Exercícios — Admin</h2>
                         <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-1">{{ count($exercises) }} Exercícios Ativos</p>
                     </div>
                     

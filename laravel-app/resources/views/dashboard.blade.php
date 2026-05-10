@@ -4,6 +4,9 @@
 
 @section('content')
     <div class="py-10 space-y-12 animate-fade-in-up mx-auto px-4 md:px-6">
+        <!-- App Promotion Banner -->
+        <x-marketing.promo-banner />
+
         <!-- Header Strategy: Glassmorphic Floating Header -->
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-4 border-b border-zinc-900">
             <div class="space-y-2">
@@ -92,12 +95,69 @@
                         <p class="text-sm font-medium text-amber-100 mt-2">Sua conta ainda não está totalmente pronta para operar. Conclua os itens abaixo para liberar todas as funcionalidades.</p>
                     </div>
                 </div>
-                <button @click="$dispatch('open-onboarding')" class="px-8 py-4 bg-white text-zinc-900 font-black rounded-2xl hover:bg-zinc-900 hover:text-white transition-all text-xs shadow-2xl uppercase tracking-widest whitespace-nowrap">
+                <button x-data @click="$dispatch('open-onboarding')" class="px-8 py-4 bg-white text-zinc-900 font-black rounded-2xl hover:bg-zinc-900 hover:text-white transition-all text-xs shadow-2xl uppercase tracking-widest whitespace-nowrap">
                     CONCLUIR AGORA
                 </button>
             </div>
         </div>
         @endif
+
+        <!-- Performance & Readiness Hub (ACWR) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 relative group bg-zinc-900 border {{ $performanceStatus['risk_level'] === 'danger' ? 'border-red-500/30' : ($performanceStatus['risk_level'] === 'high' ? 'border-amber-500/30' : 'border-emerald-500/20') }} p-8 rounded-[3rem] overflow-hidden shadow-2xl transition-all">
+                <div class="absolute inset-0 bg-gradient-to-br {{ $performanceStatus['risk_level'] === 'danger' ? 'from-red-500/5' : ($performanceStatus['risk_level'] === 'high' ? 'from-amber-500/5' : 'from-emerald-500/5') }} to-transparent"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                    <!-- Gauge ACWR -->
+                    <div class="relative w-48 h-48 flex items-center justify-center">
+                        <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="8" fill="transparent" class="text-zinc-800" />
+                            <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="8" fill="transparent" 
+                                    stroke-dasharray="282.7" 
+                                    stroke-dashoffset="{{ 282.7 - (282.7 * min($performanceStatus['acwr'] / 2.0, 1)) }}" 
+                                    stroke-linecap="round"
+                                    class="{{ $performanceStatus['risk_level'] === 'danger' ? 'text-red-500' : ($performanceStatus['risk_level'] === 'high' ? 'text-amber-500' : 'text-emerald-500') }} transition-all duration-1000 shadow-[0_0_15px_rgba(0,0,0,0.5)]" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                            <span class="text-4xl font-black text-white tracking-tighter">{{ $performanceStatus['acwr'] }}</span>
+                            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">ACWR Index</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full {{ $performanceStatus['risk_level'] === 'danger' ? 'bg-red-500/20 text-red-400 border-red-500/20' : ($performanceStatus['risk_level'] === 'high' ? 'bg-amber-500/20 text-amber-400 border-amber-500/20' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20') }} text-[10px] font-black uppercase tracking-widest border">
+                                Status: {{ strtoupper($performanceStatus['risk_level']) }}
+                            </span>
+                            <span class="text-zinc-500">•</span>
+                            <span class="text-zinc-400 text-xs font-bold uppercase tracking-tighter">Análise Bio-Rítmica Ativa</span>
+                        </div>
+                        <h2 class="text-3xl font-black text-white italic tracking-tighter leading-none uppercase">Prontidão para Treino</h2>
+                        <p class="text-zinc-400 text-sm font-medium leading-relaxed max-w-xl">
+                            {{ $performanceStatus['recommendation'] }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative group bg-zinc-900 border border-zinc-800 p-8 rounded-[3rem] shadow-2xl flex flex-col justify-center">
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-emerald-400">
+                                <i data-lucide="zap" class="w-4 h-4"></i>
+                            </div>
+                            <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Recovery Score</span>
+                        </div>
+                        <span class="text-2xl font-black text-white tracking-tighter">{{ $performanceStatus['recovery_score'] }}%</span>
+                    </div>
+                    <div class="h-2 w-full bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 transition-all duration-1000" style="width: {{ $performanceStatus['recovery_score'] }}%"></div>
+                    </div>
+                    <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter italic">Baseado em HRV, Sono e Histórico de Carga Recente.</p>
+                </div>
+            </div>
+        </div>
 
         <!-- Layout Bento Moderno -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
@@ -371,44 +431,95 @@
                         </a>
                     </div>
 
-                    <!-- AI Intelligence -->
-                    <div
-                        class="group bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] relative overflow-hidden shadow-2xl transition-all hover:border-emerald-500/20">
+                    <!-- AI Intelligence & Alerts -->
+                    <div class="group bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] relative overflow-hidden shadow-2xl transition-all hover:border-emerald-500/20 flex flex-col">
                         <div class="absolute -top-10 -right-10 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                             <i data-lucide="brain" class="w-64 h-64 text-emerald-500"></i>
                         </div>
-
+ 
                         <div class="flex items-center justify-between mb-8">
-                            <div
-                                class="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                                {{ $isPremium ? 'Elite Analysis IA' : 'Insights NexBot' }}
+                            <div class="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                {{ $isPremium ? 'Elite Analysis IA' : 'NexBot Coach' }}
                             </div>
-                            @if(!$isPremium)
-                                <div data-premium-locked class="w-6 h-6 bg-amber-500/10 text-amber-500 rounded-lg flex items-center justify-center cursor-pointer hover:bg-amber-500/20 transition-all border border-amber-500/20">
-                                    <i data-lucide="lock" class="w-3 h-3"></i>
+                        </div>
+
+                        <div class="space-y-4 flex-grow overflow-y-auto max-h-[180px] pr-2 custom-scrollbar relative z-10">
+                            @forelse($healthAlerts as $alert)
+                                <div class="flex gap-4 p-3 rounded-2xl bg-zinc-950/50 border {{ $alert->severity === 'danger' ? 'border-red-500/20' : ($alert->severity === 'warning' ? 'border-amber-500/20' : 'border-blue-500/20') }}">
+                                    <div class="w-8 h-8 rounded-lg {{ $alert->severity === 'danger' ? 'bg-red-500/10 text-red-500' : ($alert->severity === 'warning' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500') }} flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="{{ $alert->severity === 'danger' ? 'alert-triangle' : ($alert->severity === 'warning' ? 'zap' : 'info') }}" class="w-4 h-4"></i>
+                                    </div>
+                                    <p class="text-[10px] text-zinc-400 leading-relaxed">{{ $alert->message }}</p>
                                 </div>
-                            @endif
+                            @empty
+                                <div class="relative">
+                                    <i data-lucide="quote" class="absolute -left-6 -top-4 w-12 h-12 text-emerald-500/10"></i>
+                                    <p class="text-2xl font-black text-white leading-tight tracking-tight pl-4 uppercase italic">
+                                        "{{ $aiInsight }}"
+                                    </p>
+                                </div>
+                            @endforelse
                         </div>
 
-                        <div class="relative">
-                            <i data-lucide="quote" class="absolute -left-6 -top-4 w-12 h-12 text-emerald-500/10"></i>
-                            <p class="text-2xl font-black text-white leading-tight tracking-tight pl-4 uppercase italic">
-                                "{{ $aiInsight }}"
-                            </p>
-                        </div>
-
-                        <div class="mt-12 flex items-center justify-between border-t border-zinc-800 pt-8">
+                        <div class="mt-8 flex items-center justify-between border-t border-zinc-800 pt-6">
                             <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                    <i data-lucide="bot" class="w-5 h-5"></i>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                    <i data-lucide="bot" class="w-4 h-4"></i>
                                 </div>
-                                <span class="text-xs text-zinc-500 font-black uppercase tracking-widest">NexShape Neural</span>
+                                <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">NexBot Ativo</span>
                             </div>
-                            <button class="text-zinc-600 hover:text-emerald-500 transition-colors">
-                                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                            </button>
+                            <a href="{{ route('assessments.index') }}" class="text-[10px] text-emerald-500 font-black uppercase tracking-widest hover:underline">Ver Histórico</a>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Comunidade NexShape Feed Widget -->
+                <div class="lg:col-span-12 group bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] relative overflow-hidden shadow-2xl transition-all hover:border-emerald-500/20">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full"></div>
+                    
+                    <div class="flex items-center justify-between mb-10 relative z-10">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-emerald-500 text-zinc-950 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                <i data-lucide="users" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Comunidade <span class="text-emerald-500">NexShape</span></h3>
+                                <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Conecte-se com outros atletas</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('community.index') }}" class="px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white border border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Ver Feed Completo</a>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                        @forelse($communityPosts as $post)
+                            <div class="bg-zinc-950 border border-zinc-800 p-6 rounded-3xl space-y-4 hover:border-emerald-500/30 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <img src="{{ $post->user->profile_photo_url }}" class="w-10 h-10 rounded-xl border border-zinc-800">
+                                    <div>
+                                        <p class="text-white font-bold text-xs">{{ explode(' ', $post->user->name)[0] }}</p>
+                                        <p class="text-[9px] text-zinc-600 font-bold uppercase">{{ $post->created_at->diffForHumans() }}</p>
+                                    </div>
+                                    @if($post->activity_status)
+                                        <span class="ml-auto text-[10px]">{{ explode(' ', $post->activity_status)[0] }}</span>
+                                    @endif
+                                </div>
+                                <p class="text-zinc-400 text-[11px] line-clamp-2 font-medium italic">"{{ $post->content }}"</p>
+                                <div class="flex items-center gap-4 pt-2 border-t border-zinc-900">
+                                    <div class="flex items-center gap-1.5 text-zinc-600">
+                                        <i data-lucide="heart" class="w-3 h-3"></i>
+                                        <span class="text-[9px] font-black">{{ $post->reactions->count() }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-zinc-600">
+                                        <i data-lucide="message-square" class="w-3 h-3"></i>
+                                        <span class="text-[9px] font-black">{{ $post->comments->count() }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="col-span-3 text-center py-10 bg-zinc-950/50 rounded-3xl border border-dashed border-zinc-800">
+                                <p class="text-zinc-600 font-bold italic text-sm">Seja o primeiro a publicar na comunidade!</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 

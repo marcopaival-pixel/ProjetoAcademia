@@ -95,7 +95,7 @@ class RegisterController extends Controller
 
         $validated = $validator->validated();
 
-        $user = DB::transaction(function () use ($validated) {
+        $user = DB::transaction(function () use ($validated, $request) {
             $profileName = $validated['tipo_acesso'];
             $role = \App\Models\Role::where('name', $profileName)->first();
             $freePlan = \App\Models\Plan::where('name', 'Free')->first();
@@ -122,7 +122,7 @@ class RegisterController extends Controller
                 return $user;
             }
 
-        $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+            $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
 
             $user = new User();
             $user->fill([
@@ -187,8 +187,8 @@ class RegisterController extends Controller
                 'user_id' => $user->id,
                 'consent_type' => 'privacy_policy_and_terms',
                 'version' => '1.0',
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('User-Agent'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
             ]);
 
             return $user;

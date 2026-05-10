@@ -20,6 +20,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    // Ignorar requisições de onboarding para evitar conflitos com o wizard
+    if (event.request.url.includes('/onboarding-premium')) {
+        return;
+    }
+
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request).catch(() => {
@@ -29,7 +34,13 @@ self.addEventListener('fetch', (event) => {
     } else {
         event.respondWith(
             caches.match(event.request).then((response) => {
-                return response || fetch(event.request);
+                return response || fetch(event.request).catch(() => {
+                    // Retorna um erro amigável em vez de quebrar a promessa
+                    return new Response('Network error occurred', {
+                        status: 408,
+                        statusText: 'Network error occurred'
+                    });
+                });
             })
         );
     }

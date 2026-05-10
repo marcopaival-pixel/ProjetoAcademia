@@ -5,6 +5,9 @@
 @section('content')
 <div class="space-y-32 py-10 px-6 max-w-[1400px] mx-auto overflow-hidden font-['Outfit']">
     
+    <!-- App Promotion Banner -->
+    <x-marketing.promo-banner />
+
     <!-- Ultra Impact Hero -->
     <section class="relative flex flex-col lg:flex-row items-center gap-16 py-10 animate-fade-in">
         <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-emerald-600/5 blur-[150px] rounded-full pointer-events-none"></div>
@@ -30,6 +33,10 @@
             <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-6">
                 <a href="{{ route('onboarding.welcome') }}" class="group relative px-10 py-5 bg-white text-zinc-950 font-black rounded-[2rem] hover:bg-blue-500 hover:text-white transition-all shadow-2xl active:scale-95">
                     <span class="relative z-10">COMEÇAR AGORA — É GRÁTIS</span>
+                </a>
+                <a href="{{ route('demo.start') }}" class="px-10 py-5 bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 text-emerald-400 font-black rounded-[2rem] hover:bg-emerald-500/20 transition-all active:scale-95 flex items-center gap-2">
+                    <i data-lucide="play-circle" class="w-5 h-5"></i>
+                    MODO DEMONSTRAÇÃO
                 </a>
                 <a href="#pricing" class="px-10 py-5 bg-zinc-900/50 backdrop-blur-xl border border-white/5 text-white font-black rounded-[2rem] hover:bg-zinc-800 transition-all active:scale-95">
                     Ver Planos Business

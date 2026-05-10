@@ -19,9 +19,27 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
-class MercadoPagoService
+use App\Services\Payment\BasePaymentGateway;
+use App\Contracts\PaymentGatewayInterface;
+
+class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInterface
 {
+    public function getIdentifier(): string
+    {
+        return 'mercadopago';
+    }
+
+    protected $token;
+    protected $webhookSecret;
+
+    public function __construct(array $config = [])
+    {
+        parent::__construct($config);
+        $this->token = $config['access_token'] ?? (string) config('projeto.mp_access_token');
+        $this->webhookSecret = $config['webhook_secret'] ?? (string) config('projeto.mp_webhook_secret');
+    }
     public function publicBase(): string
     {
         $u = (string) config('projeto.public_url');
@@ -138,6 +156,24 @@ class MercadoPagoService
             'notification_url' => $this->absoluteUrl('mp/webhook'),
         ];
 
+        // Lógica de Split (Marketplace)
+        if ($user && $user->academy_company_id) {
+            $company = $user->academyCompany;
+            if ($company && $company->mercadopago_user_id) {
+                // Se a academia tem conta MP, o dinheiro vai para ela e a plataforma retém a taxa
+                $fee = (float) $company->platform_fee_fixed;
+                if ($company->platform_fee_percent > 0) {
+                    $fee += ($price * ($company->platform_fee_percent / 100));
+                }
+                
+                $payload['marketplace_fee'] = round($fee, 2);
+                
+                // Nota: Em produção, o Access Token usado deve ser o do Marketplace 
+                // e o mercadopago_user_id deve ser passado se usarmos a API de Split direta.
+                // Aqui estamos usando a modalidade de Marketplace Fee padrão da Preferência.
+            }
+        }
+
         $r = $this->apiRequest('POST', 'https://api.mercadopago.com/checkout/preferences', $accessToken, $payload);
         if (! $r['ok']) {
             return ['ok' => false, 'error' => $r['error']];
@@ -208,26 +244,6 @@ class MercadoPagoService
         }
 
         return ['ok' => true, 'init_point' => $init];
-    }
-
-    /**
-     * @return array{ok: true, payment: array<string, mixed>}|array{ok: false, error: string}
-     */
-    public function fetchPayment(string $accessToken, string $paymentId): array
-    {
-        $url = 'https://api.mercadopago.com/v1/payments/'.rawurlencode($paymentId);
-        $r = $this->apiRequest('GET', $url, $accessToken, null);
-        if (! $r['ok']) {
-            return ['ok' => false, 'error' => $r['error']];
-        }
-        if (! is_array($r['data'])) {
-            return ['ok' => false, 'error' => 'Pagamento inválido.'];
-        }
-
-        /** @var array<string, mixed> $pay */
-        $pay = $r['data'];
-
-        return ['ok' => true, 'payment' => $pay];
     }
 
     /**
@@ -382,6 +398,17 @@ class MercadoPagoService
         $userId = $parsed['user_id'];
         $plan = $parsed['plan'];
         $amt = (float) $payment['transaction_amount'];
+        
+        // Extrair taxas do Split/Marketplace
+        $feeAmount = (float) ($payment['marketplace_fee'] ?? 0);
+        if ($feeAmount <= 0 && isset($payment['fee_details'])) {
+            foreach ($payment['fee_details'] as $fee) {
+                if ($fee['type'] === 'marketplace_fee' || $fee['type'] === 'application_fee') {
+                    $feeAmount += (float) $fee['amount'];
+                }
+            }
+        }
+        $netAmount = $amt - $feeAmount;
 
         // Sempre registrar o pagamento (independente de estar aprovado ou não) para histórico
         Payment::updateOrCreate(
@@ -390,6 +417,8 @@ class MercadoPagoService
                 'user_id' => $userId,
                 'gateway' => 'mercadopago',
                 'amount' => $amt,
+                'fee_amount' => $feeAmount,
+                'net_amount' => $netAmount,
                 'currency' => $cur !== '' ? $cur : 'BRL',
                 'status' => $mappedStatus,
                 'payload' => $payment,
@@ -463,6 +492,8 @@ class MercadoPagoService
                 'gateway' => 'mercadopago',
                 'gateway_id' => (string) $id,
                 'amount' => $amt,
+                'fee_amount' => $feeAmount,
+                'net_amount' => $netAmount,
                 'currency' => $cur !== '' ? $cur : 'BRL',
                 'status' => Subscription::STATUS_FIN_ATIVO,
                 'payload' => $payment,
@@ -680,10 +711,10 @@ class MercadoPagoService
     /**
      * @return array{ok: true, data: array<string, mixed>}|array{ok: false, error: string}
      */
-    public function fetchPreapproval(string $accessToken, string $preapprovalId): array
+    public function fetchPreapproval(string $preapprovalId): array
     {
         $url = 'https://api.mercadopago.com/preapproval/'.rawurlencode($preapprovalId);
-        $r = $this->apiRequest('GET', $url, $accessToken, null);
+        $r = $this->apiRequest('GET', $url, $this->token, null);
         if (! $r['ok']) {
             return ['ok' => false, 'error' => $r['error']];
         }
@@ -700,9 +731,9 @@ class MercadoPagoService
     /**
      * @return array{ok: bool, message: string}
      */
-    public function syncPreapprovalWebhook(string $accessToken, string $preapprovalId): array
+    public function syncPreapprovalWebhook(string $preapprovalId): array
     {
-        $f = $this->fetchPreapproval($accessToken, $preapprovalId);
+        $f = $this->fetchPreapproval($preapprovalId);
         if (! $f['ok']) {
             return ['ok' => false, 'message' => $f['error']];
         }
@@ -745,5 +776,128 @@ class MercadoPagoService
         }
 
         return ['ok' => true, 'message' => 'Status: '.$status];
+    }
+
+    /**
+     * Interface Implementations
+     */
+
+    public function createCheckout(User $user, float $amount, array $options = []): array
+    {
+        $payload = [
+            'items' => [[
+                'title' => $options['title'] ?? 'Pagamento avulso',
+                'description' => $options['description'] ?? 'Transação segura via ' . $this->getIdentifier(),
+                'category_id' => 'services',
+                'quantity' => 1,
+                'currency_id' => 'BRL',
+                'unit_price' => (float) $amount,
+            ]],
+            'payer' => ['email' => $user->email],
+            'external_reference' => $options['external_reference'] ?? null,
+            'back_urls' => [
+                'success' => $options['success_url'] ?? $this->absoluteUrl('mp/return?collection_status=approved'),
+                'pending' => $options['pending_url'] ?? $this->absoluteUrl('mp/return?collection_status=pending'),
+                'failure' => $options['failure_url'] ?? $this->absoluteUrl('mp/return?collection_status=failure'),
+            ],
+            'auto_return' => 'approved',
+            'notification_url' => $this->absoluteUrl('payment/webhook/' . $this->getIdentifier()),
+        ];
+
+        return $this->apiRequest('POST', 'https://api.mercadopago.com/checkout/preferences', $this->token, $payload);
+    }
+
+    public function createSubscription(User $user, $plan, array $options = []): array
+    {
+        return $this->createCheckoutPreference($this->token, $user->id, $user->email, $plan, $options['coupon'] ?? null);
+    }
+
+    public function cancelSubscription($gatewaySubscriptionId): bool
+    {
+        $res = $this->apiRequest('PUT', "https://api.mercadopago.com/preapproval/{$gatewaySubscriptionId}", $this->token, [
+            'status' => 'cancelled'
+        ]);
+        return $res['ok'];
+    }
+
+    public function fetchPayment(string $paymentId): array
+    {
+        $res = $this->apiRequest('GET', "https://api.mercadopago.com/v1/payments/{$paymentId}", $this->token, null);
+        if (!$res['ok']) return ['ok' => false, 'error' => $res['error']];
+        return ['ok' => true, 'payment' => $res['data']];
+    }
+
+    public function handleWebhook(Request $request): array
+    {
+        $start = microtime(true);
+        
+        if (!$this->validateSignature($request)) {
+            $this->logWebhook($request, 401, 'Invalid Signature');
+            return ['ok' => false, 'status' => 401, 'message' => 'Invalid Signature'];
+        }
+
+        $paymentId = null;
+        $preapprovalId = null;
+        $payload = $request->all();
+
+        if (isset($payload['type'])) {
+            if ($payload['type'] === 'payment') $paymentId = $payload['data']['id'] ?? null;
+            if ($payload['type'] === 'subscription_preapproval') $preapprovalId = $payload['data']['id'] ?? null;
+        }
+
+        try {
+            if ($preapprovalId) {
+                $res = $this->syncPreapprovalWebhook($preapprovalId);
+                $this->logWebhook($request, 200, $res['message'], null, microtime(true) - $start);
+                return ['ok' => true, 'status' => 200];
+            }
+
+            if ($paymentId) {
+                $payRes = $this->fetchPayment($paymentId);
+                if ($payRes['ok']) {
+                    $res = $this->tryCreditPremium($payRes['payment']);
+                    $this->logWebhook($request, 200, $res['message'], null, microtime(true) - $start);
+                    return ['ok' => true, 'status' => 200];
+                }
+            }
+
+            $this->logWebhook($request, 200, 'Ignored (Unknown type or no ID)', null, microtime(true) - $start);
+            return ['ok' => true, 'status' => 200];
+        } catch (\Exception $e) {
+            $this->logWebhook($request, 500, 'Error', $e->getMessage(), microtime(true) - $start);
+            return ['ok' => false, 'status' => 500, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function validateSignature(Request $request): bool
+    {
+        if (empty($this->webhookSecret)) return true;
+
+        $xSignature = (string) $request->header('x-signature', '');
+        $xRequestId = (string) $request->header('x-request-id', '');
+
+        if ($xSignature === '') return false;
+
+        $ts = ''; $v1 = '';
+        foreach (explode(';', $xSignature) as $part) {
+            [$key, $value] = array_pad(explode('=', $part, 2), 2, '');
+            if (trim($key) === 'ts') $ts = trim($value);
+            if (trim($key) === 'v1') $v1 = trim($value);
+        }
+
+        if ($ts === '' || $v1 === '') return false;
+
+        $dataId = $request->input('data.id') ?? $request->input('id') ?? '';
+        $manifest = "id:{$dataId};request-id:{$xRequestId};ts:{$ts}";
+        $expected = hash_hmac('sha256', $manifest, $this->webhookSecret);
+
+        return hash_equals($expected, $v1);
+    }
+
+    public function refund(string $paymentId, ?float $amount = null): bool
+    {
+        $payload = $amount ? ['amount' => $amount] : null;
+        $res = $this->apiRequest('POST', "https://api.mercadopago.com/v1/payments/{$paymentId}/refunds", $this->token, $payload);
+        return $res['ok'];
     }
 }

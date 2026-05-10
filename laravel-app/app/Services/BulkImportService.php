@@ -225,18 +225,22 @@ class BulkImportService
         if (User::where('cpf', $cpf)->exists()) throw new \Exception("CPF já cadastrado.");
         if (User::where('email', $email)->exists()) throw new \Exception("E-mail já cadastrado.");
 
+        $plainPassword = Str::random(12);
         $user = User::create([
             'name' => $nome,
             'email' => $email,
             'cpf' => $cpf,
             'phone' => $phone,
             'status' => $status,
-            'password_hash' => Hash::make(Str::random(12)),
+            'password_hash' => Hash::make($plainPassword),
             'registration_approval_status' => 'approved',
         ]);
 
         $role = Role::where('name', 'aluno')->first();
         if ($role) $user->roles()->attach($role->id);
+
+        // Notificar administrador sobre a senha gerada
+        \App\Services\SystemMessageService::sendPasswordNotificationToAdmin($user, $plainPassword);
 
         // Map goal label to key if possible
         $goals = UserProfile::getAvailableGoals();

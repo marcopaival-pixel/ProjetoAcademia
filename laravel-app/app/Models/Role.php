@@ -42,4 +42,12 @@ class Role extends Model
     {
         return $this->hasMany(RoleMenuPermission::class, 'role_id');
     }
+
+    /**
+     * @return BelongsToMany<MarketingBanner>
+     */
+    public function marketingBanners(): BelongsToMany
+    {
+        return $this->belongsToMany(MarketingBanner::class, 'marketing_banner_targets', 'role_id', 'banner_id');
+    }
 }

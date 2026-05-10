@@ -58,4 +58,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/verify-email', [VerificationController::class, 'show'])->name('verification.notice');
     Route::post('/verify-email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
+
+    // Troca de Senha Obrigatória (Reset Forçado)
+    Route::get('/senha/obrigatoria', [\App\Http\Controllers\Auth\ForcedPasswordChangeController::class, 'show'])->name('password.change.force');
+    Route::post('/senha/obrigatoria', [\App\Http\Controllers\Auth\ForcedPasswordChangeController::class, 'store'])->name('password.change.force.store');
 });

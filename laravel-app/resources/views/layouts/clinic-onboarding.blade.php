@@ -100,7 +100,7 @@
 
                 <div class="mb-10">
                     <span class="text-blue-500 font-bold tracking-widest text-xs uppercase">Etapa {{ str_pad($step, 2, '0', STR_PAD_LEFT) }}/11</span>
-                    <h2 class="text-3xl md:text-4xl font-black text-white mt-2">{{ $currentStep['title'] }}</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white mt-2">{{ $currentStep['title'] }}</h2>
                 </div>
 
                 @yield('content')

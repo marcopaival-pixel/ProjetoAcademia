@@ -154,6 +154,12 @@ class RolesAndPermissionsSeeder extends Seeder
                     'portal.access',
                 ])->pluck('id'),
             ],
+            [
+                'name' => 'des',
+                'label' => 'DES',
+                'description' => 'Perfil de Desenvolvedor / Suporte Técnico',
+                'permissions' => Permission::all()->pluck('id'), // Full access like admin
+            ],
         ];
 
         foreach ($roles as $r) {

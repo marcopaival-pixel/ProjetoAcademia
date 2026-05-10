@@ -11,6 +11,7 @@ use App\Models\WaterEntry;
 use App\Models\TrainingPlan;
 use App\Models\LoadLog;
 use App\Models\BodyAssessment;
+use App\Models\HealthAlert;
 use App\Services\ProgressionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class DashboardController extends Controller
         // Redirecionamento baseado em perfil
         if ($user->isAdministrator()) {
             // Se for admin mas solicitou ver o painel de utilizador ou escolheu um perfil de utilizador específico
-            if ($activeRole === 'admin' || (!$activeRole && !$request->has('view_as_user'))) {
+            if (($activeRole === 'admin' || !$activeRole) && !$request->has('view_as_user')) {
                 return redirect()->route('admin.dashboard');
             }
         }
@@ -184,6 +185,9 @@ class DashboardController extends Controller
                 'setupChecklist' => $setupChecklist,
                 'linkedProfessional' => $user->professionals()->first(),
                 'pendingRequest' => $user->sentRequests()->where('status', 'pending')->first(),
+                'healthAlerts' => HealthAlert::where('user_id', $uid)->where('is_read', false)->latest()->take(3)->get(),
+                'performanceStatus' => app(\App\Services\PerformanceAnalysisService::class)->getUserStatus($user),
+                'communityPosts' => \App\Models\CommunityPost::with(['user', 'reactions', 'comments'])->where('status', 'approved')->where('visibility', 'public')->latest()->take(3)->get(),
             ];
         });
 

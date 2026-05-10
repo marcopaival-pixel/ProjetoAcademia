@@ -91,6 +91,8 @@ class User extends Authenticatable
         'perfil_paciente_completo',
         'representative_id',
         'is_representative',
+        'force_password_change',
+        'temp_password_expires_at',
     ];
 
     protected $hidden = [
@@ -118,6 +120,8 @@ class User extends Authenticatable
             'perfil_paciente_completo' => 'boolean',
             'is_representative' => 'boolean',
             'email_verified' => 'boolean',
+            'force_password_change' => 'boolean',
+            'temp_password_expires_at' => 'datetime',
         ];
     }
 
@@ -222,9 +226,51 @@ class User extends Authenticatable
     }
 
     /**
+     * Obtém as iniciais do usuário conforme a regra de negócio:
+     * - Nome composto (Marco Paiva) -> MP
+     * - Nome simples (Marco) -> MA
+     */
+    public function getInitialsAttribute(): string
+    {
+        $name = trim($this->name ?? '');
+        if (empty($name)) return 'NX';
+
+        $parts = preg_split('/\s+/', $name, -1, PREG_SPLIT_NO_EMPTY);
+        
+        if (count($parts) > 1) {
+            $first = mb_substr($parts[0], 0, 1);
+            $last = mb_substr($parts[count($parts) - 1], 0, 1);
+            return mb_strtoupper($first . $last);
+        }
+
+        return mb_strtoupper(mb_substr($name, 0, 2));
+    }
+
+    /**
+     * Obtém a URL da foto de perfil, priorizando o avatar carregado
+     * ou gerando uma imagem de iniciais customizada.
+     */
+    public function getProfilePhotoUrlAttribute(): string
+    {
+        if ($this->avatar) {
+            if (str_starts_with($this->avatar, 'http')) {
+                return $this->avatar;
+            }
+            return asset('storage/' . $this->avatar);
+        }
+
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->initials) . '&color=10b981&background=09090b&bold=true&font-size=0.4';
+    }
+
+    /**
      * Cache de permissões carregadas para a requisição atual.
      */
     protected ?\Illuminate\Support\Collection $permissionsCache = null;
+
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions', 'user_id', 'permission_id')->withTimestamps();
+    }
 
     public function hasPermission(string|array $permission): bool
     {
@@ -242,12 +288,18 @@ class User extends Authenticatable
         }
 
         if ($this->permissionsCache === null) {
-            $this->permissionsCache = \Cache::remember("user_permissions_{$this->id}", 600, function() {
-                return DB::table('permissions')
+            $this->permissionsCache = \Cache::remember("user_permissions_v2_{$this->id}", 600, function() {
+                // Permissions via Roles
+                $rolePermissions = DB::table('permissions')
                     ->join('role_permissions', 'permissions.id', '=', 'role_permissions.permission_id')
                     ->join('user_roles', 'role_permissions.role_id', '=', 'user_roles.role_id')
                     ->where('user_roles.user_id', $this->id)
                     ->pluck('permissions.name');
+
+                // Direct User Permissions
+                $userPermissions = $this->permissions()->pluck('name');
+
+                return $rolePermissions->merge($userPermissions)->unique();
             });
         }
 
@@ -355,6 +407,11 @@ class User extends Authenticatable
     public function workoutSessions(): HasMany
     {
         return $this->hasMany(WorkoutSession::class, 'user_id');
+    }
+
+    public function healthMetrics(): HasMany
+    {
+        return $this->hasMany(HealthMetric::class, 'user_id');
     }
 
     public function evolutionPhotos(): HasMany
@@ -732,5 +789,20 @@ class User extends Authenticatable
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function communityPosts(): HasMany
+    {
+        return $this->hasMany(CommunityPost::class);
+    }
+
+    public function communityComments(): HasMany
+    {
+        return $this->hasMany(CommunityComment::class);
+    }
+
+    public function communityReactions(): HasMany
+    {
+        return $this->hasMany(CommunityReaction::class);
     }
 }

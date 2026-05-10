@@ -21,7 +21,13 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\Payment\PaymentGatewayManager::class, function ($app) {
+            return new \App\Services\Payment\PaymentGatewayManager($app);
+        });
+
+        $this->app->bind(\App\Contracts\PaymentGatewayInterface::class, function ($app) {
+            return $app->make(\App\Services\Payment\PaymentGatewayManager::class)->driver();
+        });
     }
 
     public function boot(): void
@@ -33,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Aplica as configurações de e-mail do banco de dados (fallback global)
         MailConfigService::apply();
+        \App\Services\DynamicConfigService::apply();
 
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationSending::class, function ($event) {
             if ($event->channel === 'mail' && $event->notifiable instanceof \App\Models\User) {

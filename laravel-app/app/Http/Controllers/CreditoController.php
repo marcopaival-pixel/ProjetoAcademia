@@ -5,16 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\CreditoPacote;
 use App\Models\CreditoCompra;
 use App\Models\SystemSetting;
-use App\Services\MercadoPagoService;
+use App\Contracts\PaymentGatewayInterface;
 use Illuminate\Http\Request;
 
 class CreditoController extends Controller
 {
-    protected $mpService;
+    protected $gateway;
 
-    public function __construct(MercadoPagoService $mpService)
+    public function __construct(PaymentGatewayInterface $gateway)
     {
-        $this->mpService = $mpService;
+        $this->gateway = $gateway;
     }
 
     public function buy()
@@ -45,7 +45,7 @@ class CreditoController extends Controller
             'quantidade' => $package->quantidade,
             'valor' => $package->valor,
             'status' => 'PENDENTE',
-            'gateway' => 'Mercado Pago',
+            'gateway' => $this->gateway->getIdentifier(),
         ]);
 
         // Se pagamento_ativo for falso, libera automático (modo teste)
@@ -55,49 +55,23 @@ class CreditoController extends Controller
             return redirect()->route('credits.success', ['compra' => $compra->id]);
         }
 
-        // Integrar com Mercado Pago
-        $token = config('projeto.mp_access_token');
-        if (!$token) {
-            return back()->with('error', 'Gateway de pagamento não configurado.');
-        }
-
-        // Criar preferência no Mercado Pago
-        // Vou usar o payload customizado conforme MercadoPagoService
-        $payload = [
-            'items' => [[
-                'title' => "Pacote de Créditos — {$package->nome}",
-                'description' => "Compra de {$package->quantidade} créditos.",
-                'category_id' => 'services',
-                'quantity' => 1,
-                'currency_id' => 'BRL',
-                'unit_price' => (float) $package->valor,
-            ]],
-            'payer' => ['email' => $user->email],
+        // Criar preferência/checkout no Gateway Ativo
+        $response = $this->gateway->createCheckout($user, (float) $package->valor, [
+            'title' => "Pacote de Créditos — {$package->nome}",
+            'description' => "Compra de {$package->quantidade} créditos.",
             'external_reference' => "credits:{$compra->id}",
-            'back_urls' => [
-                'success' => route('credits.success', ['compra' => $compra->id]),
-                'pending' => route('credits.pending', ['compra' => $compra->id]),
-                'failure' => route('credits.buy'),
-            ],
-            'auto_return' => 'approved',
-            'notification_url' => route('credits.webhook'),
-        ];
-
-        // Se estiver em localhost, o webhook não vai funcionar via URL real, mas para produção é necessário
-        if (config('app.env') === 'local') {
-            // No local, podemos simular ou usar ngrok, mas por enquanto vamos prosseguir
-            unset($payload['notification_url']);
-        }
-
-        $response = $this->mpService->apiRequest('POST', 'https://api.mercadopago.com/checkout/preferences', $token, $payload);
+            'success_url' => route('credits.success', ['compra' => $compra->id]),
+            'pending_url' => route('credits.pending', ['compra' => $compra->id]),
+            'failure_url' => route('credits.buy'),
+        ]);
 
         if (!$response['ok']) {
-            return back()->with('error', 'Erro ao processar com Mercado Pago: ' . $response['error']);
+            return back()->with('error', 'Erro ao processar com o gateway: ' . $response['error']);
         }
 
-        $compra->update(['payment_id' => $response['data']['id']]);
+        $compra->update(['payment_id' => $response['id'] ?? $response['data']['id']]);
 
-        return redirect($response['data']['init_point']);
+        return redirect($response['init_point']);
     }
 
     public function success(CreditoCompra $compra)
@@ -125,9 +99,7 @@ class CreditoController extends Controller
 
         if ($topic === 'payment' || $request->has('data')) {
             $paymentId = $id ?? $request->input('data.id');
-            $token = config('projeto.mp_access_token');
-            
-            $payment = $this->mpService->fetchPayment($token, $paymentId);
+            $payment = $this->gateway->fetchPayment($paymentId);
             
             if ($payment['ok']) {
                 $payData = $payment['payment'];

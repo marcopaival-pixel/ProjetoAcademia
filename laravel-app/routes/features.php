@@ -18,8 +18,16 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NutritionController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\TrainingPlanController;
+use App\Http\Controllers\HealthMetricController;
 use App\Models\ExerciseCatalog;
 use Illuminate\Support\Facades\Route;
+
+// Saúde e Performance (Wearables)
+Route::prefix('health-metrics')->name('health-metrics.')->middleware('premium')->group(function () {
+    Route::get('/', [HealthMetricController::class, 'index'])->name('index');
+    Route::get('/dashboard', [HealthMetricController::class, 'dashboard'])->name('dashboard');
+    Route::post('/', [HealthMetricController::class, 'store'])->name('store');
+});
 
 // Registro de Treino — via Menu lateral (Performance HUD)
 Route::match(['get', 'post'], '/exercise', [ExerciseController::class, 'index'])->name('exercise');

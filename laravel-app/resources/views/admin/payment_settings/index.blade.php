@@ -5,12 +5,18 @@
 @section('content')
 <div class="space-y-10 animate-fade-in max-w-6xl pb-20">
     <header class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-            <h2 class="text-3xl font-black text-white tracking-tighter italic">Gateways de Pagamento</h2>
-            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                Configuração Transacional do Ecossistema
-            </p>
+        <div class="flex items-center gap-4">
+            <div>
+                <h2 class="text-3xl font-black text-white tracking-tighter italic">Gateways de Pagamento</h2>
+                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    Configuração Transacional do Ecossistema
+                </p>
+            </div>
+            <a href="{{ route('admin.settings.payments.webhooks') }}" class="flex items-center gap-3 px-6 py-3 bg-zinc-900 border border-white/5 rounded-2xl text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-emerald-500 hover:border-emerald-500/20 transition-all shadow-xl group">
+                <i data-lucide="scan-search" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                Inspecionador de Webhooks
+            </a>
         </div>
         
         @if(session('success'))
@@ -38,11 +44,11 @@
             <form action="{{ route('admin.settings.payments.toggle-global') }}" method="POST">
                 @csrf
                 <label class="relative inline-flex items-center cursor-pointer group/toggle">
-                    <input type="checkbox" name="pagamento_ativo" class="sr-only peer" onchange="this.form.submit()" {{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'checked' : '' }}>
+                    <input type="checkbox" name="pagamento_ativo" class="sr-only peer" onchange="this.form.submit()" {{ \App\Models\AdminSetting::isTrue('pagamento_ativo', true) ? 'checked' : '' }}>
                     <div class="w-16 h-9 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
                     <div class="ml-4 flex flex-col">
-                        <span class="text-[10px] font-black text-white uppercase tracking-widest">{{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'Faturamento Ativo' : 'Acesso Liberado' }}</span>
-                        <span class="text-[8px] font-bold {{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'text-emerald-500' : 'text-zinc-500' }} uppercase tracking-tighter">{{ \App\Models\AdminSetting::get('pagamento_ativo', true) ? 'Gateway Obrigatório' : 'Auto-Ativação de Planos' }}</span>
+                        <span class="text-[10px] font-black text-white uppercase tracking-widest">{{ \App\Models\AdminSetting::isTrue('pagamento_ativo', true) ? 'Faturamento Ativo' : 'Acesso Liberado' }}</span>
+                        <span class="text-[8px] font-bold {{ \App\Models\AdminSetting::isTrue('pagamento_ativo', true) ? 'text-emerald-500' : 'text-zinc-500' }} uppercase tracking-tighter">{{ \App\Models\AdminSetting::isTrue('pagamento_ativo', true) ? 'Gateway Obrigatório' : 'Auto-Ativação de Planos' }}</span>
                     </div>
                 </label>
             </form>
@@ -167,11 +173,24 @@
                             </div>
                         </div>
 
-                        <!-- Right Column: Credentials -->
+                        <!-- Right Column: Credentials & Params -->
                         <div class="space-y-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-3">
+                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Client ID</label>
+                                    <input type="password" name="client_id" value="{{ $currentSetting->client_id ?? '' }}" placeholder="ID do Cliente" 
+                                        class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Client Secret</label>
+                                    <input type="password" name="client_secret" value="{{ $currentSetting->client_secret ?? '' }}" placeholder="Secret do Cliente" 
+                                        class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
+                                </div>
+                            </div>
+
                             <div class="space-y-3">
                                 <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Public Key</label>
-                                <input type="text" name="public_key" value="{{ $currentSetting->public_key ?? '' }}" placeholder="APP_USR-..." 
+                                <input type="password" name="public_key" value="{{ $currentSetting->public_key ?? '' }}" placeholder="APP_USR-..." 
                                     class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
                             </div>
 
@@ -181,23 +200,61 @@
                                     class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
                             </div>
 
-                            <div class="space-y-3">
-                                <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Webhook Secret</label>
-                                <input type="password" name="webhook_secret" value="{{ $currentSetting->webhook_secret ?? '' }}" placeholder="whsec_..." 
-                                    class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-3">
+                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Webhook Secret</label>
+                                    <input type="password" name="webhook_secret" value="{{ $currentSetting->webhook_secret ?? '' }}" placeholder="whsec_..." 
+                                        class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Webhook URL (Custom)</label>
+                                    <input type="url" name="webhook_url" value="{{ $currentSetting->webhook_url ?? '' }}" placeholder="https://..." 
+                                        class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-800">
+                                </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-6 pt-4">
                                 <div class="space-y-3">
-                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Venc. Boleto (Dias)</label>
-                                    <input type="number" name="boleto_expiration_days" value="{{ $currentSetting->boleto_expiration_days ?? 3 }}" 
+                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Timeout (s)</label>
+                                    <input type="number" name="timeout" value="{{ $currentSetting->timeout ?? 45 }}" 
                                         class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all">
                                 </div>
                                 <div class="space-y-3">
-                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Exp. Pix (Minutos)</label>
-                                    <input type="number" name="pix_expiration_minutes" value="{{ $currentSetting->pix_expiration_minutes ?? 30 }}" 
+                                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Prioridade</label>
+                                    <input type="number" name="priority" value="{{ $currentSetting->priority ?? 1 }}" 
                                         class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all">
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Rules Section -->
+                    <div class="pt-12 mt-12 border-t border-white/5">
+                        <header class="mb-10">
+                            <h4 class="text-xl font-black text-white tracking-tight italic">Regras de Negócio</h4>
+                            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Defina multas, juros e tolerâncias para este gateway</p>
+                        </header>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div class="space-y-3">
+                                <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Multa por Atraso (%)</label>
+                                <input type="number" step="0.01" name="penalty_percent" value="{{ $currentSetting->penalty_percent ?? 0.00 }}" 
+                                    class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Juros de Mora (%)</label>
+                                <input type="number" step="0.01" name="interest_percent" value="{{ $currentSetting->interest_percent ?? 0.00 }}" 
+                                    class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Desc. Antecipado (%)</label>
+                                <input type="number" step="0.01" name="discount_percent" value="{{ $currentSetting->discount_percent ?? 0.00 }}" 
+                                    class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Dias de Tolerância</label>
+                                <input type="number" name="tolerance_days" value="{{ $currentSetting->tolerance_days ?? 0 }}" 
+                                    class="w-full bg-zinc-950 border border-white/5 p-5 rounded-[1.5rem] text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all">
                             </div>
                         </div>
                     </div>
@@ -271,11 +328,21 @@
         })
         .then(response => response.json())
         .then(data => {
-            alert(data.message);
+            window.dispatchEvent(new CustomEvent('toast', { 
+                detail: { 
+                    message: data.message, 
+                    type: data.success ? 'success' : 'error' 
+                } 
+            }));
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Erro ao processar o teste.');
+            window.dispatchEvent(new CustomEvent('toast', { 
+                detail: { 
+                    message: 'Erro ao processar o teste de conexão.', 
+                    type: 'error' 
+                } 
+            }));
         })
         .finally(() => {
             spinner.classList.add('hidden');

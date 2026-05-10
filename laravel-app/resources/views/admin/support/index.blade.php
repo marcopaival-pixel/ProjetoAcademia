@@ -6,7 +6,7 @@
 <div class="space-y-8 animate-fade-in">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-3xl font-black text-white tracking-tight">Painel de Atendimento</h2>
+            <h2 class="text-xl font-bold text-white tracking-tight">Painel de Atendimento</h2>
             <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Gerencie chamados e solicitações dos clientes</p>
         </div>
     </div>
@@ -16,7 +16,7 @@
         <div class="bg-zinc-900/40 border border-white/5 rounded-[2rem] p-6 flex items-center justify-between group hover:bg-zinc-900/60 transition-all">
             <div>
                 <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Chamados Abertos</p>
-                <h3 class="text-2xl font-black text-white">{{ $stats['open'] }}</h3>
+                <h3 class="text-xl font-bold text-white">{{ $stats['open'] }}</h3>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
                 <i class="fas fa-envelope-open text-xl"></i>
@@ -25,7 +25,7 @@
         <div class="bg-zinc-900/40 border border-white/5 rounded-[2rem] p-6 flex items-center justify-between group hover:bg-zinc-900/60 transition-all">
             <div>
                 <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Em Atendimento</p>
-                <h3 class="text-2xl font-black text-amber-500">{{ $stats['in_progress'] }}</h3>
+                <h3 class="text-xl font-bold text-amber-500">{{ $stats['in_progress'] }}</h3>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
                 <i class="fas fa-clock text-xl"></i>
@@ -34,7 +34,7 @@
         <div class="bg-zinc-900/40 border border-white/5 rounded-[2rem] p-6 flex items-center justify-between group hover:bg-zinc-900/60 transition-all">
             <div>
                 <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Resolvidos</p>
-                <h3 class="text-2xl font-black text-emerald-500">{{ $stats['resolved'] }}</h3>
+                <h3 class="text-xl font-bold text-emerald-500">{{ $stats['resolved'] }}</h3>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                 <i class="fas fa-check-circle text-xl"></i>
