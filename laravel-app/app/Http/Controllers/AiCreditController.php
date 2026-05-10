@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Models\AiCreditPackage;
 use App\Services\AiCreditService;
-use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
 
 class AiCreditController extends Controller
 {
     protected $aiCreditService;
-    protected $mpService;
+    protected $gateway;
 
-    public function __construct(AiCreditService $aiCreditService, MercadoPagoService $mpService)
+    public function __construct(AiCreditService $aiCreditService, PaymentGatewayInterface $gateway)
     {
         $this->aiCreditService = $aiCreditService;
-        $this->mpService = $mpService;
+        $this->gateway = $gateway;
     }
 
     /**
@@ -28,7 +28,7 @@ class AiCreditController extends Controller
     }
 
     /**
-     * Process a credit purchase (mock for now).
+     * Process a credit purchase.
      */
     public function buy(Request $request)
     {
@@ -36,18 +36,14 @@ class AiCreditController extends Controller
             'package_id' => 'required|exists:ai_credits_packages,id',
         ]);
 
-        $packageId = $request->package_id;
+        $package = AiCreditPackage::findOrFail($request->package_id);
         $user = auth()->user();
 
-        $token = config('projeto.mp_access_token');
-        if (!$token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gateway de pagamento não configurado.',
-            ], 500);
-        }
-
-        $checkout = $this->mpService->createAiCreditsCheckoutPreference($token, $user->id, $packageId);
+        $checkout = $this->gateway->createCheckout($user, (float) $package->price, [
+            'title' => "Créditos IA — {$package->name}",
+            'description' => "Compra de {$package->credits} créditos de IA.",
+            'external_reference' => "ai_credits:{$package->id}",
+        ]);
 
         if (!$checkout['ok']) {
             return response()->json([

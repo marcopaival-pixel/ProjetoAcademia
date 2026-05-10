@@ -102,10 +102,23 @@ class AssessmentController extends Controller
 
         $assessment = BodyAssessment::create($data);
 
-        // Auto-calcular BF% se measurements estiverem presentes (Máxima Eficácia)
-        $profile = Auth::user()->profile;
+        // Atualizar dados de Rotina e Fitness no Perfil do Usuário
+        $profile = \App\Models\UserProfile::where('user_id', $patientId)->first();
+        if ($profile) {
+            $profile->update($request->only([
+                'physical_level', 'experience_level', 'training_location', 
+                'cardio_frequency', 'sleep_hours', 'nutrition_quality', 
+                'available_daily_time_mins', 'fitness_notes', 'target_weight_kg'
+            ]));
+        }
+
+        // Executar Motor Inteligente (Máxima Eficácia)
+        $motor = app(\App\Services\IntelligenceMotorService::class);
+        $user = \App\Models\User::find($patientId);
+        
+        // Calcular BF% se measurements estiverem presentes
         if ($assessment->bf_percent === null && $profile && $profile->height_cm > 0) {
-            $calcBf = Nutrition::calculateBodyFatPercent(
+            $calcBf = \App\Services\Nutrition::calculateBodyFatPercent(
                 $profile->sex,
                 (float)$profile->height_cm,
                 (float)$assessment->neck,
@@ -118,14 +131,17 @@ class AssessmentController extends Controller
             }
         }
 
-        // Sincronizar com WeightEntry e atualizar metas automáticas (Máxima Eficácia)
+        // Atualizar Health Score do Usuário
+        $healthScore = $motor->calculateHealthScore($user);
+        $user->update(['health_score' => $healthScore]);
+
+        // Sincronizar com WeightEntry e atualizar metas automáticas
         if (!empty($data['weight_kg'])) {
             \App\Models\WeightEntry::updateOrCreate(
                 ['user_id' => $data['user_id'], 'weighed_at' => $data['assessment_date']],
                 ['weight_kg' => $data['weight_kg']]
             );
 
-            $profile = Auth::user()->profile;
             if ($profile && $profile->is_water_target_auto) {
                 $newWaterTarget = \App\Services\Nutrition::calculateWaterTarget(
                     (float)$data['weight_kg'],
@@ -138,22 +154,44 @@ class AssessmentController extends Controller
             }
         }
 
-        if ($isProfessional && $request->filled('patient_id')) {
-            return redirect()->route('professional.patients.show', $patientId)->with('success', 'Avaliação física registrada com sucesso!');
+        // Geração de Treino IA (Opcional)
+        if ($request->has('generate_ai_training')) {
+            $generator = app(\App\Services\AIFitnessGeneratorService::class);
+            $generator->generateTrainingPlan($user);
         }
 
-        return redirect()->route('assessments.index')->with('success', 'Avaliação física registrada com sucesso!');
+        // Geração de Plano Alimentar IA (Opcional)
+        if ($request->has('generate_ai_meal_plan')) {
+            $generator = app(\App\Services\AIFitnessGeneratorService::class);
+            $mealPlan = $generator->generateMealPlan($user);
+            if ($mealPlan['ok']) {
+                $assessment->update(['ai_suggestions' => $mealPlan['plan']]);
+            }
+        }
+
+        if ($isProfessional && $request->filled('patient_id')) {
+            return redirect()->route('professional.patients.show', $patientId)->with('success', 'Avaliação física e análise inteligente registradas!');
+        }
+
+        return redirect()->route('assessments.index')->with('success', 'Avaliação registrada! Seu Score de Saúde foi atualizado para ' . $healthScore . '%.');
     }
 
     public function show(BodyAssessment $assessment): View
     {
-        if ($assessment->user_id !== Auth::id()) abort(403);
+        if ($assessment->user_id !== Auth::id() && !Auth::user()->hasRole(['professional', 'admin'])) abort(403);
 
         if (Auth::user()->isResourceOverLimit('assessments', $assessment->id)) {
             return redirect()->route('assessments.index')->with('error', 'Esta avaliação está bloqueada por exceder o limite do seu plano atual. Faça upgrade para acessá-la.');
         }
 
-        return view('assessments.show', compact('assessment'));
+        $motor = app(\App\Services\IntelligenceMotorService::class);
+        $user = \App\Models\User::find($assessment->user_id);
+        
+        $predictions = $motor->predictEvolution($user);
+        $risks = $motor->detectRisks($user);
+        $healthScore = $user->health_score;
+
+        return view('assessments.show', compact('assessment', 'predictions', 'risks', 'healthScore'));
     }
 
     public function destroy(BodyAssessment $assessment)

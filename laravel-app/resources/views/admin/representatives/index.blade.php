@@ -6,7 +6,7 @@
 <div class="p-6 space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-black text-white tracking-tight italic uppercase">Gestão de <span class="text-emerald-500">Representantes</span></h1>
+            <h1 class="text-xl font-bold text-white tracking-tight">Gestão de <span class="text-emerald-500">Representantes</span></h1>
             <p class="text-sm text-zinc-500 font-medium italic">Aprove e gerencie seus parceiros comerciais.</p>
         </div>
     </div>
@@ -14,7 +14,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="p-6 rounded-[2rem] bg-zinc-900/50 border border-zinc-800 backdrop-blur-xl">
             <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Total de Representantes</p>
-            <p class="text-3xl font-black text-white italic tracking-tighter">{{ $representatives->total() }}</p>
+            <p class="text-2xl font-bold text-white tracking-tight">{{ $representatives->total() }}</p>
         </div>
     </div>
 

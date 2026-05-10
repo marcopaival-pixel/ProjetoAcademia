@@ -9,7 +9,7 @@
             <i class="fas fa-rocket text-white text-4xl"></i>
         </div>
         <div class="space-y-2">
-            <h3 class="text-white font-black text-4xl">Pronto para decolar!</h3>
+            <h3 class="text-white font-bold text-2xl">Pronto para decolar!</h3>
             <p class="text-zinc-500 text-lg max-w-lg mx-auto">
                 A implantação da <strong>{{ $company->name }}</strong> foi concluída com sucesso. 
                 Ao clicar no botão abaixo, a clínica será ativada e estará pronta para atendimento.

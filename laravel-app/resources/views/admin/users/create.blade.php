@@ -43,6 +43,15 @@
                         </div>
 
                         <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">CPF (Obrigatório)</label>
+                            <input type="text" name="cpf" value="{{ old('cpf') }}" required
+                                x-mask="999.999.999-99"
+                                class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-all"
+                                placeholder="000.000.000-00">
+                            @error('cpf') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">Perfil de Acesso</label>
                             <select name="profile_id" id="profile_id" required
                                 class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer">
@@ -82,6 +91,11 @@
                                     <div class="w-4 h-4 rounded-full border border-gray-600 peer-checked:bg-red-500 peer-checked:border-red-500 transition-all"></div>
                                     <span class="text-gray-300">Bloqueado</span>
                                 </label>
+                                <label class="flex items-center gap-2 cursor-pointer bg-black/20 px-4 py-2 border border-white/10 rounded-xl group hover:border-yellow-500 transition-all">
+                                    <input type="radio" name="status" value="pending" class="hidden peer">
+                                    <div class="w-4 h-4 rounded-full border border-gray-600 peer-checked:bg-yellow-500 peer-checked:border-yellow-500 transition-all"></div>
+                                    <span class="text-gray-300">Pendente</span>
+                                </label>
                             </div>
                         </div>
 
@@ -107,7 +121,8 @@
                             <label class="block text-sm font-medium text-gray-400 mb-2">Senha</label>
                             <input type="password" name="password" required
                                 class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-all"
-                                placeholder="Mínimo 8 caracteres">
+                                placeholder="Ex: Academia@2026">
+                            <p class="text-gray-500 text-xs mt-1">Mínimo 8 caracteres contendo maiúscula, número e símbolo.</p>
                             @error('password') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
@@ -160,7 +175,7 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">Especialidade (Obrigatório)</label>
-                                <select name="specialty" id="specialty_id" required
+                                <select name="specialty" id="specialty_id"
                                     class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-all">
                                     <option value="">Selecione uma profissão primeiro...</option>
                                 </select>

@@ -34,10 +34,12 @@ class BodyAssessment extends Model
         'professional_id',
         'blood_pressure',
         'heart_rate',
+        'ai_suggestions',
     ];
 
     protected $casts = [
         'assessment_date' => 'date',
+        'ai_suggestions' => 'array',
     ];
 
     public function user()

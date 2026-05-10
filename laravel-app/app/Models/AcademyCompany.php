@@ -17,25 +17,44 @@ class AcademyCompany extends Model
         'shared_medical_records',
         'legal_name',
         'tax_id',
+        'account_type',
+        'state_registration',
+        'municipal_registration',
         'responsible_name',
         'responsible_email',
         'phone',
+        'whatsapp',
+        'website',
+        'instagram',
         'address',
+        'street',
+        'number',
         'city',
         'state',
         'zip_code',
+        'country',
+        'language',
+        'currency',
+        'timezone',
         'pdf_settings',
         'is_active',
         'onboarding_status',
+        'onboarding_state',
         'current_onboarding_step',
+        'mercadopago_user_id',
+        'platform_fee_percent',
+        'platform_fee_fixed',
     ];
 
     protected function casts(): array
     {
         return [
             'pdf_settings' => 'array',
+            'onboarding_state' => 'array',
             'is_active' => 'boolean',
             'shared_medical_records' => 'boolean',
+            'platform_fee_percent' => 'decimal:2',
+            'platform_fee_fixed' => 'decimal:2',
         ];
     }
 

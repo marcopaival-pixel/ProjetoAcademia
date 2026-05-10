@@ -4,6 +4,14 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto pb-20">
+    <div class="mb-8 flex items-center justify-between">
+        <a href="{{ route('admin.registrations.index') }}" class="inline-flex items-center gap-3 text-zinc-500 hover:text-white transition-all group">
+            <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-rose-500/20 group-hover:text-rose-400 transition-all">
+                <i class="fas fa-chevron-left text-sm"></i>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest">Voltar para o Menu</span>
+        </a>
+    </div>
     <div class="bg-[#0d121f] border border-white/5 rounded-3xl p-8 shadow-2xl mb-8">
         <div class="flex items-center gap-4 mb-6">
             <div class="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500">

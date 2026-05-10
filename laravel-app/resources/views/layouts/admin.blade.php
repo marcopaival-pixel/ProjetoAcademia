@@ -75,7 +75,7 @@
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
                         </button>
                         <div>
-                            <h1 class="text-4xl font-black text-white tracking-tighter italic uppercase truncate leading-none">@yield('title')</h1>
+                            <h1 class="text-2xl font-bold text-white tracking-tight truncate leading-none">@yield('title')</h1>
                             <p class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] mt-2 italic">NexShape <span class="text-emerald-500">Admin Intelligence</span></p>
                         </div>
                     </div>
@@ -92,6 +92,7 @@
 
     <!-- Alpine.js Plugins -->
     <script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -110,6 +111,7 @@
         }
     </script>
     @include('partials.confirm-delete-modal')
+    @include('partials.confirm-action-modal')
     @include('partials.toast')
 
     @stack('scripts')

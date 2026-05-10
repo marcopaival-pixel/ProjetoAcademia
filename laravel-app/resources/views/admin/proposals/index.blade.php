@@ -6,7 +6,7 @@
 <div class="space-y-8 animate-fade-in">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-3xl font-black text-white tracking-tight">Propostas Comerciais</h2>
+            <h2 class="text-xl font-bold text-white tracking-tight">Propostas Comerciais</h2>
             <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Gerencie ofertas enviadas aos leads</p>
         </div>
         <a href="{{ route('admin.proposals.create') }}" class="px-6 py-3 bg-blue-600 rounded-2xl text-[10px] text-white font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20">

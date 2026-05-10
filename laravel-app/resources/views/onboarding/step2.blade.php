@@ -1,53 +1,85 @@
-@extends('layouts.onboarding')
+@extends('layouts.onboarding-premium')
 
-@section('title', 'Passo 2: Objetivo — NexShape')
-@section('step_number', '02/08')
-@section('back_route', route('onboarding.step1'))
+@section('title', 'Dados Empresariais')
+@section('step_title', 'Informações do Negócio')
+@section('step_description', 'Precisamos dos dados legais da sua empresa ou perfil profissional para emissão de documentos e conformidade fiscal.')
 
-@section('onboarding_content')
-<div class="space-y-8 animate-fade-up">
-    <header class="space-y-4">
-        <h2 class="text-4xl font-black text-white tracking-tight leading-tight">Qual é o seu objetivo?</h2>
-        <p class="text-zinc-400 text-base font-medium">Isso nos ajuda a calcular suas necessidades calóricas exatas.</p>
-    </header>
-
-    <form action="{{ route('onboarding.step2.save') }}" method="POST" class="space-y-6">
-        @csrf
-        <div class="grid grid-cols-1 gap-4">
-            @php
-                $goals = [
-                    'Emagrecimento Agressivo' => 'Foco em queima rápida de gordura.',
-                    'Emagrecimento Sustentável' => 'Perda constante e saudável de peso.',
-                    'Recomposição Corporal' => 'Perder gordura e ganhar músculo.',
-                    'Manter o peso' => 'Equilíbrio térmico e saúde geral.',
-                    'Ganhar massa muscular' => 'Foco total em hipertrofia.',
-                    'Performance Atlética' => 'Suporte máximo para treinos intensos.',
-                ];
-            @endphp
-
-            @foreach($goals as $title => $desc)
-                <label class="group relative cursor-pointer">
-                    <input type="radio" name="goal" value="{{ $title }}" class="peer sr-only" required>
-                    <div class="p-6 bg-white/5 border-2 border-white/10 rounded-2xl transition-all duration-300 group-hover:bg-white/10 peer-checked:border-blue-500 peer-checked:bg-blue-500/10">
-                        <div class="flex items-center justify-between">
-                            <div class="space-y-1">
-                                <span class="block text-lg font-bold text-white">{{ $title }}</span>
-                                <span class="block text-xs font-medium text-zinc-500 group-hover:text-zinc-400 transition-colors">{{ $desc }}</span>
-                            </div>
-                            <div class="w-6 h-6 rounded-full border-2 border-white/20 peer-checked:border-blue-500 flex items-center justify-center">
-                                <div class="w-2.5 h-2.5 bg-blue-500 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                            </div>
-                        </div>
-                    </div>
-                </label>
-            @endforeach
+@section('content')
+<form action="{{ route('onboarding-premium.step.save', 2) }}" method="POST" class="space-y-12">
+    @csrf
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Nome Fantasia -->
+        <div class="space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Nome Fantasia / Marca</label>
+            <input type="text" name="name" value="{{ old('name', $company->name ?? '') }}" required
+                placeholder="Ex: Clínica Viver Bem"
+                class="w-full input-premium">
         </div>
 
-        <div class="pt-10">
-            <button type="submit" class="w-full py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] uppercase tracking-widest text-sm transform hover:-translate-y-1">
-                Continuar
-            </button>
+        <!-- Razão Social -->
+        <div class="space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                Razão Social
+                <x-onboarding-tooltip text="O nome oficial registrado na junta comercial ou cartório." />
+            </label>
+            <input type="text" name="legal_name" value="{{ old('legal_name', $company->legal_name ?? '') }}"
+                placeholder="Ex: Viver Bem Serviços Médicos Ltda"
+                class="w-full input-premium">
         </div>
-    </form>
-</div>
+
+        <!-- CPF / CNPJ -->
+        <div class="space-y-3" x-data="{ 
+            taxId: '{{ old('tax_id', $company->tax_id ?? '') }}',
+            mask() {
+                let v = this.taxId.replace(/\D/g, '');
+                if (v.length <= 11) {
+                    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                } else {
+                    v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+                    v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                    v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                    v = v.replace(/(\d{4})(\d)/, '$1-$2');
+                }
+                this.taxId = v.substring(0, 18);
+            }
+        }">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                CPF / CNPJ / NIF
+                <x-onboarding-tooltip text="Insira o documento oficial. Para profissionais liberais use o CPF. Para clínicas use o CNPJ." />
+            </label>
+            <input type="text" name="tax_id" x-model="taxId" @input="mask()" required
+                placeholder="00.000.000/0000-00"
+                class="w-full input-premium">
+            <p class="text-[10px] text-zinc-600 mt-2 px-1">Detectamos automaticamente o tipo de documento.</p>
+        </div>
+
+        <!-- Inscrição Estadual -->
+        <div class="space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Inscrição Estadual</label>
+            <input type="text" name="state_registration" value="{{ old('state_registration', $company->state_registration ?? '') }}"
+                placeholder="Isento ou Número"
+                class="w-full input-premium">
+        </div>
+
+        <!-- Inscrição Municipal -->
+        <div class="md:col-span-2 space-y-3">
+            <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Inscrição Municipal</label>
+            <input type="text" name="municipal_registration" value="{{ old('municipal_registration', $company->municipal_registration ?? '') }}"
+                placeholder="Número da inscrição na prefeitura"
+                class="w-full input-premium">
+        </div>
+    </div>
+
+    <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <a href="{{ route('onboarding-premium.step', 1) }}" class="text-zinc-500 hover:text-white font-bold transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Voltar
+        </a>
+        <button type="submit" class="btn-premium w-full sm:w-auto flex items-center justify-center gap-3">
+            Continuar para Contato <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
 @endsection

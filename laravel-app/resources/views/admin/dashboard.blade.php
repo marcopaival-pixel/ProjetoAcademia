@@ -4,6 +4,8 @@
 
 @section('content')
 <div class="animate-fade-in space-y-6">
+    <!-- App Promotion Banner (Marketing) -->
+    <x-marketing.promo-banner />
     
     <!-- Saudação NexShape Pattern -->
     <div class="mb-10 animate-fade-in flex flex-wrap items-end justify-between gap-6">
@@ -31,6 +33,27 @@
             </div>
             <div class="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-white/5">
                 <div class="h-full bg-emerald-600 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" style="width: 94%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- IA Insight Alert (Floating Premium Card) -->
+    <div class="mb-10 animate-fade-in-up" style="animation-delay: 200ms">
+        <div class="bg-gradient-to-r from-emerald-600/10 via-zinc-900/50 to-blue-600/10 backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 flex items-center gap-6 shadow-2xl relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700"></div>
+            <div class="w-14 h-14 bg-zinc-950/80 rounded-2xl flex items-center justify-center border border-emerald-500/20 shadow-inner shrink-0">
+                <i data-lucide="brain-circuit" class="w-7 h-7 text-emerald-500 animate-pulse"></i>
+            </div>
+            <div class="flex-1">
+                <span class="text-[9px] text-emerald-500 font-black uppercase tracking-[0.4em] mb-1 block italic">NexBot Executive Intelligence</span>
+                <p class="text-zinc-100 text-sm font-bold tracking-tight italic">
+                    "{{ $metrics['ai_insight'] }}"
+                </p>
+            </div>
+            <div class="hidden md:block">
+                <button class="px-5 py-2.5 bg-zinc-950/50 hover:bg-emerald-500 hover:text-zinc-950 border border-emerald-500/20 rounded-xl text-emerald-500 text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500">
+                    Ver Otimizações
+                </button>
             </div>
         </div>
     </div>

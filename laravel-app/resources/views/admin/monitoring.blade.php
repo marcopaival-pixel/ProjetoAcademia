@@ -20,7 +20,7 @@
     </div>
 
     <!-- Info Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Software Stack Card -->
         <div class="group bg-zinc-900/40 backdrop-blur-3xl p-10 rounded-[2.5rem] border border-white/5 hover:border-blue-500/20 transition-all shadow-2xl">
             <h3 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
@@ -36,6 +36,47 @@
                     </span>
                 </div>
                 @endforeach
+            </div>
+        </div>
+
+        <!-- Queues & Workers Card -->
+        <div class="group bg-zinc-900/40 backdrop-blur-3xl p-10 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-all shadow-2xl">
+            <h3 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                <i class="fas fa-tasks text-amber-500"></i>Filas & Workers
+            </h3>
+            
+            <div class="space-y-8">
+                <div class="flex items-center justify-between p-6 bg-zinc-950/50 rounded-3xl border border-white/5">
+                    <div>
+                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1">Jobs em Espera</span>
+                        <span class="text-3xl font-black text-white">{{ $info['pending_jobs'] }}</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-zinc-400">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-6 bg-rose-500/5 rounded-3xl border border-rose-500/10">
+                    <div>
+                        <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest block mb-1">Jobs Falhados</span>
+                        <span class="text-3xl font-black text-rose-500">{{ $info['failed_jobs'] }}</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex flex-col gap-3">
+                    <form action="{{ route('admin.operations.retry-failed') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="w-full py-4 bg-zinc-950 border border-white/5 rounded-2xl text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all flex items-center justify-center gap-3">
+                            <i class="fas fa-sync-alt"></i> Tentar Novamente Falhados
+                        </button>
+                    </form>
+                    <a href="{{ route('admin.operations.index') }}" class="text-center text-[9px] font-black text-zinc-600 uppercase tracking-widest hover:text-amber-500 transition-colors">
+                        Ver Painel de Operações &rarr;
+                    </a>
+                </div>
             </div>
         </div>
 

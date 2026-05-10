@@ -14,6 +14,7 @@ class TrainingPlanExercise extends Model
     protected $fillable = [
         'training_plan_id',
         'exercise_id',
+        'custom_name',
         'position',
         'notes',
     ];

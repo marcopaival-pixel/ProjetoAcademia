@@ -19,11 +19,11 @@ class Plan extends Model
         'max_assessments',
         'max_patients',
         'max_professionals',
-        'is_active',
         'is_corporate',
         'price_per_professional',
         'min_professionals',
         'commission_rate',
+        'trial_days',
     ];
 
     protected $casts = [

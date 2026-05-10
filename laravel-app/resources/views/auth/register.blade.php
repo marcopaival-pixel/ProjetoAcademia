@@ -15,11 +15,24 @@
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/5 rounded-full blur-[150px] pointer-events-none"></div>
 
     <!-- Floating Back Button -->
-    <a href="{{ route('home') }}" 
-       class="fixed top-8 left-8 z-[500] w-12 h-12 bg-zinc-900/80 backdrop-blur-2xl border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all duration-500 group shadow-2xl hover:scale-110 active:scale-95"
-       title="Voltar para Home">
-        <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
-    </a>
+    <div class="fixed top-8 left-8 z-[500]">
+        <!-- Link to Home (Step 0) -->
+        <a href="{{ route('home') }}" 
+           x-show="step === 0"
+           class="w-12 h-12 bg-zinc-900/80 backdrop-blur-2xl border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all duration-500 group shadow-2xl hover:scale-110 active:scale-95"
+           title="Voltar para Home">
+            <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+        </a>
+
+        <!-- Button to Step 0 (Step 1+) -->
+        <button @click="step = 0; $nextTick(() => lucide.createIcons())" 
+           x-show="step > 0"
+           style="display: none;"
+           class="w-12 h-12 bg-zinc-900/80 backdrop-blur-2xl border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all duration-500 group shadow-2xl hover:scale-110 active:scale-95"
+           title="Voltar para Seleção de Protocolo">
+            <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+        </button>
+    </div>
 
     <div class="max-w-3xl w-full mx-auto space-y-8 relative z-10 transition-all duration-700">
         

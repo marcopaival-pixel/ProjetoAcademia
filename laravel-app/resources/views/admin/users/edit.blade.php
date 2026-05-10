@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-3xl font-black text-white tracking-tight">Ficha do Utilizador <span class="text-blue-500">#{{ $user->id }}</span></h2>
+            <h2 class="text-xl font-bold text-white tracking-tight">Ficha do Utilizador <span class="text-blue-500">#{{ $user->id }}</span></h2>
             <p class="text-zinc-500 text-sm mt-1">Gestão de acessos, perfil e conformidade LGPD.</p>
         </div>
         <div class="flex items-center gap-3">
@@ -50,6 +50,13 @@
                 <div class="space-y-2">
                     <label for="email" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">E-mail</label>
                     <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required
+                        class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-700">
+                </div>
+
+                <div class="space-y-2">
+                    <label for="cpf" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">CPF (Obrigatório)</label>
+                    <input type="text" id="cpf" name="cpf" value="{{ old('cpf', $user->cpf) }}" required
+                        x-mask="999.999.999-99"
                         class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-zinc-700">
                 </div>
 
@@ -315,63 +322,114 @@
             
     </div>
 
-    <!-- Permissões do Perfil -->
-    <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-10 rounded-[3rem] shadow-2xl">
-        <div class="flex items-center gap-4 mb-10 pb-6 border-b border-white/5">
-            <div class="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 border border-blue-500/20">
-                <i class="fas fa-lock text-xl"></i>
+        <!-- Permissões do Perfil -->
+        <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-10 rounded-[3rem] shadow-2xl mt-10" x-data="{ tab: 'role' }">
+            <div class="flex items-center gap-8 mb-10 pb-6 border-b border-white/5">
+                <button type="button" @click="tab = 'role'" :class="tab === 'role' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-zinc-500'" class="pb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all">Regras do Perfil (Global)</button>
+                <button type="button" @click="tab = 'direct'" :class="tab === 'direct' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-zinc-500'" class="pb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all">Exceções Individuais (Privado)</button>
             </div>
-            <div>
-                <h3 class="text-xl font-black text-white tracking-tight italic">Níveis de Acesso: {{ $user->userProfile?->label }}</h3>
-                <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Configure o que este perfil pode aceder no sistema.</p>
-            </div>
-            <div class="ml-auto">
-                <div class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                    <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Atenção: Alterações afetam TODOS com este perfil.</span>
-                </div>
-            </div>
-        </div>
 
-        @php
-            $permissionGroups = [
-                'Sistema' => $allPermissions->filter(fn($p) => str_contains($p->name, 'admin') || str_contains($p->name, 'portal')),
-                'Usuários' => $allPermissions->filter(fn($p) => str_contains($p->name, 'users')),
-                'Documentos PDF' => $allPermissions->filter(fn($p) => str_contains($p->name, 'pdf')),
-                'Operacional' => $allPermissions->filter(fn($p) => str_contains($p->name, 'training') || str_contains($p->name, 'reception')),
-                'Financeiro / Suporte' => $allPermissions->filter(fn($p) => str_contains($p->name, 'finance') || str_contains($p->name, 'support')),
-            ];
-            
-            $userProfilePermissionIds = $user->userProfile ? $user->userProfile->permissions->pluck('id')->toArray() : [];
-        @endphp
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            @foreach($permissionGroups as $groupName => $groupPermissions)
-                @if($groupPermissions->count() > 0)
-                <div class="space-y-6">
-                    <h4 class="text-xs font-black text-blue-500 uppercase tracking-widest border-l-4 border-blue-600 pl-3 leading-none">{{ $groupName }}</h4>
-                    
-                    <div class="space-y-3">
-                        @foreach($groupPermissions as $permission)
-                            <label class="flex items-start gap-3 cursor-pointer group p-3 bg-zinc-950/40 border border-white/5 rounded-2xl hover:border-blue-500/30 transition-all">
-                                <div class="relative flex items-center justify-center mt-1">
-                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" 
-                                        {{ in_array($permission->id, $userProfilePermissionIds) ? 'checked' : '' }}
-                                        class="peer sr-only">
-                                    <div class="w-5 h-5 rounded-lg bg-zinc-900 border border-white/10 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-colors flex items-center justify-center">
-                                        <i class="fas fa-check text-white text-[8px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
-                                    </div>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors block">{{ $permission->label }}</span>
-                                    <span class="text-[9px] text-zinc-600 font-medium uppercase tracking-tight block mt-0.5">{{ $permission->name }}</span>
-                                </div>
-                            </label>
-                        @endforeach
+            <!-- Role Permissions (Global) -->
+            <div x-show="tab === 'role'" class="animate-fade-in">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 border border-blue-500/20">
+                        <i class="fas fa-users-cog text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white tracking-tight">Permissões do Perfil: {{ $user->userProfile?->label }}</h3>
+                        <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Configure o que este perfil pode aceder no sistema.</p>
+                    </div>
+                    <div class="ml-auto">
+                        <div class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                            <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Atenção: Alterações afetam TODOS com este perfil.</span>
+                        </div>
                     </div>
                 </div>
-                @endif
-            @endforeach
-        </div>
+
+                @php
+                    $permissionGroups = [
+                        'Sistema' => $allPermissions->filter(fn($p) => str_contains($p->name, 'admin') || str_contains($p->name, 'portal')),
+                        'Usuários' => $allPermissions->filter(fn($p) => str_contains($p->name, 'users')),
+                        'Documentos PDF' => $allPermissions->filter(fn($p) => str_contains($p->name, 'pdf')),
+                        'Operacional' => $allPermissions->filter(fn($p) => str_contains($p->name, 'training') || str_contains($p->name, 'reception')),
+                        'Financeiro / Suporte' => $allPermissions->filter(fn($p) => str_contains($p->name, 'finance') || str_contains($p->name, 'support')),
+                    ];
+                    
+                    $userProfilePermissionIds = $user->userProfile ? $user->userProfile->permissions->pluck('id')->toArray() : [];
+                    $userDirectPermissionIds = $user->permissions->pluck('id')->toArray();
+                @endphp
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    @foreach($permissionGroups as $groupName => $groupPermissions)
+                        @if($groupPermissions->count() > 0)
+                        <div class="space-y-6">
+                            <h4 class="text-xs font-black text-blue-500 uppercase tracking-widest border-l-4 border-blue-600 pl-3 leading-none">{{ $groupName }}</h4>
+                            
+                            <div class="space-y-3">
+                                @foreach($groupPermissions as $permission)
+                                    <label class="flex items-start gap-3 cursor-pointer group p-3 bg-zinc-950/40 border border-white/5 rounded-2xl hover:border-blue-500/30 transition-all">
+                                        <div class="relative flex items-center justify-center mt-1">
+                                            <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" 
+                                                {{ in_array($permission->id, $userProfilePermissionIds) ? 'checked' : '' }}
+                                                class="peer sr-only">
+                                            <div class="w-5 h-5 rounded-lg bg-zinc-900 border border-white/10 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-colors flex items-center justify-center">
+                                                <i class="fas fa-check text-white text-[8px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors block">{{ $permission->label }}</span>
+                                            <span class="text-[9px] text-zinc-600 font-medium uppercase tracking-tight block mt-0.5">{{ $permission->name }}</span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Direct Permissions (Individual) -->
+            <div x-show="tab === 'direct'" class="animate-fade-in" x-cloak>
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 bg-emerald-600/10 rounded-2xl flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                        <i class="fas fa-user-shield text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white tracking-tight">Exceções para {{ $user->name }}</h3>
+                        <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Permissões atribuídas EXCLUSIVAMENTE a este utilizador.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    @foreach($permissionGroups as $groupName => $groupPermissions)
+                        @if($groupPermissions->count() > 0)
+                        <div class="space-y-6">
+                            <h4 class="text-xs font-black text-emerald-500 uppercase tracking-widest border-l-4 border-emerald-600 pl-3 leading-none">{{ $groupName }}</h4>
+                            
+                            <div class="space-y-3">
+                                @foreach($groupPermissions as $permission)
+                                    <label class="flex items-start gap-3 cursor-pointer group p-3 bg-zinc-950/40 border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all">
+                                        <div class="relative flex items-center justify-center mt-1">
+                                            <input type="checkbox" name="direct_permissions[]" value="{{ $permission->id }}" 
+                                                {{ in_array($permission->id, $userDirectPermissionIds) ? 'checked' : '' }}
+                                                class="peer sr-only">
+                                            <div class="w-5 h-5 rounded-lg bg-zinc-900 border border-white/10 peer-checked:bg-emerald-600 peer-checked:border-emerald-500 transition-colors flex items-center justify-center">
+                                                <i class="fas fa-check text-white text-[8px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors block">{{ $permission->label }}</span>
+                                            <span class="text-[9px] text-zinc-600 font-medium uppercase tracking-tight block mt-0.5">{{ $permission->name }}</span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         <div class="flex flex-col md:flex-row items-center gap-4 pt-10 border-t border-white/5 mt-10">
