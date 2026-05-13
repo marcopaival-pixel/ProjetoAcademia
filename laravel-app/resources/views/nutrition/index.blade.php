@@ -52,10 +52,14 @@
             },
             selectFromCatalog(item) {
                 this.supplementSearch = item.name;
-                const dosageInput = document.querySelector('input[name="dosage"]');
-                const unitSelect = document.querySelector('select[name="unit"]');
-                if (dosageInput && item.default_dosage) dosageInput.value = item.default_dosage;
-                if (unitSelect && item.default_unit) unitSelect.value = item.default_unit;
+                // Busca os campos dentro do modal de suplementos para preenchimento
+                const modal = document.querySelector('[x-show="supplementModalOpen"]');
+                if (modal) {
+                    const dosageInput = modal.querySelector('input[name="dosage"]');
+                    const unitInput = modal.querySelector('input[name="unit"]');
+                    if (dosageInput && item.default_dosage) dosageInput.value = item.default_dosage;
+                    if (unitInput && item.default_unit) unitInput.value = item.default_unit;
+                }
                 this.showCatalog = false;
             },
             async takeSupplement(id) {
@@ -123,9 +127,12 @@
                     const data = await resp.json();
                     if (data.success) {
                         this.mealSuggestion = data.suggestion;
-                        this.aiCredits--;
                     } else {
                         this.mealSuggestion = 'Erro ao gerar sugestão: ' + data.error;
+                        if (data.code === 'credits_exceeded') {
+                            this.suggestionModalOpen = false;
+                            window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
+                        }
                     }
                 } catch (e) {
                     this.mealSuggestion = 'Erro na comunicação com o servidor.';
@@ -142,9 +149,12 @@
                     const data = await resp.json();
                     if (data.success) {
                         this.auditResult = data.audit;
-                        this.aiCredits--;
                     } else {
                         this.auditResult = 'Erro na auditoria: ' + data.error;
+                        if (data.code === 'credits_exceeded') {
+                            this.auditModalOpen = false;
+                            window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
+                        }
                     }
                 } catch (e) {
                     this.auditResult = 'Erro na comunicação com o servidor.';
@@ -239,6 +249,7 @@
                     const data = await resp.json();
                     if (data.ok) {
                         this.searchResults = data.products;
+                        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
                     }
                 } catch (e) {} finally { this.isSearching = false; }
             },
@@ -257,8 +268,48 @@
                 this.loadingFavorites = true;
                 try {
                     const resp = await fetch(`{{ route('nutrition.api.favorites') }}?meal_type=${mealType}`);
-                    this.favorites = await resp.json();
-                } catch (e) {} finally { this.loadingFavorites = false; }
+                    const data = await resp.json();
+                    this.favorites = data;
+                    this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+                } catch (e) {
+                    console.error('Erro ao carregar favoritos:', e);
+                } finally { this.loadingFavorites = false; }
+            },
+            scannerOpen: false,
+            photoOpen: false,
+            photoFile: null,
+            isAnalyzingPhoto: false,
+            async analyzePhoto() {
+                if (!this.photoFile) return;
+                this.isAnalyzingPhoto = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('photo', this.photoFile);
+                    formData.append('_token', '{{ csrf_token() }}');
+
+                    const resp = await fetch('{{ route('nutrition.api.process-photo') }}', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        const food = data.foods[0];
+                        this.selectedFood = {
+                            name: food.name,
+                            energy_kcal: food.kcal,
+                            protein_g: food.p,
+                            carbohydrates_g: food.c,
+                            fat_g: food.f
+                        };
+                        this.amount = food.amount.replace(/[^0-9]/g, '') || 100;
+                        this.photoOpen = false;
+                        this.photoFile = null;
+                    } else {
+                        alert(data.error || 'Erro ao analisar foto.');
+                    }
+                } catch (e) {
+                    alert('Erro na comunicação com o servidor.');
+                } finally { this.isAnalyzingPhoto = false; }
             },
             aiInput: '',
             isProcessingAI: false,
@@ -283,6 +334,12 @@
                         };
                         this.amount = food.amount.replace(/[^0-9]/g, '') || 100;
                         this.aiInput = '';
+                    } else {
+                        if (data.code === 'credits_exceeded') {
+                            window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
+                        } else {
+                            alert(data.error || 'Erro ao processar IA.');
+                        }
                     }
                 } catch (e) {} finally { this.isProcessingAI = false; }
             },
@@ -322,14 +379,14 @@
             </a>
             <a href="{{ route('nutrition.index', ['tab' => 'diary', 'date' => $date]) }}" 
                class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'diary' ? 'text-emerald-500' : 'text-zinc-500 hover:text-zinc-300' }}">
-               Diário Alimentar
+               Diário de Comida
                @if($tab === 'diary')
                    <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
                @endif
             </a>
             <a href="{{ route('nutrition.index', ['tab' => 'stacks', 'date' => $date]) }}" 
                class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative {{ $tab === 'stacks' ? 'text-emerald-500' : 'text-zinc-500 hover:text-zinc-300' }}">
-               Smart Stack
+               Suplementação
                @if($tab === 'stacks')
                    <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
                @endif
@@ -378,6 +435,42 @@
         </div>
     </div>
 
+    @if($tab === 'diary' || $tab === 'stacks')
+        @if(!$isPremium)
+            <div class="relative min-h-[500px] flex flex-col items-center justify-center p-12 text-center bg-zinc-900/40 border border-amber-500/10 rounded-[3rem] overflow-hidden group shadow-2xl">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/20 to-zinc-950/40"></div>
+                <div class="relative z-10 max-w-lg space-y-8 animate-fade-in-up">
+                    <div class="w-24 h-24 rounded-[2rem] bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 mx-auto shadow-2xl">
+                        <i data-lucide="lock" class="w-10 h-10"></i>
+                    </div>
+                    <div class="space-y-4">
+                        <h2 class="text-3xl font-black text-white uppercase tracking-tighter">Diário & Suplementação <span class="text-emerald-500">Premium</span></h2>
+                        <p class="text-zinc-500 text-sm font-medium leading-relaxed">
+                            Controle cada grama da sua evolução com o diário completo, busca em banco de dados global e gestão inteligente de suplementação (Smart Stacks).
+                        </p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                        <x-premium-button variant="primary" size="lg" data-premium-locked>
+                            DESBLOQUEAR PLANO COMPLETO
+                        </x-premium-button>
+                        <x-premium-button variant="secondary" size="lg" href="{{ route('nutrition.index', ['tab' => 'dashboard']) }}">
+                            VOLTAR AO DASHBOARD
+                        </x-premium-button>
+                    </div>
+                </div>
+                
+                <!-- Background Teaser Elements (Blurred) -->
+                <div class="absolute inset-x-0 bottom-0 top-1/2 blur-2xl opacity-10 select-none pointer-events-none transform translate-y-20">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="h-40 bg-white rounded-3xl"></div>
+                        <div class="h-40 bg-white rounded-3xl"></div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
+    <div class="{{ (!$isPremium && ($tab === 'diary' || $tab === 'stacks')) ? 'hidden' : '' }}">
     @if($tab === 'dashboard')
         <!-- Barra de Metas Nutricionais -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -446,7 +539,7 @@
         </div>
         <div class="flex items-center gap-3">
             <x-premium-button variant="secondary" icon="microscope" size="sm" @click="runAudit()">
-                AUDITORIA IA
+                ANALISAR COM IA
             </x-premium-button>
             <x-premium-button variant="primary" icon="settings" size="sm" @click="goalModalOpen = true">
                 AJUSTAR ESTRATÉGIA
@@ -646,6 +739,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- AI Suggester -->
         <div class="bg-gradient-to-br from-emerald-600/10 to-zinc-900 border border-zinc-800 rounded-[2rem] p-8 relative overflow-hidden group shadow-2xl">
+            <!-- Decorative AI Core Background -->
+            <div class="absolute -right-20 -top-20 opacity-20 group-hover:opacity-40 transition-opacity duration-1000">
+                <x-ai-core size="lg" />
+            </div>
+
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-8">
                     <h3 class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
@@ -688,6 +786,8 @@
                 </div>
             </div>
         </div>
+
+
 
         <!-- Smart Stacks -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl">
@@ -885,10 +985,10 @@
                         <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Smart Engine Integration</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button type="button" @click="$dispatch('open-scanner')" class="w-11 h-11 rounded-xl bg-zinc-950 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all flex items-center justify-center border border-zinc-800 shadow-xl group">
+                        <button type="button" @click="scannerOpen = true" class="w-11 h-11 rounded-xl bg-zinc-950 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all flex items-center justify-center border border-zinc-800 shadow-xl group">
                             <i data-lucide="barcode" class="w-5 h-5"></i>
                         </button>
-                        <button type="button" @click="$dispatch('open-photo')" class="w-11 h-11 rounded-xl bg-zinc-950 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all flex items-center justify-center border border-zinc-800 shadow-xl group">
+                        <button type="button" @click="photoOpen = true" class="w-11 h-11 rounded-xl bg-zinc-950 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all flex items-center justify-center border border-zinc-800 shadow-xl group">
                             <i data-lucide="camera" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -916,7 +1016,12 @@
                     @if($editRow) <input type="hidden" name="food_edit_id" value="{{ $editRow->id }}"> @endif
 
                     <div class="space-y-6">
-                        <x-premium-input label="Buscar Alimento" name="food_name" x-model="searchQuery" @input.debounce.300ms="searchFood()" placeholder="Busque no banco de dados..." required />
+                        <div class="relative">
+                            <x-premium-input label="Buscar Alimento" name="food_name" x-model="searchQuery" @input.debounce.300ms="searchFood()" placeholder="Busque no banco de dados..." required />
+                            <div x-show="isSearching" class="absolute right-4 top-11">
+                                <svg class="animate-spin h-4 w-4 text-emerald-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </div>
+                        </div>
                         
                         <!-- Search Preview -->
                         <div x-show="searchResults.length > 0" 
@@ -1064,6 +1169,315 @@
     @endif
 
     <!-- Modals Section -->
+    <!-- Create Smart Stack Modal -->
+    <div x-show="stackModalOpen" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
+         style="display: none;"
+         x-cloak
+         @keydown.escape.window="stackModalOpen = false">
+        <div class="absolute inset-0" @click="stackModalOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between">
+                <div>
+                    <h5 class="text-white font-black text-2xl uppercase tracking-tighter">Novo <span class="text-emerald-500">Smart Stack</span></h5>
+                    <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Configure sua nova rotina de performance</p>
+                </div>
+                <button @click="stackModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form action="{{ route('smart-stacks.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="responsible_type" value="ia">
+                <div class="p-10 space-y-6">
+                    <x-premium-input label="Nome do Stack" name="name" placeholder="Ex: Performance Matinal, Recovery Noite..." required />
+                    <x-premium-input label="Objetivo principal" name="goal" placeholder="Ex: Hipertrofia, Queima de Gordura, Foco..." />
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Notas / Observações</label>
+                        <textarea name="notes" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-sm text-white outline-none focus:border-emerald-500/50 resize-none h-24 transition-all shadow-inner"></textarea>
+                    </div>
+                </div>
+
+                <div class="p-10 bg-zinc-950/50 border-t border-zinc-800 flex gap-4">
+                    <x-premium-button variant="secondary" class="flex-1" type="button" @click="stackModalOpen = false">CANCELAR</x-premium-button>
+                    <x-premium-button variant="primary" class="flex-1" type="submit">CRIAR STACK</x-premium-button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Smart Stack Modal -->
+    <div x-show="editStackModalOpen" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
+         style="display: none;"
+         x-cloak
+         @keydown.escape.window="editStackModalOpen = false">
+        <div class="absolute inset-0" @click="editStackModalOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between">
+                <div>
+                    <h5 class="text-white font-black text-2xl uppercase tracking-tighter">Editar <span class="text-emerald-500">Smart Stack</span></h5>
+                    <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Ajustando sua rotina de performance</p>
+                </div>
+                <button @click="editStackModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form :action="'/smart-stacks/' + selectedStackId" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="p-10 space-y-6">
+                    <x-premium-input label="Nome do Stack" name="name" x-bind:value="selectedStack?.name" required />
+                    <x-premium-input label="Objetivo principal" name="goal" x-bind:value="selectedStack?.goal" />
+                    <div class="space-y-4">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Status</label>
+                        <select name="status" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-white font-black outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer shadow-inner">
+                            <option value="ativo" :selected="selectedStack?.status === 'ativo'">Ativo</option>
+                            <option value="pausado" :selected="selectedStack?.status === 'pausado'">Pausado</option>
+                            <option value="concluído" :selected="selectedStack?.status === 'concluído'">Concluído</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Notas / Observações</label>
+                        <textarea name="notes" x-text="selectedStack?.notes" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-sm text-white outline-none focus:border-emerald-500/50 resize-none h-24 transition-all shadow-inner"></textarea>
+                    </div>
+                </div>
+
+                <div class="p-10 bg-zinc-950/50 border-t border-zinc-800 flex gap-4">
+                    <x-premium-button variant="secondary" class="flex-1" type="button" @click="editStackModalOpen = false">CANCELAR</x-premium-button>
+                    <x-premium-button variant="primary" class="flex-1" type="submit">SALVAR ALTERAÇÕES</x-premium-button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Supplement Modal -->
+    <div x-show="supplementModalOpen" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
+         style="display: none;"
+         x-cloak
+         @keydown.escape.window="supplementModalOpen = false">
+        <div class="absolute inset-0" @click="supplementModalOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between">
+                <div>
+                    <h5 class="text-white font-black text-2xl uppercase tracking-tighter">Novo <span class="text-emerald-500">Suplemento</span></h5>
+                    <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Adicionando ao seu stack inteligente</p>
+                </div>
+                <button @click="supplementModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form :action="'/smart-stacks/' + selectedStackId + '/supplements'" method="POST">
+                @csrf
+                <div class="p-10 space-y-6">
+                    <div class="relative">
+                        <x-premium-input label="Nome do Suplemento" name="name" x-model="supplementSearch" @input.debounce.300ms="searchSupplement()" placeholder="Busque no catálogo ou digite..." required />
+                        
+                        <!-- Catalog Preview -->
+                        <div x-show="showCatalog" 
+                             class="absolute z-50 left-0 right-0 mt-2 bg-zinc-900 border border-zinc-800 rounded-[2rem] shadow-2xl overflow-hidden max-h-60 overflow-y-auto animate-fade-in"
+                             @click.away="showCatalog = false">
+                            <template x-for="item in catalogResults" :key="item.id">
+                                <button type="button" @click="selectFromCatalog(item)" 
+                                        class="w-full p-4 flex items-center justify-between hover:bg-emerald-500/5 border-b border-zinc-800/50 transition-all text-left group">
+                                    <div>
+                                        <p class="text-xs font-bold text-white group-hover:text-emerald-400" x-text="item.name"></p>
+                                        <p class="text-[9px] text-zinc-600 uppercase font-black tracking-widest mt-1" x-text="item.category"></p>
+                                    </div>
+                                    <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-500 opacity-40 group-hover:opacity-100 transition-all"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <x-premium-input label="Dosagem" name="dosage" placeholder="Ex: 5, 500, 1..." />
+                        <x-premium-input label="Unidade" name="unit" placeholder="Ex: g, mg, cápsula..." />
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <x-premium-input label="Horário / Período" name="time_of_day" placeholder="Ex: Pós-treino, Jejum, Antes de dormir..." />
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest px-1">Observações</label>
+                        <textarea name="observations" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-5 text-sm text-white outline-none focus:border-emerald-500/50 resize-none h-24 transition-all shadow-inner"></textarea>
+                    </div>
+                </div>
+
+                <div class="p-10 bg-zinc-950/50 border-t border-zinc-800 flex gap-4">
+                    <x-premium-button variant="secondary" class="flex-1" type="button" @click="supplementModalOpen = false">CANCELAR</x-premium-button>
+                    <x-premium-button variant="primary" class="flex-1" type="submit">ADICIONAR SUPLEMENTO</x-premium-button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Stack Suggestion Modal -->
+    <div x-show="aiStackModalOpen" 
+         class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-2xl animate-fade-in"
+         style="display: none;"
+         x-cloak
+         @keydown.escape.window="aiStackModalOpen = false">
+        <div class="absolute inset-0" @click="aiStackModalOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-10 border-b border-zinc-800 flex items-center justify-between bg-emerald-500/5">
+                <h5 class="text-white font-black text-2xl uppercase tracking-tighter flex items-center gap-4">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-emerald-500"></i>
+                    IA — Sugestão de Stack
+                </h5>
+                <button @click="aiStackModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-10 max-h-[70vh] overflow-y-auto">
+                <div x-show="aiStackLoading" class="flex flex-col items-center justify-center py-16 space-y-10">
+                    <x-ai-core size="md" />
+                    <div class="text-center">
+                        <p class="text-white font-black uppercase text-base tracking-widest mb-2 animate-pulse">Bio-análise de Necessidades</p>
+                        <p class="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">A IA está processando seu perfil para otimizar os suplementos...</p>
+                    </div>
+                </div>
+                
+                <div x-show="!aiStackLoading && aiStackSuggestion" class="space-y-8 animate-fade-in">
+                    <div class="bg-zinc-950 p-8 rounded-[2rem] border border-zinc-800 shadow-inner">
+                        <h6 class="text-emerald-500 font-black text-xs uppercase tracking-widest mb-4" x-text="aiStackSuggestion?.stack_name"></h6>
+                        <p class="text-zinc-400 text-sm italic leading-relaxed" x-text="aiStackSuggestion?.goal"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <template x-for="sup in aiStackSuggestion?.supplements" :key="sup.name">
+                            <div class="flex items-center justify-between p-5 bg-zinc-950 border border-zinc-800 rounded-2xl">
+                                <div>
+                                    <p class="text-sm font-black text-white" x-text="sup.name"></p>
+                                    <p class="text-[10px] text-zinc-600 font-bold uppercase mt-1">
+                                        <span x-text="sup.dosage"></span><span x-text="sup.unit"></span> &bull; 
+                                        <span x-text="sup.time_of_day"></span>
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] text-emerald-500 font-black uppercase tracking-widest" x-text="sup.goal"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-10 bg-zinc-950/50 border-t border-zinc-800 flex gap-4">
+                <x-premium-button variant="secondary" class="flex-1" @click="aiStackModalOpen = false">FECHAR</x-premium-button>
+                <x-premium-button variant="primary" class="flex-1" x-show="aiStackSuggestion" @click="adoptAISuggestion()">ADOTAR ESTE STACK</x-premium-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repeat Meal Modal -->
+    <div x-show="repeatModalOpen" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
+         style="display: none;"
+         @keydown.escape.window="repeatModalOpen = false">
+        <div class="absolute inset-0" @click="repeatModalOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="p-8 border-b border-zinc-800 bg-zinc-950/50 flex items-center justify-between">
+                <h5 class="text-white font-black text-xl uppercase tracking-tighter">Repetir Refeição</h5>
+                <button @click="repeatModalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form method="POST" action="{{ route('nutrition.api.repeat-meal') }}" class="p-8 space-y-6">
+                @csrf
+                <input type="hidden" name="meal_type" :value="repeatMealType">
+                <input type="hidden" name="target_date" :value="repeatTargetDate">
+                
+                <div class="space-y-4">
+                    <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Origem dos dados:</p>
+                    <div class="grid grid-cols-1 gap-3">
+                        <label class="flex items-center gap-4 p-4 bg-zinc-950 border border-zinc-800 rounded-2xl cursor-pointer hover:border-emerald-500/50 transition-all">
+                            <input type="radio" name="source" value="yesterday" x-model="repeatSource" class="text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700">
+                            <div>
+                                <p class="text-sm font-bold text-white">Ontem</p>
+                                <p class="text-[10px] text-zinc-600 uppercase font-black tracking-widest">Repetir o que comeu no dia anterior</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-4 p-4 bg-zinc-950 border border-zinc-800 rounded-2xl cursor-pointer hover:border-emerald-500/50 transition-all">
+                            <input type="radio" name="source" value="last" x-model="repeatSource" class="text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700">
+                            <div>
+                                <p class="text-sm font-bold text-white">Última vez</p>
+                                <p class="text-[10px] text-zinc-600 uppercase font-black tracking-widest">Repetir a última ocorrência desta refeição</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <x-premium-button variant="primary" class="w-full">CONFIRMAR REPETIÇÃO</x-premium-button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scanner Modal (Placeholder for Mobile/Webcam) -->
+    <div x-show="scannerOpen" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
+         style="display: none;">
+        <div class="absolute inset-0" @click="scannerOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[3rem] overflow-hidden shadow-2xl">
+            <div class="p-8 text-center space-y-6">
+                <div class="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-500 mx-auto">
+                    <i data-lucide="smartphone" class="w-10 h-10"></i>
+                </div>
+                <div>
+                    <h5 class="text-white font-black text-xl uppercase tracking-tighter">Scanner de Código de Barras</h5>
+                    <p class="text-zinc-500 text-sm mt-2">O scanner está otimizado para o aplicativo mobile NexShape.</p>
+                </div>
+                <div class="bg-zinc-950 p-6 rounded-2xl border border-zinc-800">
+                    <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Dica de Performance</p>
+                    <p class="text-xs text-zinc-600 mt-2">Baixe nosso app para escanear produtos instantaneamente e sincronizar com seu diário.</p>
+                </div>
+                <x-premium-button variant="secondary" class="w-full" @click="scannerOpen = false">ENTENDI</x-premium-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div x-show="photoOpen" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
+         style="display: none;">
+        <div class="absolute inset-0" @click="photoOpen = false"></div>
+        <div class="relative bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[3rem] overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-zinc-800 bg-zinc-950/50 flex items-center justify-between">
+                <h5 class="text-white font-black text-xl uppercase tracking-tighter">Análise por Foto</h5>
+                <button @click="photoOpen = false" class="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6">
+                <div class="border-2 border-dashed border-zinc-800 rounded-[2rem] p-12 text-center hover:border-emerald-500/30 transition-all group">
+                    <input type="file" id="photoInput" class="hidden" accept="image/*" @change="photoFile = $event.target.files[0]">
+                    <label for="photoInput" class="cursor-pointer space-y-4 block">
+                        <div class="w-16 h-16 bg-zinc-950 rounded-2xl flex items-center justify-center text-zinc-700 mx-auto group-hover:text-emerald-500 transition-colors">
+                            <i data-lucide="image-plus" class="w-8 h-8"></i>
+                        </div>
+                        <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest" x-text="photoFile ? photoFile.name : 'Selecionar Foto do Prato'"></p>
+                    </label>
+                </div>
+
+                <x-premium-button variant="primary" class="w-full" @click="analyzePhoto()" x-bind:disabled="!photoFile || isAnalyzingPhoto">
+                    <span x-show="!isAnalyzingPhoto">ANALISAR COM IA</span>
+                    <span x-show="isAnalyzingPhoto" class="flex items-center gap-2">
+                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        PROCESSANDO...
+                    </span>
+                </x-premium-button>
+            </div>
+        </div>
+    </div>
+
     <!-- Goal Adjustment Modal -->
     <div x-show="goalModalOpen" 
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl animate-fade-in"
@@ -1141,8 +1555,8 @@
             </div>
             
             <div class="p-10 max-h-[60vh] overflow-y-auto">
-                <div x-show="loadingMeal" class="flex flex-col items-center justify-center py-12 space-y-6">
-                    <div class="w-16 h-16 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+                <div x-show="loadingMeal" class="flex flex-col items-center justify-center py-12 space-y-10">
+                    <x-ai-core size="sm" />
                     <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest animate-pulse">Consultando Engenharia Dietética IA...</p>
                 </div>
                 
@@ -1176,11 +1590,8 @@
             </div>
             
             <div class="p-10 max-h-[60vh] overflow-y-auto">
-                <div x-show="loadingAudit" class="flex flex-col items-center justify-center py-16 space-y-8">
-                    <div class="relative w-24 h-24">
-                        <div class="absolute inset-0 border-4 border-emerald-500/5 rounded-full"></div>
-                        <div class="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
+                <div x-show="loadingAudit" class="flex flex-col items-center justify-center py-16 space-y-12">
+                    <x-ai-core size="md" />
                     <div class="text-center">
                         <p class="text-white font-black uppercase text-base tracking-widest mb-2 animate-pulse">Auditando Bio-indicadores</p>
                         <p class="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Calculando desvios e padrões dos últimos 7 dias...</p>

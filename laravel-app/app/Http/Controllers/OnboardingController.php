@@ -21,7 +21,7 @@ class OnboardingController extends Controller
      */
     public function welcome(): View
     {
-        return view('onboarding.welcome');
+        return view('onboarding.welcome', ['currentStep' => 0, 'isLegacy' => true]);
     }
 
     /**
@@ -29,7 +29,7 @@ class OnboardingController extends Controller
      */
     public function step1(): View
     {
-        return view('onboarding.step1');
+        return view('onboarding.step1', ['currentStep' => 1, 'isLegacy' => true]);
     }
 
     public function saveStep1(Request $request): RedirectResponse
@@ -48,7 +48,7 @@ class OnboardingController extends Controller
     public function step2(): View
     {
         $data = Session::get('onboarding_data', []);
-        return view('onboarding.step2', compact('data'));
+        return view('onboarding.step2', ['data' => $data, 'currentStep' => 2, 'isLegacy' => true]);
     }
 
     public function saveStep2(Request $request): RedirectResponse
@@ -70,7 +70,7 @@ class OnboardingController extends Controller
     public function step2Feedback(): View
     {
         $data = Session::get('onboarding_data', []);
-        return view('onboarding.step2_feedback', compact('data'));
+        return view('onboarding.step2_feedback', ['data' => $data, 'currentStep' => 2, 'isLegacy' => true]);
     }
 
     /**
@@ -78,7 +78,7 @@ class OnboardingController extends Controller
      */
     public function step2Obstacles(): View
     {
-        return view('onboarding.step2_obstacles');
+        return view('onboarding.step2_obstacles', ['currentStep' => 2, 'isLegacy' => true]);
     }
 
     public function saveStep2Obstacles(Request $request): RedirectResponse
@@ -99,7 +99,7 @@ class OnboardingController extends Controller
      */
     public function step2Understanding(): View
     {
-        return view('onboarding.step2_understanding');
+        return view('onboarding.step2_understanding', ['currentStep' => 2, 'isLegacy' => true]);
     }
 
     /**
@@ -107,7 +107,7 @@ class OnboardingController extends Controller
      */
     public function step3(): View
     {
-        return view('onboarding.step3');
+        return view('onboarding.step3', ['currentStep' => 3, 'isLegacy' => true]);
     }
 
     public function saveStep3(Request $request): RedirectResponse
@@ -128,7 +128,7 @@ class OnboardingController extends Controller
      */
     public function step4(): View
     {
-        return view('onboarding.step4');
+        return view('onboarding.step4', ['currentStep' => 4, 'isLegacy' => true]);
     }
 
     public function saveStep4(Request $request): RedirectResponse
@@ -151,7 +151,7 @@ class OnboardingController extends Controller
      */
     public function step5(): View
     {
-        return view('onboarding.step5');
+        return view('onboarding.step5', ['currentStep' => 5, 'isLegacy' => true]);
     }
 
     public function saveStep5(Request $request): RedirectResponse
@@ -174,7 +174,7 @@ class OnboardingController extends Controller
      */
     public function step6(): View
     {
-        return view('onboarding.step6');
+        return view('onboarding.step6', ['currentStep' => 6, 'isLegacy' => true]);
     }
 
     public function saveStep6(Request $request): RedirectResponse
@@ -195,7 +195,7 @@ class OnboardingController extends Controller
      */
     public function step7(): View
     {
-        return view('onboarding.step7');
+        return view('onboarding.step7', ['currentStep' => 7, 'isLegacy' => true]);
     }
 
     public function saveStep7(Request $request): RedirectResponse
@@ -218,7 +218,7 @@ class OnboardingController extends Controller
      */
     public function step8(): View
     {
-        return view('onboarding.step8');
+        return view('onboarding.step8', ['currentStep' => 8, 'isLegacy' => true]);
     }
 
     public function saveStep8(Request $request): RedirectResponse

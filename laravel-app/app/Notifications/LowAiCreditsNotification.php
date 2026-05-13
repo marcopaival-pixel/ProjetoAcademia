@@ -42,14 +42,14 @@ class LowAiCreditsNotification extends Notification
             return (new MailMessage)
                 ->subject('Seus créditos de IA acabaram')
                 ->line('Seus créditos de IA acabaram.')
-                ->action('Comprar Créditos', url('/ai-credits/dashboard'))
+                ->action('Comprar Créditos', route('ai-credits.index'))
                 ->line('Compre novos créditos para continuar utilizando os recursos de IA.');
         }
-
+ 
         return (new MailMessage)
             ->subject('Seus créditos de IA estão acabando')
             ->line('Seus créditos de IA estão baixos (Saldo: ' . $this->balance . ').')
-            ->action('Adquirir Créditos', url('/ai-credits/dashboard'))
+            ->action('Adquirir Créditos', route('ai-credits.index'))
             ->line('Adquira mais créditos para continuar utilizando os recursos sem interrupções.');
     }
 

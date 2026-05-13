@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @deprecated Este serviço foi substituído pelo App\Services\AI\OrchestratorService.
+ * O novo orquestrador utiliza agentes especializados (Training, Nutrition, Support, etc.)
+ * para uma gestão de contexto mais granular e eficiente.
+ */
 class AdvancedAgentService
 {
     private string $apiKey;
@@ -107,17 +112,30 @@ class AdvancedAgentService
         // Financeiro
         $subscription = $user->currentSubscription;
 
+        // Evolução e Bioimpedância (Última Avaliação)
+        $lastAssessment = \App\Models\PhysicalAssessment::where('user_id', $user->id)
+            ->latest()
+            ->first();
+
+        // Performance (Melhor 1RM)
+        $topPR = \App\Models\ExerciseLog::where('user_id', $user->id)
+            ->whereNotNull('one_rm')
+            ->orderBy('one_rm', 'desc')
+            ->first();
+
         return [
             'tipoUsuario' => $user->getRoleNames()[0] ?? 'aluno',
             'empresaId' => $company->id ?? 'N/A',
             'planoEmpresa' => $user->activePlan->plan->name ?? 'Free',
             'featuresPlano' => $this->getFeaturesContext($user),
             'configuracoesEmpresa' => $this->getCompanySettingsContext($company),
-            'dadosAluno' => "Nome: {$user->name}, Peso: {$user->weight}kg, Objetivo: " . ($profile->goal ?? 'Geral'),
+            'dadosAluno' => "Nome: {$user->name}, Peso: " . ($user->weight ?? 'N/A') . "kg, Altura: " . ($user->height ?? 'N/A') . "cm, Objetivo: " . ($profile->goal ?? 'Geral'),
             'professional_context' => $professional ? "Profissional Responsável: {$professional->name} (ID: {$professional->id})" : "Nenhum profissional vinculado",
             'dadosTreino' => $lastWorkout ? "Último: {$lastWorkout->trainingPlan->name} em " . $lastWorkout->created_at->format('d/m') : 'Nenhum treino registrado',
-            'dadosDieta' => "Meta: {$dailyTarget}kcal, Consumido hoje: " . ($nutritionLogs['consumed']['kcal'] ?? 0) . "kcal",
-            'dadosEvolucao' => "Histórico de peso e BF disponível no sistema",
+            'dadosDieta' => "Meta: {$dailyTarget}kcal, Consumido hoje: " . ($nutritionLogs['consumed']['kcal'] ?? 0) . "kcal. Macros: P: " . ($nutritionLogs['consumed']['protein'] ?? 0) . "g, C: " . ($nutritionLogs['consumed']['carb'] ?? 0) . "g, G: " . ($nutritionLogs['consumed']['fat'] ?? 0) . "g",
+            'dadosHidratacao' => "Meta: " . ($profile->water_goal ?? 3000) . "ml, Consumido hoje: {$waterConsumed}ml",
+            'dadosEvolucao' => $lastAssessment ? "BF: {$lastAssessment->bf_percent}%, Massa Magra: {$lastAssessment->muscle_mass}kg, Gordura: {$lastAssessment->fat_mass}kg (Avaliação em {$lastAssessment->assessment_date->format('d/m')})" : "Sem avaliações físicas registradas",
+            'dadosPerformance' => $topPR ? "Melhor levantamento: {$topPR->exercise_name} com 1RM estimado de " . round($topPR->one_rm, 1) . "kg" : "Sem recordes de carga registrados",
             'dadosAgenda' => "Consultar agenda para próximos horários",
             'dadosFinanceiro' => $subscription ? "Status: {$subscription->status}, Vence em: " . ($subscription->end_date ?? 'N/A') : "Nenhuma assinatura ativa"
         ];
@@ -195,7 +213,9 @@ Aluno: {$ctx['dadosAluno']}
 {$ctx['professional_context']}
 Treino: {$ctx['dadosTreino']}
 Dieta: {$ctx['dadosDieta']}
+Hidratação: {$ctx['dadosHidratacao']}
 Evolução: {$ctx['dadosEvolucao']}
+Performance: {$ctx['dadosPerformance']}
 Agenda: {$ctx['dadosAgenda']}
 Financeiro: {$ctx['dadosFinanceiro']}
 

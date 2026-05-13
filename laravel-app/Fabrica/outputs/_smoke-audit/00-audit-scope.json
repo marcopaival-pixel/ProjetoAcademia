@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "run_id": "smoke-audit",
+  "agent": "System Audit Orchestrator",
+  "artifact_type": "audit-scope",
+  "created_at": "2026-05-13T12:00:00Z",
+  "depends_on": [],
+  "assumptions": [],
+  "open_questions": [],
+  "payload": {
+    "target_summary": "Smoke alvo de validação de schema.",
+    "repo_roots": ["./"],
+    "audit_goals": ["Validar pipeline de artefatos"],
+    "constraints": ["Não executar mudanças em produção"],
+    "scope_in": ["schemas", "scripts"],
+    "scope_out": ["node_modules"]
+  }
+}

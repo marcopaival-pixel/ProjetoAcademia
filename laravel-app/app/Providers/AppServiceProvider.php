@@ -108,9 +108,30 @@ class AppServiceProvider extends ServiceProvider
             <?php endif; ?>";
         });
 
+        \Illuminate\Support\Facades\Blade::directive('monetizationGate', function ($featureCode) {
+            return "<?php 
+                \$monetizationResult = app(\App\Services\MonetizationService::class)->checkAccess(auth()->user(), $featureCode);
+                if (!\$monetizationResult['allowed']): 
+                    if ((\$monetizationResult['action'] ?? '') === 'popup' && !empty(\$monetizationResult['popup'])): ?>
+                        <x-upgrade-popup :popup=\"\$monetizationResult['popup']\" />
+                    <?php else: ?>
+                        <x-plan-lock>
+                            <?php echo \$monetizationResult['message'] ?? ''; ?>
+                        </x-plan-lock>
+                    <?php endif; 
+                else: ?>";
+        });
+
+        \Illuminate\Support\Facades\Blade::directive('endMonetizationGate', function () {
+            return "<?php endif; ?>";
+        });
+
         // Configuração de Segurança para o Laravel Pulse
         \Illuminate\Support\Facades\Gate::define('viewPulse', function (\App\Models\User $user) {
             return $user->isAdministrator();
         });
+        // Achievements Observers
+        \App\Models\WaterEntry::observe(\App\Observers\WaterEntryObserver::class);
+        \App\Models\ExerciseEntry::observe(\App\Observers\ExerciseEntryObserver::class);
     }
 }

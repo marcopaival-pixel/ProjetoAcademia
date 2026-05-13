@@ -24,4 +24,14 @@ class TrainingLesson extends Model
     {
         return $this->belongsTo(TrainingModule::class, 'module_id');
     }
+
+    public function completions()
+    {
+        return $this->hasMany(TrainingLessonCompletion::class, 'lesson_id');
+    }
+
+    public function isCompletedBy(User $user): bool
+    {
+        return $this->completions()->where('user_id', $user->id)->exists();
+    }
 }

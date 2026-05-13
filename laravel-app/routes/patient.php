@@ -39,22 +39,26 @@ Route::middleware([
     // Portal do Paciente (Somente Leitura)
     Route::get('/portal', [PortalController::class, 'index'])->name('portal');
     Route::get('/plans', [PortalController::class, 'plans'])->name('plans.index');
-    Route::get('/treatment-plan', [PortalController::class, 'treatmentPlan'])->name('treatment-plan');
-    Route::get('/evolution', [PortalController::class, 'evolution'])->name('evolution');
-    Route::get('/prescriptions', [PortalController::class, 'prescriptions'])->name('prescriptions');
-    Route::get('/documents', [PortalController::class, 'documents'])->name('documents');
+    Route::get('/treatment-plan', [PortalController::class, 'treatmentPlan'])->name('treatment-plan')->middleware('premium');
+    Route::get('/evolution', [PortalController::class, 'evolution'])->name('evolution')->middleware('premium');
+    Route::get('/prescriptions', [PortalController::class, 'prescriptions'])->name('prescriptions')->middleware('premium');
+    Route::get('/documents', [PortalController::class, 'documents'])->name('documents')->middleware('premium');
     Route::get('/agenda', [PortalController::class, 'agenda'])->name('agenda');
-    Route::get('/messages', [PortalController::class, 'messages'])->name('messages');
-    Route::get('/medical-records', [PortalController::class, 'medicalRecords'])->name('medical-records.index');
-    Route::get('/medical-records/evolutions', [PortalController::class, 'medicalEvolutions'])->name('medical-records.evolutions');
-    Route::get('/medical-records/reports', [PortalController::class, 'medicalReports'])->name('medical-records.reports');
-    Route::get('/medical-records/reports/{report}/download', [PortalController::class, 'downloadReport'])->name('medical-records.reports.download');
-    Route::get('/medical-records/prescriptions', [PortalController::class, 'medicalPrescriptions'])->name('medical-records.prescriptions');
-    Route::get('/medical-records/prescriptions/{prescription}/download', [PortalController::class, 'downloadPrescription'])->name('medical-records.prescriptions.download');
-    Route::get('/medical-records/certificates', [PortalController::class, 'medicalCertificates'])->name('medical-records.certificates');
-    Route::get('/medical-records/certificates/{certificate}/download', [PortalController::class, 'downloadCertificate'])->name('medical-records.certificates.download');
-    Route::get('/export-laudo', [PortalController::class, 'exportLaudo'])->name('export-laudo');
-    Route::get('/access-logs', [PortalController::class, 'accessLogs'])->name('access-logs');
+    Route::get('/messages', [PortalController::class, 'messages'])->name('messages')->middleware('premium');
+    
+    Route::prefix('medical-records')->name('medical-records.')->middleware('premium')->group(function() {
+        Route::get('/', [PortalController::class, 'medicalRecords'])->name('index');
+        Route::get('/evolutions', [PortalController::class, 'medicalEvolutions'])->name('evolutions');
+        Route::get('/reports', [PortalController::class, 'medicalReports'])->name('reports');
+        Route::get('/reports/{report}/download', [PortalController::class, 'downloadReport'])->name('reports.download');
+        Route::get('/prescriptions', [PortalController::class, 'medicalPrescriptions'])->name('prescriptions');
+        Route::get('/prescriptions/{prescription}/download', [PortalController::class, 'downloadPrescription'])->name('prescriptions.download');
+        Route::get('/certificates', [PortalController::class, 'medicalCertificates'])->name('certificates');
+        Route::get('/certificates/{certificate}/download', [PortalController::class, 'downloadCertificate'])->name('certificates.download');
+    });
+
+    Route::get('/export-laudo', [PortalController::class, 'exportLaudo'])->name('export-laudo')->middleware('premium');
+    Route::get('/access-logs', [PortalController::class, 'accessLogs'])->name('access-logs')->middleware('premium');
 
     // Encontrar Profissionais
     Route::prefix('professionals')->name('professionals.')->group(function () {
@@ -66,7 +70,7 @@ Route::middleware([
     });
 
     // Módulo de Relatórios (Monetizado)
-    Route::prefix('reports')->name('reports.')->group(function () {
+    Route::prefix('reports')->name('reports.')->middleware('premium')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/view/{type}', [ReportController::class, 'show'])->name('show');
     });

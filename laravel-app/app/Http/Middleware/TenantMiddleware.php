@@ -40,48 +40,48 @@ class TenantMiddleware
         $clinicId = session('active_clinic_id') ?? session('impersonated_clinic_id');
 
         if (!$clinicId) {
-            // Tenta auto-seleção se houver apenas um vínculo
-            $clinics = \DB::table('clinic_user')
-                ->where('user_id', $user->id)
-                ->where('status', 'active')
-                ->pluck('academy_company_id');
-
-            if ($clinics->count() === 1) {
-                $clinicId = $clinics->first();
+            // Se o usuário já tem uma clínica preferida/única setada no perfil
+            if ($user->clinic_id) {
+                $clinicId = $user->clinic_id;
                 session(['active_clinic_id' => $clinicId]);
-            } elseif ($clinics->count() > 1) {
-                // Múltiplas clínicas: obriga seleção para pacientes e profissionais
-                // Exceção: Permite logout e rotas de seleção sem redirecionar
-                $exceptions = ['clinic.selector', 'clinic.select', 'logout', 'admin.logout'];
-                if (!$request->routeIs($exceptions) && !$request->is('api/*')) {
-                    \Log::debug('TenantMiddleware | Redirecting to clinic.selector | User: ' . $user->email . ' | Target Path: ' . $request->path());
-                    return redirect()->route('clinic.selector');
-                }
             } else {
-                // Fallback para legado (coluna academy_company_id na tabela users)
-                if ($user->academy_company_id) {
-                    $clinicId = $user->academy_company_id;
+                // Tenta auto-seleção se houver apenas uma clínica vinculada à empresa do usuário
+                $clinics = \App\Models\Clinic::where('academy_company_id', $user->academy_company_id)
+                    ->where('is_active', true)
+                    ->get();
+
+                if ($clinics->count() === 1) {
+                    $clinicId = $clinics->first()->id;
                     session(['active_clinic_id' => $clinicId]);
+                    $user->update(['clinic_id' => $clinicId]); // Salva como preferência
+                } elseif ($clinics->count() > 1) {
+                    // Múltiplas clínicas: permite navegar mas avisa ou redireciona se for rota crítica
+                    // Para simplificar agora, pegamos a primeira se não houver seleção
+                    $clinicId = $clinics->first()->id;
+                    session(['active_clinic_id' => $clinicId]);
+                } else {
+                    // Fallback para legado: tenta achar a clínica que representa a empresa
+                    $legacyClinic = \App\Models\Clinic::where('slug', $user->academyCompany?->slug)->first();
+                    if ($legacyClinic) {
+                        $clinicId = $legacyClinic->id;
+                        session(['active_clinic_id' => $clinicId]);
+                        $user->update(['clinic_id' => $clinicId]);
+                    }
                 }
             }
         }
 
         // 4. Ativa o Contexto Global
         if ($clinicId) {
-            \Log::debug('TenantMiddleware checking for: ' . $user->email . ' | Path: ' . $request->path() . ' | Context: ' . (\App\Support\TenantContext::has() ? 'HAS CONTEXT (' . \App\Support\TenantContext::get() . ')' : 'NO CONTEXT'));
             \App\Support\TenantContext::set((int) $clinicId);
             
-            // Validação de Segurança: O usuário realmente tem acesso a esta clínica?
-            if (!$user->is_admin && $user->academy_company_id != $clinicId) {
-                $hasAccess = \DB::table('clinic_user')
-                    ->where('user_id', $user->id)
-                    ->where('academy_company_id', $clinicId)
-                    ->where('status', 'active')
-                    ->exists();
-                
-                if (!$hasAccess) {
+            // Validação de Segurança: O usuário pertence à empresa desta clínica?
+            if (!$user->is_admin) {
+                $clinic = \App\Models\Clinic::find($clinicId);
+                if (!$clinic || $clinic->academy_company_id !== $user->academy_company_id) {
+                    \Log::warning('TenantMiddleware | Acesso negado à clínica ' . $clinicId . ' para o usuário ' . $user->email);
                     session()->forget('active_clinic_id');
-                    abort(403, 'Você não tem permissão para acessar esta unidade.');
+                    \App\Support\TenantContext::set(null);
                 }
             }
         }

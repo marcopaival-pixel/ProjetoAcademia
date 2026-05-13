@@ -17,19 +17,11 @@ class ClinicSelectionController extends Controller
     {
         $user = auth()->user();
         
-        $clinics = DB::table('clinic_user')
-            ->join('academy_companies', 'clinic_user.academy_company_id', '=', 'academy_companies.id')
-            ->where('clinic_user.user_id', $user->id)
-            ->where('clinic_user.status', 'active')
-            ->select('academy_companies.*', 'clinic_user.role')
+        $clinics = \App\Models\Clinic::where('academy_company_id', $user->academy_company_id)
+            ->where('is_active', true)
             ->get();
 
         if ($clinics->isEmpty()) {
-             // Fallback para comportamento legado
-             if ($user->academy_company_id) {
-                 session(['active_clinic_id' => $user->academy_company_id]);
-                 return redirect()->route('dashboard');
-             }
              abort(403, 'Você não possui vínculos ativos com nenhuma clínica.');
         }
 
@@ -53,20 +45,15 @@ class ClinicSelectionController extends Controller
         $user = auth()->user();
         $clinicId = $request->clinic_id;
         
-        $hasAccess = DB::table('clinic_user')
-            ->where('user_id', $user->id)
-            ->where('academy_company_id', $clinicId)
-            ->where('status', 'active')
-            ->exists();
+        $clinic = \App\Models\Clinic::find($clinicId);
 
-        \Log::debug('ClinicSelection@select | User: ' . $user->email . ' | Clinic: ' . $clinicId . ' | HasAccess: ' . ($hasAccess ? 'YES' : 'NO'));
-
-        // Admin global sempre tem acesso (para suporte/gestão)
-        if (!$hasAccess && !$user->is_admin && $user->academy_company_id != $clinicId) {
+        if (!$clinic || (!$user->is_admin && $clinic->academy_company_id !== $user->academy_company_id)) {
             return redirect()->back()->with('error', 'Acesso negado à unidade selecionada.');
         }
 
         session(['active_clinic_id' => $clinicId]);
+        $user->update(['clinic_id' => $clinicId]); // Opcional: salva como preferência
+
         session()->save(); // Garante persistência imediata
 
         \Log::debug('ClinicSelection@select | Session set for clinic: ' . session('active_clinic_id'));

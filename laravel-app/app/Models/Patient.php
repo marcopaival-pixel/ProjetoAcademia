@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 
 class Patient extends Model
 {
+    use Traits\HasClinic;
+
     // Removendo 'pacientes' legada se as migrações novas forem aplicadas
     protected $table = 'patients';
 

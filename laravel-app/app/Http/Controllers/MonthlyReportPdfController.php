@@ -44,12 +44,23 @@ class MonthlyReportPdfController extends Controller
         $reportRecord = $validationService->generateVersion($user, 'monthly_performance');
         $validationUrl = $validationService->getValidationUrl($reportRecord);
 
+        // Gera QR Code Localmente
+        $qrCode = \Endroid\QrCode\Builder\Builder::create()
+            ->writer(new \Endroid\QrCode\Writer\PngWriter())
+            ->data($validationUrl)
+            ->size(150)
+            ->margin(0)
+            ->build();
+        
+        $qrCodeBase64 = 'data:image/png;base64,' . base64_encode($qrCode->getString());
+
         $html = view('pdf.monthly-report', [
             'user' => $user,
             'monthLabel' => $start->translatedFormat('F Y'),
             'rangeLabel' => $start->format('d/m/Y').' — '.$end->format('d/m/Y'),
             'reportRecord' => $reportRecord,
             'validationUrl' => $validationUrl,
+            'qrCode' => $qrCodeBase64,
             ...$data,
         ])->render();
 

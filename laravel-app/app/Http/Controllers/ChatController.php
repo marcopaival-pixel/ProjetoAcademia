@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\AIChat;
 use App\Models\User;
 use App\Models\UserProfile;
-use App\Services\AIChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +13,7 @@ use Illuminate\View\View;
 class ChatController extends Controller
 {
     public function __construct(
-        private \App\Services\AdvancedAgentService $aiService,
+        private \App\Services\AI\OrchestratorService $orchestrator,
         private \App\Services\AgentActionDispatcher $actionDispatcher
     ) {}
     
@@ -40,15 +39,6 @@ class ChatController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        if (!$user->hasFeature('ai_training') && !$user->hasFeature('ai_nutrition')) {
-            return response()->json([
-                'ok' => false,
-                'code' => 'plan_blocked',
-                'error' => 'O assistente NexBot está disponível apenas no plano Pro. Faça upgrade agora para liberar seu assistente pessoal!',
-                'plano_url' => route('plano'),
-            ], 403);
-        }
-
         // Salvar mensagem do usuário no histórico
         AIChat::create([
             'user_id' => $user->id,
@@ -56,70 +46,30 @@ class ChatController extends Controller
             'message' => $validated['message'],
         ]);
 
-        // 1. Verificar Biblioteca Inteligente antes de consumir crédito e chamar IA
-        $libraryService = app(\App\Services\IntelligenceLibraryService::class);
-        $cachedResponse = $libraryService->consultar($validated['message']);
+        // Chamar Orquestrador Central
+        $result = $this->orchestrator->run($user, $validated['message'], [
+            'source' => 'chat_page',
+            'clinicId' => $user->academy_company_id
+        ]);
 
-        if ($cachedResponse) {
-            // Salvar resposta no histórico (vinda da biblioteca)
-            AIChat::create([
-                'user_id' => $user->id,
-                'role' => 'assistant',
-                'message' => $cachedResponse->conteudo,
-            ]);
-
+        if ($result['status'] === 'error') {
             return response()->json([
-                'ok' => true,
-                'message' => $cachedResponse->conteudo,
-                'chat_quota' => $this->chatQuotaPayload($user),
-                'from_library' => true
-            ]);
+                'ok' => false,
+                'error' => $result['error'],
+            ], 500);
         }
 
-        // 2. Se não estiver na biblioteca, consumir crédito e chamar IA
-        if (!$user->consumeAiCredit('chat_response', ['message_length' => strlen($validated['message'])])) {
-             return response()->json([
+        if ($result['status'] === 'limit_reached') {
+            return response()->json([
                 'ok' => false,
                 'code' => 'chat_quota_exceeded',
-                'error' => 'Créditos insuficientes. Adquira mais créditos para continuar conversando com o NexBot.',
+                'error' => 'Créditos ou plano insuficientes.',
                 'plano_url' => route('plano'),
             ], 403);
         }
 
-        // Obter métricas do usuário para contexto
-        $userMetrics = $this->getUserMetrics($user->id);
-
-        // Obter últimas 5 mensagens do histórico para contexto
-        $conversationHistory = AIChat::where('user_id', $user->id)
-            ->where('id', '!=', 0) // dummy to avoid issues with limit/orderBy
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get()
-            ->reverse()
-            ->map(function ($chat) {
-                return [
-                    'role' => $chat->role,
-                    'content' => $chat->message,
-                ];
-            })
-            ->toArray();
-
-        // Chamar IA Avançada
-        $aiResponse = $this->aiService->process(
-            $user,
-            $validated['message'],
-            $conversationHistory
-        );
-
-        if (!$aiResponse['ok']) {
-            return response()->json([
-                'ok' => false,
-                'error' => $aiResponse['error'],
-            ], 500);
-        }
-
-        $assistantMessage = $aiResponse['response'];
-        $action = $aiResponse['action'];
+        $assistantMessage = $result['message'];
+        $action = $result['action'] ?? null;
 
         // Salvar resposta da IA no histórico do usuário
         AIChat::create([
@@ -128,16 +78,10 @@ class ChatController extends Controller
             'message' => $assistantMessage,
         ]);
 
-        // 3. Salvar resposta na Biblioteca Inteligente para uso futuro global
-        $libraryService->salvarRespostaIA([
-            'message' => $assistantMessage,
-            'titulo' => $validated['message'],
-        ], 'CHAT', 'GERAL', $validated['message']);
-
         return response()->json([
             'ok' => true,
             'message' => $assistantMessage,
-            'action' => $action, // Retorna a ação para o frontend processar
+            'action' => $action, 
             'chat_quota' => $this->chatQuotaPayload($user),
         ]);
     }

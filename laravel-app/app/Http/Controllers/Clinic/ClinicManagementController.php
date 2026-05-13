@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Clinic;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademyCompany;
+use App\Models\Clinic;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ClinicManagementController extends Controller
 {
@@ -16,46 +18,89 @@ class ClinicManagementController extends Controller
         $company = $user->academyCompany;
 
         if (!$company) {
-            return back()->with('error', 'Você não está vinculado a uma clínica.');
+            return back()->with('error', 'Você não está vinculado a uma empresa/conta.');
+        }
+
+        // Listar todas as clínicas vinculadas a esta empresa
+        $clinics = Clinic::where('academy_company_id', $company->id)->get();
+
+        // Se não houver nenhuma clínica, criar a primeira baseada nos dados da empresa (Auto-migração)
+        if ($clinics->isEmpty()) {
+            $clinic = Clinic::create([
+                'academy_company_id' => $company->id,
+                'name' => $company->name,
+                'slug' => $company->slug ?? Str::slug($company->name),
+                'logo_path' => $company->logo_path,
+                'primary_color' => $company->primary_color ?? '#10b981',
+                'is_active' => true,
+            ]);
+            $clinics = collect([$clinic]);
+
+            // Vincular o usuário atual a esta clínica se ele não tiver uma
+            if (!$user->clinic_id) {
+                $user->update(['clinic_id' => $clinic->id]);
+            }
         }
 
         $team = User::where('academy_company_id', $company->id)
-            ->with('roles')
+            ->with(['roles', 'clinic'])
             ->get();
 
         $inviteUrl = route('register', ['company_slug' => $company->slug, 'tipo_acesso' => 'professional']);
 
-        return view('clinic.settings', compact('company', 'team', 'inviteUrl'));
+        return view('clinic.settings', compact('company', 'clinics', 'team', 'inviteUrl'));
     }
 
-    public function updateBranding(Request $request)
+    public function storeClinic(Request $request)
     {
         $user = Auth::user();
         $company = $user->academyCompany;
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',
+            'slug' => 'required|string|max:191|unique:clinics,slug',
             'primary_color' => 'required|string|size:7',
-            'accent_color' => 'required|string|size:7',
-            'logo' => 'nullable|image|max:2048',
-            'shared_medical_records' => 'nullable|boolean',
         ]);
 
-        $company->update([
+        Clinic::create([
+            'academy_company_id' => $company->id,
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['slug']),
+            'primary_color' => $validated['primary_color'],
+            'is_active' => true,
+        ]);
+
+        return back()->with('success', 'Nova clínica adicionada com sucesso.');
+    }
+
+    public function updateBranding(Request $request)
+    {
+        $user = Auth::user();
+        $clinicId = $request->input('clinic_id') ?? $user->clinic_id;
+        $clinic = Clinic::findOrFail($clinicId);
+
+        // Verificar se a clínica pertence à empresa do usuário
+        if ($clinic->academy_company_id !== $user->academy_company_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'primary_color' => 'required|string|size:7',
+            'logo' => 'nullable|image|max:2048',
+        ]);
+
+        $clinic->update([
             'name' => $validated['name'],
             'primary_color' => $validated['primary_color'],
-            'accent_color' => $validated['accent_color'],
-            'shared_medical_records' => $request->has('shared_medical_records'),
         ]);
 
-        \Illuminate\Support\Facades\Cache::forget("company_shared_records_{$company->id}");
-
         if ($request->hasFile('logo')) {
-            if ($company->logo_path) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($company->logo_path);
+            if ($clinic->logo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($clinic->logo_path);
             }
             $path = $request->file('logo')->store('logos', 'public');
-            $company->update(['logo_path' => $path]);
+            $clinic->update(['logo_path' => $path]);
         }
 
         return back()->with('success', 'Configurações da clínica atualizadas.');

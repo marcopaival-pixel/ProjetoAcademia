@@ -23,4 +23,17 @@ class TrainingModule extends Model
     {
         return $this->hasMany(TrainingLesson::class, 'module_id')->orderBy('order');
     }
+
+    public function getProgressForUser(?User $user): int
+    {
+        if (!$user) return 0;
+        $total = $this->lessons()->where('is_active', true)->count();
+        if ($total === 0) return 0;
+        
+        $completed = \App\Models\TrainingLessonCompletion::where('user_id', $user->id)
+            ->whereIn('lesson_id', $this->lessons()->where('is_active', true)->pluck('id'))
+            ->count();
+            
+        return (int) round(($completed / $total) * 100);
+    }
 }

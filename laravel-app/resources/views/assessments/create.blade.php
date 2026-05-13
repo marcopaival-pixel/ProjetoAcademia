@@ -75,6 +75,34 @@
                     <x-premium-input label="Panturrilha Dir. (cm)" name="calf_r" type="number" step="0.1" />
                 </div>
             </x-premium-card>
+            
+            <!-- Seção: Bioimpedância Premium -->
+            <x-premium-card title="Bioimpedância Premium (InBody Style)" icon="activity" iconColor="emerald">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <x-premium-input label="Água Intracelular (L)" name="icw_l" type="number" step="0.01" icon="droplets" />
+                    <x-premium-input label="Água Extracelular (L)" name="ecw_l" type="number" step="0.01" icon="droplet" />
+                    <x-premium-input label="Massa Magra Seca (kg)" name="dry_lean_mass_kg" type="number" step="0.1" icon="bone" />
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <x-premium-input label="Massa de Gordura (kg)" name="body_fat_mass_kg" type="number" step="0.1" icon="pie-chart" />
+                    <x-premium-input label="Nível Gordura Visceral" name="visceral_fat_level" type="number" placeholder="1-20" icon="alert-circle" />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <x-premium-input label="Taxa Metabólica Basal (kcal)" name="basal_metabolic_rate" type="number" icon="flame" />
+                    <x-premium-input label="Ângulo de Fase" name="phase_angle" type="number" step="0.1" icon="zap" />
+                </div>
+
+                <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 px-1">Análise Segmental (Massa Magra em kg)</label>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-800">
+                    <x-premium-input label="Braço E." name="segmental_lean_arm_l" type="number" step="0.1" />
+                    <x-premium-input label="Braço D." name="segmental_lean_arm_r" type="number" step="0.1" />
+                    <x-premium-input label="Perna E." name="segmental_lean_leg_l" type="number" step="0.1" />
+                    <x-premium-input label="Perna D." name="segmental_lean_leg_r" type="number" step="0.1" />
+                    <x-premium-input label="Tronco" name="segmental_lean_trunk" type="number" step="0.1" />
+                </div>
+            </x-premium-card>
 
             <x-premium-card title="Objetivos e Rotina" icon="target" iconColor="emerald">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -155,6 +183,23 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
+
+        const aiCredits = {{ auth()->user()->ai_credits ?? 0 }};
+        const aiCheckboxes = [
+            document.getElementById('generate_ai_training'),
+            document.getElementById('generate_ai_meal_plan')
+        ];
+
+        aiCheckboxes.forEach(cb => {
+            if (cb) {
+                cb.addEventListener('change', function() {
+                    if (this.checked && aiCredits <= 0) {
+                        this.checked = false;
+                        window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
+                    }
+                });
+            }
+        });
     });
 </script>
 @endpush

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional;
+    use HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional, Traits\HasClinic;
 
     protected static function booted()
     {
@@ -39,6 +39,11 @@ class User extends Authenticatable
                     'start_date' => now(),
                     'status' => 'active',
                 ]);
+
+                // Inicializar Carteira de Créditos IA com base no Plano
+                $aiService = app(\App\Services\AiCreditService::class);
+                $aiService->getWallet($user);
+                $aiService->renewMonthly($user);
             }
         });
     }
@@ -81,6 +86,7 @@ class User extends Authenticatable
         'churn_risk',
         'usage_stats',
         'academy_company_id',
+        'clinic_id',
         'uuid',
         'registration_approval_status',
         'registration_reviewed_at',
@@ -187,6 +193,11 @@ class User extends Authenticatable
         return $this->belongsTo(AcademyCompany::class, 'academy_company_id');
     }
 
+    public function clinic(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Clinic::class, 'clinic_id');
+    }
+
     public function hasRole(string|array $role): bool
     {
         if (is_array($role)) {
@@ -263,6 +274,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Retorna o rótulo do perfil para exibição na comunidade.
+     */
+    public function getCommunityProfileLabelAttribute(): string
+    {
+        if ($this->isAdministrator()) return 'Admin';
+        if ($this->hasRole('professional')) return 'Profissional';
+        if ($this->hasRole(['manager', 'receptionist', 'supervisor'])) return 'Clínica';
+        if ($this->hasRole(['paciente', 'aluno'])) return 'Aluno';
+        
+        return 'Membro';
+    }
+
+    /**
      * Cache de permissões carregadas para a requisição atual.
      */
     protected ?\Illuminate\Support\Collection $permissionsCache = null;
@@ -336,7 +360,7 @@ class User extends Authenticatable
 
     public function isPending(): bool
     {
-        return in_array($this->status, ['pending', 'PENDENTE', 'PENDENTE_APROVACAO']);
+        return in_array($this->status, ['pending', 'PENDENTE', 'PENDENTE_APROVACAO', 'pending_email_verification']);
     }
 
     public function isEmailVerified(): bool
@@ -621,36 +645,12 @@ class User extends Authenticatable
 
     public function hasFeature(string $featureKey): bool
     {
-        if ($this->isAdministrator()) {
-            return true;
-        }
-
-        $activePlan = $this->activePlan;
-        
-        if (!$activePlan) {
-            // Fallback to FREE plan features if no active plan record exists
-            return \Cache::remember("plan_feature_free_{$featureKey}", 3600, function() use ($featureKey) {
-                $freePlan = Plan::where('name', 'Free')->first();
-                return $freePlan ? $freePlan->hasFeature($featureKey) : false;
-            });
-        }
-
-        return $activePlan->plan->hasFeature($featureKey);
+        return app(\App\Services\MonetizationService::class)->hasFeature($this, $featureKey);
     }
 
     public function getPlanLimit(string $limitKey): int
     {
-        $activePlan = $this->activePlan;
-        
-        if (!$activePlan) {
-            // Fallback to FREE plan limits
-            return \Cache::remember("plan_limit_free_{$limitKey}", 3600, function() use ($limitKey) {
-                $freePlan = Plan::where('name', 'Free')->first();
-                return $freePlan ? ($freePlan->{$limitKey} ?? 0) : 0;
-            });
-        }
-
-        return $activePlan->plan->{$limitKey} ?? 0;
+        return app(\App\Services\MonetizationService::class)->getPlanLimit($this, $limitKey);
     }
 
     /**
@@ -658,14 +658,7 @@ class User extends Authenticatable
      */
     public function isOverLimit(string $resourceType): bool
     {
-        $limitKey = $this->getResourceLimitKey($resourceType);
-        $limit = $this->getPlanLimit($limitKey);
-        
-        if ($limit === 0) return false; // 0 = Ilimitado (ou não definido)
-
-        $count = $this->getResourceCount($resourceType);
-        
-        return $count > $limit;
+        return app(\App\Services\MonetizationService::class)->isOverLimit($this, $resourceType);
     }
 
     /**
@@ -673,14 +666,7 @@ class User extends Authenticatable
      */
     public function getSurplusCount(string $resourceType): int
     {
-        $limitKey = $this->getResourceLimitKey($resourceType);
-        $limit = $this->getPlanLimit($limitKey);
-        
-        if ($limit === 0) return 0;
-
-        $count = $this->getResourceCount($resourceType);
-        
-        return max(0, $count - $limit);
+        return app(\App\Services\MonetizationService::class)->getSurplusCount($this, $resourceType);
     }
 
     /**
@@ -688,81 +674,44 @@ class User extends Authenticatable
      */
     public function isResourceOverLimit(string $resourceType, $resourceId): bool
     {
-        $limitKey = $this->getResourceLimitKey($resourceType);
-        $limit = $this->getPlanLimit($limitKey);
-        
-        if ($limit === 0) return false;
-
-        $resourceIds = $this->getActiveResourceIds($resourceType, $limit);
-        
-        return !in_array($resourceId, $resourceIds);
+        return app(\App\Services\MonetizationService::class)->isResourceOverLimit($this, $resourceType, $resourceId);
     }
 
-    private function getResourceLimitKey(string $resourceType): string
+    public function aiTransactions(): HasMany
     {
-        return match($resourceType) {
-            'patients', 'students' => 'max_patients',
-            'workouts', 'training_plans' => 'max_workouts',
-            'diets', 'nutrition_plans' => 'max_diets',
-            'assessments' => 'max_assessments',
-            default => 'max_' . $resourceType
-        };
-    }
-
-    private function getResourceCount(string $resourceType): int
-    {
-        return match($resourceType) {
-            'patients' => $this->patients()->count(),
-            'workouts', 'training_plans' => $this->trainingPlans()->count(),
-            'diets' => 0, // TODO: Implementar quando houver relacionamento de dietas
-            'assessments' => $this->assessments()->count(),
-            default => 0
-        };
-    }
-
-    private function getActiveResourceIds(string $resourceType, int $limit): array
-    {
-        return match($resourceType) {
-            'patients' => $this->patients()->orderBy('pacientes.created_at', 'asc')->limit($limit)->pluck('users.id')->toArray(),
-            'workouts', 'training_plans' => $this->trainingPlans()->orderBy('created_at', 'asc')->limit($limit)->pluck('id')->toArray(),
-            'assessments' => $this->assessments()->orderBy('created_at', 'asc')->limit($limit)->pluck('id')->toArray(),
-            default => []
-        };
-    }
-
-    public function aiUsage(): HasMany
-    {
-        return $this->hasMany(AiCreditUsageLog::class);
+        return $this->hasMany(AiCreditTransaction::class);
     }
 
     public function getAiCreditsUsedToday(): int
     {
-        return $this->aiUsage()
+        return abs($this->aiTransactions()
+            ->where('type', 'usage')
             ->whereDate('created_at', now()->toDateString())
-            ->sum('credits_consumed');
+            ->sum('credits'));
     }
 
     public function getAiCreditsUsedThisMonth(): int
     {
-        return $this->aiUsage()
+        return abs($this->aiTransactions()
+            ->where('type', 'usage')
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
-            ->sum('credits_consumed');
+            ->sum('credits'));
     }
 
     public function getAiCreditsUsedTotal(): int
     {
-        return $this->aiUsage()->sum('credits_consumed');
+        return abs($this->aiTransactions()->where('type', 'usage')->sum('credits'));
     }
 
     public function getRemainingAiCredits(): int
     {
-        return (int) $this->ai_credits;
+        return app(\App\Services\AiCreditService::class)->getBalance($this);
     }
 
-    public function consumeAiCredit(string $actionType, array $metadata = []): bool
+    public function consumeAiCredit(string $featureCode, array $metadata = []): bool
     {
-        return app(\App\Services\AiCreditService::class)->consume($this, $actionType, $metadata);
+        return app(\App\Services\AiCreditService::class)->consume($this, $featureCode, $metadata);
     }
 
     /*
@@ -794,6 +743,11 @@ class User extends Authenticatable
     public function communityPosts(): HasMany
     {
         return $this->hasMany(CommunityPost::class);
+    }
+
+    public function aiWallet(): HasOne
+    {
+        return $this->hasOne(AiCreditWallet::class);
     }
 
     public function communityComments(): HasMany

@@ -56,7 +56,12 @@
 
             <div class="xl:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($eliteRanking as $index => $rank)
-                    <div class="group relative flex items-center gap-6 p-6 rounded-[2rem] border transition-all hover:scale-[1.02] border-white/5 bg-black/20 hover:bg-black/40">
+                    <div class="group relative flex items-center gap-6 p-6 rounded-[2.5rem] border transition-all hover:scale-[1.02] border-white/5 bg-black/30 hover:bg-black/50 overflow-hidden">
+                        <!-- Medal Glow -->
+                        @if(!empty($rank->medals))
+                            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-{{ $rank->medals[0]['color'] }}-500/5 blur-3xl rounded-full"></div>
+                        @endif
+
                         <div class="relative">
                             <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl @if($index == 0) bg-amber-500 text-zinc-900 shadow-[0_0_20px_rgba(245,158,11,0.3)] @else bg-zinc-900 text-white @endif">
                                 {{ $index + 1 }}
@@ -71,20 +76,36 @@
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
                                 <p class="text-white font-black text-lg truncate">{{ $rank->name }}</p>
-                                <span class="text-[8px] font-black uppercase tracking-widest @if($rank->level == 'Diamond') text-cyan-400 @elseif($rank->level == 'Platinum') text-zinc-300 @elseif($rank->level == 'Gold') text-amber-500 @else text-zinc-600 @endif">
-                                    {{ $rank->level }}
+                                <span class="px-2 py-0.5 bg-zinc-800 text-zinc-400 text-[7px] font-black uppercase tracking-widest rounded-md border border-white/5">
+                                    {{ $rank->category }}
                                 </span>
                             </div>
-                            <div class="flex items-end gap-1 mt-1">
+                            
+                            <!-- Medals Container -->
+                            <div class="flex items-center gap-2 mt-2">
+                                @forelse($rank->medals as $medal)
+                                    <div class="flex items-center gap-1.5 px-2 py-1 bg-{{ $medal['color'] }}-500/10 border border-{{ $medal['color'] }}-500/20 rounded-lg" title="{{ $medal['label'] }}">
+                                        <i class="fas fa-{{ $medal['icon'] }} text-[8px] text-{{ $medal['color'] }}-400"></i>
+                                        <span class="text-[7px] font-black text-{{ $medal['color'] }}-400 uppercase tracking-tighter">{{ $medal['label'] }}</span>
+                                    </div>
+                                @empty
+                                    <span class="text-[8px] text-zinc-700 font-bold uppercase italic tracking-widest">Sem medalhas</span>
+                                @endforelse
+                            </div>
+
+                            <div class="flex items-end gap-1 mt-3">
                                 <span class="text-2xl font-black text-white tabular-nums">{{ $rank->score }}</span>
                                 <span class="text-[9px] text-zinc-600 font-bold uppercase mb-1.5">Elite Score</span>
                             </div>
                         </div>
 
-                        <div class="h-10 w-px bg-white/5"></div>
+                        <div class="h-10 w-px bg-white/5 mx-2"></div>
 
                         <div class="flex flex-col items-center">
-                            <i class="fas fa-chart-line text-zinc-800 text-2xl group-hover:text-amber-500/20 transition-colors"></i>
+                            <span class="text-[8px] font-black uppercase tracking-widest @if($rank->level == 'Diamond') text-cyan-400 @elseif($rank->level == 'Platinum') text-zinc-300 @elseif($rank->level == 'Gold') text-amber-500 @else text-zinc-600 @endif mb-1">
+                                {{ $rank->level }}
+                            </span>
+                            <i class="fas fa-shield-alt text-zinc-800 text-2xl group-hover:text-amber-500/20 transition-colors"></i>
                         </div>
                     </div>
                 @endforeach

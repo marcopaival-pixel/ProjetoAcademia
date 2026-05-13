@@ -17,6 +17,9 @@
         </div>
 
         <div class="flex items-center gap-3">
+            <x-premium-button variant="secondary" size="md" href="{{ route('assessments.pdf', $assessment) }}" target="_blank">
+                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> GERAR LAUDO PDF
+            </x-premium-button>
             <x-premium-button variant="secondary" size="md" onclick="window.print()">
                 <i data-lucide="printer" class="w-4 h-4 mr-2"></i> IMPRIMIR
             </x-premium-button>
@@ -70,6 +73,20 @@
                             <div class="flex gap-3 p-3 rounded-xl {{ $risk['type'] === 'danger' ? 'bg-red-500/5 border border-red-500/20' : 'bg-amber-500/5 border border-amber-500/20' }}">
                                 <i data-lucide="{{ $risk['type'] === 'danger' ? 'x-circle' : 'alert-circle' }}" class="w-5 h-5 flex-shrink-0 {{ $risk['type'] === 'danger' ? 'text-red-500' : 'text-amber-500' }}"></i>
                                 <p class="text-xs text-zinc-300 leading-relaxed">{{ $risk['message'] }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </x-premium-card>
+            @endif
+
+            <!-- Interpretação Técnica Bio -->
+            @if(count($bioInsights) > 0)
+                <x-premium-card title="NexBot Bio Interpretation" icon="microscope" iconColor="emerald">
+                    <div class="space-y-4">
+                        @foreach($bioInsights as $insight)
+                            <div class="p-4 rounded-2xl {{ $insight['level'] === 'danger' ? 'bg-red-500/5 border border-red-500/10' : ($insight['level'] === 'warning' ? 'bg-amber-500/5 border border-amber-500/10' : 'bg-emerald-500/5 border border-emerald-500/10') }}">
+                                <h5 class="text-[10px] font-black {{ $insight['level'] === 'danger' ? 'text-red-500' : ($insight['level'] === 'warning' ? 'text-amber-500' : 'text-emerald-500') }} uppercase tracking-widest mb-1">{{ $insight['title'] }}</h5>
+                                <p class="text-xs text-zinc-300 leading-relaxed">{{ $insight['message'] }}</p>
                             </div>
                         @endforeach
                     </div>
@@ -140,6 +157,45 @@
                     @endforeach
                 </div>
             </x-premium-card>
+            
+            <!-- Bioimpedância Premium -->
+            @if($assessment->icw_l || $assessment->segmental_lean_trunk)
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <x-premium-card title="Composição Detalhada" icon="microscope" iconColor="emerald">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-3 rounded-xl bg-zinc-950 border border-zinc-800">
+                                <span class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Água Total (ICW+ECW)</span>
+                                <span class="text-lg font-black text-white">{{ ($assessment->icw_l ?? 0) + ($assessment->ecw_l ?? 0) }} L</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
+                                    <div class="text-[8px] text-zinc-500 font-black uppercase mb-1">Massa Magra Seca</div>
+                                    <div class="text-sm font-black text-white">{{ $assessment->dry_lean_mass_kg ?? '--' }} kg</div>
+                                </div>
+                                <div class="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
+                                    <div class="text-[8px] text-zinc-500 font-black uppercase mb-1">Ângulo de Fase</div>
+                                    <div class="text-sm font-black text-emerald-500">{{ $assessment->phase_angle ?? '--' }}°</div>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-zinc-950 border border-zinc-800">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-[10px] text-zinc-500 font-black uppercase">Gordura Visceral</span>
+                                    <span class="text-xs font-black {{ ($assessment->visceral_fat_level ?? 0) > 10 ? 'text-red-500' : 'text-emerald-500' }}">Nível {{ $assessment->visceral_fat_level ?? '--' }}</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-emerald-500 to-red-500" style="width: {{ (($assessment->visceral_fat_level ?? 0) / 20) * 100 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </x-premium-card>
+
+                    <x-premium-card title="Análise Segmental" icon="layout-grid" iconColor="emerald">
+                        <div class="h-64 relative">
+                            <canvas id="segmentalChart"></canvas>
+                        </div>
+                    </x-premium-card>
+                </div>
+            @endif
 
             @if($assessment->notes)
                 <x-premium-card title="Observações" icon="message-square" iconColor="emerald">
@@ -180,9 +236,53 @@
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
+
+        const ctx = document.getElementById('segmentalChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Braço E.', 'Braço D.', 'Perna D.', 'Perna E.', 'Tronco'],
+                    datasets: [{
+                        label: 'Massa Magra (kg)',
+                        data: [
+                            {{ $assessment->segmental_lean_arm_l ?? 0 }},
+                            {{ $assessment->segmental_lean_arm_r ?? 0 }},
+                            {{ $assessment->segmental_lean_leg_r ?? 0 }},
+                            {{ $assessment->segmental_lean_leg_l ?? 0 }},
+                            {{ $assessment->segmental_lean_trunk ?? 0 }}
+                        ],
+                        fill: true,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        pointBackgroundColor: 'rgb(16, 185, 129)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(16, 185, 129)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255,255,255,0.05)' },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            pointLabels: { color: '#71717a', font: { size: 10, weight: '900' } },
+                            ticks: { display: false },
+                            suggestedMin: 0
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
     });
 </script>
 @endpush

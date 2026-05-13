@@ -252,7 +252,8 @@
                             <label for="cpf" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Documento CPF</label>
                             <input id="cpf" name="cpf" type="text" :required="tipo_acesso !== 'manager'" maxlength="14" value="{{ old('cpf') }}"
                                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
-                                placeholder="000.000.000-00">
+                                placeholder="000.000.000-00"
+                                oninput="maskCpf(this)">
                         </div>
 
                         <div class="space-y-3 group" x-show="tipo_acesso === 'manager'" x-cloak>
@@ -260,14 +261,15 @@
                             <input id="cnpj" name="cnpj" type="text" :required="tipo_acesso === 'manager'" maxlength="18" value="{{ old('cnpj') }}"
                                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
                                 placeholder="00.000.000/0000-00"
-                                @input="maskRegisterCnpj($el)">
+                                oninput="maskCnpj(this)">
                         </div>
 
                         <div class="space-y-3 group">
                             <label for="phone" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Telefone Sinc</label>
                             <input id="phone" name="phone" type="text" value="{{ old('phone') }}"
                                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
-                                placeholder="(00) 00000-0000">
+                                placeholder="(00) 00000-0000"
+                                oninput="maskPhone(this)">
                         </div>
 
                         <div class="space-y-3 group" x-show="tipo_acesso !== 'manager'">
@@ -384,6 +386,57 @@
     </div>
 </div>
 
+{{-- Confirmation Modal --}}
+<div id="register-confirm-modal" class="fixed inset-0 z-[500] hidden flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="absolute inset-0 bg-zinc-950/90 backdrop-blur-xl"></div>
+    <div class="relative w-full max-w-2xl rounded-[3rem] border border-emerald-500/20 bg-zinc-900 shadow-3xl p-8 md:p-12 space-y-8 animate-fade-in-up overflow-y-auto max-h-[90vh]">
+        <div class="text-center space-y-2">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.2rem] bg-emerald-500/10 text-emerald-500 shadow-lg shadow-emerald-500/5 mb-4">
+                <i data-lucide="file-check-2" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-2xl font-black text-white tracking-tighter uppercase italic">Conferir <span class="text-emerald-500">Protocolo</span></h3>
+            <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Valide suas credenciais antes da ativação final</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-950/50 border border-zinc-800/50 rounded-[2rem] p-6 md:p-8">
+            <div class="space-y-1">
+                <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Nome / Razão Social</span>
+                <p id="confirm-name" class="text-sm text-white font-bold truncate"></p>
+            </div>
+            <div class="space-y-1">
+                <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">E-mail Corporativo</span>
+                <p id="confirm-email" class="text-sm text-white font-bold truncate"></p>
+            </div>
+            <div class="space-y-1">
+                <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Documento (CPF/CNPJ)</span>
+                <p id="confirm-cpf" class="text-sm text-white font-bold"></p>
+            </div>
+            <div class="space-y-1">
+                <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Telefone</span>
+                <p id="confirm-phone" class="text-sm text-white font-bold"></p>
+            </div>
+            <div class="space-y-1" id="confirm-birth-wrapper">
+                <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Data de Nascimento</span>
+                <p id="confirm-birth" class="text-sm text-white font-bold"></p>
+            </div>
+            <div class="space-y-1">
+                <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Perfil de Acesso</span>
+                <p id="confirm-profile" class="text-sm text-emerald-500 font-black italic uppercase"></p>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 pt-4">
+            <button type="button" id="confirm-back" class="flex-1 py-4 rounded-2xl bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-800 active:scale-95">
+                Voltar e Corrigir
+            </button>
+            <button type="button" id="confirm-final" class="flex-1 py-4 rounded-2xl bg-emerald-500 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-emerald-400 shadow-xl shadow-emerald-500/20 active:scale-95">
+                Confirmar e Finalizar Cadastro
+            </button>
+        </div>
+    </div>
+</div>
+
+
 <script>
     function toggleRegisterPass(fieldId, iconId) {
         const input = document.getElementById(fieldId);
@@ -397,31 +450,8 @@
 
     const REGISTER_REDIRECT_FALLBACK = @json(route('registration.pending'));
 
-    function maskRegisterCpf(input) {
-        if (!input) return;
-        let v = input.value.replace(/\D/g, '').slice(0, 11);
-        v = v.replace(/(\d{3})(\d)/, '$1.$2');
-        v = v.replace(/(\d{3})(\d)/, '$1.$2');
-        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-        input.value = v;
-    }
-
-    function maskRegisterCnpj(input) {
-        if (!input) return;
-        let v = input.value.replace(/\D/g, '').slice(0, 14);
-        v = v.replace(/^(\d{2})(\d)/, '$1.$2');
-        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-        v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
-        v = v.replace(/(\d{4})(\d)/, '$1-$2');
-        input.value = v;
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
-        const cpfEl = document.getElementById('cpf');
-        if (cpfEl) {
-            cpfEl.addEventListener('input', () => maskRegisterCpf(cpfEl));
-        }
 
         const closeBtn = document.getElementById('register-duplicate-close');
         if (closeBtn) {
@@ -432,8 +462,162 @@
         }
     });
 
-    // Form Handling Logic (Simplified for brevity as it follows the same pattern as existing)
-    // ... preserved from original ...
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('register-form');
+        const submitBtn = document.getElementById('register-submit');
+        const errorDiv = document.getElementById('register-errors');
+        const dupModal = document.getElementById('register-duplicate-modal');
+        const dupMsg = document.getElementById('register-duplicate-message');
+        
+        const confirmModal = document.getElementById('register-confirm-modal');
+        const confirmBack = document.getElementById('confirm-back');
+        const confirmFinal = document.getElementById('confirm-final');
+
+        if (!form) return;
+
+        // Function to show confirmation modal
+        const showConfirmation = () => {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const cpfInput = document.getElementById('cpf');
+            const cnpjInput = document.getElementById('cnpj');
+            const cpf = (cpfInput && cpfInput.offsetParent !== null ? cpfInput.value : (cnpjInput ? cnpjInput.value : 'N/A')) || 'N/A';
+            const phone = document.getElementById('phone').value || 'Não informado';
+            const birthDate = document.getElementById('birth_date')?.value || 'N/A';
+            
+            // Get profile text from the badge in the form
+            const profileText = document.querySelector('[x-text*="tipo_acesso"]').innerText;
+
+            document.getElementById('confirm-name').textContent = name;
+            document.getElementById('confirm-email').textContent = email;
+            document.getElementById('confirm-cpf').textContent = cpf;
+            document.getElementById('confirm-phone').textContent = phone;
+            document.getElementById('confirm-birth').textContent = birthDate;
+            document.getElementById('confirm-profile').textContent = profileText;
+
+            // Hide birth date if manager
+            const tipo_acesso = form.querySelector('[name="tipo_acesso"]').value;
+            if (tipo_acesso === 'manager') {
+                document.getElementById('confirm-birth-wrapper').style.display = 'none';
+            } else {
+                document.getElementById('confirm-birth-wrapper').style.display = 'block';
+            }
+
+            confirmModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons();
+        };
+
+        const closeConfirmation = () => {
+            confirmModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        };
+
+        confirmBack.addEventListener('click', closeConfirmation);
+
+        confirmFinal.addEventListener('click', () => {
+            closeConfirmation();
+            executeRegistration();
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Validate form
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Custom terms validation
+            const terms = document.getElementById('terms');
+            if (!terms.checked) {
+                alert('Você precisa aceitar os termos para continuar.');
+                return;
+            }
+
+            showConfirmation();
+        });
+
+        const executeRegistration = async () => {
+            // Reset UI
+            errorDiv.classList.add('hidden');
+            errorDiv.innerHTML = '';
+            submitBtn.disabled = true;
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> PROCESSANDO PROTOCOLO...';
+            lucide.createIcons();
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    console.log('DEBUG: Despachando evento de sucesso', { email: data.email, redirect: data.redirect });
+                    // Success! Dispatch event for the success modal
+                    window.dispatchEvent(new CustomEvent('registration-success', { 
+                        detail: { 
+                            email: data.email,
+                            message: data.message,
+                            redirect: data.redirect
+                        } 
+                    }));
+
+                    // Keep button disabled
+                    submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> PROTOCOLO ATIVADO';
+                    lucide.createIcons();
+                } else if (response.status === 422) {
+                    // Validation Errors
+                    if (data.duplicate_registration) {
+                        let msg = '';
+                        if (data.duplicate_registration === 'both') {
+                            msg = 'O E-mail e o CPF informados já possuem um registro ativo em nossa base de dados.';
+                        } else if (data.duplicate_registration === 'email') {
+                            msg = 'O E-mail informado já possui um registro ativo em nossa base de dados.';
+                        } else {
+                            msg = 'O CPF informado já possui um registro ativo em nossa base de dados.';
+                        }
+                        dupMsg.textContent = msg;
+                        dupModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        // Show errors in the errorDiv
+                        errorDiv.classList.remove('hidden');
+                        let errorHtml = '<ul class="space-y-1">';
+                        Object.values(data.errors).forEach(errs => {
+                            errs.forEach(err => {
+                                errorHtml += `<li>${err}</li>`;
+                            });
+                        });
+                        errorHtml += '</ul>';
+                        errorDiv.innerHTML = errorHtml;
+                        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                    lucide.createIcons();
+                } else {
+                    throw new Error(data.message || 'Erro inesperado no servidor.');
+                }
+            } catch (error) {
+                console.error('Register Error:', error);
+                errorDiv.classList.remove('hidden');
+                errorDiv.textContent = error.message || 'Falha na conexão com o servidor de protocolos.';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                lucide.createIcons();
+            }
+        };
+    });
 </script>
 
 <style>

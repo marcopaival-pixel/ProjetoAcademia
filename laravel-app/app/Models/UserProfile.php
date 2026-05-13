@@ -106,8 +106,8 @@ class UserProfile extends Model
                 'icon' => 'repeat',
             ],
             'maintain' => [
-                'label' => 'Manutenção e Saúde',
-                'description' => 'Equilíbrio calórico para longevidade.',
+                'label' => 'Saúde e Bem-Estar',
+                'description' => 'Foco em longevidade, equilíbrio e manutenção da saúde.',
                 'icon' => 'heart',
             ],
             'gain' => [

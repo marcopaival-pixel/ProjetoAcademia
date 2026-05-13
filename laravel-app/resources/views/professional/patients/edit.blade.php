@@ -74,7 +74,7 @@
                                 <option value="lose" {{ $currentGoal == 'lose' ? 'selected' : '' }}>Emagrecimento</option>
                                 <option value="recomp" {{ $currentGoal == 'recomp' ? 'selected' : '' }}>Recomposição Corporal</option>
                                 <option value="performance" {{ $currentGoal == 'performance' ? 'selected' : '' }}>Performance</option>
-                                <option value="maintain" {{ $currentGoal == 'maintain' ? 'selected' : '' }}>Manutenção</option>
+                                <option value="maintain" {{ $currentGoal == 'maintain' ? 'selected' : '' }}>Saúde e Bem-Estar</option>
                             </select>
                         </div>
                         

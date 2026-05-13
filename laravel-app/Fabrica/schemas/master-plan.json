@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/master-plan.json",
+  "title": "MasterPlanPayload",
+  "type": "object",
+  "required": [
+    "executive_summary",
+    "milestones",
+    "artifact_index",
+    "implementation_order",
+    "approval_gate"
+  ],
+  "properties": {
+    "executive_summary": { "type": "string" },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "goal", "deliverables"],
+        "properties": {
+          "name": { "type": "string" },
+          "goal": { "type": "string" },
+          "deliverables": { "type": "array", "items": { "type": "string" } },
+          "depends_on": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifact_index": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "type", "status"],
+        "properties": {
+          "path": { "type": "string" },
+          "type": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "ready", "approved", "stale"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "implementation_order": { "type": "array", "items": { "type": "string" } },
+    "approval_gate": {
+      "type": "object",
+      "required": ["human_approval_required", "criteria"],
+      "properties": {
+        "human_approval_required": { "type": "boolean" },
+        "criteria": { "type": "array", "items": { "type": "string" } },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "approved_by": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "risks_and_mitigations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["risk", "mitigation"],
+        "properties": {
+          "risk": { "type": "string" },
+          "mitigation": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

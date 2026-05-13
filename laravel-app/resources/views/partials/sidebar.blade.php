@@ -25,7 +25,10 @@
     }
 @endphp
 
-<aside class="sidebar bg-zinc-950 border-r border-zinc-900 shadow-2xl flex flex-col h-screen" id="sidebar">
+<aside class="sidebar bg-zinc-950 border-r border-zinc-900 shadow-2xl flex flex-col h-screen" 
+       id="sidebar"
+       x-data="sidebarNav"
+       data-initial-groups="{{ json_encode($initialOpenGroups) }}">
     <!-- Header/Logo -->
     <div class="sidebar-header p-10">
         @php
@@ -80,38 +83,8 @@
     @endif
 
     <!-- Navigation Scroll Area -->
-    <div class="sidebar-content flex-1 overflow-y-auto px-4 custom-scrollbar"
-         x-data="sidebarNav()"
-         data-initial-groups="{{ json_encode($initialOpenGroups) }}">
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('sidebarNav', () => ({
-                openGroups: JSON.parse(localStorage.getItem('sidebar_open_groups') || '[]'),
-                toggleGroup(id) {
-                    if (this.openGroups.includes(id)) {
-                        this.openGroups = this.openGroups.filter(g => g !== id);
-                    } else {
-                        this.openGroups.push(id);
-                    }
-                    localStorage.setItem('sidebar_open_groups', JSON.stringify(this.openGroups));
-                },
-                isGroupOpen(id) {
-                    return this.openGroups.includes(id);
-                },
-                init() {
-                    const el = document.querySelector('[data-initial-groups]');
-                    const initialGroups = el ? JSON.parse(el.dataset.initialGroups) : [];
-                    initialGroups.forEach(id => {
-                        if (!this.isGroupOpen(id)) {
-                            this.openGroups.push(id);
-                        }
-                    });
-                    localStorage.setItem('sidebar_open_groups', JSON.stringify(this.openGroups));
-                    lucide.createIcons();
-                }
-            }));
-        });
-    </script>
+    <div class="sidebar-content flex-1 overflow-y-auto px-4 custom-scrollbar">
+
 
         @foreach($menuGroups as $group)
             @php
@@ -167,7 +140,7 @@
                                 @endif
 
                                 <div class="flex items-center gap-4">
-                                    <i class="{{ $item['icon'] }} w-4 h-4 transition-transform group-hover:scale-110"></i>
+                                    <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
                                     <span class="text-[11px] font-black uppercase tracking-widest">{{ $item['label'] }}</span>
                                 </div>
 
@@ -195,49 +168,11 @@
             </div>
         @endforeach
 
-        <!-- Suporte & Ajuda -->
-        @php
-            $supportActive = request()->routeIs('support.tickets.*');
-            $supportLinkClass = $supportActive ? ($isClinica ? 'bg-blue-500/10 text-blue-400 border border-blue-500/10 shadow-lg' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 shadow-lg') : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30';
-            $supportIconWrapperClass = $supportActive ? ($isClinica ? 'text-blue-500 border-blue-500/20' : 'text-emerald-500 border-emerald-500/20') : '';
-            
-            $kbActive = request()->routeIs('kb.*');
-            $kbLinkClass = $kbActive ? ($isClinica ? 'bg-blue-500/10 text-blue-400 border border-blue-500/10 shadow-lg' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 shadow-lg') : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30';
-            $kbIconWrapperClass = $kbActive ? ($isClinica ? 'text-blue-500 border-blue-500/20' : 'text-emerald-500 border-emerald-500/20') : '';
-        @endphp
-        <div class="nav-group mb-4 space-y-1">
-            <a href="{{ route('support.tickets.index') }}" 
-               class="nav-link flex items-center gap-4 p-4 rounded-2xl transition-all {{ $supportLinkClass }}">
-                <div class="w-8 h-8 rounded-xl bg-zinc-950 border border-zinc-900 flex items-center justify-center text-zinc-700 transition-all {{ $supportIconWrapperClass }}">
-                    <i data-lucide="life-buoy" class="w-4 h-4"></i>
-                </div>
-                <span class="text-[10px] font-black tracking-[0.2em] uppercase {{ $supportActive ? 'text-white' : '' }}">Suporte Técnico</span>
-            </a>
-            
-            <a href="{{ route('kb.index') }}" 
-               class="nav-link flex items-center gap-4 p-4 rounded-2xl transition-all {{ $kbLinkClass }}">
-                <div class="w-8 h-8 rounded-xl bg-zinc-950 border border-zinc-900 flex items-center justify-center text-zinc-700 transition-all {{ $kbIconWrapperClass }}">
-                    <i data-lucide="help-circle" class="w-4 h-4"></i>
-                </div>
-                <span class="text-[10px] font-black tracking-[0.2em] uppercase {{ $kbActive ? 'text-white' : '' }}">Central de Ajuda</span>
-            </a>
-
-            <!-- Botão de Sair em Destaque -->
-            <form action="{{ route('logout') }}" method="post" class="mt-8 border-t border-zinc-900/50 pt-6">
-                @csrf
-                <button type="submit" class="w-full flex items-center gap-4 p-4 rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all group">
-                    <div class="w-8 h-8 rounded-xl bg-zinc-950 border border-zinc-900 flex items-center justify-center text-rose-500 transition-all group-hover:border-rose-500/20 shadow-lg shadow-rose-500/5">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                    </div>
-                    <span class="text-[10px] font-black tracking-[0.2em] uppercase">Sair do Sistema</span>
-                </button>
-            </form>
-        </div>
     </div>
 
     <!-- Sidebar Footer: Perfil do Usuário -->
     <div class="sidebar-footer p-4 border-t border-zinc-900 bg-zinc-950/50 relative">
-        <div class="relative" x-data="{ openProfile: false }">
+        <div class="relative">
             <button @click="openProfile = !openProfile" 
                     class="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-zinc-900/30 border border-white/5 hover:bg-zinc-900 hover:border-emerald-500/20 transition-all group">
                 

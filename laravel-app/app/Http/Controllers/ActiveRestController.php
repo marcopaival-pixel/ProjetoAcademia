@@ -13,41 +13,39 @@ class ActiveRestController extends Controller
         $user = auth()->user();
         $isPremium = $user->hasPremiumAccess();
         
-        $query = \App\Models\ActiveRestRoutine::where('is_active', true);
+        // Detecção de Dia de Descanso (OFF)
+        $dayOfWeek = now()->dayOfWeek; // 0 (Sun) - 6 (Sat)
+        // No Laravel/Carbon, Sun=0, Mon=1...
+        // No frontend costumamos usar 1-7 (Seg-Dom). Vamos normalizar.
+        $dayMap = [0 => 7, 1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5, 6 => 6];
+        $todayNormalized = $dayMap[$dayOfWeek];
 
-        // Filtros
-        if ($request->has('category') && $request->category != 'Todos') {
-            $query->where('category', $request->category);
+        $hasWorkoutToday = \App\Models\TrainingPlan::where('user_id', $user->id)
+            ->where('status', 'Ativo')
+            ->get()
+            ->contains(function ($plan) use ($todayNormalized) {
+                $days = is_array($plan->days_of_week) ? $plan->days_of_week : json_decode($plan->days_of_week, true);
+                return is_array($days) && in_array($todayNormalized, $days);
+            });
+
+        $isOffDay = !$hasWorkoutToday;
+
+        $routines = \App\Models\ActiveRestRoutine::orderBy('order')->get();
+
+        // Sugestão Inteligente para Dia OFF
+        $suggestedRoutine = null;
+        if ($isOffDay) {
+            $suggestedRoutine = $routines->where('category', 'Recuperação')->first() 
+                ?? $routines->where('category', 'Mobilidade')->first()
+                ?? $routines->first();
         }
-
-        if ($request->has('level') && $request->level != 'Todos') {
-            $query->where('recommended_level', $request->level);
-        }
-
-        if ($request->has('duration')) {
-            if ($request->duration == '5') {
-                $query->where('duration', 'like', '5%');
-            } elseif ($request->duration == '10') {
-                $query->where('duration', 'like', '10%');
-            } elseif ($request->duration == '15') {
-                $query->where('duration', 'like', '15%');
-            }
-        }
-
-        if ($request->has('favorites') && $request->favorites == '1') {
-            $favoriteIds = \App\Models\ActiveRestFavorite::where('user_id', $user->id)
-                ->pluck('active_rest_routine_id');
-            $query->whereIn('id', $favoriteIds);
-        }
-
-        $routines = $query->orderBy('order')->get();
 
         // Obter IDs favoritos do usuário para mostrar ícones
         $userFavorites = \App\Models\ActiveRestFavorite::where('user_id', $user->id)
             ->pluck('active_rest_routine_id')
             ->toArray();
 
-        return view('active-rest.index', compact('routines', 'isPremium', 'userFavorites'));
+        return view('active-rest.index', compact('routines', 'isPremium', 'userFavorites', 'isOffDay', 'suggestedRoutine'));
     }
 
     public function history(Request $request)

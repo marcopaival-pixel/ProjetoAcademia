@@ -58,23 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Submenu Toggles (só intercepta âncoras que não navegam para outra página)
-    const submenus = document.querySelectorAll('.has-submenu > .nav-link');
-    submenus.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (sidebar.classList.contains('collapsed') && window.innerWidth > 1024) {
-                return; // Don't toggle submenus when collapsed on desktop
-            }
-            const href = (this.getAttribute('href') || '').trim();
-            const isToggleOnly = href === '' || href === '#' || href.toLowerCase().startsWith('javascript:');
-            if (!isToggleOnly) {
-                return; // deixar o browser seguir o link (ex.: upgrade / plano)
-            }
-            e.preventDefault();
-            const parent = this.parentElement;
-            parent.classList.toggle('open');
-        });
-    });
+    // Submenu Toggles removidos: a sidebar agora utiliza Alpine.js (x-on:click no Blade)
+    // para evitar o problema de duplo clique causado por conflitos de handlers.
 
     // Mobile Overlay (Close sidebar when clicking outside)
     document.addEventListener('click', function(e) {

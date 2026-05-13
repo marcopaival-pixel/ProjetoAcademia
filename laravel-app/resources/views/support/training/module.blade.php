@@ -15,12 +15,12 @@
                 <p class="text-xs text-zinc-600 font-bold uppercase tracking-widest mt-1">{{ $lessons->count() }} aulas disponíveis</p>
             </div>
              <div class="px-6 py-3 bg-zinc-900/40 border border-white/5 rounded-2xl">
-                <p class="text-[9px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Seu Progresso</p>
+                <p class="text-[9px] text-zinc-500 font-black uppercase tracking-widest block mb-1">Seu Progresso ({{ $completedCount }}/{{ $totalCount }})</p>
                 <div class="flex items-center gap-3">
                     <div class="w-32 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500" style="width: 0%"></div>
+                        <div class="h-full bg-blue-500" style="width: {{ $progress }}%"></div>
                     </div>
-                    <span class="text-[10px] text-white font-bold">0%</span>
+                    <span class="text-[10px] text-white font-bold">{{ $progress }}%</span>
                 </div>
             </div>
         </div>
@@ -30,10 +30,15 @@
     <!-- Lessons List -->
     <div class="space-y-4 pb-20">
         @foreach($lessons as $index => $lesson)
+        @php $isLCompleted = $lesson->completions->isNotEmpty(); @endphp
         <a href="{{ route('training.lesson', [$module, $lesson]) }}" class="group flex items-center justify-between p-6 bg-zinc-900/40 border border-white/5 rounded-3xl hover:bg-zinc-900/60 hover:border-blue-500/30 transition-all shadow-xl">
             <div class="flex items-center gap-6">
-                <div class="w-12 h-12 rounded-2xl bg-zinc-950 flex items-center justify-center text-xs font-black text-zinc-700 group-hover:text-blue-500 group-hover:bg-blue-600/10 transition-all border border-white/5 shadow-inner">
-                    {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
+                <div class="w-12 h-12 rounded-2xl {{ $isLCompleted ? 'bg-emerald-600/10 text-emerald-500' : 'bg-zinc-950 text-zinc-700' }} flex items-center justify-center text-xs font-black group-hover:text-blue-500 group-hover:bg-blue-600/10 transition-all border border-white/5 shadow-inner">
+                    @if($isLCompleted)
+                        <i class="fas fa-check text-xs"></i>
+                    @else
+                        {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
+                    @endif
                 </div>
                 <div>
                     <h3 class="text-sm font-black text-white group-hover:text-blue-400 transition-colors">{{ $lesson->title }}</h3>
@@ -51,7 +56,7 @@
                     </div>
                 </div>
             </div>
-            <div class="w-10 h-10 rounded-full border border-white/5 flex items-center justify-center text-zinc-800 group-hover:text-blue-500 group-hover:scale-110 transition-all">
+            <div class="w-10 h-10 rounded-full border border-white/5 flex items-center justify-center {{ $isLCompleted ? 'text-emerald-500' : 'text-zinc-800' }} group-hover:text-blue-500 group-hover:scale-110 transition-all">
                  <i class="fas fa-chevron-right text-[10px]"></i>
             </div>
         </a>
