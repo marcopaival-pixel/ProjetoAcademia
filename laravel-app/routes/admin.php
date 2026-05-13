@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\PdfSignatureController;
 use App\Http\Controllers\Admin\PdfSuiteController;
 use App\Http\Controllers\Admin\PdfTemplateController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\MonetizationController;
 use App\Http\Controllers\Admin\RegistrationApprovalController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RoleMenuPermissionController;
@@ -44,7 +45,7 @@ Route::prefix('admin')->group(function () {
     // Login Administrativo
     Route::get('/login', [AdminAreaController::class, 'loginForm'])->name('admin.login');
     Route::post('/login', [LoginController::class, 'authenticate'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:20,1')
         ->name('admin.login.submit');
     Route::post('/logout', [AdminAreaController::class, 'logout'])->name('admin.logout');
 
@@ -117,6 +118,19 @@ Route::prefix('admin')->group(function () {
             Route::post('/{plan}/toggle-status', [PlanController::class, 'toggleStatus'])->name('toggle-status');
         });
 
+        // Gestão de Monetização e Limites (Novo)
+        Route::prefix('monetization')->name('admin.monetization.')->group(function () {
+            Route::get('/features', [MonetizationController::class, 'features'])->name('features');
+            Route::post('/features', [MonetizationController::class, 'storeFeature'])->name('features.store');
+            Route::post('/features/{feature}', [MonetizationController::class, 'updateFeature'])->name('features.update');
+            
+            Route::get('/limits', [MonetizationController::class, 'limits'])->name('limits');
+            Route::post('/limits', [MonetizationController::class, 'storeLimit'])->name('limits.store');
+            
+            Route::get('/popups', [MonetizationController::class, 'popups'])->name('popups');
+            Route::post('/popups', [MonetizationController::class, 'storePopup'])->name('popups.store');
+        });
+
         // Gestão de Cobrança e Créditos (Novo)
         Route::prefix('billing')->name('admin.billing.')->group(function () {
             Route::get('/credits', [\App\Http\Controllers\Admin\BillingController::class, 'index'])->name('credits');
@@ -137,6 +151,9 @@ Route::prefix('admin')->group(function () {
             Route::prefix('ai-credits')->name('ai-credits.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\AiCreditDashboardController::class, 'index'])->name('dashboard');
                 Route::get('/report', [\App\Http\Controllers\Admin\AiCreditDashboardController::class, 'report'])->name('report');
+                
+                // Monitoramento Técnico do Orquestrador
+                Route::get('/orchestrator', [\App\Http\Controllers\Admin\AdminOrchestratorDashboardController::class, 'index'])->name('orchestrator.dashboard');
             });
         });
 

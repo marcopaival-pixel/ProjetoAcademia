@@ -20,6 +20,23 @@
             </div>
             <span class="font-black text-sm tracking-tighter italic uppercase text-white">nex<span class="{{ $isClinica ? 'text-blue-500' : 'text-emerald-500' }}">shape</span></span>
         </a>
+
+        @php
+            $activeClinic = \App\Support\TenantContext::getClinic();
+        @endphp
+
+        @if($activeClinic)
+            <div class="hidden sm:flex items-center gap-3 border-l border-zinc-900 pl-6 ml-2">
+                @if($activeClinic->logo_path)
+                    <img src="{{ asset('storage/' . $activeClinic->logo_path) }}" alt="{{ $activeClinic->name }}" class="h-8 w-auto rounded shadow-sm">
+                @endif
+                <div class="flex flex-col leading-none">
+                    <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ $activeClinic->name }}</span>
+                    <span class="text-[7px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Clínica Ativa</span>
+                </div>
+            </div>
+        @endif
+
         
         @if(!auth()->user()->hasRole('paciente'))
         <div class="relative" x-data="{ 
@@ -43,7 +60,7 @@
         }" @click.away="showSuggestions = false">
             <form action="{{ route('global.search') }}" method="GET" id="searchForm" class="search-bar hidden md:flex items-center bg-zinc-950 border border-zinc-900 rounded-2xl px-5 py-2.5 w-80 focus-within:border-{{ $isClinica ? 'blue-500/50' : 'emerald-500/50' }} focus-within:shadow-[0_0_15px_{{ $isClinica ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)' }}] transition-all shadow-inner group">
                 <i data-lucide="search" class="w-4 h-4 text-zinc-700 group-focus-within:text-{{ $isClinica ? 'blue-400' : 'emerald-500' }} transition-colors"></i>
-                <input type="text" name="q" x-model="query" @input.debounce.300ms="fetchSuggestions()" autocomplete="off" placeholder="Buscar inteligência..." class="bg-transparent border-none outline-none text-xs font-black uppercase tracking-widest text-white placeholder:text-zinc-800 w-full ml-3">
+                <input type="text" name="q" x-model="query" @input.debounce.300ms="fetchSuggestions()" autocomplete="off" placeholder="Buscar no sistema..." class="bg-transparent border-none outline-none text-xs font-black uppercase tracking-widest text-white placeholder:text-zinc-800 w-full ml-3">
             </form>
 
             {{-- Dropdown de Sugestões --}}
@@ -91,7 +108,7 @@
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] tabular-nums">
                         {{ number_format($credits, 0, ',', '.') }} <span class="hidden sm:inline">Créditos</span>
                     </span>
-                    <span class="text-[7px] font-bold opacity-60 uppercase tracking-widest mt-0.5">Saldo de IA</span>
+                    <span class="text-[7px] font-bold opacity-60 uppercase tracking-widest mt-0.5">Créditos de IA</span>
                 </div>
                 @if($compraAtiva)
                     <i data-lucide="plus-circle" class="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity"></i>
@@ -219,9 +236,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        // Lucide re-init removido: já é tratado no app.blade.php globalmente
 
         // Theme Switcher Logic (preserved from original)
         document.querySelectorAll('#header-theme-toggle .btn-theme').forEach(btn => {

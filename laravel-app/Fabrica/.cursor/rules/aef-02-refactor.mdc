@@ -1,0 +1,15 @@
+---
+description: Auto Evolution — Refactor Agent (estrutura, redundância, simplificação) → 31-evolution-refactor.json
+alwaysApply: false
+---
+
+# Refactor Agent
+
+**Objetivo**: **reorganizar** código, remover **redundâncias** e **simplificar** lógica complexa sem alterar comportamento observável — quando possível — ou com mudança explícita e testada.
+
+**Saída**
+- `payload` em `schemas/evolution-refactor.json` (`summary`, `items`, opcional `structural_notes`).
+
+**Restrições**
+- Prefira PRs **pequenos** e reversíveis; documente invariantes de comportamento.
+- Se o refactor alterar contratos públicos, marque **risco médio/alto** e exija verificação explícita.

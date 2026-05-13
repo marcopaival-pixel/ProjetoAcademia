@@ -127,6 +127,20 @@ class ReportMonetizationService
                         'route_params' => ['type' => 'adherence_index']
                     ],
                     [
+                        'id' => 'bioimpedance_technical',
+                        'label' => 'Laudo Técnico de Bioimpedância',
+                        'icon' => 'fas fa-microscope',
+                        'premium' => true,
+                        'route' => 'bioimpedance.latest',
+                    ],
+                    [
+                        'id' => 'clinical_report',
+                        'label' => 'Laudo Clínico de Evolução',
+                        'icon' => 'fas fa-file-medical',
+                        'premium' => true,
+                        'route' => 'patient.export-laudo',
+                    ],
+                    [
                         'id' => 'export_pdf',
                         'label' => 'Exportar Relatório Mensal (PDF)',
                         'icon' => 'fas fa-file-pdf',

@@ -155,15 +155,15 @@
             @for($i = 1; $i <= 7; $i++)
                 <div class="flex items-center">
                     <div class="step-pill w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm
-                        {{ $currentStep == $i ? 'active text-white' : ($currentStep > $i ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' : 'bg-white/5 text-zinc-600 border border-white/5') }}">
-                        @if($currentStep > $i)
+                        {{ ($currentStep ?? 1) == $i ? 'active text-white' : (($currentStep ?? 1) > $i ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' : 'bg-white/5 text-zinc-600 border border-white/5') }}">
+                        @if(($currentStep ?? 1) > $i)
                             <i class="fas fa-check"></i>
                         @else
                             {{ $i }}
                         @endif
                     </div>
                     @if($i < 7)
-                        <div class="w-8 h-[2px] {{ $currentStep > $i ? 'bg-emerald-500/30' : 'bg-white/5' }}"></div>
+                        <div class="w-8 h-[2px] {{ ($currentStep ?? 1) > $i ? 'bg-emerald-500/30' : 'bg-white/5' }}"></div>
                     @endif
                 </div>
             @endfor
@@ -186,10 +186,10 @@
             <div class="mb-12 animate-in">
                 <div class="flex items-center gap-3 mb-4">
                     <span class="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/20">
-                        Etapa {{ $currentStep }} de 7
+                        Etapa {{ $currentStep ?? 1 }} de 7
                     </span>
                     <div class="progress-container flex-grow">
-                        <div class="progress-bar" style="width: {{ ($currentStep / 7) * 100 }}%"></div>
+                        <div class="progress-bar" style="width: {{ (($currentStep ?? 1) / 7) * 100 }}%"></div>
                     </div>
                 </div>
                 <h2 class="text-4xl lg:text-5xl font-black text-white mb-4">@yield('step_title')</h2>
@@ -236,5 +236,6 @@
             });
         }
     </script>
+    @include('partials.js-masks')
 </body>
 </html>

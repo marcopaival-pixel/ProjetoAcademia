@@ -35,10 +35,11 @@
            Dashboard
            <div x-show="tab === 'dashboard'" class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
         </button>
-        <button @click="tab = 'history'" 
+        <button {{ !$isPremium ? 'data-premium-locked' : "@click=tab = 'history'" }} 
            :class="tab === 'history' ? 'text-emerald-500' : 'text-zinc-500 hover:text-zinc-300'"
            class="px-8 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all relative">
            Histórico Completo
+           <i data-lucide="lock" class="w-2.5 h-2.5 absolute top-3 right-4 text-amber-500/50"></i>
            <div x-show="tab === 'history'" class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-t-full shadow-[0_-4px_12px_rgba(16,185,129,0.5)]"></div>
         </button>
     </div>
@@ -47,14 +48,23 @@
     <div x-show="tab === 'dashboard'" class="space-y-8 animate-fade-in">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Main Weight Chart -->
-            <div class="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl">
-                <div class="flex items-center justify-between mb-8">
+            <div class="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
+                @if(!$isPremium)
+                <div class="absolute inset-0 z-20 flex flex-col items-center justify-center p-8 text-center bg-zinc-950/40 backdrop-blur-sm">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center border border-amber-500/30 mb-3">
+                        <i data-lucide="lock" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Gráficos de Evolução Premium</p>
+                    <button data-premium-locked class="mt-4 px-6 py-2 bg-zinc-950 border border-zinc-800 text-white text-[9px] font-black rounded-xl uppercase tracking-widest hover:border-emerald-500/50 transition-all">Desbloquear</button>
+                </div>
+                @endif
+                <div class="flex items-center justify-between mb-8 {{ !$isPremium ? 'blur-sm select-none' : '' }}">
                     <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         Evolução de Peso (kg)
                     </h3>
                 </div>
-                <div style="height: 300px;">
+                <div style="height: 300px;" class="{{ !$isPremium ? 'blur-sm select-none' : '' }}">
                     <canvas id="weightEvolutionChart"></canvas>
                 </div>
             </div>

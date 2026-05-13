@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/prd.json",
+  "title": "PrdPayload",
+  "type": "object",
+  "required": ["goals", "non_goals", "personas", "user_stories", "requirements"],
+  "properties": {
+    "epics": {
+      "type": "array",
+      "description": "Optional grouping of user stories for prioritization and planning.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "story_ids": { "type": "array", "items": { "type": "string" } },
+          "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "goals": { "type": "array", "items": { "type": "string" } },
+    "non_goals": { "type": "array", "items": { "type": "string" } },
+    "personas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "pain_points": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "user_stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "story", "acceptance_criteria"],
+        "properties": {
+          "id": { "type": "string" },
+          "story": { "type": "string" },
+          "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+          "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["functional", "non_functional"] },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

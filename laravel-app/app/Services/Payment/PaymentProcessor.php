@@ -47,7 +47,7 @@ class PaymentProcessor
             // 2. Determine Action
             if (str_starts_with($reference, 'ai_credits:')) {
                 $packageId = (int) str_replace('ai_credits:', '', $reference);
-                $this->processAiCredits($user, $packageId, $gatewayId);
+                $this->processAiCredits($user, $packageId, $gatewayId, $gateway);
             } elseif (str_starts_with($reference, 'credits:')) {
                 $compraId = (int) str_replace('credits:', '', $reference);
                 $this->processGeneralCredits($user, $compraId, $gatewayId);
@@ -96,14 +96,16 @@ class PaymentProcessor
         return $subscription;
     }
 
-    protected function processAiCredits(User $user, int $packageId, string $gatewayId)
+    protected function processAiCredits(User $user, int $packageId, string $gatewayId, string $gateway)
     {
         $package = AiCreditPackage::find($packageId);
         if ($package) {
-            app(AiCreditService::class)->addCredits($user, $package->credits, 'purchase', [
-                'package_id' => $packageId,
-                'gateway_id' => $gatewayId
-            ]);
+            app(AiCreditService::class)->addCredits(
+                $user, 
+                $package->credits, 
+                'purchase', 
+                "Compra de créditos IA: {$package->name} (Gateway: {$gateway})"
+            );
         }
     }
 
@@ -114,9 +116,13 @@ class PaymentProcessor
             $compra->update(['status' => 'PAGO', 'gateway_id' => $gatewayId]);
             $user->increment('creditos', $compra->quantidade);
             
-            if (\Schema::hasColumn('users', 'ai_credits')) {
-                $user->increment('ai_credits', $compra->quantidade);
-            }
+            // Também adiciona ao novo sistema de créditos de IA se aplicável
+            app(AiCreditService::class)->addCredits(
+                $user, 
+                $compra->quantidade, 
+                'purchase', 
+                "Compra de créditos gerais convertidos para IA"
+            );
         }
     }
 

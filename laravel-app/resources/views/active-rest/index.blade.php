@@ -6,7 +6,7 @@
 @if(auth()->user()->hasPremiumAccess())
     <div class="py-10 space-y-12 animate-fade-in max-w-[1400px] mx-auto px-6">
         <!-- Header Section -->
-        <div class="mb-12 space-y-6">
+        <div class="mb-12 space-y-8">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div class="space-y-2">
                     <div class="flex items-center gap-3">
@@ -35,6 +35,37 @@
                     </a>
                 </div>
             </div>
+
+            <!-- OFF Day Smart Recommendation -->
+            @if($isOffDay && $suggestedRoutine)
+            <div class="relative p-8 rounded-[2.5rem] bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 overflow-hidden group animate-fade-in">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex items-center gap-6">
+                        <div class="w-20 h-20 rounded-[1.75rem] bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-2xl shadow-emerald-500/20">
+                            <i class="fas fa-battery-half text-3xl"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Recomendação Inteligente</p>
+                            </div>
+                            <h3 class="text-2xl font-black text-white tracking-tight italic uppercase">Hoje é seu dia de <span class="text-emerald-500">Recuperação</span></h3>
+                            <p class="text-zinc-400 text-sm font-medium mt-1">Identificamos que hoje não há treinos na sua agenda. Que tal esta rotina de <span class="text-white font-bold">{{ $suggestedRoutine->category }}</span>?</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6 bg-zinc-950/40 backdrop-blur-md p-6 rounded-3xl border border-white/5">
+                        <div class="text-right">
+                            <p class="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-1">{{ $suggestedRoutine->title }}</p>
+                            <p class="text-xs text-white font-bold">{{ $suggestedRoutine->duration }} • {{ $suggestedRoutine->recommended_level }}</p>
+                        </div>
+                        <a href="{{ route('active-rest.show', $suggestedRoutine->id) }}" class="px-8 py-3 bg-white text-zinc-950 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-xl shadow-white/5">
+                            Começar Agora
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Filter Bar -->
             <form action="{{ route('active-rest.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-3xl bg-zinc-900/40 border border-white/5">

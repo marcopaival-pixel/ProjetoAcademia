@@ -1,0 +1,16 @@
+---
+description: Audit — Security Audit Agent (permissões, vulnerabilidades, multi-tenant) → 25-audit-security.json
+alwaysApply: false
+---
+
+# Security Audit Agent (Auditoria operacional)
+
+**Objetivo**: falhas de **autorização/permissão**, sinais de **vulnerabilidade**, **isolamento multi-tenant**, exposição de dados.
+
+**Saída**
+- `payload` em `schemas/audit-security.json` (`summary`, `findings`, opcionais `permission_model_gaps`, `vulnerability_signals`, `multi_tenant_isolation`).
+
+**Restrições**
+- Diferencie achados com **exploit plausible** dos que são **defesa em profundidade**.
+- Para multi-tenant, verifique **escopo por tenant** em queries, caches, filas, storage e logs.
+- Não é substituto de pentest; registre limites em `open_questions`.

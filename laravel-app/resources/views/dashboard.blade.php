@@ -26,7 +26,7 @@
             <!-- Onboarding Progress Bar -->
             <div class="hidden lg:flex flex-col items-end gap-2 max-w-xs w-full">
                 <div class="flex items-center justify-between w-full text-[10px] font-black uppercase tracking-widest">
-                    <span class="text-zinc-500 italic">SETUP DA PERFORMANCE</span>
+                    <span class="text-zinc-500 italic">CONFIGURAÇÃO INICIAL</span>
                     <span class="text-emerald-400">{{ round($setupPercentage) }}%</span>
                 </div>
                 <div class="h-2 w-full bg-zinc-900 rounded-full border border-white/5 overflow-hidden">
@@ -36,7 +36,7 @@
             @elseif(Auth::user()->profile_completion_percentage < 100)
             <div class="hidden lg:flex flex-col items-end gap-2 max-w-xs w-full">
                 <div class="flex items-center justify-between w-full text-[10px] font-black uppercase tracking-widest">
-                    <span class="text-zinc-500 italic">PERFIL BIO-HUMANO</span>
+                    <span class="text-zinc-500 italic">PERFIL BIOMÉTRICO</span>
                     <span class="text-emerald-400">{{ Auth::user()->profile_completion_percentage }}%</span>
                 </div>
                 <div class="h-2 w-full bg-zinc-900 rounded-full border border-white/5 overflow-hidden">
@@ -74,7 +74,7 @@
                         class="relative flex items-center gap-3 bg-zinc-900 px-5 py-2.5 rounded-2xl border border-white/10">
                         <span class="text-2xl animate-bounce-slow">🔥</span>
                         <div>
-                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">Streak Atual</p>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">Sequência Atual</p>
                             <p class="text-white font-black text-lg leading-none">12 Dias</p>
                         </div>
                     </div>
@@ -102,6 +102,9 @@
         </div>
         @endif
 
+        <!-- Evolution Status Traffic Light -->
+        <x-evolution-status-traffic-light :status="$evolutionStatus" :isPremium="$isPremium" />
+
         <!-- Performance & Readiness Hub (ACWR) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 relative group bg-zinc-900 border {{ $performanceStatus['risk_level'] === 'danger' ? 'border-red-500/30' : ($performanceStatus['risk_level'] === 'high' ? 'border-amber-500/30' : 'border-emerald-500/20') }} p-8 rounded-[3rem] overflow-hidden shadow-2xl transition-all">
@@ -120,7 +123,7 @@
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                             <span class="text-4xl font-black text-white tracking-tighter">{{ $performanceStatus['acwr'] }}</span>
-                            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">ACWR Index</span>
+                            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Nível de Carga</span>
                         </div>
                     </div>
 
@@ -147,7 +150,7 @@
                             <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-emerald-400">
                                 <i data-lucide="zap" class="w-4 h-4"></i>
                             </div>
-                            <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Recovery Score</span>
+                            <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Nível de Recuperação</span>
                         </div>
                         <span class="text-2xl font-black text-white tracking-tighter">{{ $performanceStatus['recovery_score'] }}%</span>
                     </div>
@@ -156,6 +159,63 @@
                     </div>
                     <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter italic">Baseado em HRV, Sono e Histórico de Carga Recente.</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- AI Credit Management Hub -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="lg:col-span-3 bg-zinc-900 border {{ $isPremium ? 'border-emerald-500/20 shadow-emerald-500/5' : 'border-amber-500/20 shadow-amber-500/5' }} p-8 rounded-[3rem] relative overflow-hidden shadow-2xl group">
+                <div class="absolute -top-24 -right-24 w-64 h-64 {{ $isPremium ? 'bg-emerald-500/5' : 'bg-amber-500/5' }} blur-[100px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                    <div class="flex-shrink-0 flex flex-col items-center gap-4">
+                        <div class="relative w-32 h-32 flex items-center justify-center">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="6" fill="transparent" class="text-zinc-800" />
+                                <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="8" fill="transparent" 
+                                        stroke-dasharray="282.7" 
+                                        stroke-dashoffset="{{ 282.7 - (282.7 * min($aiCreditWallet->balance / (max($aiCreditWallet->monthly_allowance, 1)), 1)) }}" 
+                                        stroke-linecap="round"
+                                        class="{{ $isPremium ? 'text-emerald-500' : 'text-amber-500' }} transition-all duration-1000" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-3xl font-black text-white tabular-nums">{{ $aiCreditWallet->balance }}</span>
+                                <span class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Créditos IA</span>
+                            </div>
+                        </div>
+                        <div class="px-4 py-1 rounded-full {{ $isPremium ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-zinc-800 text-zinc-400 border-white/5' }} border text-[10px] font-black uppercase tracking-widest">
+                            Plano: {{ Auth::user()->activePlan?->plan?->name ?? (Auth::user()->hasPremiumAccess() ? 'Premium' : 'Free') }}
+                        </div>
+                    </div>
+
+                    <div class="flex-grow grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Incluso Mês</p>
+                            <p class="text-xl font-black text-white">{{ $aiCreditWallet->monthly_allowance }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Créditos Avulsos</p>
+                            <p class="text-xl font-black text-emerald-400">{{ $aiCreditWallet->extra_credits }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Consumo no Ciclo</p>
+                            <p class="text-xl font-black text-white">{{ Auth::user()->getAiCreditsUsedThisMonth() }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Próxima Renovação</p>
+                            <p class="text-sm font-black text-zinc-400 uppercase tracking-tighter">{{ $aiCreditWallet->renewal_date?->format('d/m/Y') ?: '--' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-[3rem] shadow-2xl flex flex-col justify-center items-center text-center group hover:border-emerald-500/40 transition-all">
+                <i data-lucide="shopping-cart" class="w-8 h-8 text-emerald-500 mb-4 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-2">Precisa de mais?</h4>
+                <p class="text-[10px] text-zinc-500 font-medium mb-6 uppercase tracking-tighter">Adquira pacotes extras de IA instantaneamente.</p>
+                <a href="{{ route('ai-credits.index') }}" class="w-full py-3 bg-emerald-500 text-zinc-950 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10">
+                    Comprar Créditos
+                </a>
             </div>
         </div>
 
@@ -350,7 +410,7 @@
                 <div class="lg:col-span-12 space-y-8 animate-fade-in mt-6">
                     <div class="flex items-center gap-3">
                         <div class="h-[1px] flex-grow bg-zinc-900"></div>
-                        <h2 class="text-xs font-black text-zinc-500 uppercase tracking-[0.4em] italic">Roadmap de Elite</h2>
+                        <h2 class="text-xs font-black text-zinc-500 uppercase tracking-[0.4em] italic">Plano de Evolução</h2>
                         <div class="h-[1px] flex-grow bg-zinc-900"></div>
                     </div>
 
@@ -406,8 +466,13 @@
                                     <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Treino Diário</h3>
                                     <div class="flex items-center gap-2">
                                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Sugerido para
-                                            você</p>
+                                        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest">
+                                            @if(!$isPremium)
+                                                {{ $trainingCount }} de 3 treinos utilizados
+                                            @else
+                                                Sugerido para você
+                                            @endif
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -474,54 +539,7 @@
                 </div>
 
                 <!-- Comunidade NexShape Feed Widget -->
-                <div class="lg:col-span-12 group bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] relative overflow-hidden shadow-2xl transition-all hover:border-emerald-500/20">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full"></div>
-                    
-                    <div class="flex items-center justify-between mb-10 relative z-10">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 bg-emerald-500 text-zinc-950 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                <i data-lucide="users" class="w-7 h-7"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Comunidade <span class="text-emerald-500">NexShape</span></h3>
-                                <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Conecte-se com outros atletas</p>
-                            </div>
-                        </div>
-                        <a href="{{ route('community.index') }}" class="px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white border border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Ver Feed Completo</a>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-                        @forelse($communityPosts as $post)
-                            <div class="bg-zinc-950 border border-zinc-800 p-6 rounded-3xl space-y-4 hover:border-emerald-500/30 transition-all">
-                                <div class="flex items-center gap-3">
-                                    <img src="{{ $post->user->profile_photo_url }}" class="w-10 h-10 rounded-xl border border-zinc-800">
-                                    <div>
-                                        <p class="text-white font-bold text-xs">{{ explode(' ', $post->user->name)[0] }}</p>
-                                        <p class="text-[9px] text-zinc-600 font-bold uppercase">{{ $post->created_at->diffForHumans() }}</p>
-                                    </div>
-                                    @if($post->activity_status)
-                                        <span class="ml-auto text-[10px]">{{ explode(' ', $post->activity_status)[0] }}</span>
-                                    @endif
-                                </div>
-                                <p class="text-zinc-400 text-[11px] line-clamp-2 font-medium italic">"{{ $post->content }}"</p>
-                                <div class="flex items-center gap-4 pt-2 border-t border-zinc-900">
-                                    <div class="flex items-center gap-1.5 text-zinc-600">
-                                        <i data-lucide="heart" class="w-3 h-3"></i>
-                                        <span class="text-[9px] font-black">{{ $post->reactions->count() }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 text-zinc-600">
-                                        <i data-lucide="message-square" class="w-3 h-3"></i>
-                                        <span class="text-[9px] font-black">{{ $post->comments->count() }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="col-span-3 text-center py-10 bg-zinc-950/50 rounded-3xl border border-dashed border-zinc-800">
-                                <p class="text-zinc-600 font-bold italic text-sm">Seja o primeiro a publicar na comunidade!</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
+                <x-community.dashboard-widget :posts="$communityPosts" />
 
                 <!-- Mentor / Profissional Vínculo -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -551,10 +569,7 @@
                                 <p class="text-zinc-500 text-sm leading-relaxed font-medium">Você está sob supervisão de <span class="text-emerald-400 font-black">{{ $linkedProfessional->name }}</span>. Seus dados são auditados por este mentor.</p>
                             </div>
                             <div class="flex gap-4">
-                                <a href="{{ route('internal-email.create', ['to' => $linkedProfessional->id]) }}" class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl transition-all text-[10px] uppercase tracking-widest text-center no-underline shadow-lg shadow-emerald-500/10">
-                                    Enviar Mensagem
-                                </a>
-                                <a href="{{ route('assessments.create') }}" class="flex-1 py-4 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl border border-zinc-800 transition-all text-[10px] uppercase tracking-widest text-center no-underline shadow-xl">
+                                <a href="{{ route('assessments.create') }}" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl transition-all text-[10px] uppercase tracking-widest text-center no-underline shadow-lg shadow-emerald-500/10">
                                     Enviar Medidas
                                 </a>
                             </div>
@@ -651,11 +666,22 @@
                                 <span class="text-[10px] text-emerald-400 font-black uppercase tracking-widest">-0.8kg este mês</span>
                             </div>
                         </div>
-                        <a href="{{ route('assessments.index') }}"
-                            class="mt-10 w-full py-5 bg-zinc-950 border border-zinc-800 text-white font-black rounded-3xl hover:bg-emerald-500 hover:text-zinc-950 transition-all text-[10px] uppercase tracking-widest text-center no-underline shadow-xl flex items-center justify-center gap-3">
+                        <a @if(!$isPremium) data-premium-locked @else href="{{ route('assessments.index') }}" @endif
+                            class="mt-10 w-full py-5 bg-zinc-950 border border-zinc-800 text-white font-black rounded-3xl hover:bg-emerald-500 hover:text-zinc-950 transition-all text-[10px] uppercase tracking-widest text-center no-underline shadow-xl flex items-center justify-center gap-3 relative overflow-hidden group">
+                            @if(!$isPremium)
+                                <div class="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                                    <i data-lucide="lock" class="w-4 h-4 text-emerald-500"></i>
+                                </div>
+                            @endif
                             <i data-lucide="plus" class="w-4 h-4"></i>
                             Nova Avaliação
                         </a>
+                        @if(!$isPremium)
+                        <div class="mt-4 flex items-center justify-between px-2">
+                            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest italic">Limite Free atingido</span>
+                            <span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{{ $assessmentsCount }} de 1</span>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -664,32 +690,18 @@
                     <div class="space-y-10">
                         <div>
                             <h3 class="text-xl font-black text-white uppercase tracking-tighter mb-8 flex items-center justify-between">
-                                Mensagens
-                                @if($unreadEmails > 0)
-                                    <span class="px-3 py-1 bg-emerald-500 text-zinc-950 text-[10px] font-black rounded-full shadow-lg shadow-emerald-500/20">{{ $unreadEmails }}</span>
-                                @endif
-                            </h3>
-                            <a href="{{ route('internal-email.inbox') }}" class="flex items-center gap-5 p-4 rounded-3xl bg-zinc-950 border border-zinc-800 hover:border-emerald-500/40 transition-all no-underline shadow-inner group">
-                                <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-emerald-500 bg-zinc-900 shadow-xl border border-zinc-800 group-hover:scale-110 transition-transform">
-                                    <i data-lucide="mail" class="w-6 h-6"></i>
-                                </div>
-                                <div>
-                                    <p class="font-black text-white text-sm uppercase tracking-tight">Caixa de Entrada</p>
-                                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">
-                                        {{ $unreadEmails > 0 ? 'Novas atualizações' : 'Sem pendências' }}
-                                    </p>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="border-t border-zinc-800 pt-8">
-                            <h3 class="text-xl font-black text-white uppercase tracking-tighter mb-8 flex items-center justify-between">
                                 Recordes
                                 @if($prsCount > 0)
                                     <span class="px-3 py-1 bg-amber-500 text-zinc-950 text-[10px] font-black rounded-full">{{ $prsCount }}</span>
                                 @endif
                             </h3>
-                            <a href="{{ route('progression.charts') }}" {!! !$isPremium ? 'data-premium-locked' : '' !!} class="flex items-center gap-5 p-4 rounded-3xl bg-zinc-950 border border-zinc-800 hover:border-amber-500/40 transition-all no-underline shadow-inner group">
+                            <a @if(!$isPremium) data-premium-locked @else href="{{ route('progression.charts') }}" @endif class="flex items-center gap-5 p-4 rounded-3xl bg-zinc-950 border border-zinc-800 hover:border-amber-500/40 transition-all no-underline shadow-inner group relative">
+                                @if(!$isPremium)
+                                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-amber-500 text-zinc-950 text-[8px] font-black uppercase tracking-widest z-20">PREMIUM</div>
+                                    <div class="absolute inset-0 bg-zinc-950/40 backdrop-blur-[2px] rounded-3xl z-10 flex items-center justify-end pr-4">
+                                        <i data-lucide="lock" class="w-4 h-4 text-amber-500"></i>
+                                    </div>
+                                @endif
                                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-amber-500 bg-zinc-900 shadow-xl border border-zinc-800 group-hover:scale-110 transition-transform">
                                     <i data-lucide="trophy" class="w-6 h-6"></i>
                                 </div>

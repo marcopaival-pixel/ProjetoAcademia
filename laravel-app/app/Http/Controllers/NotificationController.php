@@ -19,16 +19,8 @@ class NotificationController extends Controller
             return response()->json(['emails' => 0, 'messages' => 0], 401);
         }
 
-        // 1. Contagem de e-mails internos (Inbox)
-        $emails = InternalEmail::inbox($userId)
-            ->where('is_read', false)
-            ->whereHas('sender', function($q) use ($userId) {
-                // Não contar e-mails de quem eu bloqueei
-                $q->whereDoesntHave('blockers', function($sq) use ($userId) { 
-                    $sq->where('blocker_id', $userId); 
-                });
-            })
-            ->count();
+        // 1. Contagem de e-mails internos (Inbox) - DESATIVADO
+        $emails = 0;
 
         // 2. Contagem de mensagens diretas (Chat)
         $messages = Message::whereHas('conversation', function($q) use ($userId) {

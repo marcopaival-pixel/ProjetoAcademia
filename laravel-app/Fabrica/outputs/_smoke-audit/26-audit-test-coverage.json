@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "run_id": "smoke-audit",
+  "agent": "Test Coverage Agent",
+  "artifact_type": "audit-test-coverage",
+  "created_at": "2026-05-13T12:00:00Z",
+  "depends_on": ["outputs/_smoke-audit/00-audit-scope.json"],
+  "assumptions": [],
+  "open_questions": [],
+  "payload": {
+    "summary": "Smoke: sem achados reais.",
+    "findings": []
+  }
+}

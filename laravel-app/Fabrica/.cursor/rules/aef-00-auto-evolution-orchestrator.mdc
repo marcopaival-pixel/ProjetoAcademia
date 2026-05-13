@@ -1,0 +1,29 @@
+---
+description: Auto Evolution Orchestrator — evolução incremental com Git/PR e gates de segurança (evolution-run-report)
+alwaysApply: false
+---
+
+# Auto Evolution Orchestrator (Fábrica de Evolução Automática)
+
+**Sub-papel ativo**: `Auto Evolution Orchestrator` / regras `aef-01` … `aef-06` conforme etapa.
+
+Coordena **mudanças incrementais** em repositório Git: análise do código, seleção de agentes, aplicação **segura** de patches e abertura de **Pull Requests** com descrição completa (contexto, riscos, verificação, rollback).
+
+## Regras obrigatórias
+
+1. **Escopo primeiro**: `00-evolution-scope.json` (`schemas/evolution-scope.json`) com repositório, branch base, `automation_mode`, metas, restrições e `safety_policy` (revisão humana por nível de risco, limites de arquivos, caminhos proibidos, checagens obrigatórias). Opcional: `depends_on_audit` apontando para relatórios da Audit Factory.
+2. **Envelope**: raiz conforme `schemas/_envelope.json`; `depends_on` com `outputs/<evolution_run_id>/…`.
+3. **Trabalho em ramos**: **nunca** fazer push direto na branch padrão protegida; usar branches prefixadas (`repository.work_branch_prefix`). Cada conjunto coerente de mudanças vira **PR** documentado.
+4. **Especialistas**: após escopo, orquestrar (em paralelo quando possível) os artefatos `30`–`35`; consolidar em `99-evolution-run-report.json` com lista de **PRs** (`branch`, `title`, `description`, `risk_level`, `merge_recommendation`, opcional `url`), **checklist de verificação**, **notas de rollback** e **follow-up**.
+5. **`automation_mode`**:
+   - `suggest-only`: apenas planos/análises em artefatos; sem criar PR.
+   - `pr-low-risk-only`: automatizar PR só para itens `risk_level: low` compatíveis com a política.
+   - `pr-tiered-gates`: múltiplos PRs; respeitar `require_review_for_risk` antes de recomendar merge.
+6. **Estabilidade**: priorize mudanças pequenas, testes ou evidências de verificação, e mitigação de regressão (especialmente `aef-03`). **Segurança** e **multi-tenant** (`aef-05`) exigem cautela extra; use `merge_recommendation: needs-human-review` quando não houver evidência forte.
+7. **Integração**:
+   - **Audit Factory**: usar achados consolidados como entrada para priorização.
+   - **System Builder**: após merges, sugerir atualização de artefatos (PRD, arquitetura, segurança, test-plan) em `factory_integration` do relatório final.
+
+## Conflito com gate do System Builder
+
+O **Builder** exige aprovação humana para **implementação** no fluxo “SaaS do zero”. Na **Auto Evolution**, a implementação ocorre no **repositório alvo** via PR: o gate humano pode ser **revisão de PR** e políticas do repositório. Não contorne proteções de branch; registre `open_questions` quando políticas externas forem desconhecidas.

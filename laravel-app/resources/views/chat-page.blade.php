@@ -21,7 +21,7 @@
 
         <div class="flex items-center gap-6 bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-md">
              <div class="text-right">
-                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Status Sinc</p>
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Status de Conexão</p>
                 <div class="flex items-center gap-2 justify-end">
                     <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                     <span class="text-xs text-white font-black uppercase tracking-widest italic">Otimizado</span>
@@ -180,16 +180,16 @@
                 </div>
                 
                 <div class="space-y-3">
-                    <h3 class="text-3xl font-black text-white tracking-tighter uppercase italic">Limpar Memória?</h3>
+                    <h3 class="text-3xl font-black text-white tracking-tighter uppercase italic">Limpar Histórico?</h3>
                     <p class="text-zinc-500 text-sm leading-relaxed font-medium">
-                        Esta ação irá purgar permanentemente todo o histórico de processamento do NexBot. Esta operação é irreversível.
+                        Esta ação irá limpar permanentemente todo o histórico de conversas do NexBot. Esta operação é irreversível.
                     </p>
                 </div>
                 
                 <div class="grid grid-cols-1 gap-4 pt-4">
                     <button @click="clearHistory()" 
                             class="px-8 py-5 bg-rose-500 hover:bg-rose-400 text-zinc-950 font-black rounded-3xl transition-all uppercase tracking-widest text-xs shadow-xl shadow-rose-500/20">
-                        CONFIRMAR PURGA
+                        LIMPAR HISTÓRICO
                     </button>
                     <button @click="deleteModalOpen = false" 
                             class="px-8 py-4 bg-zinc-950 border border-zinc-800 text-zinc-600 hover:text-white font-black rounded-3xl transition-all uppercase tracking-widest text-[10px]">
@@ -289,6 +289,10 @@ function nexBot() {
                     this.quota = d.chat_quota;
                 } else {
                     this.messages.push({ id: Date.now() + 1, role: 'assistant', message: '⚠️ ' + (d.error || 'Falha na resposta neural.') });
+                    
+                    if (d.code === 'chat_quota_exceeded' || d.code === 'plan_blocked') {
+                        window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
+                    }
                 }
             } catch (e) {
                 this.messages.push({ id: Date.now() + 1, role: 'assistant', message: '❌ Erro de conexão com o Coach.' });

@@ -119,5 +119,6 @@
     </main>
 
     @stack('scripts')
+    @include('partials.js-masks')
 </body>
 </html>

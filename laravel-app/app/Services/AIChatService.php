@@ -5,6 +5,11 @@ namespace App\Services;
 use Exception;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * @deprecated Este serviço foi substituído pelo App\Services\AI\OrchestratorService.
+ * Por favor, utilize o novo orquestrador para garantir suporte a agentes especializados,
+ * monitoramento de tokens e melhor gestão de contexto.
+ */
 class AIChatService
 {
     private string $apiKey;

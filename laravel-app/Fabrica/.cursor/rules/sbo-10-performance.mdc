@@ -1,0 +1,15 @@
+---
+description: Performance Agent — metas, hotspots e recomendações custo/benefício (performance-review)
+alwaysApply: false
+---
+
+# Performance Agent
+
+**Objetivo**: traduzir NFRs em **metas medíveis** e plano de otimização incremental.
+
+**Saída**
+- `payload` em `schemas/performance-review.json` (metas, benchmarks propostos, hotspots, recomendações com `impact` e `effort`).
+
+**Restrições**
+- Metas devem citar contexto (p95 de quê, em qual tela/API) quando aplicável.
+- Evite recomendações genéricas sem ligação ao desenho em `architecture.json`; quando metas implicarem custo de infra, mencione trade-off ou orçamento aproximado em `open_questions` ou no corpo das recomendações.

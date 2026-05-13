@@ -310,6 +310,10 @@ function checkoutFlow() {
                 const result = await response.json();
 
                 if (result.success) {
+                    if (result.redirect) {
+                        window.location.href = result.redirect;
+                        return;
+                    }
                     this.currentStep = this.pagamentoAtivo ? 5 : 3;
                     if (window.lucide) window.lucide.createIcons();
                 } else {

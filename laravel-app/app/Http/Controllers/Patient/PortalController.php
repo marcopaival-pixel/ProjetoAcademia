@@ -313,10 +313,16 @@ class PortalController extends Controller
 
         $context = $this->getPatientContext($user);
 
-        // Busca planos do tipo 'student' ou 'full' (ambos) seguindo o status definido no admin
+        // Busca planos compatíveis com as roles do usuário
+        $userRoles = $user->roles->pluck('name')->toArray();
         $dbPlans = \App\Models\Plan::withoutGlobalScopes()
-            ->whereIn('type', ['student', 'full', 'aluno']) // Incluído 'aluno' por precaução
-            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where(function($query) use ($userRoles) {
+                $query->whereDoesntHave('roles')
+                    ->orWhereHas('roles', function($q) use ($userRoles) {
+                        $q->whereIn('name', $userRoles);
+                    });
+            })
             ->with(['planFeatures' => function($q) {
                 $q->where('is_enabled', true);
             }])
@@ -368,7 +374,7 @@ class PortalController extends Controller
         $pagamentoAtivo = \App\Models\AdminSetting::isTrue('pagamento_ativo', true);
         $hasEvolutionData = $user->hasRole('aluno') || \App\Models\BodyAssessment::where('user_id', $user->id)->exists();
 
-        return view('patient.plans', array_merge($context, [
+        return view('portal.plans', array_merge($context, [
             'availablePlans' => $availablePlans,
             'pagamentoAtivo' => $pagamentoAtivo,
             'hasEvolutionData' => $hasEvolutionData
@@ -404,7 +410,7 @@ class PortalController extends Controller
         // Avisos do profissional guardados no link
         $alerts = $context['primaryLink']->professional_notes_for_patient ?? null;
 
-        return view('patient.messages', array_merge($context, ['alerts' => $alerts]));
+        return view('portal.messages', array_merge($context, ['alerts' => $alerts]));
     }
 
     /**
@@ -430,7 +436,7 @@ class PortalController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('patient.access-logs', array_merge($context, ['logs' => $logs]));
+        return view('portal.access-logs', array_merge($context, ['logs' => $logs]));
     }
 
     public function downloadPrescription(\App\Models\MedicalPrescription $prescription, \App\Services\DompdfPdfService $pdfService)

@@ -15,14 +15,23 @@ class TrainingPlanController extends Controller
 {
     public function index()
     {
-        $plans = TrainingPlan::where(function($q) {
+        $user = Auth::user();
+        $isPremium = $user->hasPremiumAccess();
+        
+        $query = TrainingPlan::where(function($q) {
                 $q->where('user_id', Auth::id())
                   ->orWhere('creator_id', Auth::id());
             })
             ->withCount('exercises')
-            ->get();
+            ->latest();
+
+        if (!$isPremium) {
+            $plans = $query->limit(3)->get();
+        } else {
+            $plans = $query->get();
+        }
             
-        return view('progression.plans-index', compact('plans'));
+        return view('progression.plans-index', compact('plans', 'isPremium'));
     }
 
     public function targetSelection()

@@ -42,35 +42,35 @@ class MenuService
 
             // Mapping menus to Roles as per User Request
             $roleMenus = [
-                'admin' => ['dashboard', 'users', 'pdf_companies', 'settings', 'report', 'finance_admin', 'profile'],
+                'admin' => ['dashboard', 'users', 'pdf_companies', 'settings', 'report', 'finance_admin'],
                 'professional' => [
                     'dashboard', 'patients', 'exercise', 'diary', 'assessments', 'calendar', 'report',
-                    'messages', 'presence', 'plano', 'profile', 'nutrition', 'weight', 'hydration',
+                    'messages', 'presence', 'plano', 'nutrition', 'weight', 'hydration',
                     'chat', 'leaderboard', 'active-rest', 'evolution', 'trophies', 'body-analysis', 
-                    'patient.professionals.search', 'community'
+                    'patient.professionals.search', 'community', 'hydration', 'health-metrics'
                 ],
                 'aluno' => [
-                    'profile', 'progression.plans', 'diary', 'assessments', 'calendar', 'plano',
+                    'progression.plans', 'diary', 'assessments', 'calendar', 'plano',
                     'export', 'messages', 'presence', 'nutrition', 'weight',
                     'hydration', 'chat', 'leaderboard', 'active-rest', 'exercise', 'evolution', 
-                    'trophies', 'body-analysis', 'patient.professionals.search', 'report', 'community'
+                    'trophies', 'body-analysis', 'patient.professionals.search', 'report', 'community', 'health-metrics'
                 ],
                 'paciente' => [
-                    'patient.unified.dashboard', 'patient.portal', 'profile', 'plano', 'report'
+                    'patient.unified.dashboard', 'patient.portal', 'plano', 'report'
                 ],
-                'receptionist' => ['dashboard', 'user_registration', 'presence', 'plano', 'profile', 'clinic_settings', 'clinic_billing'],
-                'finance' => ['dashboard', 'billing', 'financial_reports', 'plano', 'profile'],
+                'receptionist' => ['dashboard', 'user_registration', 'presence', 'plano', 'clinic_settings', 'clinic_billing'],
+                'finance' => ['dashboard', 'billing', 'financial_reports', 'plano'],
                 'manager' => [
                     'dashboard', 'patients', 'assessments', 'exercise', 'diary', 'calendar',
-                    'report', 'export', 'messages', 'settings', 'profile', 'clinic_settings', 'clinic_billing'
+                    'report', 'export', 'messages', 'settings', 'clinic_settings', 'clinic_billing'
                 ],
                 'instructor' => [
                     'dashboard', 'patients', 'assessments', 'exercise', 'diary', 'calendar',
-                    'report', 'export', 'messages', 'settings', 'profile',
+                    'report', 'export', 'messages', 'settings',
                 ],
                 'supervisor' => [
                     'dashboard', 'patients', 'assessments', 'exercise', 'diary', 'calendar',
-                    'report', 'export', 'messages', 'settings', 'profile',
+                    'report', 'export', 'messages', 'settings',
                 ],
             ];
 
@@ -177,17 +177,22 @@ class MenuService
             $groups[] = [
                 'id' => 'administration',
                 'label' => 'Menu de Administração',
-                'icon' => 'fas fa-user-shield',
+                'icon' => 'shield-check',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'admin_dashboard', 'label' => 'Painel Admin', 'route' => 'admin.dashboard', 'icon' => 'fas fa-shield-alt'],
-                    ['name' => 'users_manage', 'label' => 'Gestão de Usuários', 'route' => 'admin.users', 'icon' => 'fas fa-users-cog'],
-                    ['name' => 'pdf_companies', 'label' => 'Empresas & Unidades', 'route' => 'admin.pdf-companies.index', 'icon' => 'fas fa-building'],
-                    ['name' => 'settings', 'label' => 'Configurações', 'route' => 'admin.settings', 'icon' => 'fas fa-cogs'],
-                    ['name' => 'finance_sys', 'label' => 'Financeiro SaaS', 'route' => 'admin.financial.dashboard', 'icon' => 'fas fa-university'],
-                    ['name' => 'billing_credits', 'label' => 'Cobrança / Créditos', 'route' => 'admin.billing.credits', 'icon' => 'fas fa-credit-card'],
-                    ['name' => 'finance_mgmt', 'label' => 'Gestão de Cobrança', 'route' => 'admin.financial.management', 'icon' => 'fas fa-file-invoice-dollar'],
-                    ['name' => 'report_sys', 'label' => 'Relatórios Globais', 'route' => 'admin.financial.reports', 'icon' => 'fas fa-chart-pie'],
-                    ['name' => 'marketing_banners', 'label' => 'Marketing: Banners', 'route' => 'admin.marketing.banners.index', 'icon' => 'fas fa-ad'],
+                    ['name' => 'admin_dashboard', 'label' => 'Painel Admin', 'route' => 'admin.dashboard', 'icon' => 'shield'],
+                    ['name' => 'users_manage', 'label' => 'Gestão de Usuários', 'route' => 'admin.users', 'icon' => 'users'],
+                    ['name' => 'pdf_companies', 'label' => 'Empresas & Unidades', 'route' => 'admin.pdf-companies.index', 'icon' => 'building'],
+                    ['name' => 'settings', 'label' => 'Configurações', 'route' => 'admin.settings', 'icon' => 'settings'],
+                    ['name' => 'finance_sys', 'label' => 'Financeiro SaaS', 'route' => 'admin.financial.dashboard', 'icon' => 'landmark'],
+                    ['name' => 'monetization_features', 'label' => 'Monetização: Funções', 'route' => 'admin.monetization.features', 'icon' => 'list-check'],
+                    ['name' => 'monetization_limits', 'label' => 'Monetização: Limites', 'route' => 'admin.monetization.limits', 'icon' => 'gauge'],
+                    ['name' => 'monetization_popups', 'label' => 'Monetização: Popups', 'route' => 'admin.monetization.popups', 'icon' => 'layout'],
+                    ['name' => 'billing_credits', 'label' => 'Cobrança / Créditos', 'route' => 'admin.billing.credits', 'icon' => 'credit-card'],
+                    ['name' => 'finance_mgmt', 'label' => 'Gestão de Cobrança', 'route' => 'admin.financial.management', 'icon' => 'receipt'],
+                    ['name' => 'report_sys', 'label' => 'Relatórios Globais', 'route' => 'admin.financial.reports', 'icon' => 'pie-chart'],
+                    ['name' => 'marketing_banners', 'label' => 'Marketing: Banners', 'route' => 'admin.marketing.banners.index', 'icon' => 'megaphone'],
+                    ['name' => 'training_mgmt', 'label' => 'Academia: Gestão', 'route' => 'admin.training.index', 'icon' => 'graduation-cap'],
+                    ['name' => 'omnichat', 'label' => 'OmniChat (Real-time)', 'route' => 'admin.omnichannel', 'icon' => 'message-square'],
                 ], $isPremium),
             ];
         }
@@ -198,15 +203,15 @@ class MenuService
             $groups[] = [
                 'id' => 'reception',
                 'label' => 'Menu da Recepção',
-                'icon' => 'fas fa-concierge-bell',
+                'icon' => 'bell',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'recep_dashboard', 'label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'fas fa-home'],
-                    ['name' => 'user_registration', 'label' => 'Cadastro de Usuário', 'route' => 'admin.registrations.index', 'icon' => 'fas fa-user-plus'],
-                    ['name' => 'presence', 'label' => 'Controle de Presença', 'route' => 'admin.users', 'icon' => 'fas fa-id-card'],
-                    ['name' => 'calendar', 'label' => 'Agenda Geral', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-day'],
-                    ['name' => 'clinic_settings', 'label' => 'Gestão da Clínica', 'route' => 'admin.clinic.settings', 'icon' => 'fas fa-building'],
-                    ['name' => 'clinic_protocols', 'label' => 'Protocolos Padrão', 'route' => 'admin.clinic.protocols.index', 'icon' => 'fas fa-notes-medical'],
-                    ['name' => 'clinic_billing', 'label' => 'Faturamento/Assinatura', 'route' => 'admin.clinic.billing', 'icon' => 'fas fa-credit-card'],
+                    ['name' => 'recep_dashboard', 'label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'home'],
+                    ['name' => 'user_registration', 'label' => 'Cadastro de Usuário', 'route' => 'admin.registrations.index', 'icon' => 'user-plus'],
+                    ['name' => 'presence', 'label' => 'Controle de Presença', 'route' => 'admin.users', 'icon' => 'contact-2'],
+                    ['name' => 'calendar', 'label' => 'Agenda Geral', 'route' => 'agenda.index', 'icon' => 'calendar-days'],
+                    ['name' => 'clinic_settings', 'label' => 'Gestão da Clínica', 'route' => 'admin.clinic.settings', 'icon' => 'building'],
+                    ['name' => 'clinic_protocols', 'label' => 'Protocolos Padrão', 'route' => 'admin.clinic.protocols.index', 'icon' => 'clipboard-list'],
+                    ['name' => 'clinic_billing', 'label' => 'Faturamento/Assinatura', 'route' => 'admin.clinic.billing', 'icon' => 'credit-card'],
                 ], $isPremium),
             ];
         }
@@ -216,14 +221,16 @@ class MenuService
             $groups[] = [
                 'id' => 'professional',
                 'label' => 'Portal do Profissional',
-                'icon' => 'fas fa-user-md',
+                'icon' => 'user-cog',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'prof_dashboard', 'label' => 'Painel de Controle', 'route' => 'professional.dashboard', 'icon' => 'fas fa-tachometer-alt'],
-                    ['name' => 'prof_agenda', 'label' => 'Minha Agenda', 'route' => 'agenda.index', 'icon' => 'fas fa-calendar-alt'],
-                    ['name' => 'prof_patients', 'label' => 'Meus Pacientes', 'route' => 'professional.patients.index', 'icon' => 'fas fa-user-friends'],
-                    ['name' => 'prof_library', 'label' => 'Biblioteca de Exercícios', 'route' => 'exercise.catalog', 'icon' => 'fas fa-book-medical'],
-                    ['name' => 'prof_protocols', 'label' => 'Protocolos de Treino', 'route' => 'progression.plans.index', 'icon' => 'fas fa-dumbbell'],
-                    ['name' => 'prof_assessments', 'label' => 'Avaliações Físicas', 'route' => 'assessments.index', 'icon' => 'fas fa-file-medical-alt'],
+                    ['name' => 'prof_dashboard', 'label' => 'Painel de Controle', 'route' => 'professional.dashboard', 'icon' => 'layout-dashboard'],
+                    ['name' => 'prof_agenda', 'label' => 'Minha Agenda', 'route' => 'agenda.index', 'icon' => 'calendar'],
+                    ['name' => 'prof_patients', 'label' => 'Meus Pacientes', 'route' => 'professional.patients.index', 'icon' => 'users'],
+                    ['name' => 'prof_library', 'label' => 'Biblioteca de Exercícios', 'route' => 'exercise.catalog', 'icon' => 'book-open-check'],
+                    ['name' => 'prof_protocols', 'label' => 'Protocolos de Treino', 'route' => 'progression.plans.index', 'icon' => 'dumbbell'],
+                    ['name' => 'prof_assessments', 'label' => 'Avaliações Físicas', 'route' => 'assessments.index', 'icon' => 'activity'],
+                    ['name' => 'hydration', 'label' => 'Nex Hydra', 'route' => 'hydration.index', 'icon' => 'droplet'],
+                    ['name' => 'omnichat_prof', 'label' => 'Atendimento Omni', 'route' => 'admin.omnichannel', 'icon' => 'messages-square'],
                 ], $isPremium),
             ];
         }
@@ -233,15 +240,27 @@ class MenuService
             $groups[] = [
                 'id' => 'athlete',
                 'label' => 'Painel do Aluno',
-                'icon' => 'fas fa-dumbbell',
+                'icon' => 'dumbbell',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'fas fa-th-large'],
-                    ['name' => 'training', 'label' => 'Meus Treinos', 'route' => 'progression.plans.index', 'icon' => 'fas fa-running'],
-                    ['name' => 'diet', 'label' => 'Dieta & Nutrição', 'route' => 'diary', 'icon' => 'fas fa-utensils'],
-                    ['name' => 'evolution', 'label' => 'Minha Evolução', 'route' => 'evolution.index', 'icon' => 'fas fa-chart-line'],
-                    ['name' => 'community', 'label' => 'Comunidade NexShape', 'route' => 'community.index', 'icon' => 'fas fa-users'],
-                    ['name' => 'assessments', 'label' => 'Avaliações', 'route' => 'body-analysis.index', 'icon' => 'fas fa-heartbeat'],
-                    ['name' => 'profile', 'label' => 'Meu Perfil', 'route' => 'profile', 'icon' => 'fas fa-user-circle'],
+                    ['name' => 'dashboard', 'label' => 'Visão Geral', 'route' => 'dashboard', 'icon' => 'layout-grid'],
+                    ['name' => 'training', 'label' => 'Meus Treinos', 'route' => 'progression.plans.index', 'icon' => 'footprints'],
+                    ['name' => 'exercise', 'label' => 'Registro de Treino', 'route' => 'exercise', 'icon' => 'activity'],
+                    ['name' => 'diet', 'label' => 'Alimentação', 'route' => 'diary', 'icon' => 'utensils', 'premium' => true],
+                    ['name' => 'evolution', 'label' => 'Minha Evolução', 'route' => 'evolution.index', 'icon' => 'trending-up', 'premium' => true],
+                    ['name' => 'community', 'label' => 'Comunidade NexShape', 'route' => 'community.index', 'icon' => 'users'],
+                    ['name' => 'assessments', 'label' => 'Exames e Medidas', 'route' => 'body-analysis.index', 'icon' => 'heart-pulse', 'premium' => true],
+                    ['name' => 'hydration', 'label' => 'Nex Hydra', 'route' => 'hydration.index', 'icon' => 'droplet'],
+                    ['name' => 'chat', 'label' => 'NexBot (IA)', 'route' => 'chat.page', 'icon' => 'sparkles', 'premium' => true],
+                    ['name' => 'messages', 'label' => 'Mensagens', 'route' => 'messages.index', 'icon' => 'mail'],
+                    ['name' => 'calendar', 'label' => 'Agenda', 'route' => 'calendar', 'icon' => 'calendar-days'],
+                    ['name' => 'leaderboard', 'label' => 'Ranking Global', 'route' => 'leaderboard.index', 'icon' => 'award'],
+                    ['name' => 'trophies', 'label' => 'Conquistas', 'route' => 'trophies.index', 'icon' => 'trophy', 'premium' => true],
+                    ['name' => 'plano', 'label' => 'Minha Assinatura', 'route' => 'plano', 'icon' => 'credit-card'],
+                    ['name' => 'report', 'label' => 'Relatórios PDF', 'route' => 'report', 'icon' => 'file-text', 'premium' => true],
+                    ['name' => 'active-rest', 'label' => 'Descanso Ativo', 'route' => 'active-rest.index', 'icon' => 'refresh-cw'],
+                    ['name' => 'academia', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'play-circle'],
+                    ['name' => 'health-metrics', 'label' => 'Saúde (Wearables)', 'route' => 'health-metrics.index', 'icon' => 'heart', 'premium' => true],
+                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check', 'premium' => true],
                 ], $isPremium),
             ];
         }
@@ -251,12 +270,13 @@ class MenuService
             $groups[] = [
                 'id' => 'patient',
                 'label' => 'Painel do Paciente',
-                'icon' => 'fas fa-user-injured',
+                'icon' => 'user-minus',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'patient_dashboard', 'label' => 'Visão Geral', 'route' => 'patient.unified.dashboard', 'icon' => 'fas fa-hospital-user'],
-                    ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'fas fa-file-medical'],
-                    ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'fas fa-file-invoice'],
-                    ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'fas fa-calendar-check'],
+                    ['name' => 'patient_dashboard', 'label' => 'Visão Geral', 'route' => 'patient.unified.dashboard', 'icon' => 'user-round'],
+                    ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'file-text'],
+                    ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'file-input'],
+                    ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'calendar-check'],
+                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check', 'premium' => true],
                 ], $isPremium),
             ];
         }
@@ -266,10 +286,10 @@ class MenuService
             $groups[] = [
                 'id' => 'representative',
                 'label' => 'Portal do Representante',
-                'icon' => 'fas fa-handshake',
+                'icon' => 'handshake',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'rep_dashboard', 'label' => 'Minhas Vendas', 'route' => 'representative.dashboard', 'icon' => 'fas fa-chart-bar'],
-                    ['name' => 'rep_clients', 'label' => 'Meus Clientes', 'route' => 'representative.referrals', 'icon' => 'fas fa-users'],
+                    ['name' => 'rep_dashboard', 'label' => 'Minhas Vendas', 'route' => 'representative.dashboard', 'icon' => 'bar-chart-3'],
+                    ['name' => 'rep_clients', 'label' => 'Meus Clientes', 'route' => 'representative.referrals', 'icon' => 'users'],
                 ], $isPremium),
             ];
         }
@@ -278,11 +298,11 @@ class MenuService
         $groups[] = [
             'id' => 'support',
             'label' => 'Suporte e Ajuda',
-            'icon' => 'fas fa-question-circle',
+            'icon' => 'help-circle',
             'items' => $this->prepareItems($user, [
-                ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'fas fa-life-ring'],
-                ['name' => 'kb_index', 'label' => 'Ajuda', 'route' => 'kb.index', 'icon' => 'fas fa-book'],
-                ['name' => 'legal_terms', 'label' => 'Privacidade', 'route' => 'legal.terms', 'icon' => 'fas fa-shield-alt'],
+                ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'life-buoy'],
+                ['name' => 'kb_index', 'label' => 'Ajuda', 'route' => 'kb.index', 'icon' => 'book-open'],
+                ['name' => 'legal_terms', 'label' => 'Privacidade', 'route' => 'legal.terms', 'icon' => 'shield'],
             ], $isPremium),
         ];
 

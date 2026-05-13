@@ -250,7 +250,7 @@
     setInterval(() => {
         loadConversations();
         if(activeConvId) loadMessages(activeConvId);
-    }, 5000);
+    }, 2000);
 
     loadConversations();
 </script>

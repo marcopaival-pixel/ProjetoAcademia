@@ -105,22 +105,29 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
     /**
      * @return array{ok: true, init_point: string}|array{ok: false, error: string}
      */
-    public function createCheckoutPreference(string $accessToken, int $userId, string $payerEmail, string $plan, ?Coupon $coupon = null): array
+    public function createCheckoutPreference(string $accessToken, int $userId, string $payerEmail, $plan, ?Coupon $coupon = null): array
     {
-        $prices = $this->planPrices();
         $user = User::find($userId);
-        $isPatientOnly = $user && $user->hasRole('paciente') && !$user->hasRole('aluno');
-
-        if ($plan === 'monthly') {
-            $title = 'ProjetoAcademia Premium — mensal';
-            $price = $isPatientOnly ? $prices['patient_monthly'] : $prices['monthly'];
-            $planCode = 'monthly';
-        } elseif ($plan === 'yearly') {
-            $title = 'ProjetoAcademia Premium — anual';
-            $price = $prices['yearly'];
-            $planCode = 'yearly';
+        
+        if ($plan instanceof \App\Models\Plan) {
+            $title = 'ProjetoAcademia — ' . $plan->name;
+            $price = (float) $plan->price;
+            $planCode = $plan->name;
         } else {
-            return ['ok' => false, 'error' => 'Plano inválido.'];
+            $prices = $this->planPrices();
+            $isPatientOnly = $user && $user->hasRole('paciente') && !$user->hasRole('aluno');
+
+            if ($plan === 'monthly') {
+                $title = 'ProjetoAcademia Premium — mensal';
+                $price = $isPatientOnly ? $prices['patient_monthly'] : $prices['monthly'];
+                $planCode = 'monthly';
+            } elseif ($plan === 'yearly') {
+                $title = 'ProjetoAcademia Premium — anual';
+                $price = $prices['yearly'];
+                $planCode = 'yearly';
+            } else {
+                return ['ok' => false, 'error' => 'Plano inválido.'];
+            }
         }
 
         if ($coupon) {
@@ -128,13 +135,13 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
         }
 
         if ($this->publicBase() === '') {
-            return ['ok' => false, 'error' => 'Configure APP_PUBLIC_URL e APP_BASE_PATH no .env para usar o checkout.'];
+            return ['ok' => false, 'error' => 'Configure APP_PUBLIC_URL no .env para usar o checkout.'];
         }
 
         $payload = [
             'items' => [[
                 'title' => $title,
-                'description' => 'Acesso Premium: macros personalizadas e exportação CSV.',
+                'description' => 'Acesso ao ecossistema ProjetoAcademia.',
                 'category_id' => 'services',
                 'quantity' => 1,
                 'currency_id' => 'BRL',
@@ -153,24 +160,18 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
                 'failure' => $this->absoluteUrl('mp/return?collection_status=failure'),
             ],
             'auto_return' => 'approved',
-            'notification_url' => $this->absoluteUrl('mp/webhook'),
+            'notification_url' => $this->absoluteUrl('payment/webhook/' . $this->getIdentifier()),
         ];
 
         // Lógica de Split (Marketplace)
         if ($user && $user->academy_company_id) {
             $company = $user->academyCompany;
             if ($company && $company->mercadopago_user_id) {
-                // Se a academia tem conta MP, o dinheiro vai para ela e a plataforma retém a taxa
                 $fee = (float) $company->platform_fee_fixed;
                 if ($company->platform_fee_percent > 0) {
                     $fee += ($price * ($company->platform_fee_percent / 100));
                 }
-                
                 $payload['marketplace_fee'] = round($fee, 2);
-                
-                // Nota: Em produção, o Access Token usado deve ser o do Marketplace 
-                // e o mercadopago_user_id deve ser passado se usarmos a API de Split direta.
-                // Aqui estamos usando a modalidade de Marketplace Fee padrão da Preferência.
             }
         }
 
@@ -265,7 +266,12 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
             $compra = \App\Models\CreditoCompra::find($compraId);
             $expected = $compra ? (float) $compra->valor : 0.0;
         } else {
-            $expected = $plan === 'yearly' ? $prices['yearly'] : ($isPatientOnly ? $prices['patient_monthly'] : $prices['monthly']);
+            $dbPlan = \App\Models\Plan::where('name', $plan)->first();
+            if ($dbPlan) {
+                $expected = (float) $dbPlan->price;
+            } else {
+                $expected = $plan === 'yearly' ? $prices['yearly'] : ($isPatientOnly ? $prices['patient_monthly'] : $prices['monthly']);
+            }
         }
         
         if ($coupon) {
@@ -506,10 +512,14 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
                 $packageId = (int) str_replace('ai_credits:', '', $plan);
                 $package = \App\Models\AiCreditPackage::find($packageId);
                 if ($package && $user) {
-                    app(\App\Services\AiCreditService::class)->addCredits($user, $package->credits, 'purchase', [
-                        'package_id' => $packageId,
-                        'mp_payment_id' => $mpId
-                    ]);
+                    app(\App\Services\AiCreditService::class)->addCredits(
+                        $user, 
+                        $package->credits, 
+                        $package->name, 
+                        (float) $package->price, 
+                        'mercadopago', 
+                        (string) $mpId
+                    );
                 }
             } elseif (str_starts_with($plan, 'credits:')) {
                 $compraId = (int) str_replace('credits:', '', $plan);
@@ -599,12 +609,14 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
     {
         $plan = \App\Models\Plan::where('name', $planCode)->first();
         if (!$plan) {
-            // Tentar encontrar por slug ou outro campo se necessário
-            $plan = \App\Models\Plan::where('type', $planCode === 'yearly' ? 'student' : 'student')->first(); 
+            // Fallback para nomes legados ou tipos
+            if ($planCode === 'monthly' || $planCode === 'yearly') {
+                $plan = \App\Models\Plan::where('type', 'student')->where('price', '>', 0)->first();
+            }
         }
 
         return Subscription::updateOrCreate(
-            ['user_id' => $userId, 'status' => $status !== Subscription::STATUS_FIN_CANCELADO ? $status : 'any'], // Simplificação
+            ['user_id' => $userId], 
             [
                 'plan_id' => $plan ? $plan->id : 1,
                 'status' => $status,
@@ -804,7 +816,15 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
             'notification_url' => $this->absoluteUrl('payment/webhook/' . $this->getIdentifier()),
         ];
 
-        return $this->apiRequest('POST', 'https://api.mercadopago.com/checkout/preferences', $this->token, $payload);
+        $res = $this->apiRequest('POST', 'https://api.mercadopago.com/checkout/preferences', $this->token, $payload);
+        
+        if (!$res['ok']) return $res;
+
+        return [
+            'ok' => true,
+            'init_point' => $res['data']['init_point'] ?? null,
+            'data' => $res['data']
+        ];
     }
 
     public function createSubscription(User $user, $plan, array $options = []): array

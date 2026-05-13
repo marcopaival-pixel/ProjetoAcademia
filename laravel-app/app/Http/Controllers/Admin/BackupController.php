@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Carbon\Carbon;
 use App\Models\AcademyCompany;
 
@@ -68,27 +69,30 @@ class BackupController extends Controller
 
             // Detect mysqldump path (common in XAMPP Windows)
             $mysqldump = 'mysqldump';
-            if (!`where $mysqldump 2>nul` && file_exists('C:\xampp\mysql\bin\mysqldump.exe')) {
-                $mysqldump = 'C:\xampp\mysql\bin\mysqldump.exe';
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                if (file_exists('C:\xampp\mysql\bin\mysqldump.exe')) {
+                    $mysqldump = 'C:\xampp\mysql\bin\mysqldump.exe';
+                }
             }
 
-            // Command for mysqldump (handling password carefully for Windows)
+            // Command for mysqldump (using --result-file instead of > for cross-platform stability)
             $passwordPart = $dbConfig['password'] ? "--password=" . escapeshellarg($dbConfig['password']) : "";
             
             $command = sprintf(
-                '%s --user=%s %s --host=%s %s > %s',
-                $mysqldump,
+                '%s --user=%s %s --host=%s --result-file=%s %s',
+                escapeshellarg($mysqldump),
                 escapeshellarg($dbConfig['username']),
                 $passwordPart,
                 escapeshellarg($dbConfig['host']),
-                escapeshellarg($dbConfig['database']),
-                escapeshellarg($storagePath)
+                escapeshellarg($storagePath),
+                escapeshellarg($dbConfig['database'])
             );
 
-            exec($command, $output, $returnVar);
+            $result = Process::run($command);
 
-            if ($returnVar !== 0) {
-                throw new \Exception("Erro ao executar mysqldump (código $returnVar)");
+            if (!$result->successful()) {
+                $errorMsg = $result->errorOutput() ?: "Código " . $result->exitCode();
+                throw new \Exception("Erro ao executar mysqldump: $errorMsg");
             }
 
             return redirect()->back()->with('success', "Backup nativo do banco de dados gerado com sucesso: {$fileName}");
@@ -129,13 +133,7 @@ class BackupController extends Controller
             'file_name' => 'required',
         ]);
 
-        // Implementation of restore is complex as it requires shell execution
-        // For security reasons, we might want to guide the user or implement a safe wrapper
         try {
-            // Note: In production, restoration should be handled with care.
-            // This is a placeholder for the logic.
-            // Artisan::call('backup:restore', ['--disk' => $request->disk, '--backup' => $request->file_name]);
-            
             return redirect()->back()->with('warning', 'A restauração automática via painel está em fase experimental. Recomenda-se restauração manual via CLI para maior segurança.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao restaurar: ' . $e->getMessage());

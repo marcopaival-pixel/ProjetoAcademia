@@ -63,7 +63,7 @@
 
                         <div>
                             <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-2 px-1">Telefone / WhatsApp</label>
-                            <input type="text" name="phone" id="phone_input" value="{{ old('phone') }}" required class="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" placeholder="(00) 00000-0000">
+                            <input type="text" name="phone" id="phone_input" value="{{ old('phone') }}" required class="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" placeholder="(11) 99999-9999" oninput="maskPhone(this)">
                             @error('phone')
                                 <p class="text-red-500 text-[10px] mt-2 px-1 font-bold">{{ $message }}</p>
                             @enderror
@@ -88,7 +88,7 @@
                                 <option value="lose" {{ old('goal') == 'lose' ? 'selected' : '' }}>Emagrecimento</option>
                                 <option value="recomp" {{ old('goal') == 'recomp' ? 'selected' : '' }}>Recomposição Corporal</option>
                                 <option value="performance" {{ old('goal') == 'performance' ? 'selected' : '' }}>Performance</option>
-                                <option value="maintain" {{ old('goal') == 'maintain' ? 'selected' : '' }}>Manutenção</option>
+                                <option value="maintain" {{ old('goal') == 'maintain' ? 'selected' : '' }}>Saúde e Bem-Estar</option>
                             </select>
                             @error('goal')
                                 <p class="text-red-500 text-[10px] mt-2 px-1 font-bold">{{ $message }}</p>

@@ -24,12 +24,58 @@ class EvolutionController extends Controller
             ->groupBy(function($date) {
                 return \Carbon\Carbon::parse($date->registered_date)->format('Y-m');
             });
-            
-            $latestAssessment = \App\Models\BodyAssessment::where('user_id', $user->id)
-                ->orderBy('assessment_date', 'desc')
-                ->first();
 
-        return view('evolution.index', compact('photos', 'isPremium', 'latestAssessment'));
+        // Agrupamento por tipo para o Antes & Depois Premium
+        $photosByType = EvolutionPhoto::where('user_id', $user->id)
+            ->orderBy('registered_date', 'asc')
+            ->get()
+            ->groupBy('type');
+
+        $evolutionPhotos = [];
+        foreach (['front', 'side', 'back'] as $type) {
+            if (isset($photosByType[$type]) && $photosByType[$type]->count() >= 2) {
+                $evolutionPhotos[$type] = [
+                    'first' => $photosByType[$type]->first(),
+                    'last' => $photosByType[$type]->last(),
+                ];
+            }
+        }
+            
+        $assessments = \App\Models\BodyAssessment::where('user_id', $user->id)
+            ->orderBy('assessment_date', 'asc')
+            ->get();
+
+        $processedAssessments = collect();
+        $chartData = [
+            'dates' => [],
+            'weight' => [],
+            'bf' => [],
+        ];
+
+        foreach ($assessments as $index => $assessment) {
+            $prev = $assessments->get($index - 1);
+            $assessment->delta_weight = $prev ? $assessment->weight_kg - $prev->weight_kg : 0;
+            $assessment->delta_bf = $prev ? $assessment->bf_percent - $prev->bf_percent : 0;
+            $processedAssessments->push($assessment);
+            
+            $chartData['dates'][] = $assessment->assessment_date->format('d/m/y');
+            $chartData['weight'][] = (float) $assessment->weight_kg;
+            $chartData['bf'][] = (float) $assessment->bf_percent;
+        }
+
+        $latestAssessment = $processedAssessments->last();
+        $healthScore = $user->health_score ?? 0;
+
+        return view('evolution.index', [
+            'photos' => $photos,
+            'isPremium' => $isPremium,
+            'latestAssessment' => $latestAssessment,
+            'assessments' => $processedAssessments->reverse(),
+            'chartData' => $chartData,
+            'evolutionPhotos' => $evolutionPhotos,
+            'healthScore' => $healthScore,
+            'user' => $user
+        ]);
     }
     
     public function store(Request $request)
@@ -68,7 +114,7 @@ class EvolutionController extends Controller
     /**
      * NexShape Vision: Análise de evolução entre duas fotos usando IA.
      */
-    public function analyze(Request $request, \App\Services\AIChatService $aiService)
+    public function analyze(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
     {
         $user = $request->user();
         if (!$user->hasPremiumAccess()) {
@@ -83,26 +129,24 @@ class EvolutionController extends Controller
         $photo1 = EvolutionPhoto::where('user_id', $user->id)->findOrFail($request->photo_id_1);
         $photo2 = EvolutionPhoto::where('user_id', $user->id)->findOrFail($request->photo_id_2);
 
-        $prompt = "Aja como um especialista em biomecânica e fisiologia do exercício. Através destas duas fotos de evolução (Foto 1: {$photo1->registered_date}, {$photo1->weight_kg}kg; Foto 2: {$photo2->registered_date}, {$photo2->weight_kg}kg), analise as mudanças físicas. "
-                . "Compare postura, densidade muscular e composição visual. Forneça um relatório técnico, motivador e focado em resultados reais encontrados nas imagens. "
-                . "IMPORTANTE: Se o tempo entre as fotos for curto, foque em pequenas mudanças de tônus e postura.";
+        $prompt = "Analise as mudanças físicas entre estas duas fotos (Foto 1: {$photo1->registered_date}, Foto 2: {$photo2->registered_date}).";
 
-        // Aqui assumimos que o AIChatService pode lidar com contexto de imagens ou fazemos uma análise textual baseada nos dados
-        // Para uma implementação real com visão, passaríamos as URLs das imagens para o Gemini Pro Vision.
-        $result = $aiService->chat($prompt, [
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'clinical',
+            'type' => 'evolution_analysis',
+            'clinicId' => $user->academy_company_id,
             'photo_1_url' => asset('storage/' . $photo1->photo_path),
             'photo_2_url' => asset('storage/' . $photo2->photo_path),
-            'user_name' => $user->name
         ]);
 
-        if ($result['ok']) {
+        if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
                 'analysis' => $result['message']
             ]);
         }
 
-        return response()->json(['error' => 'Falha na análise NexShape Vision.'], 500);
+        return response()->json(['error' => $result['error'] ?? 'Falha na análise NexShape Vision.'], 500);
     }
 
     public function destroy($id)

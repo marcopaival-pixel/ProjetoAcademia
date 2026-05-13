@@ -137,7 +137,6 @@ class DashboardController extends Controller
                 ->sortByDesc('time')->values()->take(4);
 
             $nextTraining = TrainingPlan::where('user_id', $uid)->where('is_active', true)->first();
-            $unreadEmails = \App\Models\InternalEmail::where('recipient_id', $uid)->where('is_read', false)->whereNull('excluded_at_receiver')->count();
 
             $prsCount = LoadLog::query()->from('load_logs as l1')
                 ->join('load_logs as l2', function($join) { $join->on('l1.exercise_id', '=', 'l2.exercise_id')->on('l1.user_id', '=', 'l2.user_id')->on('l1.log_date', '>', 'l2.log_date'); })
@@ -177,7 +176,6 @@ class DashboardController extends Controller
                 'waterConsumed' => $waterConsumed,
                 'recentActivities' => $recentActivities,
                 'nextTraining' => $nextTraining,
-                'unreadEmails' => $unreadEmails,
                 'prsCount' => $prsCount,
                 'latestAssessment' => $latestAssessment,
                 'topExercisePR' => $topExercisePR,
@@ -187,22 +185,46 @@ class DashboardController extends Controller
                 'pendingRequest' => $user->sentRequests()->where('status', 'pending')->first(),
                 'healthAlerts' => HealthAlert::where('user_id', $uid)->where('is_read', false)->latest()->take(3)->get(),
                 'performanceStatus' => app(\App\Services\PerformanceAnalysisService::class)->getUserStatus($user),
-                'communityPosts' => \App\Models\CommunityPost::with(['user', 'reactions', 'comments'])->where('status', 'approved')->where('visibility', 'public')->latest()->take(3)->get(),
+                'trainingCount' => TrainingPlan::where('user_id', $uid)->count(),
+                'assessmentsCount' => BodyAssessment::where('user_id', $uid)->count(),
+                'communityPosts' => \App\Models\CommunityPost::with(['user', 'reactions', 'comments', 'media'])
+                    ->where('status', 'approved')
+                    ->where('visibility', 'public')
+                    ->latest()
+                    ->take(5)
+                    ->get(),
+                'aiCreditWallet' => app(\App\Services\AiCreditService::class)->getWallet($user),
+                'evolutionStatus' => app(\App\Services\EvolutionStatusService::class)->getEvolutionStatus($user),
             ];
         });
 
         // Insights de IA (calculados fora do cache pois podem depender do tempo exato ou randomização)
-        $aiInsight = "Continue mantendo o foco nos seus objetivos!";
-        if ($stats['waterConsumed'] < ($stats['waterTarget'] * 0.5)) {
-            $aiInsight = "Sua hidratação está baixa hoje (" . round(($stats['waterConsumed'] / $stats['waterTarget']) * 100) . "%). Beba mais água.";
-        } elseif ($stats['prsCount'] > 0) {
-            $aiInsight = "Incrível! Você bateu " . $stats['prsCount'] . " recordes pessoais nos últimos 30 dias.";
+        if ($isPremium) {
+            $aiInsight = "Analisando seu padrão biométrico... ";
+            if ($stats['waterConsumed'] < ($stats['waterTarget'] * 0.5)) {
+                $aiInsight .= "Sua hidratação está em nível crítico (" . round(($stats['waterConsumed'] / $stats['waterTarget']) * 100) . "%). Isso pode reduzir sua força em até 20% no próximo treino.";
+            } elseif ($stats['prsCount'] > 0) {
+                $aiInsight .= "Pico de performance detectado! Você superou " . $stats['prsCount'] . " marcas pessoais recentemente. Considere aumentar a ingestão proteica para otimizar a síntese muscular.";
+            } else {
+                $aiInsight .= collect([
+                    "Sua variabilidade de frequência cardíaca indica que você está pronto para um treino de alta intensidade hoje.",
+                    "Otimize seu ciclo circadiano: procure ingerir sua última grande refeição 3h antes de dormir.",
+                    "Baseado no seu volume de treino, o magnésio pode ser um aliado na recuperação neuromuscular hoje."
+                ])->random();
+            }
         } else {
-            $aiInsight = collect([
-                "Beber mais água durante o treino aumenta o rendimento em até 15%.",
-                "Consistência é melhor que perfeição. Continue firme!",
-                "O descanso é onde o músculo realmente cresce. Respeite seus dias de off."
-            ])->random();
+            $aiInsight = "Continue mantendo o foco nos seus objetivos!";
+            if ($stats['waterConsumed'] < ($stats['waterTarget'] * 0.5)) {
+                $aiInsight = "Sua hidratação está baixa hoje. Beba mais água para manter o foco.";
+            } elseif ($stats['prsCount'] > 0) {
+                $aiInsight = "Parabéns pelos novos recordes! Continue evoluindo.";
+            } else {
+                $aiInsight = collect([
+                    "Beber mais água durante o treino aumenta o rendimento.",
+                    "Consistência é melhor que perfeição. Continue firme!",
+                    "O descanso é fundamental para o crescimento muscular."
+                ])->random();
+            }
         }
 
         $completedTasks = collect($stats['setupChecklist'])->where('done', true)->count();

@@ -8,6 +8,8 @@ use Carbon\Carbon;
 
 class ProfessionalProfile extends Model
 {
+    use Traits\HasClinic;
+
     protected $fillable = [
         'user_id',
         'profession_id',

@@ -39,7 +39,7 @@
                     MODO DEMONSTRAÇÃO
                 </a>
                 <a href="#pricing" class="px-10 py-5 bg-zinc-900/50 backdrop-blur-xl border border-white/5 text-white font-black rounded-[2rem] hover:bg-zinc-800 transition-all active:scale-95">
-                    Ver Planos Business
+                    Ver Todos os Planos
                 </a>
             </div>
         </div>
@@ -186,10 +186,30 @@
             </div>
         </div>
     </section>
+    
+    <!-- Comunidade Section -->
+    <section id="community" class="space-y-16 py-20 relative">
+        <div class="absolute -top-40 right-1/2 translate-x-1/2 w-[800px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+        
+        <div class="text-center space-y-6 max-w-3xl mx-auto mb-16">
+            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl">
+                <i data-lucide="users" class="w-4 h-4 text-emerald-500"></i>
+                <span class="text-[10px] font-black text-white uppercase tracking-[0.2em]">Conexão e Motivação</span>
+            </div>
+            <h2 class="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none italic uppercase">
+                Comunidade <span class="text-emerald-500 italic">NexShape.</span>
+            </h2>
+            <p class="text-zinc-500 font-medium text-lg leading-relaxed italic">
+                Junte-se a centenas de atletas compartilhando evolução, dicas e superação em tempo real.
+            </p>
+        </div>
+
+        <x-community.dashboard-widget :posts="$communityPosts" :showActions="false" />
+    </section>
 
     <!-- Pricing Summary Section -->
     <section id="pricing" class="space-y-20 relative" x-data="{ 
-        activeCategory: '{{ $preferredType ?? 'student' }}',
+        activeCategory: new URLSearchParams(window.location.search).get('type') || '{{ $preferredType ?? 'student' }}',
         categories: {
             student: 'Aluno',
             professional: 'Profissional',
@@ -299,14 +319,19 @@
                     <div class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Seguro (LGPD)</div>
                 </div>
             </div>
+
+            <div class="pt-4">
+                <a href="#pricing" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 group">
+                    VER TODOS OS PLANOS
+                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
         </div>
         
         <div class="relative">
             <div class="absolute -inset-4 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-2xl rounded-full opacity-50"></div>
-            <div class="bg-zinc-950 p-4 rounded-[2.5rem] shadow-2xl border border-white/10">
-                 <div class="aspect-video bg-zinc-900 rounded-[2rem] overflow-hidden flex items-center justify-center">
-                    <span class="text-zinc-700 font-black text-sm tracking-widest uppercase italic">Painel Administrativo B2B</span>
-                 </div>
+            <div class="bg-zinc-950 p-2 rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden">
+                <img src="{{ asset('images/b2b-preview.png') }}" alt="NexShape B2B Dashboard" class="w-full h-full object-cover rounded-[2rem] opacity-90 group-hover:opacity-100 transition-opacity">
             </div>
         </div>
     </section>

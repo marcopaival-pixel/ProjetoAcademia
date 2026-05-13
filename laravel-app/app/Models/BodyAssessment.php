@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class BodyAssessment extends Model
 {
-    use HasFactory, Traits\FiltersByProfessional;
+    use HasFactory, Traits\FiltersByProfessional, Traits\HasClinic;
+
 
     protected $fillable = [
         'user_id',
@@ -35,6 +36,18 @@ class BodyAssessment extends Model
         'blood_pressure',
         'heart_rate',
         'ai_suggestions',
+        'icw_l',
+        'ecw_l',
+        'dry_lean_mass_kg',
+        'body_fat_mass_kg',
+        'segmental_lean_arm_l',
+        'segmental_lean_arm_r',
+        'segmental_lean_leg_l',
+        'segmental_lean_leg_r',
+        'segmental_lean_trunk',
+        'visceral_fat_level',
+        'basal_metabolic_rate',
+        'phase_angle',
     ];
 
     protected $casts = [

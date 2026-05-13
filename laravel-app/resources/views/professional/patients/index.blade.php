@@ -59,9 +59,10 @@
             </select>
             <select name="goal" onchange="this.form.submit()" class="bg-zinc-900/50 border border-white/5 rounded-2xl px-5 py-3 text-zinc-400 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none min-w-[140px]">
                 <option value="">Objetivo</option>
-                <option value="Hipertrofia" {{ request('goal') == 'Hipertrofia' ? 'selected' : '' }}>Hipertrofia</option>
-                <option value="Emagrecimento" {{ request('goal') == 'Emagrecimento' ? 'selected' : '' }}>Emagrecimento</option>
-                <option value="Performance" {{ request('goal') == 'Performance' ? 'selected' : '' }}>Performance</option>
+                <option value="gain" {{ request('goal') == 'gain' ? 'selected' : '' }}>Hipertrofia</option>
+                <option value="lose" {{ request('goal') == 'lose' ? 'selected' : '' }}>Emagrecimento</option>
+                <option value="performance" {{ request('goal') == 'performance' ? 'selected' : '' }}>Performance</option>
+                <option value="maintain" {{ request('goal') == 'maintain' ? 'selected' : '' }}>Saúde e Bem-Estar</option>
             </select>
         </form>
     </div>

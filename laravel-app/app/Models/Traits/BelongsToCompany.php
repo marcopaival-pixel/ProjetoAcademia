@@ -26,7 +26,7 @@ trait BelongsToCompany
                     return;
                 }
 
-                $clinicId = \App\Support\TenantContext::get();
+                $clinicId = \App\Support\TenantContext::getCompanyId();
 
                 // Se existe uma clínica no contexto, filtramos os dados por ela
                 if ($clinicId) {

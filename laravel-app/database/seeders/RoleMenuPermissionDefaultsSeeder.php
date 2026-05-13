@@ -23,7 +23,8 @@ class RoleMenuPermissionDefaultsSeeder extends Seeder
             'aluno' => [
                 'profile', 'progression.plans', 'diary', 'assessments', 'calendar', 'plano',
                 'export', 'messages', 'presence', 'dashboard', 'nutrition', 'weight',
-                'hydration', 'chat', 'leaderboard', 'active-rest',
+                'hydration', 'chat', 'leaderboard', 'active-rest', 'evolution',
+                'progression.charts', 'trophies', 'body-analysis', 'exercise', 'report',
             ],
             'receptionist' => ['dashboard', 'user_registration', 'presence', 'plano', 'profile'],
             'finance' => ['dashboard', 'billing', 'financial_reports', 'plano', 'profile'],

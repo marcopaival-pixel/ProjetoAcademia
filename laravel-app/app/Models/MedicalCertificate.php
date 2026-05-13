@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MedicalCertificate extends Model
 {
+    use Traits\HasClinic;
+
     protected $fillable = [
         'patient_id',
         'professional_id',

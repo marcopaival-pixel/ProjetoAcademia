@@ -18,7 +18,24 @@
                 Este link não é válido ou já foi utilizado.
             @endif
         </p>
-        <div class="space-y-3">
+        <div class="space-y-4">
+            @if(($motivo ?? '') === 'expirado')
+                <div class="p-6 bg-zinc-900/50 border border-zinc-800 rounded-3xl backdrop-blur-xl">
+                    <form action="{{ route('verification.resend.guest') }}" method="POST" class="space-y-4">
+                        @csrf
+                        <div class="text-left space-y-1.5">
+                            <label for="email" class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">E-mail para reenvio</label>
+                            <input type="email" name="email" id="email" required placeholder="seu@email.com" 
+                                value="{{ request()->query('email') }}"
+                                class="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-zinc-600">
+                        </div>
+                        <button type="submit" class="w-full py-4 bg-zinc-100 hover:bg-white text-zinc-900 font-black rounded-2xl transition-all active:scale-[0.98] text-[10px] uppercase tracking-widest shadow-xl">
+                            Reenviar link agora
+                        </button>
+                    </form>
+                </div>
+            @endif
+
             <a href="{{ route('login') }}" class="inline-flex items-center justify-center w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-3xl transition-all active:scale-[0.98] shadow-2xl shadow-blue-600/20 uppercase tracking-[0.2em] text-[10px]">
                 Ir para o login
             </a>

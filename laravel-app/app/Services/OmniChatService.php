@@ -121,28 +121,23 @@ class OmniChatService
             return;
         }
 
-        // 5. Fallback Original (IA)
+        // 5. Fallback via Orquestrador NexShape
         try {
-            $aiService = app(\App\Services\AIChatService::class);
+            $orchestrator = app(\App\Services\AI\OrchestratorService::class);
+            $user = \App\Models\User::where('academy_company_id', $conversation->company_id)->first(); // Fallback user
             
-            // Formatamos o histórico para o padrão da OpenAI
-            $recentMessages = $conversation->messages()->orderBy('created_at', 'desc')->take(5)->get()->reverse();
-            $history = [];
-            foreach($recentMessages as $msg) {
-                $history[] = [
-                    'role' => ($msg->sender_type === 'customer' ? 'user' : 'assistant'),
-                    'content' => $msg->content
-                ];
-            }
-
-            $response = $aiService->chat($userContent, [], $history);
+            $response = $orchestrator->run($user ?? auth()->user(), $userContent, [
+                'intent' => 'support',
+                'source' => 'omnichannel',
+                'clinicId' => $conversation->company_id
+            ]);
             
-            if ($response['ok']) {
+            if ($response['status'] === 'success') {
                 $this->sendBotMessage($conversation, $response['message']);
                 return;
             }
         } catch (\Exception $e) {
-            Log::error("Omni AI Fallback Error: " . $e->getMessage());
+            Log::error("Omni AI Orchestrator Error: " . $e->getMessage());
         }
 
         // 4. Default Fallback

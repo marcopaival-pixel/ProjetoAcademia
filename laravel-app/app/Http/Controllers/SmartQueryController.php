@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\AIChatService;
+use App\Services\AI\OrchestratorService;
 use App\Services\IntelligenceLibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 class SmartQueryController extends Controller
 {
     public function __construct(
-        private AIChatService $aiService,
+        private OrchestratorService $orchestrator,
         private IntelligenceLibraryService $libraryService
     ) {}
 
@@ -55,11 +55,13 @@ class SmartQueryController extends Controller
             }
         }
 
-        // 2. Se não encontrar ou forçado, chamar a IA
-        // Nota: AIChatService pode precisar de mais contexto se for para um módulo específico
-        $aiResponse = $this->aiService->chat($pergunta, [], []); 
-
-        if (!$aiResponse['ok']) {
+        // 2. Se não encontrar ou forçado, chamar o Orquestrador
+        $aiResponse = $this->orchestrator->run(Auth::user(), $pergunta, [
+            'modulo' => $modulo,
+            'categoria' => $categoria
+        ]); 
+ 
+        if ($aiResponse['status'] !== 'success') {
             return response()->json([
                 'ok' => false,
                 'error' => $aiResponse['error'] ?? 'Erro ao consultar IA',

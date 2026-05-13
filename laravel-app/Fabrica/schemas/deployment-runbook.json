@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/deployment-runbook.json",
+  "title": "DeploymentRunbookPayload",
+  "type": "object",
+  "required": ["environments", "iac", "pipeline", "secrets", "rollback"],
+  "properties": {
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "purpose"],
+        "properties": {
+          "name": { "type": "string" },
+          "purpose": { "type": "string" },
+          "url_pattern": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "iac": { "type": "string" },
+    "pipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "actions"],
+        "properties": {
+          "stage": { "type": "string" },
+          "actions": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "secrets": { "type": "array", "items": { "type": "string" } },
+    "rollback": { "type": "string" },
+    "observability_hooks": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

@@ -23,9 +23,10 @@
                 body: JSON.stringify({ package_id: packageId })
             });
             const data = await response.json();
-            if (data.success) {
-                this.balance = data.new_balance;
-                window.location.reload(); // Simplest way to update everywhere
+            if (data.success && data.init_point) {
+                window.location.href = data.init_point;
+            } else if (data.success) {
+                window.location.reload(); 
             } else {
                 alert(data.message || 'Erro ao processar compra');
             }

@@ -4,27 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\SmartStack;
 use App\Models\Supplement;
-use App\Services\SmartStackAIService;
+use App\Services\AI\OrchestratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SmartStackController extends Controller
 {
-    protected $aiService;
-
-    public function __construct(SmartStackAIService $aiService)
-    {
-        $this->aiService = $aiService;
-    }
+    public function __construct(
+        private OrchestratorService $orchestrator
+    ) {}
 
     public function index()
     {
-        $stacks = SmartStack::where('user_id', auth()->id())
-            ->with('supplements')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('nutrition.stacks.index', compact('stacks'));
+        return redirect()->route('nutrition.index', ['tab' => 'stacks']);
     }
 
     public function store(Request $request)
@@ -97,22 +89,20 @@ class SmartStackController extends Controller
     }
 
     /**
-     * Gera sugestão via IA.
-     */
     public function suggest(Request $request)
     {
         $user = auth()->user();
-        if ($user->ai_credits < 1) {
-            return response()->json(['success' => false, 'error' => 'Créditos insuficientes']);
+        $result = $this->orchestrator->run($user, "Sugira um Smart Stack para: " . ($request->goal ?? 'geral'), [
+            'intent' => 'nutrition',
+            'type' => 'supplement_suggestion',
+            'clinicId' => $user->academy_company_id
+        ]);
+
+        if ($result['status'] === 'success') {
+            return response()->json(['success' => true, 'suggestion' => $result['message']]);
         }
 
-        $result = $this->aiService->suggestStack($user, $request->goal);
-
-        if ($result['success']) {
-            $user->consumeAiCredit('supplement_suggestion');
-        }
-
-        return response()->json($result);
+        return response()->json(['success' => false, 'error' => $result['error'] ?? 'Erro na sugestão.']);
     }
 
     /**

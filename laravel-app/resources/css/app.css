@@ -84,6 +84,13 @@ body {
   box-shadow: var(--shadow-emerald);
 }
 
+/* Otimização para evitar "Double Click" em elementos pesados com blur/transform */
+.nav-link, .nav-group-header, .topbar-icon-btn, .sidebar-logo {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }

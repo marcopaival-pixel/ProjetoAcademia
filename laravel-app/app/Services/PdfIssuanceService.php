@@ -10,16 +10,16 @@ use App\Models\AcademyUnit;
 use App\Models\HistoricoPdf;
 use App\Models\PdfTemplate;
 use App\Models\User;
+use App\Models\PdfNumberSequence;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PdfIssuanceService
 {
     public function __construct(
-        private readonly PdfTemplateService $pdfTemplateService,
-        private readonly PdfNumberingService $numberingService,
-        private readonly PdfQrService $qrService
+        private readonly PdfTemplateService $pdfTemplateService
     ) {}
 
     /**
@@ -49,12 +49,12 @@ class PdfIssuanceService
             : PdfDocumentType::from((string) $template->document_type);
 
         $year = (int) now()->year;
-        $numero = $this->numberingService->nextOfficialNumber($company, $type, $year);
+        $numero = $this->nextOfficialNumber($company, $type, $year);
 
         $codigo = $this->uniqueValidationCode();
 
-        $validationUrl = $this->qrService->validationUrl($codigo);
-        $qrDataUri = $this->qrService->pngDataUriForText($validationUrl, 130);
+        $validationUrl = $this->pdfTemplateService->validationUrl($codigo);
+        $qrDataUri = $this->pdfTemplateService->pngDataUriForText($validationUrl, 130);
 
         $mergedVars = array_merge($variables, [
             'numero_oficial' => $numero,
@@ -135,5 +135,36 @@ class PdfIssuanceService
         } while (HistoricoPdf::query()->where('codigo_validacao', $code)->exists());
 
         return $code;
+    }
+
+    /**
+     * Gera número único por empresa, tipo e ano (ex.: REC-2026-000001).
+     */
+    private function nextOfficialNumber(AcademyCompany $company, \App\Enums\PdfDocumentType $type, int $year): string
+    {
+        return DB::transaction(function () use ($company, $type, $year) {
+            $row = PdfNumberSequence::query()
+                ->where('academy_company_id', $company->id)
+                ->where('tipo_documento', $type->value)
+                ->where('ano', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if ($row === null) {
+                $row = PdfNumberSequence::create([
+                    'academy_company_id' => $company->id,
+                    'tipo_documento' => $type->value,
+                    'ano' => $year,
+                    'sequencia_atual' => 0,
+                ]);
+            }
+
+            $row->increment('sequencia_atual');
+            $row->refresh();
+
+            $seq = str_pad((string) $row->sequencia_atual, 6, '0', STR_PAD_LEFT);
+
+            return $type->numberPrefix().'-'.$year.'-'.$seq;
+        });
     }
 }

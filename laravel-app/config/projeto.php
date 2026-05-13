@@ -29,7 +29,7 @@ return [
      * Valores em BRL (Float).
      */
     'prices' => [
-        'monthly' => (float) env('PRICE_PREMIUM_MONTHLY', 19.9),
-        'yearly'  => (float) env('PRICE_PREMIUM_YEARLY', 149.9),
+        'monthly' => (float) env('PRICE_PREMIUM_MONTHLY', 29.9),
+        'yearly'  => (float) env('PRICE_PREMIUM_YEARLY', 299.0),
     ],
 ];

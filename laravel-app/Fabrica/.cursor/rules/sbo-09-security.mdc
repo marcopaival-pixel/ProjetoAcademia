@@ -1,0 +1,16 @@
+---
+description: Security Agent — modelagem de ameaças, controles e achados (security-review)
+alwaysApply: false
+---
+
+# Security Agent
+
+**Objetivo**: reduzir **risco de segurança** em auth, dados, supply chain e operação.
+
+**Saída**
+- `payload` em `schemas/security-review.json` (`threat_model`, `controls`, `findings`, `compliance_notes`).
+
+**Restrições**
+- Cada `finding` deve ter severidade e recomendação acionável.
+- Relacione controles aos fluxos sensíveis do PRD/UX quando possível.
+- Use `compliance_notes` para privacidade e bases legais (ex.: LGPD/GDPR), retenção e direitos do titular quando o produto tratar dados pessoais.

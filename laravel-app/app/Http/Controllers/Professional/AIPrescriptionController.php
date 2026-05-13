@@ -13,9 +13,13 @@ use App\Models\ClinicProtocol;
 use App\Models\MedicalPrescription;
 use App\Models\MedicalHistory;
 use App\Models\User;
+use App\Services\AI\OrchestratorService;
 
 class AIPrescriptionController extends Controller
 {
+    public function __construct(
+        private OrchestratorService $orchestrator
+    ) {}
     /**
      * Exibe o Assistente de Prescrição Dinâmica.
      */
@@ -114,39 +118,28 @@ class AIPrescriptionController extends Controller
             ]);
         }
 
-        try {
-            $client = OpenAI::client($apiKey);
-            
-            $persona = $specialty->nome;
-            $systemPrompt = "Você é um especialista em {$persona}. Gere uma prescrição/estratégia personalizada baseada nos dados do paciente: " . json_encode($context) . ". ";
-            
-            if ($request->type === 'training') {
-                $systemPrompt .= "Retorne JSON com: 'name', 'description', 'exercises' (array de {name, sets, reps, notes}).";
-            } elseif ($request->type === 'nutrition') {
-                $systemPrompt .= "Retorne JSON com: 'name', 'strategy', 'meals' (array de {time, foods, macros_est}).";
-            } else {
-                $systemPrompt .= "Retorne JSON com: 'name', 'objective', 'protocol', 'frequency', 'duration', 'medicine', 'dosage', 'observations'.";
-            }
+        $intent = $request->type === 'training' ? 'training' : ($request->type === 'nutrition' ? 'nutrition' : 'clinical');
 
-            $response = $client->chat()->create([
-                'model' => 'gpt-4o',
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $request->prompt ?? "Crie a melhor estratégia para o perfil acima."],
-                ],
-                'response_format' => ['type' => 'json_object'],
-            ]);
+        $result = $this->orchestrator->run($user, $request->prompt ?? "Gere uma estratégia personalizada.", [
+            'intent' => $intent,
+            'patient_id' => $patient->id,
+            'specialty' => $specialty->nome,
+            'clinicId' => $user->academy_company_id,
+            'response_format' => 'json'
+        ]);
 
+        if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
-                'data' => json_decode($response->choices[0]->message->content, true),
+                'data' => is_string($result['message']) ? json_decode($result['message'], true) : $result['message'],
                 'context' => $context
             ]);
-
-        } catch (\Exception $e) {
-            Log::error('Erro AI Prescription: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => 'Falha no motor de IA.'], 500);
         }
+
+        return response()->json([
+            'success' => false, 
+            'error' => $result['error'] ?? 'Falha no motor de IA NexShape.'
+        ], 500);
     }
 
     /**

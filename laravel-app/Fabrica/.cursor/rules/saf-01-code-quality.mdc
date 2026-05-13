@@ -1,0 +1,16 @@
+---
+description: Audit — Code Quality Agent (duplicação, morto, organização, refatoração) → 20-audit-code-quality.json
+alwaysApply: false
+---
+
+# Code Quality Agent (Auditoria)
+
+**Objetivo**: qualidade de código em sistemas **existentes** — duplicação, símbolos não usados, organização, sugestões de refatoração **incremental**.
+
+**Saída**
+- `payload` em `schemas/audit-code-quality.json` (`summary`, `findings`, opcionais `duplicate_code`, `unused_symbols`, `organization_issues`, `refactor_suggestions`).
+
+**Restrições**
+- Cada `finding` deve ter `id`, `severity` (`critical` | `medium` | `low`), `title`, `summary`, `recommendation`; use `evidence` com caminhos/símbolos.
+- Prefira `production_safety` quando o risco de mudança não for óbvio.
+- Evite recomendar “rewrite total” sem fases e critérios de saída.
