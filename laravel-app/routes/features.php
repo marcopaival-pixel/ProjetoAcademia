@@ -30,7 +30,7 @@ Route::prefix('health-metrics')->name('health-metrics.')->middleware('premium')-
 });
 
 // Registro de Treino — via Menu lateral (Performance HUD)
-Route::match(['get', 'post'], '/exercise', [ExerciseController::class, 'index'])->name('exercise');
+Route::match(['get', 'post'], '/exercise', [ExerciseController::class, 'index'])->name('exercise')->middleware('premium');
 Route::prefix('api/exercise')->name('api.exercise.')->group(function () {
     Route::get('/search', [ExerciseController::class, 'apiSearch'])->name('search');
     Route::get('/list-all', [ExerciseController::class, 'apiListAll'])->name('list-all');
@@ -53,8 +53,13 @@ Route::prefix('assessments')->name('assessments.')->group(function () {
     Route::get('/', [AssessmentController::class, 'index'])->name('index');
     Route::get('/create', [AssessmentController::class, 'create'])->name('create');
     Route::post('/', [AssessmentController::class, 'store'])->name('store');
+    
     Route::get('/{assessment}', [AssessmentController::class, 'show'])->name('show');
     Route::delete('/{assessment}', [AssessmentController::class, 'destroy'])->name('destroy');
+    
+    Route::middleware('premium')->group(function() {
+        Route::get('/{assessment}/pdf', \App\Http\Controllers\BioimpedancePdfController::class)->name('pdf');
+    });
 });
 
 // Nutrição (metas e dashboard parcial)
@@ -114,7 +119,7 @@ Route::prefix('progression')->name('progression.')->group(function () {
 // Mensagens diretas
 Route::post('/user/block/{user}', [MessageController::class, 'blockUser'])->name('user.block');
 
-Route::prefix('messages')->name('messages.')->group(function () {
+Route::prefix('messages')->name('messages.')->middleware('premium')->group(function () {
     Route::get('/create', [MessageController::class, 'create'])->name('create');
     Route::post('/start', [MessageController::class, 'startConversation'])->name('start');
     Route::post('/bulk-delete', [MessageController::class, 'bulkDelete'])->name('bulk-delete');
@@ -122,20 +127,6 @@ Route::prefix('messages')->name('messages.')->group(function () {
     Route::post('/{conversation}', [MessageController::class, 'store'])->name('store');
 });
 
-// Correio interno (rotas nomeadas internal-email.*)
-Route::prefix('internal-email')->name('internal-email.')->group(function () {
-    Route::get('/', [InternalEmailController::class, 'inbox'])->name('inbox');
-    Route::get('/sent', [InternalEmailController::class, 'sent'])->name('sent');
-    Route::get('/outbox', [InternalEmailController::class, 'outbox'])->name('outbox');
-    Route::get('/trash', [InternalEmailController::class, 'trash'])->name('trash');
-    Route::get('/create', [InternalEmailController::class, 'create'])->name('create');
-    Route::post('/', [InternalEmailController::class, 'store'])->name('store');
-    Route::post('/{message}/restore', [InternalEmailController::class, 'restore'])->name('restore');
-    Route::delete('/{message}/permanent', [InternalEmailController::class, 'permanentDelete'])->name('permanent');
-    Route::post('/{message}/unread', [InternalEmailController::class, 'markAsUnread'])->name('unread');
-    Route::delete('/{message}', [InternalEmailController::class, 'destroy'])->name('destroy');
-    Route::get('/{message}', [InternalEmailController::class, 'show'])->name('show');
-});
 
 // Grupos de comunicação (mensagens)
 Route::prefix('groups')->name('groups.')->group(function () {
@@ -184,8 +175,11 @@ Route::prefix('agenda')->name('agenda.')->group(function () {
 Route::prefix('evolution')->name('evolution.')->group(function () {
     Route::get('/', [\App\Http\Controllers\EvolutionController::class, 'index'])->name('index');
     Route::post('/', [\App\Http\Controllers\EvolutionController::class, 'store'])->name('store');
-    Route::post('/analyze', [\App\Http\Controllers\EvolutionController::class, 'analyze'])->name('analyze');
-    Route::delete('/{id}', [\App\Http\Controllers\EvolutionController::class, 'destroy'])->name('destroy');
+    
+    Route::middleware('premium')->group(function() {
+        Route::post('/analyze', [\App\Http\Controllers\EvolutionController::class, 'analyze'])->name('analyze');
+        Route::delete('/{id}', [\App\Http\Controllers\EvolutionController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Conquistas e Troféus
@@ -214,4 +208,7 @@ Route::prefix('supplements')->name('supplements.')->group(function () {
     Route::post('/{supplement}/take', [\App\Http\Controllers\SupplementController::class, 'take'])->name('take');
     Route::delete('/{supplement}', [\App\Http\Controllers\SupplementController::class, 'destroy'])->name('destroy');
 });
-
+// Orquestrador de IA NexShape
+Route::prefix('api/ai')->name('api.ai.')->group(function () {
+    Route::post('/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('orchestrator');
+});

@@ -40,7 +40,10 @@ class VerificationController extends Controller
         }
 
         if ($result['status'] === EmailVerificationService::VERIFY_EXPIRED) {
-            return redirect()->route('email-verification.failed', ['motivo' => 'expirado']);
+            return redirect()->route('email-verification.failed', [
+                'motivo' => 'expirado',
+                'email' => $result['user']?->email ?? null
+            ]);
         }
 
         return redirect()->route('email-verification.failed', ['motivo' => 'invalido']);

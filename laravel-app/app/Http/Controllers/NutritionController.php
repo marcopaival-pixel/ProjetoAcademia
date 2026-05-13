@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\Nutrition;
-use App\Services\AIChatService;
 use App\Models\UserProfile;
 use App\Models\FoodEntry;
 use App\Models\WeightEntry;
@@ -192,7 +191,7 @@ class NutritionController extends Controller
         return back()->with('success', 'Estratégia nutricional atualizada com sucesso!');
     }
 
-    public function weeklyAudit(Request $request, AIChatService $aiService)
+    public function weeklyAudit(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
     {
         $user = $request->user();
         $profile = UserProfile::where('user_id', $user->id)->first();
@@ -218,33 +217,29 @@ class NutritionController extends Controller
             'alimentos' => $d->foods
         ])->toArray();
 
-        $prompt = "Aja como um Nutricionista Chefe de Performance. Analise meus últimos 7 dias de alimentação: " . json_encode($summary) . ". "
-                . "Meu objetivo é: " . ($profile->goal ?? 'manutenção') . ". "
-                . "Forneça um relatório dividido em: 1. Pontos Fortes, 2. Onde Melhorar, 3. Nota NexShape (0-100) e 4. Dica de Ouro para a próxima semana. "
-                . "Seja direto, técnico e motivador.";
+        $prompt = "Analise meus últimos 7 dias de alimentação: " . json_encode($summary) . ". Meu objetivo é: " . ($profile->goal ?? 'manutenção') . ".";
 
-        $result = $aiService->chat($prompt, [
-            'history_count' => count($summary),
-            'objective' => $profile->goal
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'nutrition',
+            'type' => 'weekly_audit',
+            'clinicId' => $user->academy_company_id
         ]);
 
-        if ($result['ok']) {
-            $user->consumeAiCredit('diet_audit');
+        if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
                 'audit' => $result['message']
             ]);
         }
 
-        return response()->json(['success' => false, 'error' => 'Falha na auditoria.'], 500);
+        return response()->json(['success' => false, 'error' => $result['error'] ?? 'Falha na auditoria.'], 500);
     }
 
-    public function suggestMeal(Request $request, AIChatService $aiService)
+    public function suggestMeal(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
     {
         $user = $request->user();
         $profile = UserProfile::where('user_id', $user->id)->first();
         
-        // Calculate remaining macros (same logic as index)
         $targetKcal = $profile->daily_calorie_target ?? 2000;
         $macroTargets = Nutrition::macroTargetsForDisplay($user->hasPremiumAccess(), $profile->toArray());
         
@@ -254,30 +249,26 @@ class NutritionController extends Controller
             ->first();
 
         $remaining = [
-            'daily_calories' => $targetKcal,
-            'consumed_calories' => $todaySums->cal ?? 0,
             'remaining_kcal' => max($targetKcal - ($todaySums->cal ?? 0), 0),
             'remaining_p' => max(($macroTargets['p'] ?? 0) - ($todaySums->p ?? 0), 0),
             'remaining_c' => max(($macroTargets['c'] ?? 0) - ($todaySums->c ?? 0), 0),
             'remaining_f' => max(($macroTargets['f'] ?? 0) - ($todaySums->f ?? 0), 0),
-            'objective' => $profile->goal ?? 'maintain',
         ];
 
-        $prompt = "Aja como um Coach de Biohacking e Especialista em Nutrição de Performance. "
-                . "Baseado nos meus macros restantes para hoje ({$remaining['remaining_kcal']} kcal, {$remaining['remaining_p']}g P, {$remaining['remaining_c']}g C, {$remaining['remaining_f']}g G), "
-                . "sugira UMA refeição prática e descreva brevemente a VANTAGEM FISIOLÓGICA dessa escolha (ex: controle de cortisol, otimização da síntese proteica noturna ou densidade de micronutrientes). "
-                . "No FINAL da resposta, obrigatoriamente inclua uma linha com esta estrutura exata: "
-                . "METRICS: [cal:X, p:Y, c:Z, f:W] "
-                . "Substitua X, Y, Z, W pelos valores totais da refeição sugerida.";
+        $prompt = "Sugira UMA refeição baseada nos meus macros restantes: " . json_encode($remaining);
 
-        $result = $aiService->chat($prompt, $remaining);
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'nutrition',
+            'type' => 'meal_suggestion',
+            'clinicId' => $user->academy_company_id,
+            'remaining' => $remaining
+        ]);
 
-        if ($result['ok']) {
-            $user->consumeAiCredit('meal_suggestion');
+        if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
                 'suggestion' => $result['message'],
-                'remaining' => $remaining // Pass for fallback
+                'remaining' => $remaining 
             ]);
         }
 
@@ -405,26 +396,22 @@ class NutritionController extends Controller
         return response()->json($query->get());
     }
 
-    public function naturalLanguageRegistry(Request $request, AIChatService $aiService)
+    public function naturalLanguageRegistry(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
     {
         $user = $request->user();
-        if (!$user->hasPremiumAccess()) {
-            return response()->json(['error' => 'Recurso disponível apenas no plano Pro.'], 403);
-        }
-
         $data = $request->validate(['text' => 'required|string|max:500']);
 
-        $prompt = "Aja como um assistente nutricional. Analise este texto: \"{$data['text']}\". "
-                . "Identifique os alimentos, estime as quantidades e forneça os macros nutricionais. "
-                . "Retorne APENAS um JSON no formato: [{\"name\": \"alimento\", \"amount\": \"quantidade\", \"kcal\": 100, \"p\": 10, \"c\": 20, \"f\": 5}].";
+        $prompt = "Identifique os alimentos, estime as quantidades e forneça os macros nutricionais para: \"{$data['text']}\". Retorne um JSON.";
 
-        $result = $aiService->chat($prompt);
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'nutrition',
+            'type' => 'nlp_registry',
+            'clinicId' => $user->academy_company_id
+        ]);
 
-        if ($result['ok']) {
-            // Extract JSON from response if there's any markdown
+        if ($result['status'] === 'success') {
             $json = preg_replace('/^.*?(\[.*\]).*?$/s', '$1', $result['message']);
             $foods = json_decode($json, true);
-            
             if ($foods) {
                 return response()->json(['success' => true, 'foods' => $foods]);
             }
@@ -433,24 +420,21 @@ class NutritionController extends Controller
         return response()->json(['error' => 'Não foi possível processar o registro.'], 500);
     }
 
-    public function processPhoto(Request $request, AIChatService $aiService)
+    public function processPhoto(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
     {
         $user = $request->user();
-        if (!$user->hasPremiumAccess()) {
-            return response()->json(['error' => 'Recurso disponível apenas no plano Pro.'], 403);
-        }
-
         $request->validate(['photo' => 'required|image|max:5120']);
 
-        // In a real scenario, we would send the image to a vision-capable AI.
-        // For this demo, we'll simulate the AI analysis based on the requirement.
-        
-        $prompt = "Analise esta foto de um prato de comida (simulado). Identifique os alimentos e estime os macros. "
-                . "Retorne APENAS um JSON no formato: [{\"name\": \"alimento\", \"amount\": \"quantidade\", \"kcal\": 100, \"p\": 10, \"c\": 20, \"f\": 5}].";
+        $prompt = "Analise esta foto de um prato de comida. Identifique os alimentos e estime os macros.";
 
-        $result = $aiService->chat($prompt);
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'nutrition',
+            'type' => 'photo_analysis',
+            'clinicId' => $user->academy_company_id,
+            'photo_url' => asset('storage/' . $request->file('photo')->store('nutrition_temp', 'public'))
+        ]);
 
-        if ($result['ok']) {
+        if ($result['status'] === 'success') {
             $json = preg_replace('/^.*?(\[.*\]).*?$/s', '$1', $result['message']);
             $foods = json_decode($json, true);
             if ($foods) {

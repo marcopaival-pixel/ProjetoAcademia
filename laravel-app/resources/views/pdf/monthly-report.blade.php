@@ -2,123 +2,189 @@
 <html lang="pt-BR">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Performance Mensal - {{ $user->name }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #222; }
-        h1 { font-size: 18px; margin: 0 0 8px; }
-        .meta { margin: 0 0 16px; font-size: 10px; color: #555; }
-        .stats { width: 100%; margin-bottom: 14px; border-collapse: collapse; }
-        .stats td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; }
-        .stats .lab { font-weight: bold; width: 42%; background: #f5f5f5; }
-        table.days { width: 100%; border-collapse: collapse; font-size: 9px; }
-        table.days th, table.days td { border: 1px solid #ddd; padding: 4px 5px; text-align: left; }
-        table.days th { background: #eee; }
+        @page { margin: 0; }
+        body { 
+            font-family: 'DejaVu Sans', sans-serif; 
+            color: #09090b; 
+            line-height: 1.4; 
+            font-size: 10px; 
+            margin: 0; 
+            background: #ffffff;
+        }
+        
+        .page-wrapper { padding: 1.5cm; }
+
+        /* Header Moderno */
+        .header { border-bottom: 4px solid #10b981; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo { font-size: 26px; font-weight: 900; color: #10b981; text-transform: uppercase; letter-spacing: -1.5px; }
+        .logo span { color: #09090b; }
+        .tagline { font-size: 8px; color: #71717a; text-transform: uppercase; font-weight: 800; letter-spacing: 2px; margin-top: -5px; }
+        
+        .report-badge { 
+            background: #f0fdf4; 
+            color: #166534; 
+            padding: 4px 12px; 
+            border-radius: 6px; 
+            font-size: 8px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            display: inline-block; 
+            margin-bottom: 8px;
+            border: 1px solid #bbf7d0;
+        }
+        .report-title { font-size: 24px; font-weight: 900; margin: 0; color: #09090b; text-transform: uppercase; }
+        
+        /* Box de Informações */
+        .user-box { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 15px; padding: 20px; margin-top: 25px; }
+        .user-table { width: 100%; border: 0; }
+        .user-table td { padding: 4px 0; border: 0; }
+        .label { color: #71717a; font-weight: 700; font-size: 8px; text-transform: uppercase; width: 90px; }
+        .value { color: #09090b; font-weight: 800; font-size: 10px; }
+
+        /* QR Code & Validação */
+        .qr-section { float: right; text-align: center; width: 120px; margin-top: -110px; }
+        .qr-box { background: white; border: 1px solid #e4e4e7; padding: 10px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .qr-image { width: 85px; height: 85px; }
+        .qr-text { font-size: 7px; color: #71717a; margin-top: 8px; text-transform: uppercase; font-weight: 800; }
+
+        /* Grid de Resumo */
+        .summary-grid { width: 100%; margin: 30px 0; border-collapse: separate; border-spacing: 12px 0; margin-left: -12px; }
+        .card { background: #ffffff; border: 1px solid #e4e4e7; border-radius: 15px; padding: 18px; }
+        .card-title { font-size: 8px; font-weight: 800; color: #71717a; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #f4f4f5; padding-bottom: 6px; }
+        .card-value { font-size: 18px; font-weight: 900; color: #09090b; }
+        .card-unit { font-size: 9px; color: #a1a1aa; font-weight: 600; margin-left: 3px; }
+        .card-trend { font-size: 7px; color: #a1a1aa; margin-top: 6px; }
+
+        /* Tabela de Registros */
+        .section-title { font-size: 11px; font-weight: 900; color: #09090b; text-transform: uppercase; margin: 35px 0 15px; border-left: 4px solid #10b981; padding-left: 12px; letter-spacing: 1px; }
+        
+        table.days { width: 100%; border-collapse: separate; border-spacing: 0 5px; }
+        table.days th { text-align: left; padding: 12px; color: #71717a; font-size: 8px; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid #f4f4f5; }
+        table.days td { padding: 12px; background: #fafafa; border-top: 1px solid #e4e4e7; border-bottom: 1px solid #e4e4e7; }
+        table.days tr td:first-child { border-left: 1px solid #e4e4e7; border-top-left-radius: 10px; border-bottom-left-radius: 10px; font-weight: 800; color: #09090b; }
+        table.days tr td:last-child { border-right: 1px solid #e4e4e7; border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
         .num { text-align: right; }
-        .foot { margin-top: 16px; font-size: 9px; color: #777; }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+
+        /* Footer */
+        .footer { 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1cm 1.5cm;
+            border-top: 1px solid #f4f4f5; 
+            text-align: center; 
+            font-size: 8px; 
+            color: #a1a1aa;
+            background: #fafafa;
+        }
+        .hash-id { color: #d4d4d8; font-family: monospace; letter-spacing: 1px; }
     </style>
 </head>
 <body>
-    <table style="width: 100%; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px;">
-        <tr>
-            <td style="width: 65%; vertical-align: top;">
-                <img src="{{ public_path('images/logo_Rodape.png') }}" alt="NexShape" style="width: 140px; margin-bottom: 15px;">
-                <h1 style="color: #1a1a1a; margin: 0; font-size: 24px; font-weight: 900;">RELATÓRIO DE PERFORMANCE</h1>
-                <p style="color: #666; font-size: 10px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">
-                    Inteligência em Saúde & Performance Elite
-                </p>
-                
-                <div style="margin-top: 20px;">
-                    <table style="width: 100%; font-size: 10px;">
-                        <tr>
-                            <td style="color: #888; width: 120px;">PACIENTE:</td>
-                            <td style="font-weight: bold; color: #333;">{{ $user->name }}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #888;">PROFISSIONAL:</td>
-                            <td style="font-weight: bold; color: #333;">{{ $user->activeProfessional->name ?? 'NexShape Academy' }}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #888;">ID DO DOCUMENTO:</td>
-                            <td style="font-family: monospace; color: #555;">{{ $reportRecord->document_id }}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #888;">VERSÃO:</td>
-                            <td style="color: #333;"><strong>v{{ $reportRecord->version }}</strong> (Incremental)</td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-            <td style="width: 35%; text-align: right; vertical-align: top;">
-                <div style="display: inline-block; text-align: center; border: 1px solid #eee; padding: 10px; border-radius: 10px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ urlencode($validationUrl) }}" alt="QR Code" style="width: 100px; height: 100px;">
-                    <p style="font-size: 7px; color: #999; margin-top: 5px; text-transform: uppercase;">Aponte para validar<br>autenticidade</p>
-                </div>
-                <p style="font-size: 8px; color: #aaa; margin-top: 10px;">
-                    Gerado em: {{ $reportRecord->generated_at->format('d/m/Y H:i:s') }}
-                </p>
-            </td>
-        </tr>
-    </table>
-
-    <div style="background: #fafafa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #f0f0f0;">
-        <p style="margin: 0; font-size: 11px; color: #444;">
-            <strong>Contexto da Análise:</strong> Referente ao mês de <strong>{{ $monthLabel }}</strong>. 
-            Período de coleta: <strong>{{ $rangeLabel }}</strong>.
-        </p>
-    </div>
-
-    <table class="stats" aria-label="Resumo">
-        <tr>
-            <td class="lab">Média kcal / dia (com registo alimentar)</td>
-            <td>{{ $days_with_food > 0 ? $avg_kcal . ' kcal (' . $days_with_food . ' dia(s))' : '—' }}</td>
-        </tr>
-        <tr>
-            <td class="lab">Exercício no período</td>
-            <td>{{ $total_ex_min }} min · {{ $total_ex_kcal }} kcal indicadas</td>
-        </tr>
-        <tr>
-            <td class="lab">Peso (variação no período, quando aplicável)</td>
-            <td>
-                @if ($delta_weight !== null)
-                    {{ sprintf('%+.2f', $delta_weight) }} kg
-                    @if ($first_weight !== null && $last_weight !== null)
-                        ({{ number_format($first_weight, 2, ',', '.') }} → {{ number_format($last_weight, 2, ',', '.') }} kg)
-                    @endif
-                @else
-                    —
-                @endif
-            </td>
-        </tr>
-    </table>
-
-    <p style="margin:0 0 6px; font-weight:bold;">Detalhe por dia</p>
-    <table class="days">
-        <thead>
-            <tr>
-                <th>Dia</th>
-                <th class="num">kcal</th>
-                <th class="num">Ex. min</th>
-                <th class="num">Ex. kcal</th>
-                <th class="num">Peso kg</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($days as $r)
+    <div class="page-wrapper">
+        <div class="header">
+            <table style="width: 100%;">
                 <tr>
-                    <td>{{ $r['label'] }}</td>
-                    <td class="num">{{ $r['kcal_in'] > 0 ? $r['kcal_in'] : '—' }}</td>
-                    <td class="num">{{ $r['ex_min'] > 0 ? $r['ex_min'] : '—' }}</td>
-                    <td class="num">{{ $r['ex_kcal'] > 0 ? $r['ex_kcal'] : '—' }}</td>
-                    <td class="num">{{ $r['weight'] !== null ? number_format($r['weight'], 2, ',', '.') : '—' }}</td>
+                    <td style="border: 0;">
+                        <div class="logo">Nex<span>Shape</span></div>
+                        <div class="tagline">Inteligência em Performance Elite</div>
+                    </td>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </table>
+            
+            <div style="margin-top: 35px;">
+                <div class="report-badge">Performance Mensal Analítica</div>
+                <h1 class="report-title">{{ $monthLabel }}</h1>
+            </div>
 
-    <p class="foot" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-        Gerado em {{ $reportRecord->generated_at->format('d/m/Y H:i') }}. Versão: <strong>v{{ $reportRecord->version }}</strong>. 
-        Hash de Autenticidade: <span style="font-family: monospace; font-size: 8px;">{{ $reportRecord->hash }}</span><br>
-        Este documento é digitalmente rastreável. A validação pode ser feita via QR Code ou no portal oficial da NexShape.
-        Não substitui acompanhamento profissional de saúde ou nutrição.
-    </p>
+            <div class="user-box">
+                <table class="user-table">
+                    <tr>
+                        <td class="label">Atleta/Paciente</td>
+                        <td class="value">{{ $user->name }}</td>
+                        <td class="label">Período Fiscal</td>
+                        <td class="value">{{ $rangeLabel }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Certificação</td>
+                        <td class="value">#{{ str_pad($reportRecord->document_id, 10, '0', STR_PAD_LEFT) }}</td>
+                        <td class="label">Versão</td>
+                        <td class="value">{{ $reportRecord->version }}.0.0 - Premium</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="qr-section">
+                <div class="qr-box">
+                    <img src="{{ $qrCode }}" class="qr-image" alt="QR Validation">
+                </div>
+                <div class="qr-text">Certificado NexShape</div>
+            </div>
+        </div>
+
+        <table class="summary-grid">
+            <tr>
+                <td style="width: 33%;">
+                    <div class="card">
+                        <div class="card-title">Média Calórica</div>
+                        <div class="card-value">{{ $days_with_food > 0 ? round($avg_kcal) : '--' }}<span class="card-unit">kcal/dia</span></div>
+                        <div class="card-trend">Baseado em {{ $days_with_food }} dias registrados</div>
+                    </div>
+                </td>
+                <td style="width: 34%;">
+                    <div class="card" style="border-color: #10b981;">
+                        <div class="card-title" style="color: #10b981;">Atividade Física</div>
+                        <div class="card-value">{{ number_format($total_ex_min, 0, ',', '.') }}<span class="card-unit">min totais</span></div>
+                        <div class="card-trend">Gasto estimado: {{ number_format($total_ex_kcal, 0, ',', '.') }} kcal</div>
+                    </div>
+                </td>
+                <td style="width: 33%;">
+                    <div class="card">
+                        <div class="card-title">Variação Ponderal</div>
+                        <div class="card-value {{ $delta_weight <= 0 ? 'positive' : 'negative' }}">
+                            {{ $delta_weight !== null ? sprintf('%+.1f', $delta_weight) : '--' }}<span class="card-unit">kg</span>
+                        </div>
+                        <div class="card-trend">{{ $first_weight ?? '--' }}kg → {{ $last_weight ?? '--' }}kg</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">Log de Performance e Biometria Diária</div>
+        
+        <table class="days">
+            <thead>
+                <tr>
+                    <th>Data do Registro</th>
+                    <th class="num">Ingestão (kcal)</th>
+                    <th class="num">Treino (min)</th>
+                    <th class="num">Gasto (kcal)</th>
+                    <th class="num">Peso (kg)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($days as $r)
+                    <tr>
+                        <td>{{ $r['label'] }}</td>
+                        <td class="num" style="color: {{ $r['kcal_in'] > 2500 ? '#ef4444' : '#09090b' }}">{{ $r['kcal_in'] > 0 ? number_format($r['kcal_in'], 0, ',', '.') : '—' }}</td>
+                        <td class="num">{{ $r['ex_min'] > 0 ? $r['ex_min'] : '—' }}</td>
+                        <td class="num">{{ $r['ex_kcal'] > 0 ? number_format($r['ex_kcal'], 0, ',', '.') : '—' }}</td>
+                        <td class="num" style="font-weight: 800;">{{ $r['weight'] !== null ? number_format($r['weight'], 1, ',', '.') : '—' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <div class="footer">
+            Este relatório analítico foi gerado pela Inteligência Artificial NexBot para fins de monitoramento de performance.<br>
+            <span class="hash-id">AUTENTICIDADE: {{ $reportRecord->hash }}</span><br>
+            NexShape Academy © {{ date('Y') }} - Todos os direitos reservados.
+        </div>
+    </div>
 </body>
 </html>

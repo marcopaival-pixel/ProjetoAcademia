@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BodyAnalysis extends Model
 {
+    use Traits\HasClinic;
     use HasFactory;
 
     protected $table = 'body_analyses';

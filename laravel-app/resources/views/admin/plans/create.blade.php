@@ -46,12 +46,15 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-black text-gray-500 mb-3 uppercase tracking-widest ml-1">Tipo de Usuário</label>
+                        <label class="block text-xs font-black text-gray-500 mb-3 uppercase tracking-widest ml-1">Tipo de Plano</label>
                         <select name="type" required
                             class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all">
-                            <option value="student" {{ old('type') == 'student' ? 'selected' : '' }}>Aluno</option>
-                            <option value="professional" {{ old('type') == 'professional' ? 'selected' : '' }}>Profissional</option>
-                            <option value="full" {{ old('type') == 'full' ? 'selected' : '' }}>Completo (Ambos)</option>
+                            <option value="student"      {{ old('type') == 'student'      ? 'selected' : '' }}>Aluno (B2C)</option>
+                            <option value="personal"     {{ old('type') == 'personal'     ? 'selected' : '' }}>Personal Trainer</option>
+                            <option value="nutritionist" {{ old('type') == 'nutritionist' ? 'selected' : '' }}>Nutricionista</option>
+                            <option value="professional" {{ old('type') == 'professional' ? 'selected' : '' }}>Profissional (Legado)</option>
+                            <option value="clinic"       {{ old('type') == 'clinic'       ? 'selected' : '' }}>Academia / Estúdio (B2B)</option>
+                            <option value="full"         {{ old('type') == 'full'         ? 'selected' : '' }}>Completo (Todos os perfis)</option>
                         </select>
                         @error('type') <p class="text-red-400 text-xs mt-2 ml-2 italic">{{ $message }}</p> @enderror
                     </div>
@@ -153,6 +156,34 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Roles / Perfis Vinculados -->
+            <div class="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 md:col-span-2">
+                <h3 class="text-xl font-bold text-white flex items-center gap-3 mb-2">
+                    <div class="w-8 h-8 bg-violet-500/20 rounded-xl flex items-center justify-center text-violet-400 text-sm border border-violet-500/20">
+                        <i class="fas fa-user-tag"></i>
+                    </div>
+                    Perfis que podem assinar este plano
+                </h3>
+                <p class="text-xs text-gray-600 mb-8 ml-1">Deixe em branco para tornar o plano visível a todos os perfis.</p>
+
+                <div class="flex flex-wrap gap-4">
+                    @foreach($roles as $role)
+                    <label class="flex items-center gap-3 cursor-pointer group p-3 pr-5 rounded-2xl border border-white/[0.05] hover:bg-white/[0.04] hover:border-violet-500/30 transition-all">
+                        <input type="checkbox"
+                               name="role_ids[]"
+                               value="{{ $role->id }}"
+                               class="hidden peer"
+                               {{ is_array(old('role_ids')) && in_array($role->id, old('role_ids')) ? 'checked' : '' }}>
+                        <div class="w-5 h-5 rounded-md border-2 border-white/10 flex items-center justify-center peer-checked:bg-violet-600 peer-checked:border-violet-600 transition-all">
+                            <i class="fas fa-check text-white text-[9px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                        </div>
+                        <span class="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">{{ $role->label }}</span>
+                    </label>
+                    @endforeach
+                </div>
+                @error('role_ids') <p class="text-red-400 text-xs mt-4 ml-2 italic">{{ $message }}</p> @enderror
             </div>
 
             <!-- Features -->

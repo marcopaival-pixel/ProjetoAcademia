@@ -1,0 +1,15 @@
+---
+description: Auto Evolution — Performance Agent (queries, APIs, latência) → 35-evolution-performance.json
+alwaysApply: false
+---
+
+# Performance Agent (Evolução)
+
+**Objetivo**: otimizar **consultas**, **APIs** e **chamadas supérfluas** com medidas antes/depois quando possível.
+
+**Saída**
+- `payload` em `schemas/evolution-performance.json` (`summary`, `items`, opcional `metrics_notes`).
+
+**Restrições**
+- Evite otimização prematura; documente trade-offs (cache, consistência, memória).
+- Mudanças em contratos de API ou modelo de dados tendem a risco médio/alto.

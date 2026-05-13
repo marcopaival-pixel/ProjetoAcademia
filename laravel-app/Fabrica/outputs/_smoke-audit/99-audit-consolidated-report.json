@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "run_id": "smoke-audit",
+  "agent": "System Audit Orchestrator",
+  "artifact_type": "audit-consolidated-report",
+  "created_at": "2026-05-13T12:00:00Z",
+  "depends_on": [
+    "outputs/_smoke-audit/20-audit-code-quality.json",
+    "outputs/_smoke-audit/21-audit-architecture.json",
+    "outputs/_smoke-audit/22-audit-performance.json",
+    "outputs/_smoke-audit/23-audit-feature-overload.json",
+    "outputs/_smoke-audit/24-audit-duplication.json",
+    "outputs/_smoke-audit/25-audit-security.json",
+    "outputs/_smoke-audit/26-audit-test-coverage.json"
+  ],
+  "assumptions": [],
+  "open_questions": [],
+  "payload": {
+    "system_overview": "Smoke: relatório consolidado mínimo para validação.",
+    "critical_issues": [],
+    "medium_issues": [],
+    "low_issues": [],
+    "remove_candidates": [],
+    "redundant_features": [],
+    "recommended_improvements": [],
+    "refactoring_roadmap": [
+      {
+        "phase": 1,
+        "name": "Baseline",
+        "goals": "Manter sistema estável enquanto instrumenta métricas.",
+        "steps": ["Rodar auditoria real em código de produto"],
+        "exit_criteria": ["Artefatos specialist preenchidos"],
+        "production_safe_default": true
+      }
+    ],
+    "technical_debt": [],
+    "builder_integration": {
+      "next_builder_actions": [
+        "Opcional: abrir revisão de PRD/arquitetura com base nos achados reais."
+      ]
+    }
+  }
+}

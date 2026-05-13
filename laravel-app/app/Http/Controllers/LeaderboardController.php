@@ -68,38 +68,53 @@ class LeaderboardController extends Controller
 
         $eliteRanking = $candidateIds->isEmpty()
             ? collect()
-            : User::whereIn('id', $candidateIds)->get()->map(function ($user) {
-                $consistency = LoadLog::where('user_id', $user->id)
+            : User::whereIn('id', $candidateIds)->get()->map(function ($user) use ($consistencyRanking, $strengthRanking, $nutritionRanking) {
+                $consistencyCount = LoadLog::where('user_id', $user->id)
                     ->where('log_date', '>=', now()->subDays(30))
                     ->distinct()
                     ->count('log_date');
 
-                $maxStrength = (float) (LoadLog::where('user_id', $user->id)
+                $maxStrengthValue = (float) (LoadLog::where('user_id', $user->id)
                     ->selectRaw('MAX(weight_kg / (1.0278 - 0.0278 * reps_done)) as one_rm')
                     ->where('reps_done', '>', 0)
                     ->value('one_rm') ?? 0);
 
-                $nutrition = FoodEntry::where('user_id', $user->id)
+                $nutritionCount = FoodEntry::where('user_id', $user->id)
                     ->where('entry_date', '>=', now()->subDays(7))
                     ->count();
 
-                $score = ($consistency * 50) + ($maxStrength * 2) + ($nutrition * 10);
+                $score = ($consistencyCount * 50) + ($maxStrengthValue * 2) + ($nutritionCount * 10);
 
+                // Categoria e Nível
+                $category = 'Iniciante';
                 $level = 'Bronze';
+                
                 if ($score > 1500) {
+                    $category = 'Elite';
                     $level = 'Diamond';
                 } elseif ($score > 1000) {
+                    $category = 'Elite';
                     $level = 'Platinum';
                 } elseif ($score > 600) {
+                    $category = 'Intermediário';
                     $level = 'Gold';
                 } elseif ($score > 300) {
+                    $category = 'Intermediário';
                     $level = 'Silver';
                 }
+
+                // Medalhas Dinâmicas
+                $medals = [];
+                if ($consistencyRanking->where('id', $user->id)->first()) $medals[] = ['type' => 'constancy', 'icon' => 'clock', 'color' => 'blue', 'label' => 'Metrônomo'];
+                if ($strengthRanking->where('user_name', $user->name)->first()) $medals[] = ['type' => 'strength', 'icon' => 'dumbbell', 'color' => 'amber', 'label' => 'Titã'];
+                if ($nutritionRanking->where('name', $user->name)->first()) $medals[] = ['type' => 'nutrition', 'icon' => 'leaf', 'color' => 'emerald', 'label' => 'Imunidade'];
 
                 return (object) [
                     'name' => $user->name,
                     'score' => round($score),
                     'level' => $level,
+                    'category' => $category,
+                    'medals' => $medals,
                     'is_premium' => $user->hasPremiumAccess(),
                 ];
             })->sortByDesc('score')->values()->take(10);

@@ -306,7 +306,7 @@
                                             <i class="fas fa-users mr-1"></i> {{ $u->patients->count() }} Pacientes
                                         </span>
                                     @elseif(($isAluno || $isPaciente) && $u->profile)
-                                        <span class="text-[10px] text-white font-bold">{{ $u->profile->goal ?? 'Objetivo não definido' }}</span>
+                                        <span class="text-[10px] text-white font-bold">{{ $goals[$u->profile->goal]['label'] ?? $u->profile->goal ?? 'Objetivo não definido' }}</span>
                                         <div class="flex items-center gap-2 mt-1">
                                             @php
                                                 $latestWeight = $u->weightEntries()->latest('weighed_at')->first();

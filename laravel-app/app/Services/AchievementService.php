@@ -2,86 +2,130 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
-use App\Models\LoadLog;
+use App\Models\UserAchievement;
+use App\Models\WaterEntry;
+use App\Models\ExerciseEntry;
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class AchievementService
 {
-    private static $badges = [
-        'pioneer' => [
-            'name' => 'Pioneiro',
-            'desc' => 'Completou o primeiro treino no sistema.',
-            'icon' => '🚀'
-        ],
-        'iron_heart' => [
-            'name' => 'Coração de Ferro',
-            'desc' => 'Completou 10 sessões de treino.',
-            'icon' => '❤️'
-        ],
-        'beast_mode' => [
-            'name' => 'Beast Mode',
-            'desc' => 'Ergueu 100kg em qualquer exercício.',
-            'icon' => '💪'
-        ],
-        'consistency_king' => [
-            'name' => 'Rei da Constância',
-            'desc' => 'Treinou 5 dias seguidos.',
-            'icon' => '👑'
-        ],
-        'data_master' => [
-            'name' => 'Mestre dos Dados',
-            'desc' => 'Aceitou os termos LGPD e configurou o perfil.',
-            'icon' => '🛡️'
-        ]
-    ];
-
-    public static function check(int $userId)
+    public function getUserBadges(User $user)
     {
-        $newBadges = [];
+        $profile = $user->profile;
+        $targetWater = $profile->water_target_ml ?? 2500;
+        
+        // 1. Camelo de Elite (7 dias de água)
+        $daysWithTargetWater = WaterEntry::where('user_id', $user->id)
+            ->selectRaw('entry_date, SUM(amount_ml) as total')
+            ->groupBy('entry_date')
+            ->having('total', '>=', $targetWater)
+            ->get()
+            ->count();
 
-        // 1. Pioneer (any log)
-        if (!self::has($userId, 'pioneer')) {
-            if (DB::table('load_logs')->where('user_id', $userId)->exists()) {
-                self::award($userId, 'pioneer');
+        // 2. Monstro de Carga (Volume Total)
+        // Cache por 1 hora para performance
+        $totalVolume = Cache::remember("user_volume_{$user->id}", 3600, function() use ($user) {
+            $total = 0;
+            $exercises = ExerciseEntry::where('user_id', $user->id)->get();
+            foreach($exercises as $exe) {
+                $sets = is_array($exe->sets_data) ? $exe->sets_data : json_decode($exe->sets_data ?? '[]', true);
+                if($sets) {
+                    foreach($sets as $s) {
+                        $total += (float)($s['weight'] ?? 0) * (float)($s['reps'] ?? 0);
+                    }
+                }
             }
-        }
+            return $total;
+        });
 
-        // 2. Iron Heart (10 logs)
-        if (!self::has($userId, 'iron_heart')) {
-            $count = DB::table('load_logs')
-                ->where('user_id', $userId)
-                ->select(DB::raw('count(distinct log_date) as c'))
-                ->first()->c;
-            if ($count >= 10) self::award($userId, 'iron_heart');
-        }
+        // 3. Em Chamas (5 treinos na semana)
+        $trainingsThisWeek = ExerciseEntry::where('user_id', $user->id)
+            ->whereBetween('entry_date', [now()->startOfWeek(), now()->endOfWeek()])
+            ->distinct('entry_date')
+            ->count();
 
-        // 3. Beast Mode (100kg in any set)
-        if (!self::has($userId, 'beast_mode')) {
-            if (DB::table('load_logs')->where('user_id', $userId)->where('weight_kg', '>=', 100)->exists()) {
-                self::award($userId, 'beast_mode');
+        $badgeDefinitions = [
+            'camelo' => [
+                'title' => 'Camelo de Elite',
+                'description' => "Bata a meta de água ({$targetWater}ml) por 7 dias.",
+                'icon' => 'fa-solid fa-glass-water',
+                'color' => 'text-blue-500',
+                'bg' => 'bg-blue-500/10 border-blue-500/20',
+                'meta' => 7,
+                'current' => $daysWithTargetWater,
+            ],
+            'monstro' => [
+                'title' => 'Monstro de Carga',
+                'description' => "Mova um volume total de 10.000kg em seus treinos.",
+                'icon' => 'fa-solid fa-dumbbell',
+                'color' => 'text-emerald-500',
+                'bg' => 'bg-emerald-500/10 border-emerald-500/20',
+                'meta' => 10000,
+                'current' => $totalVolume,
+            ],
+            'fogo' => [
+                'title' => 'Em Chamas',
+                'description' => "Treine pelo menos 5 vezes nesta semana.",
+                'icon' => 'fa-solid fa-fire',
+                'color' => 'text-orange-500',
+                'bg' => 'bg-orange-500/10 border-orange-500/20',
+                'meta' => 5,
+                'current' => $trainingsThisWeek,
+            ]
+        ];
+
+        $unlockedBadges = UserAchievement::where('user_id', $user->id)
+            ->get()
+            ->keyBy('badge_code');
+
+        $finalBadges = [];
+        $newlyUnlocked = [];
+        foreach ($badgeDefinitions as $code => $data) {
+            $isUnlocked = $data['current'] >= $data['meta'];
+            
+            // Persistir se desbloqueado agora e não estava antes
+            if ($isUnlocked && !isset($unlockedBadges[$code])) {
+                $achievement = UserAchievement::create([
+                    'user_id' => $user->id,
+                    'badge_code' => $code,
+                    'title' => $data['title'],
+                    'description' => $data['description'],
+                    'unlocked_at' => now(),
+                ]);
+                $unlockedBadges[$code] = $achievement;
+                $newlyUnlocked[] = $data['title'];
             }
+
+            $finalBadges[$code] = array_merge($data, [
+                'unlocked' => $isUnlocked,
+                'unlocked_at' => $unlockedBadges[$code]->unlocked_at ?? null,
+                'progress' => min(100, ($data['current'] / $data['meta']) * 100),
+            ]);
         }
-    }
 
-    private static function has($userId, $slug)
-    {
-        return DB::table('achievements')->where('user_id', $userId)->where('badge_slug', $slug)->exists();
-    }
-
-    private static function award($userId, $slug)
-    {
-        DB::table('achievements')->insert(['user_id' => $userId, 'badge_slug' => $slug, 'achieved_at' => now()]);
+        return [
+            'all' => $finalBadges,
+            'new' => $newlyUnlocked
+        ];
     }
 
     public static function getList($userId)
     {
-        $unlocked = DB::table('achievements')->where('user_id', $userId)->pluck('badge_slug')->toArray();
+        $user = User::find($userId);
+        if (!$user) return collect([]);
         
-        $result = [];
-        foreach (self::$badges as $slug => $data) {
-            $data['unlocked'] = in_array($slug, $unlocked);
-            $result[] = (object) $data;
-        }
-        return $result;
+        $service = app(self::class);
+        $result = $service->getUserBadges($user);
+        
+        return collect($result['all'])->map(function($badge) {
+            return (object) [
+                'unlocked' => $badge['unlocked'],
+                'icon' => $badge['icon'],
+                'name' => $badge['title'],
+                'color' => $badge['color'],
+                'bg' => $badge['bg'],
+            ];
+        });
     }
 }

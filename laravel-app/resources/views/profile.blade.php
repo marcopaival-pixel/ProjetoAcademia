@@ -372,7 +372,7 @@
                             <label for="goal" class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Objetivo Primário</label>
                             <select id="goal" name="goal" class="w-full bg-zinc-950 border border-zinc-800 p-5 rounded-2xl text-white text-xs font-black outline-none focus:border-emerald-500/50 transition-all shadow-inner appearance-none cursor-pointer uppercase tracking-widest">
                                 <option value="lose" @selected(old('goal', $u->goal) === 'lose')>🔥 Perder Peso / Emagrecer</option>
-                                <option value="maintain" @selected(old('goal', $u->goal) === 'maintain')>⚖️ Manter Peso Atual</option>
+                                <option value="maintain" @selected(old('goal', $u->goal) === 'maintain')>⚖️ Saúde e Bem-Estar</option>
                                 <option value="gain" @selected(old('goal', $u->goal) === 'gain')>💪 Ganhar Massa Muscular</option>
                             </select>
                         </div>
@@ -448,11 +448,29 @@
                     <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Galeria de Conquistas</h3>
                 </div>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 text-center">
                 @foreach(\App\Services\AchievementService::getList(auth()->id()) as $badge)
-                    <div class="p-4 bg-zinc-950 rounded-3xl border border-zinc-800 {{ $badge->unlocked ? 'opacity-100' : 'opacity-20 grayscale' }}">
-                        <div class="text-3xl mb-2">{{ $badge->icon }}</div>
-                        <p class="text-[8px] font-black text-white uppercase tracking-widest">{{ $badge->name }}</p>
+                    <div class="group relative p-4 bg-zinc-900/40 border {{ $badge->unlocked ? 'border-zinc-800' : 'border-zinc-800/30' }} rounded-[2.5rem] transition-all duration-500 {{ $badge->unlocked ? 'hover:border-white/20 hover:bg-zinc-900 shadow-2xl' : 'opacity-30' }}">
+                        @if($badge->unlocked)
+                            <div class="absolute -inset-px bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2.5rem]"></div>
+                        @endif
+                        
+                        <div class="relative z-10 flex flex-col items-center">
+                            <!-- Icon Container -->
+                            <div class="w-14 h-14 mb-4 rounded-2xl flex items-center justify-center text-xl transition-all duration-500 {{ $badge->unlocked ? $badge->bg . ' ' . $badge->color . ' shadow-lg transform group-hover:-rotate-12 group-hover:scale-110' : 'bg-zinc-800/50 text-zinc-700' }}">
+                                <i class="{{ $badge->icon }} notranslate"></i>
+                            </div>
+                            
+                            <!-- Status & Title -->
+                            <div class="space-y-1">
+                                <p class="text-[7px] font-black uppercase tracking-[0.3em] {{ $badge->unlocked ? 'text-emerald-500' : 'text-zinc-700' }}">
+                                    {{ $badge->unlocked ? 'Desbloqueado' : 'Bloqueado' }}
+                                </p>
+                                <p class="text-[9px] font-black {{ $badge->unlocked ? 'text-white' : 'text-zinc-600' }} uppercase tracking-tighter italic leading-tight">
+                                    {{ $badge->name }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 @endforeach
             </div>

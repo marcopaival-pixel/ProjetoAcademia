@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     @stack('styles')
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -100,8 +100,8 @@
                 </a>
                 
                 <nav class="hidden md:flex items-center gap-10">
-                    <a href="#features" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Recursos</a>
-                    <a href="#pricing" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Preços</a>
+                    <a href="{{ route('home') }}#features" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Recursos</a>
+                    <a href="{{ route('home') }}#pricing" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Preços</a>
                     <div class="w-px h-6 bg-zinc-800 mx-2"></div>
                     <a href="{{ route('login') }}" class="text-[10px] font-black text-zinc-400 hover:text-emerald-500 uppercase tracking-[0.2em] transition-all">Autenticar</a>
                     <a href="{{ route('register') }}" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-xl shadow-emerald-500/10 active:scale-95">
@@ -148,8 +148,8 @@
                 <div class="md:col-span-2 space-y-8">
                     <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em] italic">Ecossistema</h4>
                     <ul class="space-y-4">
-                        <li><a href="#features" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Recursos</a></li>
-                        <li><a href="#pricing" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Planos</a></li>
+                        <li><a href="{{ route('home') }}#features" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Recursos</a></li>
+                        <li><a href="{{ route('home') }}#pricing" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Planos</a></li>
                         <li><a href="{{ route('register') }}" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Criar Conta</a></li>
                     </ul>
                 </div>
@@ -183,8 +183,71 @@
     </footer>
     @endif
 
+    <!-- Alpine.js Plugins (MUST load before core) -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+
+    <!-- Alpine.js Core -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            // Helper para parse seguro de JSON
+            const safeParse = (key, fallback) => {
+                try {
+                    const item = localStorage.getItem(key);
+                    return item ? JSON.parse(item) : fallback;
+                } catch (e) {
+                    console.error('Erro ao ler localStorage:', key, e);
+                    return fallback;
+                }
+            };
+
+            // Registrar componente de navegação da sidebar
+            Alpine.data('sidebarNav', () => ({
+                openGroups: safeParse('sidebar_open_groups', []),
+                openProfile: false,
+                
+                toggleGroup(id) {
+                    if (this.openGroups.includes(id)) {
+                        this.openGroups = this.openGroups.filter(g => g !== id);
+                    } else {
+                        this.openGroups.push(id);
+                    }
+                    localStorage.setItem('sidebar_open_groups', JSON.stringify(this.openGroups));
+                },
+                
+                isGroupOpen(id) {
+                    // Garantia de que openGroups é um array e o id está lá
+                    return Array.isArray(this.openGroups) && this.openGroups.includes(id);
+                },
+                
+                init() {
+                    // Carregar grupos iniciais vindos do servidor (data-initial-groups no elemento)
+                    const el = this.$el;
+                    if (el && el.dataset.initialGroups) {
+                        try {
+                            const initialGroups = JSON.parse(el.dataset.initialGroups);
+                            if (Array.isArray(initialGroups)) {
+                                initialGroups.forEach(id => {
+                                    if (!this.openGroups.includes(id)) {
+                                        this.openGroups.push(id);
+                                    }
+                                });
+                                localStorage.setItem('sidebar_open_groups', JSON.stringify(this.openGroups));
+                            }
+                        } catch (e) {
+                            console.warn('Sidebar: Falha ao processar grupos iniciais:', e);
+                        }
+                    }
+                    
+                    // Re-inicializar ícones Lucide apenas se necessário
+                    // Removido daqui para evitar conflito com o carregamento global
+                }
+            }));
+        });
+    </script>
+
+
     @stack('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -209,7 +272,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
     <script src="{{ asset('js/demo-tour.js') }}"></script>
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    {{-- Removido script redundante: asset('js/app.js') já está no @vite --}}
 
 
     <script>
@@ -231,20 +294,6 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    const emailBadge = document.querySelector('.nav-link[href*="internal-email"] .badge');
-                    const sidebarEmailBadge = document.querySelector('.nav-link-email.active .badge') || document.querySelector('.nav-link-email[href*="inbox"] .badge');
-                    const sidebarMainEmailBadge = document.querySelector('.nav-link[href*="internal-email"] .bg-red-500');
-                    
-                    if (data.emails > 0) {
-                        if (emailBadge) { emailBadge.textContent = data.emails; emailBadge.style.display = 'inline-block'; }
-                        if (sidebarEmailBadge) { sidebarEmailBadge.textContent = data.emails; sidebarEmailBadge.style.display = 'inline-block'; }
-                        if (sidebarMainEmailBadge) { sidebarMainEmailBadge.textContent = data.emails; sidebarMainEmailBadge.style.display = 'inline-block'; }
-                    } else {
-                        if (emailBadge) emailBadge.style.display = 'none';
-                        if (sidebarEmailBadge) sidebarEmailBadge.style.display = 'none';
-                        if (sidebarMainEmailBadge) sidebarMainEmailBadge.style.display = 'none';
-                    }
-
                     const sidebarMsgBadge = document.querySelector('.nav-link[href*="/messages"] .bg-blue-500');
                     if (data.messages > 0) {
                         if (sidebarMsgBadge) {
@@ -268,70 +317,155 @@
             });
         }
     </script>
-
     <!-- Premium Upgrade Modal (Global) -->
-    <div id="premiumModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-6 bg-zinc-950/90 backdrop-blur-xl animate-fade-in" style="display: none;">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[3.5rem] p-10 shadow-3xl animate-fade-in-up text-center space-y-8 relative overflow-hidden">
-            <div class="absolute -top-10 -left-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            
-            <div class="w-24 h-24 bg-emerald-500 text-zinc-950 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/20 transform -rotate-12">
-                <i data-lucide="crown" class="w-12 h-12"></i>
-            </div>
-            
-            <div class="space-y-3">
-                <h3 class="text-4xl font-black text-white tracking-tighter uppercase italic">Protocolo <span class="text-emerald-500">Premium</span></h3>
-                <p class="text-zinc-500 font-medium leading-relaxed">Esta funcionalidade exclusiva faz parte do plano **Performance Elite**. Evolua seu treino com processamento neural e biometria avançada.</p>
-            </div>
+    <div id="premiumModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-6 bg-zinc-950/40 backdrop-blur-md animate-fade-in" style="display: none;">
+        <div class="bg-zinc-900/90 border border-white/10 w-full max-w-xl rounded-[3rem] p-1 shadow-[0_0_50px_-12px_rgba(16,185,129,0.2)] animate-fade-in-up relative overflow-hidden group">
+            <!-- Background Decorative Glows -->
+            <div class="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px] pointer-events-none group-hover:bg-emerald-500/30 transition-all duration-700"></div>
+            <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-blue-500/20 transition-all duration-700"></div>
 
-            <div class="grid grid-cols-1 gap-4 pt-4">
-                <a href="{{ route('plano') }}" class="w-full py-6 bg-emerald-500 text-zinc-950 font-black rounded-3xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-3 shadow-xl text-xs uppercase tracking-[0.2em]">
-                    <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
-                    ATIVAR ACESSO ELITE
-                </a>
-                <button onclick="document.getElementById('premiumModal').style.display = 'none'" class="w-full py-5 bg-zinc-950 border border-zinc-800 text-zinc-600 font-black rounded-3xl hover:text-white transition-all text-[10px] uppercase tracking-widest">
-                    FECHAR
-                </button>
+            <div class="relative bg-zinc-950/50 backdrop-blur-xl rounded-[2.9rem] p-10 md:p-12 space-y-10 border border-white/5">
+                <!-- Icon & Badge -->
+                <div class="flex flex-col items-center gap-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 text-zinc-950 rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-500/40 transform -rotate-6 group-hover:rotate-0 transition-transform duration-500">
+                        <i data-lucide="crown" class="w-10 h-10 fill-current"></i>
+                    </div>
+                    <div class="px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <span class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Experiência Elite</span>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="text-center space-y-4">
+                    <h3 class="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
+                        POTENCIALIZAR <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">RESULTADOS</span>
+                    </h3>
+                    <p class="text-zinc-500 font-medium leading-relaxed max-w-md mx-auto text-sm md:text-base">
+                        Esta funcionalidade é exclusiva para membros **NexShape Premium**. Desbloqueie o poder total da inteligência artificial e biometria avançada.
+                    </p>
+                </div>
+
+                <!-- Benefits List -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+                    @foreach([
+                        ['icon' => 'zap', 'text' => 'IA Preditiva'],
+                        ['icon' => 'activity', 'text' => 'Laudos Bio'],
+                        ['icon' => 'trending-up', 'text' => 'Trends Elite'],
+                        ['icon' => 'shield-check', 'text' => 'Suporte VIP']
+                    ] as $benefit)
+                    <div class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900/50 border border-white/5 group/benefit hover:border-emerald-500/30 transition-all">
+                        <div class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                            <i data-lucide="{{ $benefit['icon'] }}" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{{ $benefit['text'] }}</span>
+                    </div>
+                    @endforeach
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col gap-4 pt-4">
+                    <a href="{{ route('plano') }}" class="w-full group/btn relative py-6 bg-emerald-500 text-zinc-950 font-black rounded-3xl overflow-hidden transition-all shadow-2xl shadow-emerald-500/20 active:scale-[0.98]">
+                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-400 to-emerald-600 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                        <div class="relative flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em]">
+                            <i data-lucide="sparkles" class="w-4 h-4 fill-current"></i>
+                            ATIVAR PROTOCOLO ELITE
+                        </div>
+                    </a>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <a href="{{ route('plano') }}" class="py-4 bg-zinc-900 border border-white/5 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center justify-center hover:bg-zinc-800 transition-all">
+                            Ver Planos
+                        </a>
+                        <a href="{{ route('ai-credits.index') }}" class="py-4 bg-zinc-900 border border-white/5 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center justify-center hover:bg-zinc-800 transition-all">
+                            Comprar Créditos
+                        </a>
+                    </div>
+                    
+                    <button onclick="document.getElementById('premiumModal').style.display = 'none'" class="w-full py-4 text-zinc-600 hover:text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all">
+                        CONTINUAR NO PLANO FREE
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        window.isPremiumUser = {{ auth()->check() && auth()->user()->hasPremiumAccess() ? 'true' : 'false' }};
+
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('[data-premium-locked]').forEach(el => {
-                el.addEventListener('click', function(e) {
-                    if (window.isPremiumUser === false) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const pModal = document.getElementById('premiumModal');
-                        if (pModal) pModal.style.display = 'flex';
+            // Interceptar cliques em elementos bloqueados para mostrar o modal
+            // Usando fase de bubble (false) para evitar interferência prematura no DOM
+            document.addEventListener('click', function(e) {
+                const lockedElement = e.target.closest('[data-premium-locked]');
+                if (lockedElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const modal = document.getElementById('premiumModal');
+                    if (modal) {
+                        modal.style.display = 'flex';
                     }
-                });
+                    return false;
+                }
+            }, false);
+
+            // Estilizar elementos bloqueados
+            document.querySelectorAll('[data-premium-locked]').forEach(el => {
+                el.style.cursor = 'pointer';
+                el.classList.add('premium-locked-overlay');
             });
 
-            const modal = document.getElementById('premiumModal');
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        this.style.display = 'none';
-                    }
-                });
-            }
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
         });
-        
-        window.isPremiumUser = {{ auth()->check() && auth()->user()->hasPremiumAccess() ? 'true' : 'false' }};
     </script>
 
     @if(auth()->check())
         @include('partials.onboarding_modal')
         @include('partials.ai-credits-modal')
+        @include('partials.omnichat-widget')
+        @include('partials.community-post-modal')
     @endif
     @include('partials.confirm-delete-modal')
     @include('partials.legal-modal')
     @include('partials.toast')
     @include('partials.error-modal')
+    @include('partials.success-modal')
     <x-demo-badge />
+
+    <!-- Global AI Brand Orbit (Senior Design Touch) -->
+    @if($loggedIn && !request()->routeIs('home'))
+    <div class="fixed bottom-8 right-8 z-[100] pointer-events-none select-none opacity-40 hover:opacity-100 transition-opacity duration-700 hidden lg:block">
+        <div class="relative flex items-center justify-center w-32 h-32">
+            <!-- Center Symbol -->
+            <div class="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 backdrop-blur-sm">
+                <i data-lucide="zap" class="w-5 h-5 text-emerald-500 animate-pulse"></i>
+            </div>
+            
+            <!-- Orbiting Text -->
+            <svg class="absolute inset-0 w-full h-full animate-spin-slow" viewBox="0 0 100 100">
+                <defs>
+                    <path id="globalOrbitPath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" />
+                </defs>
+                <text class="text-[4.5px] font-black fill-emerald-500/60 uppercase tracking-[0.4em] italic">
+                    <textPath href="#globalOrbitPath" startOffset="0%">
+                        NEXSHAPE AI • OTIMIZANDO PERFORMANCE •
+                    </textPath>
+                </text>
+            </svg>
+        </div>
+    </div>
+    <style>
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin-slow 25s linear infinite;
+        }
+    </style>
+    @endif
+    @include('partials.js-masks')
 </body>
 </html>

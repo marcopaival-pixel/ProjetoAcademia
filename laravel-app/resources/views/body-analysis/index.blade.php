@@ -229,6 +229,13 @@
         if (data.success) {
             document.getElementById('aiSummaryText').textContent = data.summary;
             document.getElementById('analysisActions').classList.remove('d-none');
+        } else {
+            if (data.code === 'credits_exceeded') {
+                window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
+            } else {
+                alert(data.error || 'Erro ao processar análise.');
+            }
+            overlay.classList.remove('hidden'); // Show upload button again
         }
     }
 

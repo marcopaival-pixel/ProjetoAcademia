@@ -52,7 +52,7 @@ class LoadProgressionController extends Controller
             }
         }
 
-        return view('progression.session-log', compact('plan'));
+        return view('progression.session-log', compact('plan', 'isPremium'));
     }
 
     public function storeLog(Request $request)

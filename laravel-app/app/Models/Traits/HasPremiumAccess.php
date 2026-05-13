@@ -13,64 +13,42 @@ trait HasPremiumAccess
 
     public function isPremiumActive(): bool
     {
-        if ($this->isPremiumCache !== null) {
-            return $this->isPremiumCache;
+        // 1. Administradores e Staff têm acesso total por definição
+        if ($this->is_admin || $this->hasRole(['professional', 'manager', 'instructor', 'supervisor', 'receptionist'])) {
+            return true;
         }
 
-        // Administradores e Profissionais têm acesso total
-        if ($this->is_admin || $this->hasRole('professional')) {
-            return $this->isPremiumCache = true;
-        }
-
-        // 1. Verificar nova estrutura de Assinatura (SaaS Premium)
-        $subscription = $this->relationLoaded('currentSubscription') ? $this->currentSubscription : $this->currentSubscription()->first();
-        if ($subscription) {
-            if ($subscription->status === \App\Models\Subscription::STATUS_FIN_ATIVO) {
-                return $this->isPremiumCache = true;
-            }
-            
-            // Se houver uma assinatura mas não estiver ATIVA, bloqueamos explicitamente
-            if (in_array($subscription->status, [\App\Models\Subscription::STATUS_FIN_PENDENTE, \App\Models\Subscription::STATUS_FIN_AGUARDANDO, \App\Models\Subscription::STATUS_FIN_RECUSADO])) {
-                return $this->isPremiumCache = false;
-            }
-        }
-
-        // 2. Verificar Assinatura Corporativa (B2B)
-        if ($this->academy_company_id) {
-            $company = $this->academyCompany;
-            if ($company) {
-                $corporateSub = $company->subscriptions()
-                    ->where('status', 'active')
-                    ->where('billing_type', 'corporate')
-                    ->where(function ($q) {
-                        $q->whereNull('end_date')
-                          ->orWhere('end_date', '>=', now()->toDateString());
-                    })
-                    ->exists();
-                
-                if ($corporateSub) {
-                    return $this->isPremiumCache = true;
-                }
-            }
-        }
-
-        // 3. Sistema de planos (PRO) - Legado ou Alunos
-        $activePlan = $this->relationLoaded('activePlan') ? $this->activePlan : $this->activePlan()->first();
-        
-        if ($activePlan && trim(strtoupper($activePlan->plan->name)) === 'PRO' && $activePlan->status === 'active') {
-            return $this->isPremiumCache = true;
-        }
-
-        // Legado (campo is_premium direto no users)
+        // 2. Verificar campo direto is_premium (Legado/Atalhos)
         if ($this->is_premium) {
-            $exp = $this->premium_expires_at;
-            if ($exp === null) {
-                return $this->isPremiumCache = true;
+            if ($this->premium_expires_at === null || $this->premium_expires_at >= now()) {
+                return true;
             }
-            return $this->isPremiumCache = ($exp >= now());
         }
 
-        return $this->isPremiumCache = false;
+        // 3. Verificar Assinatura (SaaS)
+        $subscription = $this->relationLoaded('currentSubscription') ? $this->currentSubscription : $this->currentSubscription()->first();
+        if ($subscription && method_exists($subscription, 'isActive') && $subscription->isActive()) {
+            return true;
+        }
+
+        // 4. Verificar Plano Ativo (Alunos)
+        $activePlan = $this->relationLoaded('activePlan') ? $this->activePlan : $this->activePlan()->first();
+        if ($activePlan && $activePlan->status === 'active') {
+            $plan = $activePlan->plan;
+            if ($plan && (strtoupper($plan->name) !== 'FREE' || $plan->price > 0)) {
+                return true;
+            }
+        }
+
+        // 5. Fallback direto pelo plan_id no User
+        if ($this->plan_id) {
+            $plan = $this->relationLoaded('plan') ? $this->plan : $this->plan()->first();
+            if ($plan && (strtoupper($plan->name) !== 'FREE' || $plan->price > 0)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

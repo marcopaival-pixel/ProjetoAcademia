@@ -13,11 +13,17 @@ class AssessmentController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
+        $isPremium = $user->hasPremiumAccess();
         $tab = $request->get('tab', 'dashboard');
         
-        $assessments = BodyAssessment::where('user_id', $user->id)
-            ->orderBy('assessment_date', 'desc')
-            ->get();
+        $query = BodyAssessment::where('user_id', $user->id)
+            ->orderBy('assessment_date', 'desc');
+
+        if (!$isPremium) {
+            $assessments = $query->limit(1)->get();
+        } else {
+            $assessments = $query->get();
+        }
 
         // Dados para o gráfico de evolução (unindo pesos avulsos e avaliações)
         $weightEntries = \App\Models\WeightEntry::where('user_id', $user->id)
@@ -29,7 +35,7 @@ class AssessmentController extends Controller
             'weight' => $e->weight_kg
         ]);
 
-        return view('assessments.index', compact('assessments', 'tab', 'chartData'));
+        return view('assessments.index', compact('assessments', 'tab', 'chartData', 'isPremium'));
     }
 
     public function create(): View
@@ -73,6 +79,18 @@ class AssessmentController extends Controller
             'professional_id' => 'nullable|exists:users,id',
             'blood_pressure' => 'nullable|string',
             'heart_rate' => 'nullable|integer',
+            'icw_l' => 'nullable|numeric',
+            'ecw_l' => 'nullable|numeric',
+            'dry_lean_mass_kg' => 'nullable|numeric',
+            'body_fat_mass_kg' => 'nullable|numeric',
+            'segmental_lean_arm_l' => 'nullable|numeric',
+            'segmental_lean_arm_r' => 'nullable|numeric',
+            'segmental_lean_leg_l' => 'nullable|numeric',
+            'segmental_lean_leg_r' => 'nullable|numeric',
+            'segmental_lean_trunk' => 'nullable|numeric',
+            'visceral_fat_level' => 'nullable|integer',
+            'basal_metabolic_rate' => 'nullable|integer',
+            'phase_angle' => 'nullable|numeric',
         ]);
 
         $patientId = Auth::id();
@@ -156,16 +174,24 @@ class AssessmentController extends Controller
 
         // Geração de Treino IA (Opcional)
         if ($request->has('generate_ai_training')) {
-            $generator = app(\App\Services\AIFitnessGeneratorService::class);
-            $generator->generateTrainingPlan($user);
+            if ($user->consumeAiCredit('generate_workout')) {
+                $generator = app(\App\Services\AIFitnessGeneratorService::class);
+                $generator->generateTrainingPlan($user);
+            } else {
+                return redirect()->route('assessments.index')->with('error', 'Avaliação salva, mas créditos insuficientes para gerar o treino IA.');
+            }
         }
 
         // Geração de Plano Alimentar IA (Opcional)
         if ($request->has('generate_ai_meal_plan')) {
-            $generator = app(\App\Services\AIFitnessGeneratorService::class);
-            $mealPlan = $generator->generateMealPlan($user);
-            if ($mealPlan['ok']) {
-                $assessment->update(['ai_suggestions' => $mealPlan['plan']]);
+            if ($user->consumeAiCredit('generate_diet')) {
+                $generator = app(\App\Services\AIFitnessGeneratorService::class);
+                $mealPlan = $generator->generateMealPlan($user);
+                if ($mealPlan['ok']) {
+                    $assessment->update(['ai_suggestions' => $mealPlan['plan']]);
+                }
+            } else {
+                return redirect()->route('assessments.index')->with('warning', 'Avaliação salva, mas créditos insuficientes para gerar o plano alimentar IA.');
             }
         }
 
@@ -176,33 +202,55 @@ class AssessmentController extends Controller
         return redirect()->route('assessments.index')->with('success', 'Avaliação registrada! Seu Score de Saúde foi atualizado para ' . $healthScore . '%.');
     }
 
-    public function show(BodyAssessment $assessment): View
+    public function show(BodyAssessment $assessment)
     {
-        if ($assessment->user_id !== Auth::id() && !Auth::user()->hasRole(['professional', 'admin'])) abort(403);
+        $user = Auth::user();
+        $isPremium = $user->hasPremiumAccess();
 
-        if (Auth::user()->isResourceOverLimit('assessments', $assessment->id)) {
-            return redirect()->route('assessments.index')->with('error', 'Esta avaliação está bloqueada por exceder o limite do seu plano atual. Faça upgrade para acessá-la.');
+        // Se não for premium, só pode ver a última
+        if (!$isPremium) {
+            $latestId = BodyAssessment::where('user_id', $user->id)
+                ->latest('assessment_date')
+                ->latest('id')
+                ->value('id');
+
+            if ($assessment->id !== $latestId) {
+                return redirect()->route('assessments.index')
+                    ->with('premium_locked', true);
+            }
         }
 
-        $motor = app(\App\Services\IntelligenceMotorService::class);
-        $user = \App\Models\User::find($assessment->user_id);
-        
-        $predictions = $motor->predictEvolution($user);
-        $risks = $motor->detectRisks($user);
-        $healthScore = $user->health_score;
+        if ($assessment->user_id !== $user->id && !Auth::user()->hasRole(['professional', 'admin'])) abort(403);
 
-        return view('assessments.show', compact('assessment', 'predictions', 'risks', 'healthScore'));
+        $motor = app(\App\Services\IntelligenceMotorService::class);
+        $owner = \App\Models\User::find($assessment->user_id);
+        
+        $predictions = $motor->predictEvolution($owner);
+        $risks = $motor->detectRisks($owner);
+        $healthScore = $owner->health_score;
+        $bioInsights = $motor->analyzeBioimpedance($assessment);
+
+        return view('assessments.show', compact('assessment', 'predictions', 'risks', 'healthScore', 'bioInsights', 'isPremium'));
     }
 
     public function destroy(BodyAssessment $assessment)
     {
-        if ($assessment->user_id !== Auth::id()) abort(403);
+        $user = Auth::user();
+        if ($assessment->user_id !== $user->id) abort(403);
 
-        if (Auth::user()->isResourceOverLimit('assessments', $assessment->id)) {
-            return back()->with('error', 'Esta avaliação está bloqueada por exceder o limite do seu plano atual. Faça upgrade para gerenciá-la.');
+        if (!$user->hasPremiumAccess()) {
+             $latestId = BodyAssessment::where('user_id', $user->id)
+                ->latest('assessment_date')
+                ->latest('id')
+                ->value('id');
+
+            if ($assessment->id !== $latestId) {
+                return redirect()->route('assessments.index')
+                    ->with('error', 'Apenas o registro mais recente pode ser gerenciado no plano gratuito.');
+            }
         }
 
         $assessment->delete();
-        return back()->with('success', 'Avaliação removida.');
+        return redirect()->route('assessments.index')->with('success', 'Avaliação removida com sucesso!');
     }
 }

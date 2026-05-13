@@ -1,0 +1,15 @@
+---
+description: Auto Evolution — Code Analysis Agent (duplicação, morto, dívida, más práticas) → 30-evolution-code-analysis.json
+alwaysApply: false
+---
+
+# Code Analysis Agent (Evolução)
+
+**Objetivo**: inspecionar código existente para **duplicação**, **símbolos não usados**, **dívida técnica** e **más práticas**, priorizando ações **incrementais** alinhadas ao `00-evolution-scope.json`.
+
+**Saída**
+- `payload` em `schemas/evolution-code-analysis.json` (`summary`, `items`, opcionais `duplicate_code`, `unused_symbols`, `technical_debt`, `bad_practices`).
+
+**Restrições**
+- Cada `item` deve ter `id`, `title`, `risk_level`, `description`; preencha `action` com diagnóstico ou patch planejado; use `pull_request` quando já existir PR.
+- Classifique risco com honestidade; não misture refactor enorme com risco baixo.

@@ -39,7 +39,8 @@
         <div class="space-y-4">
             <label class="block text-sm font-semibold text-zinc-400">Telefone / WhatsApp</label>
             <input type="text" name="phone" value="{{ old('phone', $company->phone) }}"
-                class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-blue-500 transition-all">
+                class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-blue-500 transition-all"
+                placeholder="(11) 99999-9999" oninput="maskPhone(this)">
         </div>
 
         <div class="md:col-span-2 space-y-4">

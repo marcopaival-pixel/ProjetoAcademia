@@ -133,18 +133,25 @@ class RegisterController extends Controller
                 'cnpj' => $validated['cnpj'] ?? null,
                 'profile_id' => $role?->id, // Compatibilidade
                 'plan_id' => $freePlan?->id,
-                'status' => $profileName === 'representative' ? 'PENDENTE_APROVACAO' : ($verificacaoAtiva ? 'PENDENTE' : 'active'),
+                'status' => $profileName === 'representative' ? 'PENDENTE_APROVACAO' : ($verificacaoAtiva ? 'pending_email_verification' : 'active'),
                 'onboarding_status' => 'pending',
                 'profile_completion_percentage' => 0,
                 'registration_approval_status' => in_array($profileName, ['professional', 'representative']) ? 'pending' : 'approved',
                 'email_verified' => !$verificacaoAtiva,
                 'email_verified_at' => $verificacaoAtiva ? null : now(),
+                'email_verification_expires_at' => $verificacaoAtiva ? now()->addHours(24) : null,
                 'representative_id' => $request->get('representative_id') ?: (session('representative_id') ?: request()->cookie('representative_id')),
                 'is_representative' => $profileName === 'representative',
             ]);
 
-            // Vincular à empresa se houver slug na request
-            if ($request->filled('company_slug')) {
+            // Vincular à clínica ou empresa se houver slug na request
+            if ($request->filled('clinic')) {
+                $clinic = \App\Models\Clinic::where('slug', $request->get('clinic'))->first();
+                if ($clinic) {
+                    $user->clinic_id = $clinic->id;
+                    $user->academy_company_id = $clinic->academy_company_id;
+                }
+            } elseif ($request->filled('company_slug')) {
                 $company = \App\Models\AcademyCompany::where('slug', $request->get('company_slug'))->first();
                 if ($company) {
                     $user->academy_company_id = $company->id;

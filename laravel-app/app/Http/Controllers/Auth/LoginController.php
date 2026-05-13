@@ -121,6 +121,7 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->forget(['active_clinic_id', 'impersonated_clinic_id']);
         $request->session()->flash('success', 'Acesso autorizado. Bem-vindo de volta!');
 
         \Log::info('Login success for: ' . $user->email . ' | Admin: ' . ($user->isAdministrator() ? 'YES' : 'NO'));
@@ -149,14 +150,26 @@ class LoginController extends Controller
         
         if ($user->hasRole('paciente')) {
             $professionals = $user->professionals()->wherePivot('status', 'Sim')->get();
+            $defaultTarget = ($professionals->count() > 1) 
+                ? route('patient.dashboard.choice') 
+                : route('patient.portal');
+
+            $target = session()->pull('url.intended', $defaultTarget);
             
-            if ($professionals->count() > 1) {
-                return redirect()->intended(route('patient.dashboard.choice'));
+            if (str_contains((string)$target, '/admin') && !$user->hasAdminPanelAccess()) {
+                $target = $defaultTarget;
             }
-            
-            return redirect()->intended(route('patient.portal'));
+            return redirect($target);
         }
 
-        return redirect()->intended(route('dashboard'));
+        $defaultTarget = route('dashboard');
+        $target = session()->pull('url.intended', $defaultTarget);
+        
+        // Proteção Extra: Se o usuário não for admin, nunca redirecionar para /admin via intended
+        if (str_contains((string)$target, '/admin') && !$user->hasAdminPanelAccess()) {
+            $target = $defaultTarget;
+        }
+
+        return redirect($target);
     }
 }

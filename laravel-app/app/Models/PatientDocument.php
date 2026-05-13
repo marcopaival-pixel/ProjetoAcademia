@@ -9,7 +9,8 @@ use App\Models\Traits\BelongsToCompany;
 
 class PatientDocument extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory, Traits\HasClinic;
+
 
     protected $fillable = [
         'patient_id',

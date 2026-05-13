@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/test-plan.json",
+  "title": "TestPlanPayload",
+  "type": "object",
+  "required": ["levels", "coverage_targets", "cases", "test_data", "ci_gates"],
+  "properties": {
+    "levels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["unit", "integration", "contract", "e2e", "smoke", "load"]
+      }
+    },
+    "coverage_targets": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "level", "name", "steps", "expected"],
+        "properties": {
+          "id": { "type": "string" },
+          "level": { "type": "string" },
+          "name": { "type": "string" },
+          "steps": { "type": "array", "items": { "type": "string" } },
+          "expected": { "type": "string" },
+          "maps_to": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "test_data": { "type": "array", "items": { "type": "string" } },
+    "ci_gates": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

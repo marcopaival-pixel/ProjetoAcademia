@@ -134,7 +134,14 @@ class PatientController extends Controller
                 'last_weight' => $lastWeight,
                 'weight_evo' => ($weightEvo > 0 ? '+' : '') . number_format($weightEvo, 1),
                 'fat_evo' => ($fatEvo > 0 ? '+' : '') . number_format($fatEvo, 1),
-                'goal' => $user->profile->goal ?? 'Manutenção',
+                'goal' => match($user->profile->goal ?? '') {
+                    'maintain' => 'Saúde e Bem-Estar',
+                    'gain' => 'Hipertrofia',
+                    'lose' => 'Emagrecimento',
+                    'recomp' => 'Recomposição Corporal',
+                    'performance' => 'Performance',
+                    default => $user->profile->goal ?? 'Saúde e Bem-Estar'
+                },
                 'last_activity' => $user->last_activity_at ? $user->last_activity_at->diffForHumans() : 'Nunca acessou',
                 'last_activity_date' => $user->last_activity_at ? $user->last_activity_at->format('d/m/Y H:i') : '--',
                 'color' => $isOverLimit ? 'rose' : ($currentStatus === 'Inativo' ? 'zinc' : ($currentStatus === 'Ativo' ? 'emerald' : 'amber')),
@@ -183,7 +190,14 @@ class PatientController extends Controller
             'bf' => $user->assessments()->orderBy('assessment_date', 'desc')->value('bf_percent') ?? 'N/A',
             'formula' => 'Cunningham',
             'activity_level' => $profile->activity_level ?? 'Não definido',
-            'goal' => $profile->goal ?? 'Não definido',
+            'goal' => match($profile->goal ?? '') {
+                'maintain' => 'Saúde e Bem-Estar',
+                'gain' => 'Hipertrofia',
+                'lose' => 'Emagrecimento',
+                'recomp' => 'Recomposição Corporal',
+                'performance' => 'Performance',
+                default => $profile->goal ?? 'Não definido'
+            },
             'biotype' => 'Mesomorfo', // Placeholder
         ];
 

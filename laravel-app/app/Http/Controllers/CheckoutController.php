@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\AdminSetting;
+use App\Services\Payment\PaymentGatewayManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,12 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
+    protected $paymentManager;
+
+    public function __construct(PaymentGatewayManager $paymentManager)
+    {
+        $this->paymentManager = $paymentManager;
+    }
     /**
      * Exibe o fluxo de checkout.
      */
@@ -78,38 +85,39 @@ class CheckoutController extends Controller
 
                 $plan = Plan::findOrFail($request->plan_id);
 
-                // 2. Criar ou Atualizar Assinatura
-                $subscription = Subscription::updateOrCreate(
+                // 2. Se for plano gratuito ou pagamentos desligados, ativação direta
+                if (!$pagamentoAtivo || $plan->price <= 0) {
+                    $subscription = $this->autoActivate($user, $plan);
+                    return response()->json([
+                        'success' => true,
+                        'redirect' => route('dashboard'),
+                        'message' => 'Plano ativado com sucesso!'
+                    ]);
+                }
+
+                // 3. Se for plano pago, criar preferência no Gateway
+                $gateway = $this->paymentManager->driver();
+                $checkout = $gateway->createSubscription($user, $plan);
+
+                if (!$checkout['ok']) {
+                    throw new \Exception($checkout['error'] ?? 'Erro no gateway de pagamento.');
+                }
+
+                // Criar assinatura pendente
+                Subscription::updateOrCreate(
                     ['user_id' => $user->id],
                     [
                         'plan_id' => $plan->id,
-                        'status' => !$pagamentoAtivo ? Subscription::STATUS_FIN_ATIVO : ($request->payment_method === 'pix' ? Subscription::STATUS_FIN_PENDENTE : Subscription::STATUS_FIN_ATIVO),
-                        'payment_method' => $pagamentoAtivo ? $request->payment_method : 'free_activation',
+                        'status' => Subscription::STATUS_FIN_PENDENTE,
+                        'payment_method' => $request->payment_method ?? 'gateway',
                         'start_date' => now(),
-                        'end_date' => now()->addMonth(),
-                        'next_billing_date' => now()->addMonth(),
-                        'gateway_type' => $pagamentoAtivo ? 'manual' : 'system',
+                        'gateway_type' => $gateway->getIdentifier(),
                     ]
                 );
 
-                // 3. Registrar Log de Pagamento
-                $user->payments()->create([
-                    'subscription_id' => $subscription->id,
-                    'amount' => $pagamentoAtivo ? $plan->price : 0,
-                    'status' => $subscription->status === Subscription::STATUS_FIN_ATIVO ? 'paid' : 'pending',
-                    'gateway' => $pagamentoAtivo ? 'manual' : 'internal',
-                    'gateway_id' => 'TXN-' . strtoupper(Str::random(10)),
-                    'currency' => 'BRL',
-                    'payload' => [
-                        'payment_method' => $pagamentoAtivo ? $request->payment_method : 'auto_activation',
-                        'plan_name' => $plan->name,
-                        'global_payment_enabled' => $pagamentoAtivo,
-                    ],
-                ]);
-
                 return response()->json([
                     'success' => true,
-                    'redirect' => route('dashboard'),
+                    'redirect' => $checkout['init_point'],
                 ]);
             });
         } catch (\Exception $e) {

@@ -142,4 +142,88 @@ class IntelligenceMotorService
 
         return $risks;
     }
+
+    /**
+     * Realiza uma análise técnica profunda de dados de Bioimpedância.
+     */
+    public function analyzeBioimpedance(BodyAssessment $assessment): array
+    {
+        $insights = [];
+
+        // 1. Índice de Edema (ECW/TBW)
+        if ($assessment->icw_l && $assessment->ecw_l) {
+            $tbw = $assessment->icw_l + $assessment->ecw_l;
+            $edemaIndex = $assessment->ecw_l / $tbw;
+            
+            if ($edemaIndex > 0.40) {
+                $insights[] = [
+                    'title' => 'Retenção Hídrica / Inflamação',
+                    'level' => 'danger',
+                    'message' => "Seu índice de edema está em " . round($edemaIndex, 3) . " (Ideal < 0.390). Isso pode indicar inflamação sistêmica, excesso de sódio ou overtraining."
+                ];
+            } elseif ($edemaIndex > 0.390) {
+                $insights[] = [
+                    'title' => 'Leve Retenção Detectada',
+                    'level' => 'warning',
+                    'message' => "Relação de água extracelular levemente acima do ideal. Acompanhe a ingestão de água e minerais."
+                ];
+            } else {
+                $insights[] = [
+                    'title' => 'Equilíbrio Hídrico',
+                    'level' => 'success',
+                    'message' => "Sua distribuição de água intracelular e extracelular está excelente."
+                ];
+            }
+        }
+
+        // 2. Saúde Celular (Ângulo de Fase)
+        if ($assessment->phase_angle) {
+            if ($assessment->phase_angle < 5.0) {
+                $insights[] = [
+                    'title' => 'Integridade Celular Baixa',
+                    'level' => 'warning',
+                    'message' => "Seu ângulo de fase está abaixo de 5.0°. Isso pode indicar fadiga celular ou nutrição insuficiente para recuperação."
+                ];
+            } elseif ($assessment->phase_angle >= 7.0) {
+                $insights[] = [
+                    'title' => 'Vitalidade Celular Excelente',
+                    'level' => 'success',
+                    'message' => "Seu ângulo de fase de {$assessment->phase_angle}° indica células musculares muito saudáveis e excelente capacidade de recuperação."
+                ];
+            }
+        }
+
+        // 3. Equilíbrio Muscular (Segmental)
+        if ($assessment->segmental_lean_arm_l && $assessment->segmental_lean_arm_r) {
+            $diffArm = abs($assessment->segmental_lean_arm_l - $assessment->segmental_lean_arm_r);
+            $maxArm = max($assessment->segmental_lean_arm_l, $assessment->segmental_lean_arm_r);
+            
+            if ($maxArm > 0 && ($diffArm / $maxArm) > 0.10) {
+                $insights[] = [
+                    'title' => 'Assimetria nos Braços',
+                    'level' => 'warning',
+                    'message' => "Detectada diferença superior a 10% na massa magra entre os braços. Priorize exercícios unilaterais para equilíbrio."
+                ];
+            }
+        }
+
+        // 4. Gordura Visceral
+        if ($assessment->visceral_fat_level) {
+            if ($assessment->visceral_fat_level >= 15) {
+                $insights[] = [
+                    'title' => 'Risco Metabólico Elevado',
+                    'level' => 'danger',
+                    'message' => "Nível de gordura visceral crítico ({$assessment->visceral_fat_level}). Foco total em controle calórico e exercícios aeróbicos para reduzir riscos cardíacos."
+                ];
+            } elseif ($assessment->visceral_fat_level >= 10) {
+                $insights[] = [
+                    'title' => 'Atenção à Gordura Visceral',
+                    'level' => 'warning',
+                    'message' => "Sua gordura visceral está em nível de alerta. Reduza açúcares e gorduras saturadas."
+                ];
+            }
+        }
+
+        return $insights;
+    }
 }

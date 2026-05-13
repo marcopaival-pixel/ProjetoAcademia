@@ -15,7 +15,14 @@ class CheckPremiumAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->hasPremiumAccess()) {
+        $user = $request->user();
+
+        // Segurança: Admin e Staff Clínico sempre passam
+        if ($user && ($user->isAdministrator() || $user->hasRole(['professional', 'manager', 'instructor', 'supervisor', 'receptionist']))) {
+            return $next($request);
+        }
+
+        if (!$user || !$user->hasPremiumAccess()) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'error' => 'Acesso Premium Necessário',
@@ -24,7 +31,7 @@ class CheckPremiumAccess
                 ], 403);
             }
 
-            return redirect()->route('plano')->with('error', 'Esta funcionalidade é exclusiva para assinantes Premium.');
+            return redirect()->route('plano');
         }
 
         return $next($request);

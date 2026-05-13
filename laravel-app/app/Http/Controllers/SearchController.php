@@ -7,16 +7,13 @@ use App\Models\ExerciseCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use App\Services\AdvancedAgentService;
+use App\Services\AI\OrchestratorService;
 
 class SearchController extends Controller
 {
-    protected $agent;
-
-    public function __construct(AdvancedAgentService $agent)
-    {
-        $this->agent = $agent;
-    }
+    public function __construct(
+        private OrchestratorService $orchestrator
+    ) {}
     public function search(Request $request): View
     {
         $query = trim($request->input('q'));
@@ -143,19 +140,19 @@ class SearchController extends Controller
             }
         }
 
-        // IA: Interpretação de Texto (Opcional Avançado)
+        // IA: Interpretação de Texto (Opcional Avançado) via Orquestrador
         $aiResponse = null;
         if (!empty($query) && (strlen($query) > 15 || str_contains($query, ' ') || preg_match('/(quero|como|meu|treino|ajuda|onde|qual)/i', $query))) {
-            // Só executa se o usuário tiver créditos ou se for admin para teste
-            if ($user->ai_credits > 0 || $isAdmin) {
-                $aiResult = $this->agent->process($user, $query);
-                if ($aiResult['ok']) {
-                    $aiResponse = [
-                        'text' => $aiResult['response'],
-                        'action' => $aiResult['action'] ?? null
-                    ];
-                    // Opcional: descontar crédito aqui ou apenas registrar uso
-                }
+            $result = $this->orchestrator->run($user, $query, [
+                'source' => 'global_search',
+                'clinicId' => $user->academy_company_id
+            ]);
+
+            if ($result['status'] === 'success') {
+                $aiResponse = [
+                    'text' => $result['message'],
+                    'action' => $result['action'] ?? null
+                ];
             }
         }
 

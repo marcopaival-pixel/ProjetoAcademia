@@ -49,15 +49,27 @@ class PatientReportController extends Controller
         // Histórico simplificado
         $history = $patient->weightEntries()->latest()->limit(5)->get();
 
-        // QR Code
-        $qrCodeData = urlencode(route('access', ['token' => 'verification-' . $patient->id]));
-        $qrCodeUrl = "https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl={$qrCodeData}&choe=UTF-8";
+        // Sistema de Versionamento e Validação (Standard)
+        $validationService = app(\App\Services\ReportValidationService::class);
+        $reportRecord = $validationService->generateVersion($patient, 'Clinical Evolution');
+        $validationUrl = $validationService->getValidationUrl($reportRecord);
+
+        // QR Code Local
+        $qrCode = \Endroid\QrCode\Builder\Builder::create()
+            ->writer(new \Endroid\QrCode\Writer\PngWriter())
+            ->data($validationUrl)
+            ->size(150)
+            ->margin(0)
+            ->build();
+        
+        $qrCodeBase64 = 'data:image/png;base64,' . base64_encode($qrCode->getString());
 
         $html = view('pdf.patient-report', [
             'patient' => $patient,
             'clinicalData' => $clinicalData,
             'history' => $history,
-            'qrCodeUrl' => $qrCodeUrl,
+            'qrCode' => $qrCodeBase64,
+            'reportRecord' => $reportRecord,
             'professional' => $professional ?? $loggedUser,
             'emissionDate' => now()->format('d/m/Y H:i'),
         ])->render();

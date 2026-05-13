@@ -12,7 +12,6 @@ class KnowledgeBaseController extends Controller
     public function index(Request $request)
     {
         $userType = $this->getUserKnowledgeType();
-        
         $categories = KnowledgeCategory::active()
             ->forUserType($userType)
             ->with(['articles' => function($q) {
@@ -51,16 +50,24 @@ class KnowledgeBaseController extends Controller
     private function getUserKnowledgeType()
     {
         $user = Auth::user();
-        
-        if (!$user) return 'ALUNO'; // Default for public if allowed, but we'll use auth middleware
+        if (!$user) return 'ALUNO';
 
+        $activeRole = session('active_role');
+
+        // Prioridade 1: Papel Ativo na Sessão (Respeita a troca de perfil)
+        if ($activeRole === 'admin') return 'ADMIN';
+        if ($activeRole === 'finance') return 'FINANCEIRO';
+        if (in_array($activeRole, ['professional', 'instructor', 'manager', 'receptionist', 'supervisor'])) return 'CLINICA';
+        if (in_array($activeRole, ['paciente', 'aluno'])) return 'ALUNO';
+
+        // Prioridade 2: Fallback para is_admin se não houver papel ativo
         if ($user->is_admin) return 'ADMIN';
         
+        // Prioridade 3: Fallback baseado nos papéis do usuário
         if ($user->hasRole('finance')) return 'FINANCEIRO';
-        if ($user->hasRole(['professional', 'manager'])) return 'CLINICA';
-        if ($user->hasRole('paciente')) return 'PACIENTE';
-        if ($user->hasRole('aluno')) return 'ALUNO';
+        if ($user->hasRole(['professional', 'instructor', 'manager'])) return 'CLINICA';
+        if ($user->hasRole(['paciente', 'aluno'])) return 'ALUNO';
 
-        return 'ALUNO'; // Fallback
+        return 'ALUNO';
     }
 }

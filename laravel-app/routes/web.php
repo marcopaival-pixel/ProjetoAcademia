@@ -73,6 +73,7 @@ Route::post('/theme', ThemeController::class)->name('theme');
 
 /** Página Meu Plano / Checkout Premium (Acessível publicamente) */
 Route::get('/plano', \App\Http\Controllers\PlanoController::class)->name('plano');
+Route::get('/business', \App\Http\Controllers\BusinessLandingController::class)->name('business');
 
 // Fluxo de Checkout Modular
 Route::get('/checkout/{plan}', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
@@ -210,14 +211,16 @@ Route::middleware(['auth'])->group(function () {
             // Nova Consulta Inteligente (Biblioteca)
             Route::post('/smart-query', [\App\Http\Controllers\SmartQueryController::class, 'query'])->name('smart-query');
         });
+
+        // Endpoint Global do Orquestrador (Usado pelo Frontend)
+        Route::post('/api/ai/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('ai.orchestrator.api');
     });
 
     // Gestão de Créditos de IA
     Route::prefix('ai-credits')->name('ai-credits.')->group(function () {
-        Route::get('/packages', [\App\Http\Controllers\AiCreditController::class, 'packages'])->name('packages');
+        Route::get('/', [\App\Http\Controllers\AiCreditController::class, 'index'])->name('index');
         Route::post('/buy', [\App\Http\Controllers\AiCreditController::class, 'buy'])->name('buy');
         Route::get('/dashboard', [\App\Http\Controllers\AiCreditController::class, 'dashboard'])->name('dashboard');
-        Route::post('/distribute', [\App\Http\Controllers\AiCreditController::class, 'distribute'])->name('distribute');
     });
 
     // Análise Corporal (IA)
@@ -245,6 +248,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
         Route::post('/{ticket}/reply', [TicketController::class, 'reply'])->name('reply');
     });
+    Route::get('/clinic/settings', [ClinicManagementController::class, 'index'])->name('clinic.settings');
+    Route::post('/clinic/settings/update', [ClinicManagementController::class, 'updateBranding'])->name('clinic.settings.update');
+    Route::post('/clinic/settings/store', [ClinicManagementController::class, 'storeClinic'])->name('clinic.settings.store');
     Route::get('/system/status', [SystemStatusController::class, 'index'])->name('system.status');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
 
@@ -254,12 +260,22 @@ Route::middleware(['auth'])->group(function () {
     
     // Relatórios e Exportação (PDF Mensal)
     Route::get('/report/monthly-pdf', \App\Http\Controllers\MonthlyReportPdfController::class)->name('report.monthly.pdf');
+    Route::get('/report/bioimpedance-latest', function() {
+        $assessment = \App\Models\BodyAssessment::where('user_id', auth()->id())->latest('assessment_date')->first();
+        if (!$assessment) {
+            return redirect()->back()->with('error', 'Nenhuma avaliação de bioimpedância encontrada.');
+        }
+        return app(\App\Http\Controllers\BioimpedancePdfController::class)($assessment, app(\App\Services\DompdfPdfService::class), app(\App\Services\ReportValidationService::class));
+    })->name('bioimpedance.latest');
+
+    Route::get('/report/bioimpedance/{assessment}', \App\Http\Controllers\BioimpedancePdfController::class)->name('bioimpedance.pdf');
 
     // Academia NexShape (Treinamento do Cliente)
     Route::prefix('training')->name('training.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Support\TrainingController::class, 'index'])->name('index');
         Route::get('/module/{module}', [\App\Http\Controllers\Support\TrainingController::class, 'showModule'])->name('module');
         Route::get('/module/{module}/lesson/{lesson}', [\App\Http\Controllers\Support\TrainingController::class, 'showLesson'])->name('lesson');
+        Route::post('/lesson/{lesson}/toggle-completion', [\App\Http\Controllers\Support\TrainingController::class, 'toggleCompletion'])->name('lesson.toggle-completion');
     });
     // Comunidade Social NexShape
     Route::prefix('community')->name('community.')->group(function () {
@@ -268,4 +284,19 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/react/{type}/{id}', [App\Http\Controllers\CommunityController::class, 'react'])->name('react');
         Route::post('/post/{post}/comment', [App\Http\Controllers\CommunityController::class, 'comment'])->name('comment');
     });
+
+    // Gestão de Créditos IA
+    Route::prefix('ai-credits')->name('ai-credits.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AiCreditController::class, 'index'])->name('index');
+        Route::get('/dashboard', [\App\Http\Controllers\AiCreditController::class, 'dashboard'])->name('dashboard');
+        Route::get('/packages', [\App\Http\Controllers\AiCreditController::class, 'packages'])->name('packages');
+        Route::post('/buy', [\App\Http\Controllers\AiCreditController::class, 'buy'])->name('buy');
+    });
+
+    // OmniChannel Public/Widget Webhook
+    Route::post('/omnichannel/webhook', [\App\Http\Controllers\OmniChatController::class, 'receiveMessage'])->name('omni.webhook');
 });
+
+// 7. Rota de Clínica (Multi-Tenant Slug) - Deve ficar por último
+Route::get('/{slug}', [\App\Http\Controllers\ClinicPublicController::class, 'show'])->name('clinic.home');
+

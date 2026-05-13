@@ -34,10 +34,18 @@ class HomeController extends Controller
             elseif ($user->hasRole('manager')) $preferredType = 'clinic';
         }
 
+        $communityPosts = \App\Models\CommunityPost::with(['user', 'reactions', 'comments', 'media'])
+            ->where('status', 'approved')
+            ->where('visibility', 'public')
+            ->latest()
+            ->take(5)
+            ->get();
+
         return view('home', [
             'summaryPlans' => $summaryPlans,
             'preferredType' => $preferredType,
-            'user' => $user
+            'user' => $user,
+            'communityPosts' => $communityPosts
         ]);
     }
 }

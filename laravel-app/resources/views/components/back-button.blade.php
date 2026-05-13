@@ -43,9 +43,6 @@
         'messages.index' => ['route' => 'dashboard', 'label' => 'Dashboard'],
         'messages.show' => ['route' => 'messages.index', 'label' => 'Mensagens'],
         'messages.create' => ['route' => 'messages.index', 'label' => 'Mensagens'],
-        'internal-email.inbox' => ['route' => 'dashboard', 'label' => 'Dashboard'],
-        'internal-email.show' => ['route' => 'internal-email.inbox', 'label' => 'Entrada'],
-        'internal-email.create' => ['route' => 'internal-email.inbox', 'label' => 'Entrada'],
         'groups.index' => ['route' => 'dashboard', 'label' => 'Dashboard'],
         
         // Suporte e Sistema
@@ -117,7 +114,7 @@
     $forceFallbackRoutes = [
         'support.tickets.index', 'kb.index', 'exercise', 'nutrition.index', 
         'messages.index', 'assessments.index', 'active-rest.index', 
-        'body-analysis.index', 'internal-email.inbox', 'leaderboard.index', 
+        'body-analysis.index', 'leaderboard.index', 
         'groups.index', 'system.status', 'plano', 'credits.buy',
         'admin.kb.index', 'patient.plans.index', 'patient.medical-records.index', 'patient.reports.index'
     ];

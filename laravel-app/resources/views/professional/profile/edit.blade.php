@@ -81,7 +81,7 @@
                         </div>
                         <div class="space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Telefone / WhatsApp</label>
-                            <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" placeholder="(00) 00000-0000">
+                            <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" placeholder="(11) 99999-9999" oninput="maskPhone(this)">
                         </div>
                     </div>
                 </div>

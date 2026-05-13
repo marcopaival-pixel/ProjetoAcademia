@@ -3,16 +3,25 @@
 @section('title', 'NexShape — Planos e Performance')
 
 @section('content')
-<div class="py-12 space-y-20 animate-fade-in-up max-w-[1400px] mx-auto px-6" 
-     x-data="{ 
-        activeType: (new URLSearchParams(window.location.search)).get('type') || 'student', 
+@php
+    $planGroups  = $plans->keys()->toArray();
+    $defaultTab  = $planGroups[0] ?? 'student';
+    $multiGroup  = count($planGroups) > 1;
+@endphp
+
+<div class="py-12 space-y-20 animate-fade-in-up max-w-[1400px] mx-auto px-6"
+     x-data="{
+        activeType: (function() {
+            const t = new URLSearchParams(window.location.search).get('type');
+            const m = { 'student': 'aluno', 'clinic': 'academia', 'manager': 'academia', 'nutritionist': 'nutricionista' };
+            return m[t] || t || '{{ $defaultTab }}';
+        })(),
         selectedPlan: null,
         pagamentoAtivo: {{ $pagamentoAtivo ? 'true' : 'false' }},
-        openModal(plan) {
-            this.selectedPlan = plan;
-        }
+        currentPlanId: {{ $currentPlanId ?? 0 }},
+        openModal(plan) { this.selectedPlan = plan; }
      }">
-    
+
     <!-- Hero Section -->
     <div class="text-center space-y-6 max-w-3xl mx-auto">
         <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] shadow-inner">
@@ -30,28 +39,43 @@
         </div>
     @endif
 
-    <!-- Type Selector -->
-    <div class="flex justify-center p-2 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] max-w-xl mx-auto shadow-2xl">
-        <button @click="activeType = 'student'" :class="activeType === 'student' ? 'bg-emerald-500 text-zinc-950 shadow-xl' : 'text-zinc-500 hover:text-white'" class="flex-1 py-4 px-6 rounded-[2rem] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3">
-            <i data-lucide="user-round" class="w-4 h-4"></i> Aluno
-        </button>
-        <button @click="activeType = 'professional'" :class="activeType === 'professional' ? 'bg-emerald-500 text-zinc-950 shadow-xl' : 'text-zinc-500 hover:text-white'" class="flex-1 py-4 px-6 rounded-[2rem] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3">
-            <i data-lucide="stethoscope" class="w-4 h-4"></i> Profissional
-        </button>
-        <button @click="activeType = 'clinic'" :class="activeType === 'clinic' ? 'bg-emerald-500 text-zinc-950 shadow-xl' : 'text-zinc-500 hover:text-white'" class="flex-1 py-4 px-6 rounded-[2rem] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3">
-            <i data-lucide="building-2" class="w-4 h-4"></i> Clínica
-        </button>
+    <!-- Type Selector — dinâmico conforme perfil do usuário / grupos retornados -->
+    @if($multiGroup)
+    <div class="flex justify-center p-2 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] max-w-3xl mx-auto shadow-2xl flex-wrap gap-2">
+        @foreach($planGroups as $group)
+            @php
+                $meta = $tabMeta[$group] ?? ['icon' => 'layers', 'label' => ucfirst($group)];
+            @endphp
+            <button
+                @click="activeType = '{{ $group }}'"
+                :class="activeType === '{{ $group }}' ? 'bg-emerald-500 text-zinc-950 shadow-xl' : 'text-zinc-500 hover:text-white'"
+                class="flex-1 py-4 px-6 rounded-[2rem] font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3 min-w-[140px]">
+                <i data-lucide="{{ $meta['icon'] }}" class="w-4 h-4"></i>
+                {{ $meta['label'] }}
+            </button>
+        @endforeach
     </div>
+    @endif
 
     <!-- Pricing Matrix -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         <template x-for="plan in (plans[activeType] || [])" :key="plan.id">
             <div class="group relative bg-zinc-900 border border-zinc-800 p-10 rounded-[3.5rem] flex flex-col items-start transition-all hover:bg-zinc-950 hover:border-emerald-500/30 shadow-2xl relative overflow-hidden"
                  :class="plan.name.includes('Premium') || plan.name.includes('Pro') ? 'border-emerald-500/40' : ''">
-                
+
                 <div x-show="plan.name.includes('Premium') || plan.name.includes('Pro')" class="absolute top-0 right-0 p-8">
                     <span class="bg-emerald-500 text-zinc-950 text-[9px] font-black px-5 py-2 rounded-full shadow-2xl tracking-widest uppercase italic">Elite</span>
                 </div>
+
+                <!-- Badge Plano Atual — Regra 5 -->
+                <template x-if="currentPlanId > 0 && currentPlanId == plan.id">
+                    <div class="absolute top-0 left-0 p-8">
+                        <span class="bg-zinc-950 border border-emerald-500/50 text-emerald-400 text-[9px] font-black px-4 py-2 rounded-full shadow-inner tracking-widest uppercase flex items-center gap-1.5">
+                            <i data-lucide="check-circle" class="w-3 h-3"></i>
+                            Plano Atual
+                        </span>
+                    </div>
+                </template>
 
                 <div class="flex justify-between items-start w-full mb-8">
                     <div class="space-y-1">
@@ -59,7 +83,7 @@
                         <p class="text-[9px] text-zinc-700 font-bold uppercase" x-text="activeType"></p>
                     </div>
                 </div>
-                
+
                 <div class="flex items-baseline gap-2 mb-10">
                     <span class="text-zinc-600 text-xs font-black uppercase">R$</span>
                     <span class="text-6xl font-black text-white tracking-tighter" x-text="pagamentoAtivo ? parseFloat(plan.price).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'"></span>
@@ -72,7 +96,7 @@
                         <div class="flex items-center gap-4">
                             <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                             <span class="text-white font-black text-2xl tabular-nums" x-text="plan.ai_credits"></span>
-                            <span class="text-zinc-700 text-[10px] font-black uppercase tracking-widest">Sincronizações</span>
+                            <span class="text-zinc-700 text-[10px] font-black uppercase tracking-widest">Créditos de IA</span>
                         </div>
                     </div>
 
@@ -93,7 +117,7 @@
                         <template x-if="plan.max_patients > 0">
                             <div class="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-300 transition-colors">
                                 <i data-lucide="users" class="w-4 h-4 text-emerald-500"></i>
-                                <span class="text-xs font-black uppercase tracking-tighter" x-text="plan.max_patients + ' pacientes'"></span>
+                                <span class="text-xs font-black uppercase tracking-tighter" x-text="plan.max_patients + ' pacientes/alunos'"></span>
                             </div>
                         </template>
 
@@ -108,14 +132,16 @@
 
                 <div class="mt-auto w-full pt-10 border-t border-zinc-800">
                     @auth
-                        <template x-if="{{ $user->plan_id }} == plan.id">
-                            <div class="text-center py-5 bg-zinc-950 border border-emerald-500/20 rounded-[2rem] text-emerald-500 text-[10px] font-black uppercase tracking-[0.3em] italic shadow-inner">
+                        {{-- Regra 5: destaque do plano atual usa currentPlanId do controller --}}
+                        <template x-if="currentPlanId > 0 && currentPlanId == plan.id">
+                            <div class="text-center py-5 bg-zinc-950 border border-emerald-500/20 rounded-[2rem] text-emerald-500 text-[10px] font-black uppercase tracking-[0.3em] italic shadow-inner flex items-center justify-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
                                 Plano Atual
                             </div>
                         </template>
-                        <template x-if="{{ $user->plan_id }} != plan.id">
+                        <template x-if="!(currentPlanId > 0 && currentPlanId == plan.id)">
                             <div class="flex flex-col gap-4">
-                                <button @click="window.location.href = '{{ route('checkout.index', '') }}/' + plan.id" 
+                                <button @click="window.location.href = '{{ route('checkout.index', '') }}/' + plan.id"
                                         class="w-full py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all"
                                         :class="(plan.price > 0 || !pagamentoAtivo) ? 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400 shadow-xl shadow-emerald-500/10' : 'bg-zinc-800 text-zinc-600 border border-zinc-700 cursor-not-allowed'">
                                     <span x-text="(plan.price > 0 || !pagamentoAtivo) ? 'COMEÇAR AGORA' : 'PLANO BASE'"></span>
@@ -134,7 +160,7 @@
     </div>
 
     <!-- Modal de Descrição do Plano -->
-    <div x-show="selectedPlan" 
+    <div x-show="selectedPlan"
          x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
@@ -145,7 +171,7 @@
          class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-zinc-950/95 backdrop-blur-xl"
          @keydown.escape.window="selectedPlan = null"
          style="display: none;">
-        
+
         <div class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[3.5rem] overflow-hidden shadow-3xl relative animate-fade-in-up"
              @click.away="selectedPlan = null">
             <button @click="selectedPlan = null" class="absolute top-10 right-10 text-zinc-600 hover:text-rose-500 transition-all bg-zinc-950 border border-zinc-800 w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl">
@@ -161,7 +187,7 @@
                 </header>
 
                 <div class="bg-zinc-950 border border-zinc-800 p-8 rounded-3xl shadow-inner">
-                    <p class="text-zinc-500 leading-relaxed font-medium text-sm italic" x-text="'“' + selectedPlan?.description + '”'"></p>
+                    <p class="text-zinc-500 leading-relaxed font-medium text-sm italic" x-text="'\"' + selectedPlan?.description + '\"'"></p>
                 </div>
 
                 <div class="space-y-6">
@@ -204,14 +230,14 @@
                 </div>
                 <p class="text-zinc-500 text-lg leading-relaxed font-medium">Créditos de IA esgotados? Mantenha seu sistema alimentado com nossa rede de alta performance. Adquira pacotes adicionais instantaneamente.</p>
             </div>
-            
+
             <div class="flex flex-wrap justify-center lg:justify-end gap-6">
                 @foreach(\App\Models\AiCreditPackage::where('is_active', true)->get() as $pkg)
                 <div class="bg-zinc-950 border border-zinc-800 p-8 rounded-[2.5rem] flex flex-col items-center gap-3 hover:border-emerald-500/30 transition-all cursor-pointer group shadow-inner min-w-[180px]">
                     <span class="text-[9px] text-zinc-700 font-black uppercase tracking-widest">{{ $pkg->name }}</span>
                     <div class="flex items-baseline gap-1">
                         <span class="text-3xl font-black text-white group-hover:text-emerald-500 transition-colors tabular-nums">{{ $pkg->credits }}</span>
-                        <span class="text-[9px] text-zinc-700 font-black uppercase tracking-widest">Sinc</span>
+                        <span class="text-[9px] text-zinc-700 font-black uppercase tracking-widest">Créditos</span>
                     </div>
                     <span class="text-emerald-500 text-[11px] font-black tabular-nums">R$ {{ number_format($pkg->price, 2, ',', '.') }}</span>
                 </div>
@@ -256,14 +282,14 @@
 @endpush
 
 <style>
-    body { 
+    body {
         background-color: #080a0f;
         background-image:
             radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0, transparent 40%),
             radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0, transparent 40%);
         background-attachment: fixed;
     }
-    
+
     .animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(30px); }

@@ -10,6 +10,8 @@ use App\Models\PdfTemplate;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class PdfTemplateService
 {
@@ -294,8 +296,8 @@ HTML;
         ];
 
         if ($historico->codigo_validacao) {
-            $qr = app(PdfQrService::class)->validationUrl($historico->codigo_validacao);
-            $envelope['qr_data_uri'] = app(PdfQrService::class)->pngDataUriForText($qr, 130);
+            $qr = $this->validationUrl($historico->codigo_validacao);
+            $envelope['qr_data_uri'] = $this->pngDataUriForText($qr, 130);
         }
 
         return $this->renderPdfBinary($template, $variables, 'A4', 'portrait', $envelope);
@@ -329,5 +331,29 @@ HTML;
             'ip_address' => request()->ip(),
             'user_agent' => Str::limit((string) request()->userAgent(), 500),
         ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auxiliares de QR Code e Validação
+    |--------------------------------------------------------------------------
+    */
+
+    public function validationUrl(string $codigoValidacao): string
+    {
+        $segment = trim(config('pdf.validation_path_segment', 'validar-documento'), '/');
+
+        return rtrim(url('/'), '/').'/'.$segment.'/'.$codigoValidacao;
+    }
+
+    /**
+     * PNG em data URI para incrustar no HTML do Dompdf.
+     */
+    public function pngDataUriForText(string $text, int $size = 140): string
+    {
+        $qr = QrCode::create($text)->setSize($size)->setMargin(4);
+        $writer = new PngWriter();
+
+        return $writer->write($qr)->getDataUri();
     }
 }

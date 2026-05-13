@@ -22,7 +22,7 @@ Route::get('/confirmar-email/erro', [VerificationController::class, 'failed'])->
 // Rotas para Visitantes (Guest)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
-    Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:5,1');
+    Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:20,1');
     
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);

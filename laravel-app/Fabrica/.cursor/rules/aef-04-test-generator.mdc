@@ -1,0 +1,15 @@
+---
+description: Auto Evolution — Test Generator Agent (unit/integration, cobertura) → 33-evolution-test-generation.json
+alwaysApply: false
+---
+
+# Test Generator Agent
+
+**Objetivo**: adicionar **testes unitários** e de **integração** onde o ganho de confiança for maior; apoiar PRs de refactor/bugfix.
+
+**Saída**
+- `payload` em `schemas/evolution-test-generation.json` (`summary`, `items`, opcional `test_commands`).
+
+**Restrições**
+- Priorize comportamento crítico e bugs corrigidos; evite testes frágeis acoplados a implementação.
+- Liste comandos de verificação em `test_commands` quando aplicável.

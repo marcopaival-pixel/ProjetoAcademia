@@ -133,7 +133,7 @@
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Telefone / WhatsApp</label>
                         <input name="phone" type="text" required value="{{ old('phone', $patient->phone) }}"
                             class="premium-input" 
-                            placeholder="(00) 00000-0000">
+                            placeholder="(11) 99999-9999" oninput="maskPhone(this)">
                     </div>
 
                     <!-- Sexo -->
@@ -239,7 +239,7 @@
                             <option value="">Selecione...</option>
                             <option value="lose" {{ old('goal') == 'lose' ? 'selected' : '' }}>Emagrecimento</option>
                             <option value="gain" {{ old('goal') == 'gain' ? 'selected' : '' }}>Hipertrofia (Ganho de Massa)</option>
-                            <option value="maintain" {{ old('goal') == 'maintain' ? 'selected' : '' }}>Saúde e Bem-estar</option>
+                            <option value="maintain" {{ old('goal') == 'maintain' ? 'selected' : '' }}>Saúde e Bem-Estar</option>
                             <option value="performance" {{ old('goal') == 'performance' ? 'selected' : '' }}>Performance Atlética</option>
                         </select>
                     </div>
@@ -264,7 +264,7 @@
                     <div class="space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Telefone do Contato</label>
                         <input name="emergency_contact_phone" type="text" required value="{{ old('emergency_contact_phone') }}"
-                            class="premium-input" placeholder="(00) 00000-0000">
+                            class="premium-input" placeholder="(11) 99999-9999" oninput="maskPhone(this)">
                     </div>
                 </div>
             </div>
@@ -333,19 +333,6 @@
         }
     });
 
-    function maskCPF(i) {
-        let v = i.value.replace(/\D/g, '');
-        if (v.length > 11) v = v.substring(0, 11);
-        let m = '';
-        if (v.length > 0) {
-            m = v.substring(0, 3);
-            if (v.length > 3) m += '.' + v.substring(3, 6);
-            if (v.length > 6) m += '.' + v.substring(6, 9);
-            if (v.length > 9) m += '-' + v.substring(9, 11);
-        }
-        i.value = m;
-    }
-
     function toggleDetails(id, show) {
         const container = document.getElementById(id);
         if (show) {
@@ -360,5 +347,6 @@
 
 @include('partials.toast')
 @include('partials.legal-modal')
+@include('partials.js-masks')
 </body>
 </html>

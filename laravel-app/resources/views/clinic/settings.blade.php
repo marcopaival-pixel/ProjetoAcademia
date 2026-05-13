@@ -23,23 +23,37 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Company Info -->
+            <!-- Clinics List -->
             <div class="lg:col-span-2 space-y-8">
-                <div class="glass-card rounded-[2.5rem] p-8">
-                    <h3 class="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2">
-                        <i class="fas fa-building text-blue-500"></i> Informações da Unidade
-                    </h3>
+                @foreach($clinics as $clinic)
+                <div class="glass-card rounded-[2.5rem] p-8 {{ $clinic->id === auth()->user()->clinic_id ? 'border-emerald-500/30' : '' }}">
+                    <div class="flex justify-between items-start mb-8">
+                        <h3 class="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-clinic-medical text-blue-500"></i> {{ $clinic->name }}
+                            @if($clinic->id === auth()->user()->clinic_id)
+                                <span class="bg-emerald-500/10 text-emerald-500 text-[8px] px-2 py-0.5 rounded-full">Ativa</span>
+                            @endif
+                        </h3>
+                        <a href="{{ route('clinic.home', $clinic->slug) }}" target="_blank" class="text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
+                            Ver Home Pública <i class="fas fa-external-link-alt ml-1"></i>
+                        </a>
+                    </div>
 
                     <form action="{{ route('clinic.settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                         @csrf
+                        <input type="hidden" name="clinic_id" value="{{ $clinic->id }}">
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Nome da Clínica / Unidade</label>
-                                <input type="text" name="name" value="{{ $company->name }}" class="w-full bg-zinc-900 border-none rounded-2xl p-4 text-sm font-bold focus:ring-1 ring-blue-500">
+                                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Nome da Clínica</label>
+                                <input type="text" name="name" value="{{ $clinic->name }}" class="w-full bg-zinc-900 border-none rounded-2xl p-4 text-sm font-bold focus:ring-1 ring-blue-500">
                             </div>
                             <div>
-                                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Identificador (Slug)</label>
-                                <input type="text" value="{{ $company->slug }}" disabled class="w-full bg-zinc-800 border-none rounded-2xl p-4 text-sm font-bold opacity-50 cursor-not-allowed">
+                                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">URL Exclusiva</label>
+                                <div class="relative">
+                                    <input type="text" value="{{ $clinic->slug }}" disabled class="w-full bg-zinc-800 border-none rounded-2xl p-4 text-sm font-bold opacity-50 cursor-not-allowed">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] text-zinc-600 font-bold">nexshape.com/{{ $clinic->slug }}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -47,81 +61,71 @@
                             <div>
                                 <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Cor Primária</label>
                                 <div class="flex gap-4 items-center bg-zinc-900 rounded-2xl p-2">
-                                    <input type="color" name="primary_color" value="{{ $company->primary_color ?? '#3b82f6' }}" class="h-12 w-20 bg-transparent border-none cursor-pointer">
-                                    <span class="text-xs font-mono font-bold text-zinc-400">{{ $company->primary_color ?? '#3b82f6' }}</span>
+                                    <input type="color" name="primary_color" value="{{ $clinic->primary_color ?? '#10b981' }}" class="h-12 w-20 bg-transparent border-none cursor-pointer">
+                                    <span class="text-xs font-mono font-bold text-zinc-400 uppercase">{{ $clinic->primary_color ?? '#10b981' }}</span>
                                 </div>
                             </div>
                             <div>
-                                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Cor de Destaque</label>
-                                <div class="flex gap-4 items-center bg-zinc-900 rounded-2xl p-2">
-                                    <input type="color" name="accent_color" value="{{ $company->accent_color ?? '#10b981' }}" class="h-12 w-20 bg-transparent border-none cursor-pointer">
-                                    <span class="text-xs font-mono font-bold text-zinc-400">{{ $company->accent_color ?? '#10b981' }}</span>
+                                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Logo da Clínica</label>
+                                <div class="flex items-center gap-6">
+                                    <div class="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 overflow-hidden">
+                                        @if($clinic->logo_path)
+                                            <img src="{{ asset('storage/' . $clinic->logo_path) }}" class="w-full h-full object-contain">
+                                        @else
+                                            <i class="fas fa-image text-zinc-700"></i>
+                                        @endif
+                                    </div>
+                                    <input type="file" name="logo" class="text-[8px] text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[9px] file:font-black file:uppercase file:bg-zinc-800 file:text-zinc-300">
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Logo da Clínica</label>
-                            <div class="flex items-center gap-6">
-                                <div class="w-20 h-20 rounded-2xl bg-zinc-900 flex items-center justify-center border border-white/5 overflow-hidden">
-                                    @if($company->logo_path)
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($company->logo_path) }}" class="w-full h-full object-contain">
-                                    @else
-                                        <i class="fas fa-image text-zinc-700"></i>
-                                    @endif
-                                </div>
-                                <input type="file" name="logo" class="text-xs text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-zinc-800 file:text-zinc-300 hover:file:bg-zinc-700">
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between p-6 bg-zinc-900/50 rounded-2xl border border-white/5">
-                            <div>
-                                <h4 class="text-xs font-bold uppercase tracking-widest">Compartilhar Prontuários entre Profissionais</h4>
-                                <p class="text-[9px] text-zinc-500 uppercase font-black">Permite que todos os profissionais da clínica visualizem o histórico completo dos pacientes da unidade.</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="shared_medical_records" value="1" {{ ($company->shared_medical_records ?? false) ? 'checked' : '' }} class="sr-only peer">
-                                <div class="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="p-6 bg-blue-500/5 border border-blue-500/10 rounded-[2rem]">
-                            <h4 class="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="fas fa-user-plus text-blue-400"></i> Link de Convite para Profissionais
-                            </h4>
-                            <p class="text-[10px] text-zinc-400 mb-4 uppercase font-bold">Use este link para que novos profissionais se cadastrem diretamente na sua clínica.</p>
-                            
-                            <div class="flex gap-2">
-                                <input type="text" id="inviteUrl" value="{{ $inviteUrl }}" readonly class="flex-1 bg-black/40 border-none rounded-xl p-3 text-[10px] font-mono text-blue-400">
-                                <button onclick="copyInviteUrl()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-[10px] font-black uppercase transition-all">
-                                    Copiar
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button type="submit" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20">
-                                Salvar Alterações
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                                Atualizar {{ $clinic->name }}
                             </button>
                         </div>
                     </form>
                 </div>
+                @endforeach
+
+                <!-- Add New Clinic Button -->
+                @if($clinics->count() < 5) {{-- Exemplo de limite --}}
+                <div class="glass-card rounded-[2.5rem] p-8 border-dashed border-zinc-800 bg-transparent hover:border-blue-500/50 transition-colors group">
+                    <h3 class="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2 group-hover:text-blue-500 transition-colors">
+                        <i class="fas fa-plus-circle"></i> Adicionar Nova Clínica
+                    </h3>
+                    <form action="{{ route('clinic.settings.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        @csrf
+                        <input type="text" name="name" placeholder="Nome da Clínica" class="bg-zinc-900 border-none rounded-xl p-3 text-xs font-bold" required>
+                        <input type="text" name="slug" placeholder="slug-exclusivo" class="bg-zinc-900 border-none rounded-xl p-3 text-xs font-bold" required>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            Criar Clínica
+                        </button>
+                    </form>
+                </div>
+                @endif
 
                 <!-- Team List -->
                 <div class="glass-card rounded-[2.5rem] p-8">
                     <h3 class="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2">
-                        <i class="fas fa-users text-blue-500"></i> Equipe da Clínica
+                        <i class="fas fa-users text-blue-500"></i> Equipe da Empresa
                     </h3>
 
                     <div class="space-y-4">
                         @foreach($team as $member)
-                        <div class="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/5">
+                        <div class="flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
                             <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center font-black text-xs text-zinc-500">
                                 {{ substr($member->name, 0, 2) }}
                             </div>
                             <div class="flex-1">
                                 <h4 class="text-sm font-bold">{{ $member->name }}</h4>
-                                <p class="text-[9px] text-zinc-500 uppercase font-black">{{ $member->roles->pluck('name')->join(', ') }}</p>
+                                <div class="flex gap-2">
+                                    <span class="text-[8px] text-zinc-500 uppercase font-black">{{ $member->roles->pluck('name')->join(', ') }}</span>
+                                    @if($member->clinic)
+                                        <span class="text-[8px] text-blue-500/70 uppercase font-black">• {{ $member->clinic->name }}</span>
+                                    @endif
+                                </div>
                             </div>
                             <div class="text-right">
                                 <span class="text-[10px] font-bold text-zinc-500">{{ $member->email }}</span>
@@ -131,6 +135,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- Sidebar Info -->
             <div class="space-y-6">

@@ -11,13 +11,36 @@ class HealthMetricController extends Controller
     /**
      * Lista as métricas recentes do usuário.
      */
+    /**
+     * Lista as métricas recentes do usuário e exibe o dashboard.
+     */
     public function index()
     {
-        $metrics = Auth::user()->healthMetrics()
-            ->recent()
-            ->paginate(20);
+        $user = Auth::user();
+        
+        // Dados para o dashboard (últimos 30 dias para os gráficos)
+        $history = HealthMetric::where('user_id', $user->id)
+            ->where('recorded_at', '>=', now()->subDays(30))
+            ->orderBy('recorded_at', 'asc')
+            ->get()
+            ->groupBy('type');
 
-        return response()->json($metrics);
+        // Métricas atuais (última de cada tipo)
+        $latest = [
+            'hrv' => $user->healthMetrics()->where('type', 'hrv')->latest('recorded_at')->first(),
+            'sleep' => $user->healthMetrics()->where('type', 'sleep_hours')->latest('recorded_at')->first(),
+            'recovery' => $user->healthMetrics()->where('type', 'recovery_score')->latest('recorded_at')->first(),
+            'resting_hr' => $user->healthMetrics()->where('type', 'resting_hr')->latest('recorded_at')->first(),
+        ];
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'history' => $history,
+                'latest' => $latest
+            ]);
+        }
+
+        return view('health-metrics.index', compact('history', 'latest'));
     }
 
     /**

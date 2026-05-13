@@ -33,6 +33,7 @@ class BodyAnalysisController extends Controller
         if (!auth()->user()->consumeAiCredit('analyze_body_photo', ['view_type' => $request->view_type])) {
             return response()->json([
                 'success' => false,
+                'code' => 'credits_exceeded',
                 'error' => 'Créditos insuficientes para realizar a análise corporal.'
             ], 403);
         }

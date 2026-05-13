@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\Models\AiCreditPackage;
+use App\Models\AiCreditWallet;
+use App\Models\AiCreditTransaction;
 use App\Services\AiCreditService;
 use Illuminate\Http\Request;
 
@@ -19,12 +21,19 @@ class AiCreditController extends Controller
     }
 
     /**
-     * List available credit packages.
+     * View packages and balance.
      */
-    public function packages()
+    public function index()
     {
+        $user = auth()->user();
+        $wallet = $this->aiCreditService->getWallet($user);
         $packages = AiCreditPackage::where('is_active', true)->orderBy('credits')->get();
-        return response()->json($packages);
+        
+        $history = $user->aiTransactions()
+            ->latest()
+            ->paginate(10);
+
+        return view('ai-credits.index', compact('user', 'wallet', 'packages', 'history'));
     }
 
     /**
@@ -38,6 +47,18 @@ class AiCreditController extends Controller
 
         $package = AiCreditPackage::findOrFail($request->package_id);
         $user = auth()->user();
+
+        // Se pagamento_ativo for falso, libera automático (modo teste)
+        $pagamentoAtivo = \App\Models\SystemSetting::where('key', 'pagamento_ativo')->first()?->value === 'true';
+        if (!$pagamentoAtivo) {
+            $this->aiCreditService->addCredits($user, $package->credits, 'purchase', "Compra de créditos (Modo Teste): {$package->name}");
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Créditos ativados com sucesso (Modo Teste)',
+                'reload' => true
+            ]);
+        }
 
         $checkout = $this->gateway->createCheckout($user, (float) $package->price, [
             'title' => "Créditos IA — {$package->name}",
@@ -59,49 +80,43 @@ class AiCreditController extends Controller
     }
 
     /**
-     * Dashboard of AI usage (Improvement 13).
+     * Histórico detalhado e Dashboard.
      */
     public function dashboard()
     {
         $user = auth()->user();
+        $wallet = $this->aiCreditService->getWallet($user);
         
-        $usageToday = $user->aiUsage()
-            ->whereDate('created_at', now()->today())
-            ->sum('credits_consumed');
-            
-        $usageMonth = $user->aiUsage()
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('credits_consumed');
-            
-        $totalUsage = $user->aiUsage()->sum('credits_consumed');
+        $usageToday = $user->getAiCreditsUsedToday();
+        $usageMonth = $user->getAiCreditsUsedThisMonth();
+        $totalUsage = $user->getAiCreditsUsedTotal();
         
-        $history = $user->aiUsage()
+        $history = $user->aiTransactions()
             ->latest()
             ->paginate(15);
 
-        return view('ai-credits.dashboard', compact('user', 'usageToday', 'usageMonth', 'totalUsage', 'history'));
+        $featureCosts = \App\Models\AiFeatureCost::where('is_active', true)->get();
+
+        return view('ai-credits.dashboard', compact(
+            'user', 
+            'wallet',
+            'usageToday', 
+            'usageMonth', 
+            'totalUsage', 
+            'history',
+            'featureCosts'
+        ));
     }
 
     /**
-     * Distribute credits (Improvement 6).
+     * Get available packages as JSON for the purchase modal.
      */
-    public function distribute(Request $request)
+    public function packages()
     {
-        $request->validate([
-            'target_user_id' => 'required|exists:users,id',
-            'amount' => 'required|integer|min:1',
-        ]);
+        $packages = AiCreditPackage::where('is_active', true)
+            ->orderBy('credits')
+            ->get();
 
-        $clinic = auth()->user();
-        $target = \App\Models\User::find($request->target_user_id);
-
-        $success = $this->aiCreditService->distribute($clinic, $target, $request->amount);
-
-        if (!$success) {
-            return back()->with('error', 'Saldo insuficiente para distribuição.');
-        }
-
-        return back()->with('success', "{$request->amount} créditos distribuídos com sucesso para {$target->name}.");
+        return response()->json($packages);
     }
 }

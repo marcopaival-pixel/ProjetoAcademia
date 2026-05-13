@@ -17,26 +17,57 @@ class CheckActiveSubscription
     {
         $user = $request->user();
 
+        // Whitelist de rotas acessíveis para usuários Free (Alunos)
+        $allowedRoutes = [
+            'patient.dashboard',
+            'patient.profile',
+            'patient.profile.update',
+            'patient.reports.index',
+            'plano',
+            'checkout',
+            'payment.*',
+            'notifications.*',
+            'logout',
+            'support.*',
+            'help.*',
+            'home',
+            'profile.edit',
+            'profile.update',
+        ];
+
+        $user = $request->user();
+
+        // Segurança: Admin e Staff Clínico sempre passam por este middleware
+        if ($user && ($user->isAdministrator() || $user->hasRole(['professional', 'manager', 'instructor', 'supervisor', 'receptionist']))) {
+            return $next($request);
+        }
+
+        if ($request->routeIs($allowedRoutes)) {
+            return $next($request);
+        }
+
         if (!$user || !$user->hasPremiumAccess()) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Sua assinatura ainda não foi confirmada ou está inativa.'
+                    'message' => 'Esta funcionalidade é exclusiva para assinantes Premium.'
                 ], 403);
             }
 
-            // Verificar se existe uma assinatura pendente para mostrar mensagem personalizada
-            $subscription = $user ? $user->subscriptions()->latest()->first() : null;
-            $message = 'Esta funcionalidade está disponível apenas para usuários com assinatura ativa.';
-            
-            if ($subscription) {
-                if ($subscription->status === \App\Models\Subscription::STATUS_FIN_PENDENTE || $subscription->status === \App\Models\Subscription::STATUS_FIN_AGUARDANDO) {
-                    $message = 'Sua assinatura ainda não foi confirmada pelo gateway de pagamento. Assim que recebermos a confirmação, seu acesso será liberado automaticamente.';
-                } elseif ($subscription->status === \App\Models\Subscription::STATUS_FIN_RECUSADO) {
-                    $message = 'Seu último pagamento foi recusado. Por favor, verifique seus dados de pagamento ou tente outro cartão.';
-                }
+            // Se for uma rota de "relatório" específica que já tem seu próprio gating, deixa passar
+            // para que o ReportController ou MonthlyReportPdfController lidem com a mensagem amigável.
+            if ($request->routeIs(['report.monthly.pdf', 'bioimpedance.pdf', 'patient.report.export'])) {
+                return $next($request);
             }
 
-            return redirect()->route('plano')->with('warning', $message);
+            $subscription = $user ? $user->subscriptions()->latest()->first() : null;
+            
+            // Redirecionar com mensagem apenas quando há assinatura pendente de confirmação
+            if ($subscription && in_array($subscription->status, [\App\Models\Subscription::STATUS_FIN_PENDENTE, \App\Models\Subscription::STATUS_FIN_AGUARDANDO])) {
+                return redirect()->route('plano')->with('info', 'Sua assinatura ainda não foi confirmada. O acesso será liberado assim que o pagamento for processado.');
+            }
+
+            // Redirect silencioso para /plano — sem session('error') que dispara o modal
+            return redirect()->route('plano');
         }
 
         return $next($request);

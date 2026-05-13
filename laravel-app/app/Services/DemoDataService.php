@@ -20,14 +20,17 @@ class DemoDataService
         $demoUser = $user ?? Auth::user();
 
         if (!$demoUser || !$demoUser->is_demo) {
-            // Se não houver usuário, criar um temporário para a sessão
-            $company = \App\Models\AcademyCompany::first();
-            $demoUser = User::firstOrCreate(
-                ['email' => 'demo@nexshape.com.br'],
-                [
+            // Se não houver usuário, buscar ou criar o usuário demo
+            $demoUser = User::where('email', 'demo@nexshape.com.br')->first();
+
+            if (!$demoUser) {
+                $company = \App\Models\AcademyCompany::first();
+                
+                $demoUser = new User();
+                $demoUser->fill([
+                    'email' => 'demo@nexshape.com.br',
                     'name' => 'Usuário Demonstração',
                     'username' => 'demo_user',
-                    'password_hash' => Hash::make('demo123'),
                     'is_demo' => true,
                     'is_premium' => true,
                     'academy_company_id' => $company ? $company->id : null,
@@ -35,8 +38,12 @@ class DemoDataService
                     'email_verified' => true,
                     'plan_id' => 2, // Premium
                     'professional_plan_id' => 3, // Profissional Premium
-                ]
-            );
+                ]);
+                
+                // password_hash não é fillable, atribuir explicitamente conforme regra do Model User
+                $demoUser->password_hash = Hash::make('demo123');
+                $demoUser->save();
+            }
         }
 
         // Atribuir papel correto e remover o anterior para evitar conflito de redirecionamento

@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TrainingPlan extends Model
 {
-    use HasFactory, Traits\FiltersByProfessional;
+    use HasFactory, Traits\FiltersByProfessional, Traits\HasClinic;
+
 
     protected $fillable = [
         'user_id',

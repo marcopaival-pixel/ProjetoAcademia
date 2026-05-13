@@ -101,6 +101,8 @@
         .admin-sidebar-nav { overflow-x: hidden !important; }
         .admin-sidebar-nav .nav-link, .admin-sidebar-nav .submenu-link {
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none !important;
+            color: #71717a; /* text-zinc-500 */
         }
         .admin-sidebar-nav .nav-link:hover {
             background: rgba(255, 255, 255, 0.03);
@@ -111,6 +113,9 @@
             background: rgba(16, 185, 129, 0.05);
             border-right: 2px solid #10b981;
         }
+        .admin-sidebar-nav .submenu-link {
+            color: #52525b; /* text-zinc-600 */
+        }
         .admin-sidebar-nav .submenu-link:hover {
             color: #fff;
             background: rgba(255, 255, 255, 0.02);
@@ -119,6 +124,11 @@
             color: #10b981;
             background: rgba(16, 185, 129, 0.05);
             font-weight: 800;
+        }
+        .admin-sidebar-nav .submenu {
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         .chevron {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -150,7 +160,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('dashboard') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('dashboard') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Geral')"><a href="{{ route('admin.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Geral</a></li>
                 <li x-show="isVisible('Financeiro')"><a href="{{ route('admin.financial.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Financeiro</a></li>
                 <li x-show="isVisible('Comercial')"><a href="{{ route('admin.commercial.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.commercial.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Comercial</a></li>
@@ -169,7 +179,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('operacoes') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('operacoes') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Tarefas')"><a href="{{ route('admin.kanban.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.kanban.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Gestão de Tarefas</a></li>
                 <li x-show="isVisible('Suporte')"><a href="{{ route('admin.support.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.support.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Chamados de Suporte</a></li>
                 <li x-show="isVisible('Base de Conhecimento')"><a href="{{ route('admin.kb.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.kb.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Base de Conhecimento</a></li>
@@ -186,7 +196,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('usuarios') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('usuarios') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Alunos')"><a href="{{ route('admin.users') }}?role=aluno" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Alunos</a></li>
                 <li x-show="isVisible('Pacientes')"><a href="{{ route('admin.users') }}?role=paciente" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Pacientes</a></li>
                 <li x-show="isVisible('Profissionais')"><a href="{{ route('admin.users') }}?role=professional" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Profissionais</a></li>
@@ -205,7 +215,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('clinicas') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('clinicas') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Gestão de Clínicas')"><a href="{{ route('admin.pdf-companies.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.pdf-companies.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Gestão de Clínicas</a></li>
                 <li x-show="isVisible('Implantação')"><a href="{{ route('admin.clinic-onboarding.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.clinic-onboarding.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Implantação (Wizard)</a></li>
                 <li x-show="isVisible('Onboarding Premium')"><a href="{{ route('onboarding-premium.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('onboarding-premium.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Onboarding Premium</a></li>
@@ -221,7 +231,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('planos') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('planos') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Planos')"><a href="{{ route('admin.plans.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.plans.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Planos</a></li>
                 <li x-show="isVisible('Assinaturas')"><a href="{{ route('admin.financial.management') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.management') ? 'active' : 'text-zinc-600 hover:text-white' }}">Gestão de Assinaturas</a></li>
                 <li x-show="isVisible('Cupons')"><a href="{{ route('admin.coupons.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.coupons.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Cupons</a></li>
@@ -237,7 +247,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('ia_credits') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('ia_credits') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Dashboard')"><a href="{{ route('admin.financial.ai-credits.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.ai-credits.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Dashboard</a></li>
                 <li x-show="isVisible('Relatórios')"><a href="{{ route('admin.financial.ai-credits.report') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.ai-credits.report') ? 'active' : 'text-zinc-600 hover:text-white' }}">Relatórios</a></li>
                 <li x-show="isVisible('Preços e Pacotes')"><a href="{{ route('admin.billing.credits') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.billing.credits') ? 'active' : 'text-zinc-600 hover:text-white' }}">Pacotes & Preços</a></li>
@@ -253,7 +263,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('financeiro') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('financeiro') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Pagamentos')"><a href="{{ route('admin.settings.payments') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.payments') ? 'active' : 'text-zinc-600 hover:text-white' }}">Config. Pagamentos</a></li>
                 <li x-show="isVisible('Representantes')"><a href="{{ route('admin.representatives.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.representatives.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Representantes</a></li>
                 <li x-show="isVisible('Resgates')"><a href="{{ route('admin.representatives.withdrawals') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.representatives.withdrawals') ? 'active' : 'text-zinc-600 hover:text-white' }}">Resgates</a></li>
@@ -271,7 +281,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('vendas') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('vendas') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Leads')"><a href="{{ route('admin.leads.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.leads.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Leads</a></li>
                 <li x-show="isVisible('Funil de Vendas')"><a href="{{ route('admin.leads.funnel') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.leads.funnel') ? 'active' : 'text-zinc-600 hover:text-white' }}">Funil de Vendas</a></li>
                 <li x-show="isVisible('Propostas')"><a href="{{ route('admin.proposals.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.proposals.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Propostas Comerciais</a></li>
@@ -288,7 +298,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('relatorios') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('relatorios') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Monitoramento')"><a href="{{ route('admin.monitoring') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.monitoring') ? 'active' : 'text-zinc-600 hover:text-white' }}">Monitoramento Geral</a></li>
                 <li x-show="isVisible('Performance / CS')"><a href="{{ route('admin.cs.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.cs.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Performance / CS</a></li>
                 <li x-show="isVisible('Retenção')"><a href="{{ route('admin.cs.retention') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.cs.retention') ? 'active' : 'text-zinc-600 hover:text-white' }}">Retenção & Churn</a></li>
@@ -304,7 +314,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('ia_automacao') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('ia_automacao') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Monitoramento IA')"><a href="{{ route('admin.ai.monitoring') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.ai.monitoring') ? 'active' : 'text-zinc-600 hover:text-white' }}">Monitoramento IA</a></li>
                 <li x-show="isVisible('Workers & Filas')"><a href="{{ route('admin.operations.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.operations.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Workers & Operações</a></li>
             </ul>
@@ -319,7 +329,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('chatbot') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('chatbot') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Painel Omni')"><a href="{{ route('admin.omnichannel') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.omnichannel') ? 'active' : 'text-zinc-600 hover:text-white' }}">Painel OmniChannel</a></li>
                 <li x-show="isVisible('Bots')"><a href="{{ route('admin.omnichannel.bots') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.omnichannel.bots') ? 'active' : 'text-zinc-600 hover:text-white' }}">Gestão de Bots</a></li>
             </ul>
@@ -334,7 +344,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('configuracoes') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('configuracoes') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Geral')"><a href="{{ route('admin.settings') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings') ? 'active' : 'text-zinc-600 hover:text-white' }}">Geral</a></li>
                 <li x-show="isVisible('Especialidades')"><a href="{{ route('admin.especialidades.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.especialidades.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Especialidades</a></li>
                 <li x-show="isVisible('Músculos')"><a href="{{ route('admin.muscles.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.muscles.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Catálogo de Músculos</a></li>
@@ -352,7 +362,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('seguranca') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('seguranca') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Permissões')"><a href="{{ route('admin.roles.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.roles.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Permissões (Roles)</a></li>
                 <li x-show="isVisible('LGPD')"><a href="{{ route('admin.lgpd.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.lgpd.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Auditoria LGPD</a></li>
                 <li x-show="isVisible('Segurança Geral')"><a href="{{ route('admin.security.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.security.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Segurança Geral</a></li>
@@ -368,7 +378,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('logs') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('logs') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Logs de Erro')"><a href="{{ route('admin.system-errors') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.system-errors') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de Erro</a></li>
                 <li x-show="isVisible('Logs de E-mail')"><a href="{{ route('admin.settings.email.logs') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.logs') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de E-mail</a></li>
                 <li x-show="isVisible('Logs de Pagamento')"><a href="{{ route('admin.settings.payments.webhooks') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.payments.webhooks') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de Pagamento</a></li>
@@ -385,7 +395,7 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
-            <ul class="submenu space-y-1 mt-1 pl-4" x-show="openMenus.includes('integracoes') && !isCollapsed" x-collapse>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('integracoes') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('APIs Externas')"><a href="{{ route('admin.api-integrations.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.api-integrations.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">APIs Externas</a></li>
                 <li x-show="isVisible('Provedores SMTP')"><a href="{{ route('admin.settings.email.providers') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.providers') ? 'active' : 'text-zinc-600 hover:text-white' }}">Provedores SMTP</a></li>
                 <li x-show="isVisible('Templates de E-mail')"><a href="{{ route('admin.settings.email.templates.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.templates.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Templates de E-mail</a></li>
