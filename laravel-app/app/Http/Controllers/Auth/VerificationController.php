@@ -58,6 +58,11 @@ class VerificationController extends Controller
             return redirect()->route('login');
         }
 
+        $user = Auth::user();
+        if (app()->environment('production') && $user->systemAccessLinks()->exists()) {
+            return redirect()->route('onboarding.welcome-access');
+        }
+
         return view('auth.email-verification-success');
     }
 

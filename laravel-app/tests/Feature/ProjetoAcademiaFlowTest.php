@@ -2,17 +2,28 @@
 
 namespace Tests\Feature;
 
+use App\Models\SystemSetting;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\SeedsRbacForTests;
 use Tests\TestCase;
 
 class ProjetoAcademiaFlowTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsRbacForTests;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RolesAndPermissionsSeeder::class);
+        SystemSetting::query()->where('key', 'verificacao_email_ativa')->update(['value' => 'false']);
+    }
 
     public function test_home_shows_app_name_for_guest(): void
     {
-        $this->get('/')->assertOk()->assertSee('ProjetoAcademia', false);
+        $this->get('/')->assertOk()->assertSee('NexShape', false);
     }
 
     public function test_dashboard_redirects_guest_to_login(): void
@@ -27,13 +38,18 @@ class ProjetoAcademiaFlowTest extends TestCase
             'email' => 'flow@example.com',
             'password' => 'senha1234',
             'password_confirmation' => 'senha1234',
+            'tipo_acesso' => 'aluno',
+            'cpf' => '52998224725',
+            'birth_date' => '1990-01-15',
+            'sex' => 'M',
+            'terms' => '1',
         ])->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'flow@example.com']);
         $this->assertDatabaseHas('user_profiles', ['user_id' => User::where('email', 'flow@example.com')->first()->id]);
 
-        $this->get('/dashboard')->assertOk()->assertSee('Hoje', false);
+        $this->get('/dashboard')->assertOk()->assertSee('Força', false);
     }
 
     public function test_legacy_index_redirects_guest_to_home(): void
@@ -77,7 +93,7 @@ class ProjetoAcademiaFlowTest extends TestCase
 
     public function test_dashboard_add_water(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('aluno');
         $this->actingAs($user)->post('/dashboard', ['water_add' => 500])->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('water_entries', [

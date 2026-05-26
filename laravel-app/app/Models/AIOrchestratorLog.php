@@ -9,6 +9,9 @@ use App\Models\Traits\HasClinic;
 class AIOrchestratorLog extends Model
 {
     use HasClinic;
+
+    protected $table = 'ai_orchestrator_logs';
+
     protected $fillable = [
         'user_id',
         'clinic_id',

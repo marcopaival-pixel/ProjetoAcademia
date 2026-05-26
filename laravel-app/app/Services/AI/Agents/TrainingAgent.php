@@ -3,8 +3,8 @@
 namespace App\Services\AI\Agents;
 
 use App\Models\User;
+use App\Services\AI\AIProviderService;
 use Exception;
-use Illuminate\Support\Facades\Http;
 
 class TrainingAgent extends BaseAgent
 {
@@ -20,13 +20,18 @@ class TrainingAgent extends BaseAgent
     public function execute(User $user, string $message, array $context = []): array
     {
         try {
-            // Coletar contexto de treino real
             $userContext = $this->getUserTrainingContext($user);
+            $instructions = \Illuminate\Support\Facades\File::get(base_path('agentesprd/training-agent.md'));
+
+            // Injetar dados de visão se existirem
+            if (!empty($context['vision_data'])) {
+                $message = "DADOS DA FICHA DE TREINO (VISÃO): " . json_encode($context['vision_data']) . "\n\nCOMENTÁRIO DO USUÁRIO: " . $message;
+            }
 
             $messages = [
                 [
                     'role' => 'system',
-                    'content' => $this->getSystemPrompt($userContext)
+                    'content' => $instructions . "\n\n" . $this->getSystemContextPrompt($userContext)
                 ],
                 ['role' => 'user', 'content' => $message]
             ];
@@ -36,7 +41,7 @@ class TrainingAgent extends BaseAgent
                 messages: $messages,
                 agentName: $this->getName(),
                 modelType: 'main',
-                context: $context
+                context: array_merge(['temperature' => 0.5], $context)
             );
 
         } catch (Exception $e) {
@@ -44,22 +49,13 @@ class TrainingAgent extends BaseAgent
         }
     }
 
-    private function getSystemPrompt(array $ctx): string
+    private function getSystemContextPrompt(array $ctx): string
     {
-        return "Você é o NexShape Performance Coach, um especialista em fisiologia do exercício e biomecânica.
-        Seu objetivo é gerar prescrições de treino seguras e eficazes.
-        
-        CONTEXTO DO ALUNO:
+        return "CONTEXTO DINÂMICO DO ALUNO:
         - Nome: {$ctx['name']}
         - Objetivo: {$ctx['goal']}
         - Nível: {$ctx['level']}
-        - Último Treino: {$ctx['last_workout']}
-        
-        DIRETRIZES:
-        1. Priorize a segurança articular.
-        2. Use linguagem técnica mas motivadora.
-        3. Se houver lesão, sugira alternativas.
-        4. Retorne o treino formatado em Markdown.";
+        - Último Treino: {$ctx['last_workout']}";
     }
 
     private function getUserTrainingContext(User $user): array

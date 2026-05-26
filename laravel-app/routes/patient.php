@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Patient\MeasurementController;
+
 use App\Http\Controllers\Patient\PortalController;
 use App\Http\Controllers\Patient\ProfessionalSearchController;
 use App\Http\Controllers\Patient\ReportController;

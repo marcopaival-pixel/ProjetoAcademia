@@ -3,8 +3,8 @@
 namespace App\Services\AI\Agents;
 
 use App\Models\User;
+use App\Services\AI\AIProviderService;
 use Exception;
-use Illuminate\Support\Facades\Http;
 
 class SupportAgent extends BaseAgent
 {

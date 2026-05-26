@@ -39,6 +39,23 @@ class ChatController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
+        if (! $user->hasPremiumAccess() && ! $user->isAdministrator()) {
+            $limit = (int) config('projeto.chat_free_daily_user_messages', 8);
+            $used = $this->countUserMessagesToday($user->id);
+            if ($used >= $limit) {
+                return response()->json([
+                    'ok' => false,
+                    'code' => 'chat_quota_exceeded',
+                    'error' => 'Limite diário de mensagens atingido.',
+                    'quota' => [
+                        'limit' => $limit,
+                        'used' => $used,
+                    ],
+                    'plano_url' => route('plano'),
+                ], 403);
+            }
+        }
+
         // Salvar mensagem do usuário no histórico
         AIChat::create([
             'user_id' => $user->id,
@@ -223,19 +240,22 @@ class ChatController extends Controller
     }
 
     /**
-     * @return array{is_premium: bool, daily_user_limit: int|null, daily_user_used: int}
+     * @return array{is_premium: bool, has_ai_access: bool, daily_user_limit: int|null, daily_user_used: int, remaining_credits: int}
      */
     private function chatQuotaPayload(User $user): array
     {
-        $hasAi = $user->hasFeature('ai_training') || $user->hasFeature('ai_nutrition');
-        $remaining = $user->getRemainingAiCredits();
-        $limit = $user->getPlanLimit('ai_credits');
+        $isPremium = $user->isPremiumActive() || $user->isAdministrator();
+        $dailyLimit = $isPremium ? null : (int) config('projeto.chat_free_daily_user_messages', 8);
+        $dailyUsed = $this->countUserMessagesToday($user->id);
 
         return [
-            'is_premium' => $user->isPremiumActive(),
-            'has_ai_access' => $hasAi,
-            'daily_user_limit' => $limit,
-            'remaining_credits' => $remaining,
+            'is_premium' => $isPremium,
+            'has_ai_access' => $user->hasFeature('ai_training') || $user->hasFeature('ai_nutrition'),
+            'daily_user_limit' => $dailyLimit,
+            'daily_user_used' => $dailyUsed,
+            'remaining_credits' => (int) (\App\Models\AiCreditWallet::query()
+                ->where('user_id', $user->id)
+                ->value('balance') ?? 0),
         ];
     }
 }

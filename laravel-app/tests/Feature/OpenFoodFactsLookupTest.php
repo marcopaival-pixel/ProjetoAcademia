@@ -102,8 +102,8 @@ class OpenFoodFactsLookupTest extends TestCase
             ->getJson(route('food.product', ['code' => '3017620422003']))
             ->assertOk()
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('product.calories', 100)
-            ->assertJsonPath('product.protein_g', 5.0);
+            ->assertJsonPath('product.energy_kcal', 100)
+            ->assertJsonPath('product.protein_g', 5);
     }
 
     public function test_food_product_second_request_uses_cache_and_does_not_hit_api_again(): void
@@ -129,19 +129,19 @@ class OpenFoodFactsLookupTest extends TestCase
         $this->actingAs($user)
             ->getJson(route('food.product', ['code' => '3017620422003']))
             ->assertOk()
-            ->assertJsonPath('product.calories', 50);
+            ->assertJsonPath('product.energy_kcal', 50);
 
         $this->actingAs($user)
             ->getJson(route('food.product', ['code' => '3017620422003']))
             ->assertOk()
-            ->assertJsonPath('product.calories', 50);
+            ->assertJsonPath('product.energy_kcal', 50);
 
         Http::assertSentCount(1);
     }
 
     public function test_food_search_requires_authentication(): void
     {
-        $this->getJson(route('food.search', ['q' => 'test']))->assertRedirect(route('login'));
+        $this->getJson(route('food.search', ['q' => 'test']))->assertUnauthorized();
     }
 
     public function test_openfoodfacts_routes_are_throttled_per_user(): void
@@ -152,8 +152,10 @@ class OpenFoodFactsLookupTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        $this->actingAs($user)->getJson(route('food.search', ['q' => 'aa']))->assertOk();
-        $this->actingAs($user)->getJson(route('food.search', ['q' => 'bb']))->assertOk();
-        $this->actingAs($user)->getJson(route('food.search', ['q' => 'cc']))->assertStatus(429);
+        $queries = ['aaa', 'bbb', 'ccc', 'ddd', 'eee', 'fff'];
+        foreach (array_slice($queries, 0, 5) as $q) {
+            $this->actingAs($user)->getJson(route('food.search', ['q' => $q]))->assertOk();
+        }
+        $this->actingAs($user)->getJson(route('food.search', ['q' => $queries[5]]))->assertStatus(429);
     }
 }

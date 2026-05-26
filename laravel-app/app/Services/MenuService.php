@@ -229,6 +229,7 @@ class MenuService
                     ['name' => 'prof_library', 'label' => 'Biblioteca de Exercícios', 'route' => 'exercise.catalog', 'icon' => 'book-open-check'],
                     ['name' => 'prof_protocols', 'label' => 'Protocolos de Treino', 'route' => 'progression.plans.index', 'icon' => 'dumbbell'],
                     ['name' => 'prof_assessments', 'label' => 'Avaliações Físicas', 'route' => 'assessments.index', 'icon' => 'activity'],
+                    ['name' => 'prof_import_workout', 'label' => 'Importar Treino (IA)', 'route' => 'progression.plans.import-photo', 'icon' => 'camera', 'premium' => true],
                     ['name' => 'hydration', 'label' => 'Nex Hydra', 'route' => 'hydration.index', 'icon' => 'droplet'],
                     ['name' => 'omnichat_prof', 'label' => 'Atendimento Omni', 'route' => 'admin.omnichannel', 'icon' => 'messages-square'],
                 ], $isPremium),
@@ -243,6 +244,7 @@ class MenuService
                 'icon' => 'dumbbell',
                 'items' => $this->prepareItems($user, [
                     ['name' => 'dashboard', 'label' => 'Visão Geral', 'route' => 'dashboard', 'icon' => 'layout-grid'],
+                    ['name' => 'import_workout', 'label' => 'Importar Treino (IA)', 'route' => 'progression.plans.import-photo', 'icon' => 'camera', 'premium' => true],
                     ['name' => 'training', 'label' => 'Meus Treinos', 'route' => 'progression.plans.index', 'icon' => 'footprints'],
                     ['name' => 'exercise', 'label' => 'Registro de Treino', 'route' => 'exercise', 'icon' => 'activity'],
                     ['name' => 'diet', 'label' => 'Alimentação', 'route' => 'diary', 'icon' => 'utensils', 'premium' => true],

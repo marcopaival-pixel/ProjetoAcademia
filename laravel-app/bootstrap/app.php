@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -20,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'payment/webhook/*',
             'logout',
             'admin/logout',
-            'omni/webhook',
+            'omnichannel/webhook',
         ]);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->web(append: [
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'pro_patient_limit' => \App\Http\Middleware\CheckProfessionalPatientLimit::class,
             'patient_linked' => \App\Http\Middleware\EnsurePatientLinked::class,
             'menu.access' => \App\Http\Middleware\CheckRouteMenuAccess::class,
+            'block.demo.prod' => \App\Http\Middleware\BlockDemoInProduction::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

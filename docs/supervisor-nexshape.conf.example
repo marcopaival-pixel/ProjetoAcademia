@@ -1,0 +1,31 @@
+; Exemplo Supervisor — NexShape (Linux)
+; Copiar para /etc/supervisor/conf.d/nexshape.conf e ajustar paths/usuário.
+;
+; sudo supervisorctl reread && sudo supervisorctl update
+; sudo supervisorctl status
+
+[program:nexshape-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /home/USER/NexShape/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+directory=/home/USER/NexShape
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/home/USER/NexShape/storage/logs/worker.log
+stopwaitsecs=3600
+
+; Se não houver Redis, substituir "redis" por "database" no command acima.
+
+[program:nexshape-scheduler]
+process_name=%(program_name)s
+command=/bin/bash -c "while true; do php /home/USER/NexShape/artisan schedule:run --verbose --no-interaction; sleep 60; done"
+directory=/home/USER/NexShape
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/home/USER/NexShape/storage/logs/scheduler.log

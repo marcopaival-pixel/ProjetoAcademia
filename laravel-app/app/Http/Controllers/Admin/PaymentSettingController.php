@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentSetting;
+use App\Support\PaymentGatewayRegistry;
 use App\Models\AdminLog;
 use App\Models\AdminSetting;
 use App\Models\PaymentWebhookLog;
@@ -18,16 +19,15 @@ class PaymentSettingController extends Controller
     {
         $settings = PaymentSetting::all()->keyBy('gateway');
         
-        // Default gateways if not existing in DB
-        $gateways = ['mercadopago', 'pagseguro', 'asaas', 'stripe'];
-        
+        $gateways = PaymentGatewayRegistry::options();
+
         return view('admin.payment_settings.index', compact('settings', 'gateways'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'gateway' => 'required|string|in:mercadopago,pagseguro,asaas,stripe',
+            'gateway' => ['required', 'string', PaymentGatewayRegistry::validationRule()],
             'environment' => 'required|in:sandbox,production',
             'client_id' => 'nullable|string',
             'client_secret' => 'nullable|string',
@@ -77,41 +77,25 @@ class PaymentSettingController extends Controller
 
     public function testConnection(Request $request)
     {
-        $gateway = $request->input('gateway');
+        $gateway = (string) $request->input('gateway');
+
+        if (! PaymentGatewayRegistry::isImplemented($gateway)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gateway não implementado no sistema.',
+            ], 422);
+        }
+
         $setting = PaymentSetting::where('gateway', $gateway)->first();
 
-        if (!$setting) {
+        if (! $setting) {
             return response()->json(['success' => false, 'message' => 'Configurações não encontradas para este gateway.']);
         }
 
-        // Mocking connection test logic
-        // In a real scenario, we would make a request to the gateway API
-        
-        $success = false;
-        $message = 'Falha na conexão com o gateway.';
-
-        try {
-            switch ($gateway) {
-                case 'mercadopago':
-                    $success = !empty($setting->access_token); 
-                    break;
-                case 'stripe':
-                    $success = !empty($setting->access_token);
-                    break;
-                case 'asaas':
-                    $success = !empty($setting->access_token);
-                    break;
-                case 'pagseguro':
-                    $success = !empty($setting->access_token);
-                    break;
-            }
-            
-            if ($success) {
-                $message = "Conexão com {$gateway} estabelecida com sucesso!";
-            }
-        } catch (\Exception $e) {
-            $message = "Erro ao testar conexão: " . $e->getMessage();
-        }
+        $success = ! empty($setting->access_token);
+        $message = $success
+            ? "Credenciais de {$gateway} presentes (teste básico)."
+            : 'Token de acesso não configurado.';
 
         return response()->json([
             'success' => $success,

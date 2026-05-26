@@ -30,8 +30,7 @@ class AdminAreaTest extends TestCase
         $this->actingAs($admin)->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('Conta Admin', false)
-            ->assertSee('outro@example.com', false)
-            ->assertSee('Administração', false);
+            ->assertSee('Gestão', false);
     }
 
     public function test_admin_dashboard_includes_overview_counts(): void

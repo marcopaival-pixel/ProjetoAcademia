@@ -19,17 +19,20 @@ class AiCreditService
      */
     public function getWallet(User $user): AiCreditWallet
     {
-        if (!$user->aiWallet) {
-            $legacyCredits = (int) ($user->ai_credits ?? 0);
-            return AiCreditWallet::create([
-                'user_id' => $user->id,
+        $legacyCredits = (int) ($user->ai_credits ?? 0);
+
+        /** @var AiCreditWallet $wallet */
+        $wallet = AiCreditWallet::firstOrCreate(
+            ['user_id' => $user->id],
+            [
                 'balance' => $legacyCredits,
                 'monthly_allowance' => 0,
                 'extra_credits' => $legacyCredits,
                 'renewal_date' => now()->addMonth(),
-            ]);
-        }
-        return $user->aiWallet;
+            ]
+        );
+
+        return $wallet;
     }
 
     /**

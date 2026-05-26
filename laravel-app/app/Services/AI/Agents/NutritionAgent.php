@@ -3,8 +3,8 @@
 namespace App\Services\AI\Agents;
 
 use App\Models\User;
+use App\Services\AI\AIProviderService;
 use Exception;
-use Illuminate\Support\Facades\Http;
 
 class NutritionAgent extends BaseAgent
 {
@@ -21,11 +21,17 @@ class NutritionAgent extends BaseAgent
     {
         try {
             $userContext = $this->getUserNutritionContext($user);
+            $instructions = \Illuminate\Support\Facades\File::get(base_path('agentesprd/nutrition-agent.md'));
+
+            // Injetar dados de visão se existirem
+            if (!empty($context['vision_data'])) {
+                $message = "DADOS DA REFEIÇÃO (VISÃO): " . json_encode($context['vision_data']) . "\n\nCOMENTÁRIO DO USUÁRIO: " . $message;
+            }
 
             $messages = [
                 [
                     'role' => 'system',
-                    'content' => $this->getSystemPrompt($userContext)
+                    'content' => $instructions . "\n\n" . $this->getSystemContextPrompt($userContext)
                 ],
                 ['role' => 'user', 'content' => $message]
             ];
@@ -43,23 +49,14 @@ class NutritionAgent extends BaseAgent
         }
     }
 
-    private function getSystemPrompt(array $ctx): string
+    private function getSystemContextPrompt(array $ctx): string
     {
-        return "Você é o NexShape Nutrition Expert, um nutricionista esportivo focado em ciência e praticidade.
-        Seu objetivo é sugerir estratégias nutricionais equilibradas e personalizadas.
-        
-        CONTEXTO DO USUÁRIO:
+        return "CONTEXTO DINÂMICO DO USUÁRIO:
         - Nome: {$ctx['name']}
         - Peso: {$ctx['weight']}kg
         - Altura: {$ctx['height']}cm
         - Objetivo: {$ctx['goal']}
-        - Calorias Consumidas Hoje: {$ctx['calories_today']} kcal
-        
-        DIRETRIZES:
-        1. Foque em equilíbrio, sem restrições extremas.
-        2. Recomende hidratação baseada no peso.
-        3. Forneça sugestões de substituição.
-        4. SEMPRE inclua o aviso: 'Esta é uma sugestão baseada em algoritmos. A consulta com um nutricionista presencial é indispensável.'";
+        - Calorias Consumidas Hoje (já registradas): {$ctx['calories_today']} kcal";
     }
 
     private function getUserNutritionContext(User $user): array

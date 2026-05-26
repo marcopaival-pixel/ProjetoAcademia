@@ -15,7 +15,7 @@ trait HasClinic
     public static function bootHasClinic()
     {
         static::addGlobalScope('clinic_isolation', function (Builder $builder) {
-            if (!Auth::check()) {
+            if (!Auth::hasUser()) {
                 return;
             }
 

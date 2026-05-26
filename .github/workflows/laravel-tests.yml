@@ -1,11 +1,10 @@
-# Executa a suíte de testes do Laravel quando `laravel-app/` muda.
-# Alinha-se a AGENTS.md: validação automática fica a cargo do repositório de aplicação.
+# Executa testes e análise estática quando `laravel-app/` muda.
 
 name: Laravel tests
 
 on:
   push:
-    branches: [master, main]
+    branches: [main, MAPL_0004]
     paths:
       - "laravel-app/**"
       - ".github/workflows/laravel-tests.yml"
@@ -21,6 +20,19 @@ defaults:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +40,36 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: mbstring, xml, sqlite3, pdo_sqlite
+          extensions: mbstring, xml, pdo_mysql
           coverage: none
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Run PHPUnit
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: php artisan test
+
+  phpstan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPStan
+        run: composer phpstan

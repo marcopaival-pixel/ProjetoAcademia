@@ -11,11 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional, Traits\HasClinic;
+    use HasApiTokens, HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional, Traits\HasClinic;
 
     protected static function booted()
     {
@@ -682,6 +683,11 @@ class User extends Authenticatable
         return $this->hasMany(AiCreditTransaction::class);
     }
 
+    public function aiUsage(): HasMany
+    {
+        return $this->hasMany(AiCreditUsageLog::class, 'user_id');
+    }
+
     public function getAiCreditsUsedToday(): int
     {
         return abs($this->aiTransactions()
@@ -758,5 +764,10 @@ class User extends Authenticatable
     public function communityReactions(): HasMany
     {
         return $this->hasMany(CommunityReaction::class);
+    }
+
+    public function systemAccessLinks(): HasMany
+    {
+        return $this->hasMany(SystemAccessLink::class);
     }
 }

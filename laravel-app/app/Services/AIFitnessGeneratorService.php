@@ -132,6 +132,8 @@ class AIFitnessGeneratorService
                 }
             ]
         }";
+    }
+
     /**
      * Gera sugestões alimentares via IA.
      */
@@ -175,6 +177,145 @@ class AIFitnessGeneratorService
             if (!$response->successful()) return ['ok' => false, 'error' => 'IA Offline'];
 
             return ['ok' => true, 'plan' => $response->json()];
+
+        } catch (\Exception $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Gera um relatório de evolução semanal via IA.
+     */
+    public function generateEvolutionReport(User $user): array
+    {
+        $p = $user->profile;
+        if (!$p) return ['ok' => false, 'error' => 'Perfil não encontrado'];
+
+        // Coletar avaliações recentes
+        $assessments = \App\Models\BodyAssessment::where('user_id', $user->id)
+            ->orderBy('assessment_date', 'desc')
+            ->take(2)
+            ->get();
+            
+        $currentAssessment = $assessments->first();
+        $previousAssessment = $assessments->last();
+
+        $pesoAtual = $currentAssessment ? $currentAssessment->weight_kg . 'kg' : 'N/A';
+        $bfAtual = $currentAssessment ? $currentAssessment->bf_percent . '%' : 'N/A';
+        
+        $historico = "Nenhum histórico anterior";
+        if ($currentAssessment && $previousAssessment && $currentAssessment->id !== $previousAssessment->id) {
+            $historico = "Peso anterior: {$previousAssessment->weight_kg}kg, BF anterior: {$previousAssessment->bf_percent}%";
+        }
+
+        // Treino atual
+        $activePlan = TrainingPlan::where('user_id', $user->id)->where('is_active', true)->first();
+        $treinoStr = $activePlan ? "{$activePlan->name} - Objetivo: {$activePlan->goal}" : "Nenhum treino ativo no sistema";
+
+        // Observações do professor / notas do usuário
+        $notasProf = $currentAssessment->notes ?? '';
+        $notasUser = $p->fitness_notes ?? '';
+        $observacoes = trim("$notasProf $notasUser");
+        if (empty($observacoes)) $observacoes = "Nenhuma observação extra.";
+
+        // Dados base de perfil para traçar o 'patamar'
+        $idade = $p->birth_date ? \Carbon\Carbon::parse($p->birth_date)->age . ' anos' : 'N/A';
+        $altura = $p->height_cm ? $p->height_cm . ' cm' : 'N/A';
+        
+        $metaGeralTranslate = [
+            'lose_weight' => 'Perda de Peso / Emagrecimento',
+            'gain_mass' => 'Hipertrofia / Ganho de Massa',
+            'maintain' => 'Manutenção / Condicionamento',
+            'health' => 'Saúde e Qualidade de Vida',
+            'performance' => 'Performance Desportiva'
+        ];
+        $metaGeral = $metaGeralTranslate[$p->goal] ?? ($p->goal ?? 'Não definido');
+        
+        $pesoAlvo = $p->target_weight_kg ? $p->target_weight_kg . 'kg' : 'N/A';
+        $nivelExperiencia = ucfirst($p->experience_level ?? 'N/A');
+        $diasTreino = $p->training_days_per_week ? $p->training_days_per_week . ' dias/semana' : 'N/A';
+
+        $prompt = "Você é o NexBot, a Inteligência Artificial de alta performance do ecossistema NexShape. O seu objetivo é fornecer um Relatório Semanal de Evolução ao aluno, como se fosse um coach premium (estilo Whoop, Apple Fitness).
+
+Aja com um tom de 'Treinador de Elite/Analista de Performance', científico, sofisticado e focado em resultados.
+NUNCA use 'Sem dados precisos', use frases premium como 'A ausência de biometria sincronizada limita análises avançadas de recuperação muscular e performance metabólica.'
+
+RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO. NÃO retorne markdown ao redor do JSON.
+A estrutura JSON DEVE conter exatamente as seguintes chaves:
+
+{
+  \"diagnostico\": \"O texto do diagnóstico inteligente. Pareça muito inteligente e analítico.\",
+  \"scores\": {
+    \"performance_geral\": 82,
+    \"disciplina\": 90,
+    \"consistencia\": 85,
+    \"recuperacao\": 70,
+    \"intensidade\": 75,
+    \"condicionamento\": 80,
+    \"regularidade\": 95,
+    \"evolucao\": 75
+  },
+  \"tendencias\": [
+    {\"area\": \"Condicionamento\", \"status\": \"Evolução moderada\", \"icon\": \"↗\"},
+    {\"area\": \"Peso\", \"status\": \"Estável\", \"icon\": \"→\"},
+    {\"area\": \"Recuperação\", \"status\": \"Atenção\", \"icon\": \"↘\"}
+  ],
+  \"insight_premium\": \"Um parágrafo de insight profundo e científico sobre o comportamento.\",
+  \"estrategia_semana\": \"O foco desta semana.\",
+  \"ajustes_treino\": \"O que alterar no treino.\",
+  \"recuperacao_energia\": \"O que fazer para recuperar melhor.\",
+  \"alimentacao_metabolismo\": \"Dicas de alimentação.\",
+  \"comparativo\": \"Comparativo com a semana anterior.\",
+  \"veredito\": \"Frase de efeito motivacional final.\",
+  \"proximos_passos\": [\"Passo 1\", \"Passo 2\", \"Passo 3\"]
+}
+
+DADOS DE PERFIL CADASTRADOS (PATAMAR ALVO):
+- Atleta: {$user->name} ({$idade}), Altura: {$altura}
+- Objetivo Principal: {$metaGeral}
+- Peso Alvo: {$pesoAlvo}
+- Nível de Experiência: {$nivelExperiencia}
+- Frequência: {$diasTreino}
+
+DADOS BIOMÉTRICOS RECENTES (STATUS ATUAL):
+- Peso Atual: {$pesoAtual}
+- Percentual de Gordura (BF): {$bfAtual}
+
+HISTÓRICO RECENTE (Variação):
+- {$historico}
+
+PROGRAMA DE TREINO ATIVO:
+- {$treinoStr}
+
+NOTAS CLÍNICAS / OBSERVAÇÕES DO PROFESSOR:
+- {$observacoes}
+
+Gere os scores de forma coerente com a evolução atual (0 a 100).";
+
+        try {
+            $payload = [
+                'model' => $this->model,
+                'messages' => [
+                    ['role' => 'system', 'content' => 'Você é o NexBot, a IA de Elite do NexShape. Retorne ESTRITAMENTE a estrutura JSON pedida e MAIS NADA. NUNCA coloque formatações markdown em torno do JSON (não use ```json).'],
+                    ['role' => 'user', 'content' => $prompt]
+                ]
+            ];
+            
+            // Suporte para garantias JSON caso a API suporte
+            if (str_contains($this->model, 'gpt-3.5') || str_contains($this->model, 'gpt-4')) {
+                $payload['response_format'] = ['type' => 'json_object'];
+            }
+
+            $response = Http::withToken($this->apiKey)
+                ->timeout(60)
+                ->post($this->apiUrl, $payload);
+
+            if (!$response->successful()) {
+                return ['ok' => false, 'error' => 'IA Offline ou Erro na API'];
+            }
+
+            $content = $response->json('choices.0.message.content');
+            return ['ok' => true, 'report' => $content];
 
         } catch (\Exception $e) {
             return ['ok' => false, 'error' => $e->getMessage()];

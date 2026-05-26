@@ -4,17 +4,32 @@ namespace Tests\Feature;
 
 use App\Models\AIChat;
 use App\Models\User;
-use App\Services\AIChatService;
+use Database\Seeders\AppFeatureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ChatQuotaTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(AppFeatureSeeder::class);
+    }
+
+    private function fakeOpenAiResponses(): void
+    {
+        Http::fake([
+            '*' => Http::response($this->openAiChatFakePayload('Resposta de teste'), 200),
+        ]);
+    }
+
     public function test_free_user_blocked_when_daily_user_message_quota_reached(): void
     {
         config(['projeto.chat_free_daily_user_messages' => 2]);
+        $this->fakeOpenAiResponses();
 
         $user = User::factory()->create([
             'is_premium' => false,
@@ -47,7 +62,7 @@ class ChatQuotaTest extends TestCase
 
         $user = User::factory()->create(['is_premium' => false]);
 
-        $this->actingAs($user)->getJson('/api/chat/history?limit=5')
+        $this->actingAs($user)->getJson(route('chat.history', ['limit' => 5]))
             ->assertOk()
             ->assertJsonPath('chat_quota.is_premium', false)
             ->assertJsonPath('chat_quota.daily_user_limit', 6)
@@ -61,7 +76,7 @@ class ChatQuotaTest extends TestCase
             'premium_expires_at' => now()->addMonth(),
         ]);
 
-        $this->actingAs($user)->getJson('/api/chat/history')
+        $this->actingAs($user)->getJson(route('chat.history'))
             ->assertOk()
             ->assertJsonPath('chat_quota.is_premium', true)
             ->assertJsonPath('chat_quota.daily_user_limit', null);
@@ -70,12 +85,7 @@ class ChatQuotaTest extends TestCase
     public function test_send_returns_chat_quota_after_success(): void
     {
         config(['projeto.chat_free_daily_user_messages' => 8]);
-
-        $this->mock(AIChatService::class, function ($mock) {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andReturn(['ok' => true, 'message' => 'Resposta de teste']);
-        });
+        $this->fakeOpenAiResponses();
 
         $user = User::factory()->create(['is_premium' => false]);
 
@@ -90,12 +100,7 @@ class ChatQuotaTest extends TestCase
     public function test_administrator_bypasses_daily_chat_quota(): void
     {
         config(['projeto.chat_free_daily_user_messages' => 1]);
-
-        $this->mock(AIChatService::class, function ($mock) {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andReturn(['ok' => true, 'message' => 'Ok']);
-        });
+        $this->fakeOpenAiResponses();
 
         $user = User::factory()->administrator()->create([
             'is_premium' => false,

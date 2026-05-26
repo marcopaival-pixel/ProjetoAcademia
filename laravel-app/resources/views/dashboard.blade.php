@@ -219,6 +219,58 @@
             </div>
         </div>
 
+        @if($systemAccessLinks->isNotEmpty())
+        <!-- My Systems - Direct Access Links -->
+        <div class="space-y-8">
+            <div class="flex items-center gap-3">
+                <div class="h-[1px] flex-grow bg-zinc-900"></div>
+                <h2 class="text-xs font-black text-zinc-500 uppercase tracking-[0.4em] italic">Meus Sistemas</h2>
+                <div class="h-[1px] flex-grow bg-zinc-900"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                @foreach($systemAccessLinks as $link)
+                <div class="group relative bg-zinc-900 border border-zinc-800 p-8 rounded-[3rem] overflow-hidden shadow-2xl transition-all hover:border-blue-500/30">
+                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/5 blur-[50px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
+                    
+                    <div class="relative z-10 flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 border border-blue-500/20 group-hover:bg-blue-500 group-hover:text-zinc-950 transition-all">
+                            <i data-lucide="external-link" class="w-8 h-8"></i>
+                        </div>
+                        
+                        <h3 class="text-xl font-black text-white uppercase tracking-tighter mb-2">{{ $link->system_name }}</h3>
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-6">Acesso Direto ao Sistema</p>
+                        
+                        <div class="w-full space-y-3">
+                            <a href="{{ $link->system_url }}" target="_blank" class="flex items-center justify-center w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/10 no-underline">
+                                Acessar Sistema
+                            </a>
+                            <button onclick="copyToClipboard('{{ $link->system_url }}')" class="flex items-center justify-center w-full py-4 bg-zinc-950 border border-zinc-800 text-zinc-400 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:text-white transition-all">
+                                Copiar Link
+                            </button>
+                        </div>
+                        
+                        @if($link->qr_code_path)
+                        <div class="mt-6 pt-6 border-t border-zinc-800 w-full flex flex-col items-center">
+                            <img src="{{ asset('storage/' . $link->qr_code_path) }}" alt="QR Code" class="w-20 h-20 opacity-50 group-hover:opacity-100 transition-opacity mb-2">
+                            <span class="text-[8px] text-zinc-600 font-black uppercase tracking-widest">Acesso pelo Celular</span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        <script>
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Link copiado para a área de transferência!');
+                });
+            }
+        </script>
+        @endif
+
         <!-- Layout Bento Moderno -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
 

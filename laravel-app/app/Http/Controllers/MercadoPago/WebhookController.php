@@ -73,18 +73,22 @@ class WebhookController extends Controller
 
         // --- Validação de assinatura HMAC-SHA256 (Correção S2) ---
         $webhookSecret = (string) config('projeto.mp_webhook_secret', '');
-        if ($webhookSecret !== '') {
-            if (! $this->validateMpSignature($request, $webhookSecret)) {
-                Log::warning('[mp_webhook] Assinatura inválida rejeitada.', [
-                    'ip'           => $request->ip(),
-                    'x-signature'  => $request->header('x-signature', ''),
-                    'x-request-id' => $request->header('x-request-id', ''),
-                ]);
+        if ($webhookSecret === '') {
+            if (app()->environment('production')) {
+                Log::error('[mp_webhook] MP_WEBHOOK_SECRET obrigatório em produção.');
 
-                return response('Assinatura inválida', 401, ['Content-Type' => 'text/plain; charset=UTF-8']);
+                return response('Webhook não configurado', 503, ['Content-Type' => 'text/plain; charset=UTF-8']);
             }
-        } else {
+
             Log::debug('[mp_webhook] MP_WEBHOOK_SECRET não configurado — validação de assinatura ignorada (apenas dev).');
+        } elseif (! $this->validateMpSignature($request, $webhookSecret)) {
+            Log::warning('[mp_webhook] Assinatura inválida rejeitada.', [
+                'ip'           => $request->ip(),
+                'x-signature'  => $request->header('x-signature', ''),
+                'x-request-id' => $request->header('x-request-id', ''),
+            ]);
+
+            return response('Assinatura inválida', 401, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
         $paymentId           = null;

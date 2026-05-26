@@ -36,6 +36,10 @@ return [
                  */
                 'follow_links' => false,
 
+                'ignore_unreadable_directories' => true,
+
+                'relative_path' => null,
+
                 /*
                  * Determines if it should avoid backing up when the size in bytes exceeds a certain value.
                  */

@@ -73,13 +73,14 @@ class CheckoutController extends Controller
 
                 // 1. Criar usuário se não existir
                 if (!$user) {
-                    $user = User::create([
+                    $user = new User([
                         'name' => $request->name,
                         'email' => $request->email,
-                        'password_hash' => Hash::make($request->password),
                         'status' => 'active',
                         'onboarding_status' => 'pending',
                     ]);
+                    $user->password_hash = Hash::make($request->password);
+                    $user->save();
                     Auth::login($user);
                 }
 

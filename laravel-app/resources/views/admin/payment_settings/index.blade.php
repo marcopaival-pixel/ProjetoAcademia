@@ -60,9 +60,12 @@
         <div class="lg:col-span-1 space-y-4">
             <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-4 mb-4">Selecione o Provedor</p>
             
-            @foreach($gateways as $gw)
+            @foreach($gateways as $gw => $gatewayLabel)
                 @php 
                     $activeGw = request('gateway', 'mercadopago');
+                    if (! array_key_exists($activeGw, $gateways)) {
+                        $activeGw = array_key_first($gateways);
+                    }
                     $isCurrent = $activeGw == $gw;
                     $config = $settings->get($gw);
                     $isActiveInDb = $config && $config->status == 'active';
@@ -75,7 +78,7 @@
                                     <span class="text-[10px] font-black text-white uppercase">{{ substr($gw, 0, 2) }}</span>
                                 </div>
                                 <div>
-                                    <h4 class="text-xs font-black text-white capitalize">{{ str_replace('pago', ' Pago', str_replace('seguro', ' Seguro', $gw)) }}</h4>
+                                    <h4 class="text-xs font-black text-white">{{ $gatewayLabel }}</h4>
                                     @if($isActiveInDb)
                                         <span class="text-[8px] font-bold text-green-500 uppercase tracking-widest flex items-center gap-1">
                                             <span class="w-1 h-1 bg-green-500 rounded-full"></span> Ativo
@@ -98,14 +101,18 @@
         <div class="lg:col-span-3">
             @php 
                 $selectedGateway = request('gateway', 'mercadopago');
+                if (! array_key_exists($selectedGateway, $gateways)) {
+                    $selectedGateway = array_key_first($gateways);
+                }
                 $currentSetting = $settings->get($selectedGateway);
+                $selectedLabel = $gateways[$selectedGateway] ?? $selectedGateway;
             @endphp
             
             <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[100px] rounded-full -mr-20 -mt-20 group-hover:bg-blue-600/10 transition-all duration-700"></div>
                 
                 <header class="mb-12 relative z-10">
-                    <h3 class="text-2xl font-black text-white tracking-tight italic capitalize">Configurar {{ str_replace('pago', ' Pago', str_replace('seguro', ' Seguro', $selectedGateway)) }}</h3>
+                    <h3 class="text-2xl font-black text-white tracking-tight italic">Configurar {{ $selectedLabel }}</h3>
                     <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Defina as credenciais e parâmetros operacionais</p>
                 </header>
 

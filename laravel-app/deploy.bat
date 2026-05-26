@@ -56,10 +56,13 @@ echo.
 echo ============================================
 echo   Passos OBRIGATORIOS apos este script:
 echo.
-echo   1. Envie os arquivos via FTP para o servidor:
-echo      - public\build\         -> /NexShape/public/build/
-echo      - public\css\           -> /NexShape/public/css/
-echo      - resources\views\      -> /NexShape/resources/views/
+echo   1. Envie os arquivos via FTP para o servidor (CRÍTICO: Sincronize as pastas de lógica):
+echo      - app/                  -> /NexShape/app/ (Lógica, Models, Controllers)
+echo      - config/               -> /NexShape/config/ (Configurações)
+echo      - routes/               -> /NexShape/routes/ (Rotas)
+echo      - public/build/         -> /NexShape/public/build/ (Vite Assets)
+echo      - public/css/           -> /NexShape/public/css/ (CSS)
+echo      - resources/views/      -> /NexShape/resources/views/ (Templates)
 echo.
 echo   2. Confira o .env no servidor (via cPanel ou FTP):
 echo      APP_ENV=production

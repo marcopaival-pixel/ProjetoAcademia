@@ -2,6 +2,8 @@
 
 Este documento contém a estrutura detalhada de todas as tabelas do banco de dados.
 
+> **Atualização (mai/2026):** tabelas criadas após este snapshot estão em **`dicionario_dados_suplemento_2026-05.md`** (clinics, IA, Configuration Center, pagamentos, comunidade, etc.).
+
 ========================================
 TABELA: academy_companies
 ========================================

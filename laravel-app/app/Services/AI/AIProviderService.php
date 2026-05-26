@@ -41,12 +41,14 @@ class AIProviderService
             $response = Http::withToken($this->apiKey)
                 ->acceptJson()
                 ->timeout(60)
-                ->post($this->apiUrl, [
+                ->post($this->apiUrl, array_filter([
                     'model' => $modelName,
                     'messages' => $messages,
                     'temperature' => $context['temperature'] ?? 0.7,
                     'max_tokens' => $context['max_tokens'] ?? 2000,
-                ]);
+                    'response_format' => $context['response_format'] ?? null,
+                    'seed' => $context['seed'] ?? null,
+                ]));
 
             $executionTime = (int) ((microtime(true) - $startTime) * 1000);
 
@@ -87,7 +89,8 @@ class AIProviderService
                 'message' => $content,
                 'tokens' => $totalTokens,
                 'cost' => $cost,
-                'model' => $modelName
+                'model' => $modelName,
+                'execution_time_ms' => $executionTime
             ];
 
         } catch (Exception $e) {
@@ -131,7 +134,11 @@ class AIProviderService
                 'clinic_id' => $clinicId,
                 'agent_name' => $agentName,
                 'model_name' => $modelName,
-                'user_message' => collect($messages)->where('role', 'user')->last()['content'] ?? 'N/A',
+                'user_message' => (function () use ($messages) {
+                    $lastUser = collect($messages)->where('role', 'user')->last();
+
+                    return is_array($lastUser) ? (string) ($lastUser['content'] ?? 'N/A') : 'N/A';
+                })(),
                 'ai_response' => $responseContent,
                 'input_tokens' => $input,
                 'output_tokens' => $output,

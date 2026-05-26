@@ -44,6 +44,10 @@
             <button {{ !$isPremium ? 'data-premium-locked' : 'onclick=generateShareCard()' }} class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-emerald-500 hover:text-zinc-950 transition-all shadow-xl" title="Gerar Card de Evolução">
                 <i data-lucide="share-2" class="w-6 h-6"></i>
             </button>
+            <a href="{{ $isPremium ? route('evolution.ai-report') : '#' }}" {{ !$isPremium ? 'data-premium-locked' : '' }} class="px-6 py-5 bg-zinc-900 text-zinc-300 border border-zinc-800 font-black text-xs rounded-2xl hover:text-white hover:border-zinc-700 transition-all shadow-xl flex items-center gap-2 uppercase tracking-widest">
+                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-500"></i>
+                <span class="hidden md:inline">Relatório IA</span>
+            </a>
             <button onclick="document.getElementById('uploadModal').classList.remove('hidden')" class="px-8 py-5 bg-emerald-500 text-zinc-950 font-black text-xs rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10 flex items-center gap-3 uppercase tracking-widest">
                 <i data-lucide="camera" class="w-4 h-4"></i>
                 Lançar Registro

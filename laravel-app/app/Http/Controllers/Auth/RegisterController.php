@@ -271,7 +271,27 @@ class RegisterController extends Controller
         if ($verificacaoAtiva) {
             $postRegisterRedirect = route('verification.notice', ['email' => $user->email]);
         } else {
-            if ($user->registration_approval_status === 'approved') {
+            // Requisito: Geração Automática de Link de Acesso Direto
+            $accessLink = null;
+            if (config('system.onboarding.enabled', true)) {
+                try {
+                    $service = app(\App\Services\SystemAccessService::class);
+                    $accessLink = $service->generateForUser($user);
+                    
+                    if (config('system.onboarding.send_email', true)) {
+                        \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeSystemAccessMail($user, $accessLink));
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Falha ao gerar link de acesso ou enviar e-mail de boas-vindas', [
+                        'user_id' => $user->id,
+                        'exception' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            if ($accessLink && app()->environment('production')) {
+                $postRegisterRedirect = route('onboarding.welcome-access');
+            } elseif ($user->registration_approval_status === 'approved') {
                 $postRegisterRedirect = route($user->hasRole('professional') ? 'professional.dashboard' : 'dashboard');
             } else {
                 $postRegisterRedirect = $user->isRepresentativePending() 

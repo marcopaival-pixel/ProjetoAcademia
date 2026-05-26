@@ -15,4 +15,7 @@ return [
     'APP_PUBLIC_URL' => 'https://localhost',
     // Credenciais em developers.mercadopago.com.br — use token de TESTE primeiro
     'MP_ACCESS_TOKEN' => '',
+    // Em produção use apenas o webhook Laravel (/mp/webhook). Legado php-app responde 410 se APP_ENV=production.
+    'MP_WEBHOOK_SECRET' => '',
+    'APP_ENV' => 'local',
 ];

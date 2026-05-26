@@ -2,7 +2,14 @@
     $accentColor = \App\Models\AdminSetting::get('accent_color', '#10b981');
     $loggedIn = auth()->check();
     $customLogo = \App\Models\AdminSetting::get('logo_url', '');
+
+    // Capturar origem PaivaTech
+    if (request()->has('from') && request()->get('from') === 'paivatech') {
+        session(['paivatech_origin' => 'paivatech']);
+    }
+    $showPaivaBacklink = session('paivatech_origin') === 'paivatech' || request()->get('from') === 'paivatech';
 @endphp
+
 <!DOCTYPE html>
 <html lang="pt-PT" data-theme="dark">
 <head>
@@ -56,7 +63,56 @@
     @stack('styles')
 </head>
 <body class="admin-panel-body">
+    {{-- Barra de Retorno PaivaTech (Versão Robusta) --}}
+    <div id="paiva-backlink-bar" class="bg-[#080a0f] border-b border-zinc-900/50 py-2.5 px-6 sm:px-8 flex items-center justify-between relative z-[2000] animate-fade-in" style="display: none;">
+        <div class="flex items-center gap-4">
+            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] hidden sm:block">Uma solução da PaivaTech Solutions</span>
+            <a href="{{ (request()->getHost() === 'localhost' || request()->getHost() === '127.0.0.1') ? 'http://localhost:3000' : 'https://paivatechsolutions.com.br' }}" class="group flex items-center gap-2 text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-[0.2em] transition-all">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1"></i>
+                Voltar ao Portal
+            </a>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="h-4 w-px bg-zinc-900 hidden sm:block"></div>
+            <button onclick="dismissPaivaBacklink()" class="text-zinc-800 hover:text-zinc-600 transition-colors">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function dismissPaivaBacklink() {
+            const bar = document.getElementById('paiva-backlink-bar');
+            if (bar) bar.style.display = 'none';
+            sessionStorage.setItem('paivatech_dismissed', 'true');
+            document.querySelectorAll('.fixed-top-header, .topbar').forEach(el => el.style.top = '0');
+        }
+
+        (function() {
+            const hasParam = new URLSearchParams(window.location.search).get('from') === 'paivatech';
+            const hasSession = sessionStorage.getItem('paivatech_origin') === 'paivatech';
+            const isDismissed = sessionStorage.getItem('paivatech_dismissed') === 'true';
+
+            if ((hasParam || hasSession) && !isDismissed) {
+                if (hasParam) sessionStorage.setItem('paivatech_origin', 'paivatech');
+                
+                document.addEventListener('DOMContentLoaded', function() {
+                    const bar = document.getElementById('paiva-backlink-bar');
+                    if (bar) {
+                        bar.style.display = 'flex';
+                        // Ajustar elementos fixos
+                        document.querySelectorAll('.fixed-top-header, .topbar').forEach(el => {
+                            el.style.top = '41px';
+                        });
+                    }
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            }
+        })();
+    </script>
+
     @include('partials.impersonation-banner')
+
     <div class="app-container">
         @include('partials.admin-sidebar')
 

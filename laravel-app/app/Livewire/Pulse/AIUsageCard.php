@@ -4,7 +4,7 @@ namespace App\Livewire\Pulse;
 
 use App\Models\AIOrchestratorLog;
 use Illuminate\Support\Facades\DB;
-use Laravel\Pulse\Http\Livewire\Card;
+use Laravel\Pulse\Livewire\Card;
 use Livewire\Attributes\Lazy;
 
 #[Lazy]

@@ -43,10 +43,9 @@ class MonthlyReportPdfTest extends TestCase
             'premium_expires_at' => now()->addYear(),
         ]);
 
-        $this->actingAs($user)->get(route('report.monthly.pdf', ['month' => now()->format('Y-m')]))
-            ->assertOk();
-
-        $this->assertStringContainsString('application/pdf', (string) $this->response->headers->get('Content-Type'));
+        $response = $this->actingAs($user)->get(route('report.monthly.pdf', ['month' => now()->format('Y-m')]));
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', (string) $response->headers->get('Content-Type'));
     }
 
     public function test_monthly_pdf_administrator_receives_pdf_when_dompdf_installed(): void
