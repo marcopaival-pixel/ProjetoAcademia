@@ -3,7 +3,7 @@
 use App\Http\Controllers\BodyAnalysisController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DiaryController;
+
 use App\Http\Controllers\DocumentValidationController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\ExportController;
@@ -25,7 +25,7 @@ use App\Http\Controllers\Support\TicketController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\TrainingPlanController;
-use App\Http\Controllers\WeightController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -47,8 +47,8 @@ Route::get('/health', [App\Http\Controllers\HealthCheckController::class, 'index
 // 1. Home e Páginas Públicas
 Route::get('/', HomeController::class)->name('home');
 
-// MODO DEMONSTRAÇÃO
-Route::prefix('demo')->name('demo.')->group(function () {
+// MODO DEMONSTRAÇÃO (indisponível em APP_ENV=production)
+Route::prefix('demo')->name('demo.')->middleware('block.demo.prod')->group(function () {
     Route::get('/start', [App\Http\Controllers\DemoController::class, 'start'])->name('start');
     Route::get('/stop', [App\Http\Controllers\DemoController::class, 'stop'])->name('stop');
     Route::post('/reset', [App\Http\Controllers\DemoController::class, 'reset'])->name('reset');
@@ -93,8 +93,8 @@ Route::prefix('proposal')->name('public.proposal.')->group(function () {
     Route::post('/{token}/reject', [PublicProposalController::class, 'reject'])->name('reject');
 });
 
-// 2. Busca de Alimentos (Throttle)
-Route::middleware('throttle:openfoodfacts')->group(function () {
+// 2. Busca de Alimentos (autenticado + throttle)
+Route::middleware(['auth', 'throttle:openfoodfacts'])->group(function () {
     Route::get('/api/food/search', [FoodLookupController::class, 'search'])->name('food.search');
     Route::get('/api/food/product/{code}', [FoodLookupController::class, 'product'])->name('food.product');
 });
@@ -113,8 +113,22 @@ foreach ($legacyRedirects as $file => $target) {
     Route::get($file.'.php', fn(Request $request) => redirect($target . ($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301));
 }
 
+Route::post('diary.php', [\App\Http\Controllers\NutritionController::class, 'manageDiary']);
+
+Route::get('logout.php', function (Request $request) {
+    auth()->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect('/', 301);
+});
+
 // 4. Inclusão de Módulos Específicos
 Route::post('/payment/webhook/{gateway}', \App\Http\Controllers\Payment\WebhookController::class)->name('payment.webhook');
+
+// Omnichannel (widget / integrações externas — público, validação por X-Omni-Secret)
+Route::post('/omnichannel/webhook', [\App\Http\Controllers\OmniChatController::class, 'receiveMessage'])->name('omni.webhook');
+
 require __DIR__.'/auth.php';
 require __DIR__.'/mercado_pago.php';
 require __DIR__.'/admin.php';
@@ -183,6 +197,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/step1', [OnboardingController::class, 'step1'])->name('step1');
         Route::post('/step1', [OnboardingController::class, 'saveStep1'])->name('step1.save');
         Route::get('/finish', [OnboardingController::class, 'finish'])->name('finish');
+        
+        // Novo: Boas-vindas com link de acesso direto
+        Route::get('/welcome-access', function() {
+            $user = auth()->user();
+            $accessLink = $user->systemAccessLinks()->latest()->first();
+            if (!$accessLink) {
+                return redirect()->route('dashboard');
+            }
+            return view('welcome-access', compact('user', 'accessLink'));
+        })->name('welcome-access');
 
         // AJAX Endpoints para o modal de onboarding
         Route::post('/api/update', [OnboardingController::class, 'update'])->name('api.update');
@@ -199,21 +223,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/finish', [\App\Http\Controllers\PremiumOnboardingController::class, 'finish'])->name('finish');
     });
 
-    // IA & NexBot
+    // IA & NexBot — API de chat acessível a utilizadores autenticados (quota Free em ChatController)
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::post('/send', [ChatController::class, 'sendMessage'])->name('send');
+        Route::get('/history', [ChatController::class, 'getHistory'])->name('history');
+        Route::post('/clear', [ChatController::class, 'clearHistory'])->name('clear');
+        Route::post('/execute-action', [ChatController::class, 'executeAction'])->name('execute-action');
+        Route::post('/smart-query', [\App\Http\Controllers\SmartQueryController::class, 'query'])->name('smart-query');
+    });
+
+    Route::post('/api/ai/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('ai.orchestrator.api');
+
     Route::middleware('premium')->group(function () {
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.page');
-        Route::prefix('chat')->name('chat.')->group(function () {
-            Route::post('/send', [ChatController::class, 'sendMessage'])->name('send');
-            Route::get('/history', [ChatController::class, 'getHistory'])->name('history');
-            Route::post('/clear', [ChatController::class, 'clearHistory'])->name('clear');
-            Route::post('/execute-action', [ChatController::class, 'executeAction'])->name('execute-action');
-            
-            // Nova Consulta Inteligente (Biblioteca)
-            Route::post('/smart-query', [\App\Http\Controllers\SmartQueryController::class, 'query'])->name('smart-query');
-        });
-
-        // Endpoint Global do Orquestrador (Usado pelo Frontend)
-        Route::post('/api/ai/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('ai.orchestrator.api');
     });
 
     // Gestão de Créditos de IA
@@ -293,8 +315,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/buy', [\App\Http\Controllers\AiCreditController::class, 'buy'])->name('buy');
     });
 
-    // OmniChannel Public/Widget Webhook
-    Route::post('/omnichannel/webhook', [\App\Http\Controllers\OmniChatController::class, 'receiveMessage'])->name('omni.webhook');
 });
 
 // 7. Rota de Clínica (Multi-Tenant Slug) - Deve ficar por último

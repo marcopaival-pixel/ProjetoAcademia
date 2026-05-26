@@ -35,7 +35,7 @@ class MonetizationService
             ->first();
 
         // Se não houver limite configurado para o plano, mas a categoria for Premium e o usuário não for Premium
-        if (!$limit && $feature->category === 'premium' && !$user->isPremium()) {
+        if (!$limit && $feature->category === 'premium' && !$user->hasPremiumAccess()) {
             return [
                 'allowed' => false,
                 'action' => 'popup',

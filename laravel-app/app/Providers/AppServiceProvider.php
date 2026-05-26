@@ -28,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\PaymentGatewayInterface::class, function ($app) {
             return $app->make(\App\Services\Payment\PaymentGatewayManager::class)->driver();
         });
+
+        $this->app->bind(\App\Services\OCR\OCRServiceInterface::class, \App\Services\OCR\GoogleVisionOCRService::class);
     }
 
     public function boot(): void

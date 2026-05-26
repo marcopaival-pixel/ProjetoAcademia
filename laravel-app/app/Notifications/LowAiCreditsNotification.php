@@ -36,7 +36,7 @@ class LowAiCreditsNotification extends Notification
     /**
      * Get the mail representation of the notification.
      */
-    public function向(object $notifiable): MailMessage
+    public function toMail(object $notifiable): MailMessage
     {
         if ($this->isExhausted) {
             return (new MailMessage)

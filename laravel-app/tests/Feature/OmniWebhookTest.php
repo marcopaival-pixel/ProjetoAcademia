@@ -58,8 +58,22 @@ class OmniWebhookTest extends TestCase
             ->assertJsonPath('message_id', 42);
     }
 
+    public function test_omni_webhook_requires_secret_in_production(): void
+    {
+        $this->app['env'] = 'production';
+        Config::set('projeto.omni_webhook_secret', '');
+
+        $this->postJson(route('omni.webhook'), [
+            'company_slug' => 'acme',
+            'channel_type' => 'widget',
+            'customer_id' => 'c1',
+            'content' => 'hello',
+        ])->assertStatus(503);
+    }
+
     public function test_no_secret_allows_request_without_header_when_service_ok(): void
     {
+        Config::set('app.env', 'local');
         Config::set('projeto.omni_webhook_secret', '');
 
         $msg = new \stdClass;

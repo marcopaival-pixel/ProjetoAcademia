@@ -12,14 +12,18 @@ use Illuminate\Support\Facades\Log;
 class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
 {
     protected $token;
+
     protected $baseUrl;
+
+    protected string $webhookSecret = '';
 
     public function __construct(array $config = [])
     {
         parent::__construct($config);
         $this->token = $config['access_token'] ?? '';
-        $this->baseUrl = ($config['environment'] ?? 'sandbox') === 'production' 
-            ? 'https://www.asaas.com/api/v3' 
+        $this->webhookSecret = (string) ($config['webhook_secret'] ?? '');
+        $this->baseUrl = ($config['environment'] ?? 'sandbox') === 'production'
+            ? 'https://www.asaas.com/api/v3'
             : 'https://sandbox.asaas.com/api/v3';
     }
 
@@ -161,9 +165,21 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
 
     public function validateSignature(Request $request): bool
     {
-        // Asaas uses a fixed token in settings for webhooks
-        $receivedToken = $request->header('asaas-access-token');
-        return $receivedToken === $this->webhookSecret;
+        if ($this->webhookSecret === '') {
+            if (app()->environment('production')) {
+                Log::warning('[asaas_webhook] webhook_secret não configurado em produção — rejeitado.');
+
+                return false;
+            }
+
+            Log::debug('[asaas_webhook] webhook_secret não configurado — validação ignorada (apenas dev).');
+
+            return true;
+        }
+
+        $receivedToken = (string) $request->header('asaas-access-token', '');
+
+        return hash_equals($this->webhookSecret, $receivedToken);
     }
 
     public function refund(string $paymentId, ?float $amount = null): bool

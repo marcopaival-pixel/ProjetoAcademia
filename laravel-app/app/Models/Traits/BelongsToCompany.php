@@ -15,7 +15,7 @@ trait BelongsToCompany
     {
         static::addGlobalScope('company_isolation', function (Builder $builder) {
             \App\Support\TenantGuard::protect(function () use ($builder) {
-                if (!Auth::check()) {
+                if (!Auth::hasUser()) {
                     return;
                 }
 

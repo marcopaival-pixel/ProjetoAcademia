@@ -195,6 +195,7 @@ class DashboardController extends Controller
                     ->get(),
                 'aiCreditWallet' => app(\App\Services\AiCreditService::class)->getWallet($user),
                 'evolutionStatus' => app(\App\Services\EvolutionStatusService::class)->getEvolutionStatus($user),
+                'systemAccessLinks' => $user->systemAccessLinks()->get(),
             ];
         });
 

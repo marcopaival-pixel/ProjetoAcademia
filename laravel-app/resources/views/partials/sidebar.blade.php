@@ -151,12 +151,19 @@
                                 @endphp
 
                                 @if($showLocked)
-                                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-900 text-[8px] font-black text-zinc-700 uppercase tracking-widest group-hover:border-emerald-500/20 group-hover:text-emerald-500 transition-all">
-                                        <i data-lucide="lock" class="w-2.5 h-2.5"></i>ELITE
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="lock" class="w-3 h-3 text-zinc-500"></i>
+                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-zinc-950 border border-amber-500/30">
+                                            <i data-lucide="crown" class="w-2.5 h-2.5 fill-current"></i>
+                                            <span class="text-[7px] font-black uppercase tracking-widest">VIP</span>
+                                        </div>
                                     </div>
                                 @endif
                                 @if(!$showLocked && $showPremium)
-                                    <div class="px-2.5 py-1 rounded-lg bg-amber-500 text-zinc-950 text-[8px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/10">VIP</div>
+                                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
+                                        <i data-lucide="crown" class="w-2.5 h-2.5 fill-current"></i>
+                                        <span class="text-[7px] font-black uppercase tracking-widest">VIP</span>
+                                    </div>
                                 @endif
                                 @if(!$showLocked && !$showPremium && $badgeValue)
                                     <span class="w-5 h-5 flex items-center justify-center bg-emerald-500 text-zinc-950 text-[9px] font-black rounded-lg shadow-lg shadow-emerald-500/20">{{ $badgeValue }}</span>
@@ -169,6 +176,48 @@
         @endforeach
 
     </div>
+
+    @if(($user && $user->hasRole('aluno') && (!$activeRole || $activeRole === 'aluno')) || (session('active_role') === 'aluno'))
+        <div class="p-4 pt-2">
+            @if(!$isPremium)
+                <!-- Card Free User -->
+                <div class="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 flex flex-col items-center text-center">
+                    <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 mb-3">
+                        <i data-lucide="lock" class="w-4 h-4 text-amber-500"></i>
+                    </div>
+                    <h4 class="text-[11px] font-black text-white leading-tight mb-2">
+                        Recurso exclusivo<br>
+                        <span class="text-amber-500">para membros Premium</span>
+                    </h4>
+                    <p class="text-[9px] text-zinc-500 leading-snug mb-4">
+                        Faça upgrade e desbloqueie<br>todas as funcionalidades<br>inteligentes do NexShape.
+                    </p>
+                    <a href="{{ route('plano') }}" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 group">
+                        <i data-lucide="crown" class="w-3.5 h-3.5 fill-current"></i>
+                        Tornar-se Premium
+                    </a>
+                </div>
+            @else
+                <!-- Card Premium User -->
+                <div class="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex flex-col items-center text-center shadow-[0_0_15px_-3px_rgba(16,185,129,0.1)] relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 mb-3 relative z-10 shadow-lg shadow-emerald-500/20">
+                        <i data-lucide="crown" class="w-4 h-4 text-emerald-500 fill-current"></i>
+                    </div>
+                    <h4 class="text-[12px] font-black text-white leading-tight mb-2 relative z-10">
+                        Você é Premium ✨
+                    </h4>
+                    <p class="text-[9px] text-zinc-400 leading-snug mb-4 relative z-10">
+                        Aproveite todos os recursos<br>exclusivos do NexShape.
+                    </p>
+                    <div class="w-full py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 relative z-10">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        Premium Ativo
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
 
     <!-- Sidebar Footer: Perfil do Usuário -->
     <div class="sidebar-footer p-4 border-t border-zinc-900 bg-zinc-950/50 relative">

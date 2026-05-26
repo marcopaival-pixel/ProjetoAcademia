@@ -13,7 +13,14 @@
     $currentRouteName = request()->route()?->getName() ?? '';
     $isPrimaryPage = in_array($currentRouteName, $primaryRoutes) || str_starts_with($currentRouteName, 'onboarding.');
     $showGlobalBack = $loggedIn && !$isPrimaryPage && !request()->routeIs('verification.notice');
+
+    // Capturar origem PaivaTech
+    if (request()->has('from') && request()->get('from') === 'paivatech') {
+        session(['paivatech_origin' => 'paivatech']);
+    }
+    $showPaivaBacklink = session('paivatech_origin') === 'paivatech' || request()->get('from') === 'paivatech';
 @endphp
+
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="{{ $projetoTheme }}">
 <head>
@@ -54,7 +61,57 @@
     }
 @endphp
 <body class="{{ $experienceClass }} {{ request()->is('professional*') ? 'portal-pro' : '' }} {{ request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected') ? 'min-h-screen overflow-x-hidden overflow-y-auto' : '' }}">
+    {{-- Barra de Retorno PaivaTech (Versão Robusta) --}}
+    <div id="paiva-backlink-bar" class="bg-[#080a0f] border-b border-zinc-900/50 py-2.5 px-6 sm:px-8 flex items-center justify-between relative z-[2000] animate-fade-in" style="display: none;">
+        <div class="flex items-center gap-4">
+            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] hidden sm:block">Uma solução da PaivaTech Solutions</span>
+            <a href="{{ (request()->getHost() === 'localhost' || request()->getHost() === '127.0.0.1') ? 'http://localhost:3000' : 'https://paivatechsolutions.com.br' }}" class="group flex items-center gap-2 text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-[0.2em] transition-all">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1"></i>
+                Voltar ao Portal
+            </a>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="h-4 w-px bg-zinc-900 hidden sm:block"></div>
+            <button onclick="dismissPaivaBacklink()" class="text-zinc-800 hover:text-zinc-600 transition-colors">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function dismissPaivaBacklink() {
+            const bar = document.getElementById('paiva-backlink-bar');
+            if (bar) bar.style.display = 'none';
+            sessionStorage.setItem('paivatech_dismissed', 'true');
+            document.querySelectorAll('.fixed-top-header, .topbar').forEach(el => el.style.top = '0');
+        }
+
+        (function() {
+            const hasParam = new URLSearchParams(window.location.search).get('from') === 'paivatech';
+            const hasSession = sessionStorage.getItem('paivatech_origin') === 'paivatech';
+            const isDismissed = sessionStorage.getItem('paivatech_dismissed') === 'true';
+
+            if ((hasParam || hasSession) && !isDismissed) {
+                if (hasParam) sessionStorage.setItem('paivatech_origin', 'paivatech');
+                
+                document.addEventListener('DOMContentLoaded', function() {
+                    const bar = document.getElementById('paiva-backlink-bar');
+                    if (bar) {
+                        bar.style.display = 'flex';
+                        // Ajustar elementos fixos
+                        document.querySelectorAll('.fixed-top-header, .topbar').forEach(el => {
+                            el.style.top = '41px';
+                        });
+                    }
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            }
+        })();
+    </script>
+
+
     <a class="skip-link" href="#main">Ir para o conteúdo</a>
+
 
     @if($loggedIn && !request()->routeIs('home') && !request()->routeIs('verification.notice') && !request()->routeIs('registration.pending') && !request()->routeIs('registration.rejected'))
         @include('partials.impersonation-banner')
@@ -87,7 +144,8 @@
             @yield('content')
         </main>
     @else
-        <header class="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/70 backdrop-blur-2xl border-b border-zinc-900/50 transition-all duration-500">
+        <header class="fixed-top-header fixed top-0 left-0 right-0 z-[100] bg-zinc-950/70 backdrop-blur-2xl border-b border-zinc-900/50 transition-all duration-500" style="{{ $showPaivaBacklink ? 'top: 41px;' : '' }}">
+
             <div class="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
                 <a href="{{ route('home') }}" class="flex items-center gap-4 group">
                     <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform group-hover:-rotate-6 transition-transform duration-500">

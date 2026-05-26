@@ -1,0 +1,2491 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$balance\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$extra_credits\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$monthly_allowance\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$renewal_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Anonymous function has an unused use \$service\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isActive\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditInitialize.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AiCreditWallet\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/AiCreditRenew.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/CheckExpiredPlans.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/CheckExpiredPlans.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:userPlans\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/CheckExpiredPlans.php
+
+		-
+			message: '#^Property App\\Models\\Subscription\:\:\$days_overdue \(int\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Console/Commands/FinancialStatusCheck.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$goal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/NexBotCoachCommand.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\User\:\:isAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/AI/OrchestratorController.php
+
+		-
+			message: '#^Call to static method where\(\) on an unknown class App\\Http\\Controllers\\ActiveRestLog\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/ActiveRestController.php
+
+		-
+			message: '#^Cannot unset offset ''watermark'' on array\{\}\.$#'
+			identifier: unset.offset
+			count: 1
+			path: app/Http/Controllers/Admin/AcademyCompanyController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExerciseCatalog\:\:\$muscles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Muscle\:\:\$group\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Controllers\\Admin\\AdminAreaController\:\:getPasswordValidationRules\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Admin\\AdminAreaController\:\:users\(\) should return Illuminate\\View\\View but returns Illuminate\\Http\\JsonResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Relation ''group'' is not found in App\\Models\\Muscle model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/AdminAreaController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\AIOrchestratorLog model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/AdminOrchestratorDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Muscle\:\:\$group\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ClinicImplantationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$data\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ClinicImplantationController.php
+
+		-
+			message: '#^Relation ''features'' is not found in App\\Models\\Plan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/ClinicImplantationController.php
+
+		-
+			message: '#^Relation ''group'' is not found in App\\Models\\Muscle model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/ClinicImplantationController.php
+
+		-
+			message: '#^Relation ''lead'' is not found in App\\Models\\CommercialProposal model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/CommercialDashboardController.php
+
+		-
+			message: '#^Relation ''plan'' is not found in App\\Models\\CommercialProposal model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/CommercialDashboardController.php
+
+		-
+			message: '#^Relation ''lead'' is not found in App\\Models\\CommercialProposal model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/CommercialProposalController.php
+
+		-
+			message: '#^Relation ''plan'' is not found in App\\Models\\CommercialProposal model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/CommercialProposalController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_required\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ConfigurationCenter/DynamicCrudController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 7
+			path: app/Http/Controllers/Admin/ConfigurationCenter/DynamicCrudController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$validation_rules\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ConfigurationCenter/DynamicCrudController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/CouponController.php
+
+		-
+			message: '#^Relation ''profession'' is not found in App\\Models\\Especialidade model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/EspecialidadeController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\AiCreditUsageLog model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/FinancialDashboardController.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:role\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/GoalController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Admin\\HistoricoPdfController\:\:download\(\) should return Illuminate\\Http\\Response but returns Symfony\\Component\\HttpFoundation\\StreamedResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Admin/HistoricoPdfController.php
+
+		-
+			message: '#^Relation ''responsavel'' is not found in App\\Models\\Lead model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/LeadController.php
+
+		-
+			message: '#^Relation ''group'' is not found in App\\Models\\Muscle model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/MuscleController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Admin\\PdfDocumentGeneratorController\:\:download\(\) should return Illuminate\\Http\\Response but returns Symfony\\Component\\HttpFoundation\\StreamedResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Admin/PdfDocumentGeneratorController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Admin/PdfTemplateController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$unreadNotifications\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/RegistrationApprovalController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\SupportTicket model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/SupportTicketController.php
+
+		-
+			message: '#^Relation ''lessons'' is not found in App\\Models\\TrainingModule model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/TrainingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branding\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AgendaController.php
+
+		-
+			message: '#^Call to static method beginTransaction\(\) on an unknown class App\\Http\\Controllers\\DB\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/AgendaController.php
+
+		-
+			message: '#^Call to static method commit\(\) on an unknown class App\\Http\\Controllers\\DB\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/AgendaController.php
+
+		-
+			message: '#^Call to static method rollBack\(\) on an unknown class App\\Http\\Controllers\\DB\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/AgendaController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/AssessmentController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\AssessmentController\:\:create\(\) should return Illuminate\\View\\View but returns Illuminate\\Http\\RedirectResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/AssessmentController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Socialite\\Contracts\\User\:\:\$avatar\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Auth/GoogleController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Socialite\\Contracts\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Auth/GoogleController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Socialite\\Contracts\\User\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Auth/GoogleController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Socialite\\Contracts\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Auth/GoogleController.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Auth/LoginController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/ProfileSelectionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/BioimpedancePdfController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$weight\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserProfile\:\:\$biological_sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserProfile\:\:\$goal_weight\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserProfile\:\:\$water_goal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserProfile\:\:\$weight\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WorkoutSession\:\:\$trainingPlan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Nutrition\:\:dailyTargetMacros\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Nutrition\:\:getLogs\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Method App\\Services\\Nutrition\:\:dailyTargetKcal\(\) invoked with 1 parameter, 3 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Relation ''trainingPlan'' is not found in App\\Models\\WorkoutSession model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/ChatController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:activeSubscription\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Clinic/BillingController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:professionals\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Clinic/BillingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Clinic/ClinicManagementController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$logo_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Clinic/ClinicManagementController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Clinic/ClinicManagementController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Clinic/ClinicManagementController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ExerciseEntry\:\:\$time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WeightEntry\:\:\$time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WeightEntry\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$delta_bf\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/EvolutionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$delta_weight\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/EvolutionController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:ofType\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Http/Controllers/HealthMetricController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/HydrationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$climate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/HydrationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_water_target_auto\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/HydrationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/HydrationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$water_target_ml\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/HydrationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\LoadLog\:\:\$max_one_rm\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\LoadLog\:\:\$volume\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$exercise_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$last_log\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sets\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$suggestion\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Call to an undefined static method App\\Services\\AchievementService\:\:check\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Http/Controllers/LoadProgressionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/MessageController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$c\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/NutritionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$cal\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/NutritionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$f\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/NutritionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$foods\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/NutritionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$p\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/NutritionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$daily_calorie_target\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OnboardingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$target_weight_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OnboardingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cpf\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PatientActivationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PatientActivationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$password_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PatientActivationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PatientActivationController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:profile\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PatientActivationController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:weightEntries\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PatientActivationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$delta_bf\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$delta_weight\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProfessionalPatient\:\:\$patient_permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProfessionalPatient\:\:\$professional\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$feature_key\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$perfil_paciente_completo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\DompdfPdfService\:\:generate\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Patient\\PortalController\:\:plans\(\) should return Illuminate\\View\\View but returns Illuminate\\Http\\RedirectResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\ProfessionalPatient model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Patient/PortalController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/ProfessionalSelectionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ActiveRestFavorite\:\:\$routine\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PatientDocument\:\:\$professional\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branding\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$goal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$height_cm\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Call to static method where\(\) on an unknown class App\\Models\\InternalEmail\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\PatientDocument model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Patient/UnifiedDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$activePlan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PlanoController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PlanoController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PrivacyController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$calories\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PrivacyController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PrivacyController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bf_percent\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/AIPrescriptionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/AIPrescriptionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nome\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/AIPrescriptionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/AIPrescriptionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/AIPrescriptionController.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 1
+			path: app/Http/Controllers/Professional/AIPrescriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\HealthAlert\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$expiry_warning\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$last_activity_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:daysUntilExpiry\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\HealthAlert model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Professional/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$health_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/EvolutionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/EvolutionController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Professional/EvolutionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$date\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dosage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$frequency\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$medicine\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\DompdfPdfService\:\:generate\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/MedicalRecordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$assessments\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$food_entries_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$last_activity_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$profile\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$weightEntries\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assessment_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bf_percent\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weighed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Professional\\PatientController\:\:show\(\) should return Illuminate\\View\\View but returns Illuminate\\Http\\RedirectResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Professional/PatientController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProfessionalPatientRequest\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\ProfessionalPatientRequest\>\:\:\$patient\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientRequestController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_patients\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/PatientRequestController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$professional_photo_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Professional/ProfessionalProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$activity_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$carbs_target_g\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$climate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$daily_calorie_target\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fat_target_g\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$goal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$height_cm\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_water_target_auto\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$protein_target_g\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$target_weight_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$training_days_per_week\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$water_target_ml\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weighed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CommercialProposal\:\:\$lead\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/PublicProposalController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CommercialProposal\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PublicProposalController.php
+
+		-
+			message: '#^Relation ''lead'' is not found in App\\Models\\CommercialProposal model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/PublicProposalController.php
+
+		-
+			message: '#^Relation ''plan'' is not found in App\\Models\\CommercialProposal model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/PublicProposalController.php
+
+		-
+			message: '#^Offset ''adherence'' does not exist on array\{days\: array\<string, array\{label\: string, kcal_in\: int, p\: float, c\: float, f\: float, ex_min\: int, ex_kcal\: int, water\: int, \.\.\.\}\>, avg_kcal\: int, avg_p\: float, avg_c\: float, avg_f\: float, days_with_food\: int, total_ex_min\: int, total_ex_kcal\: int, \.\.\.\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Offset ''days_with_ex'' does not exist on array\{days\: array\<string, array\{label\: string, kcal_in\: int, p\: float, c\: float, f\: float, ex_min\: int, ex_kcal\: int, water\: int, \.\.\.\}\>, avg_kcal\: int, avg_p\: float, avg_c\: float, avg_f\: float, days_with_food\: int, total_ex_min\: int, total_ex_kcal\: int, \.\.\.\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Offset ''goals'' does not exist on array\{days\: array\<string, array\{label\: string, kcal_in\: int, p\: float, c\: float, f\: float, ex_min\: int, ex_kcal\: int, water\: int, \.\.\.\}\>, avg_kcal\: int, avg_p\: float, avg_c\: float, avg_f\: float, days_with_food\: int, total_ex_min\: int, total_ex_kcal\: int, \.\.\.\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Offset ''physical'' does not exist on array\{days\: array\<string, array\{label\: string, kcal_in\: int, p\: float, c\: float, f\: float, ex_min\: int, ex_kcal\: int, water\: int, \.\.\.\}\>, avg_kcal\: int, avg_p\: float, avg_c\: float, avg_f\: float, days_with_food\: int, total_ex_min\: int, total_ex_kcal\: int, \.\.\.\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Call to static method where\(\) on an unknown class App\\Models\\KnowledgeBaseArticle\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Http/Controllers/SearchController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Muscle\:\:\$group\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sets\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$training_plan_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Relation ''group'' is not found in App\\Models\\Muscle model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Relation ''muscles'' is not found in App\\Models\\ExerciseCatalog model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Relation ''muscles'' is not found in App\\Models\\MuscleGroup model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/TrainingPlanController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/CheckActiveSubscription.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_patients\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/CheckProfessionalPatientLimit.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$feature$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Http/Middleware/CheckUserPlanAccess.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/EnsureProfessionalIsSelected.php
+
+		-
+			message: '#^Call to an undefined method Symfony\\Component\\HttpFoundation\\Response\:\:withCookie\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Middleware/RepresentativeTrackingMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/TenantMiddleware.php
+
+		-
+			message: '#^Method App\\Models\\AcademyCompany\:\:configuracaoEmail\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasOne\<App\\Models\\ConfiguracaoEmail, App\\Models\\AcademyCompany\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasOne\<App\\Models\\ConfiguracaoEmail, \$this\(App\\Models\\AcademyCompany\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/AcademyCompany.php
+
+		-
+			message: '#^Method App\\Models\\AcademyCompany\:\:pdfTemplates\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfTemplate, App\\Models\\AcademyCompany\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfTemplate, \$this\(App\\Models\\AcademyCompany\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/AcademyCompany.php
+
+		-
+			message: '#^Method App\\Models\\AcademyCompany\:\:units\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\AcademyUnit, App\\Models\\AcademyCompany\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\AcademyUnit, \$this\(App\\Models\\AcademyCompany\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/AcademyCompany.php
+
+		-
+			message: '#^Method App\\Models\\AcademyUnit\:\:company\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\AcademyUnit\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\AcademyUnit\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/AcademyUnit.php
+
+		-
+			message: '#^Method App\\Models\\AcademyUnit\:\:pdfTemplates\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfTemplate, App\\Models\\AcademyUnit\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfTemplate, \$this\(App\\Models\\AcademyUnit\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/AcademyUnit.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\BodyAssessment model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/BodyAssessment.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\CommunityPost model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/CommunityPost.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\CommunityPost model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/CommunityPost.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\CommunityPost model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/CommunityPost.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\CommunityPost model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/CommunityPost.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\CommunityPost model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/CommunityPost.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/CommunityPost.php
+
+		-
+			message: '#^Method App\\Models\\ConfiguracaoEmail\:\:empresa\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\ConfiguracaoEmail\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\ConfiguracaoEmail\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/ConfiguracaoEmail.php
+
+		-
+			message: '#^Method App\\Models\\Conversation\:\:getOtherUser\(\) should return App\\Models\\User\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\Conversation model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\Conversation model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\Conversation model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\Conversation model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\Conversation model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/Conversation.php
+
+		-
+			message: '#^Method App\\Models\\EmailTemplate\:\:empresa\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\EmailTemplate\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\EmailTemplate\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/EmailTemplate.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Food.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\HistoricoPdf\:\:company\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\HistoricoPdf\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\HistoricoPdf\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\HistoricoPdf\:\:deliveryLogs\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfDeliveryLog, App\\Models\\HistoricoPdf\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfDeliveryLog, \$this\(App\\Models\\HistoricoPdf\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\HistoricoPdf\:\:signatures\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfSignature, App\\Models\\HistoricoPdf\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfSignature, \$this\(App\\Models\\HistoricoPdf\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\HistoricoPdf\:\:template\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\PdfTemplate, App\\Models\\HistoricoPdf\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\PdfTemplate, \$this\(App\\Models\\HistoricoPdf\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\HistoricoPdf\:\:unit\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyUnit, App\\Models\\HistoricoPdf\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyUnit, \$this\(App\\Models\\HistoricoPdf\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\HistoricoPdf\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\HistoricoPdf\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\HistoricoPdf\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\HistoricoPdf model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\HistoricoPdf model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\HistoricoPdf model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\HistoricoPdf model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\HistoricoPdf model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/HistoricoPdf.php
+
+		-
+			message: '#^Method App\\Models\\LogEnvioEmail\:\:empresa\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\LogEnvioEmail\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\LogEnvioEmail\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/LogEnvioEmail.php
+
+		-
+			message: '#^Method App\\Models\\LogEnvioEmail\:\:usuario\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\LogEnvioEmail\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\LogEnvioEmail\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/LogEnvioEmail.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\MealTemplate model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/MealTemplate.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\MealTemplate model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/MealTemplate.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\MealTemplate model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/MealTemplate.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\MealTemplate model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/MealTemplate.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\MealTemplate model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/MealTemplate.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/MealTemplate.php
+
+		-
+			message: '#^Method App\\Models\\Menu\:\:children\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Menu, App\\Models\\Menu\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Menu, \$this\(App\\Models\\Menu\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Menu.php
+
+		-
+			message: '#^Method App\\Models\\Menu\:\:parent\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Menu, App\\Models\\Menu\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Menu, \$this\(App\\Models\\Menu\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Menu.php
+
+		-
+			message: '#^Method App\\Models\\Menu\:\:roleMenuPermissions\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\RoleMenuPermission, App\\Models\\Menu\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\RoleMenuPermission, \$this\(App\\Models\\Menu\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Menu.php
+
+		-
+			message: '#^Class App\\Models\\Profile not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/MenuPermissionAuditLog.php
+
+		-
+			message: '#^Method App\\Models\\MenuPermissionAuditLog\:\:profile\(\) has invalid return type App\\Models\\Profile\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/MenuPermissionAuditLog.php
+
+		-
+			message: '#^Method App\\Models\\MenuPermissionAuditLog\:\:profile\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Profile, App\\Models\\MenuPermissionAuditLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\MenuPermissionAuditLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/MenuPermissionAuditLog.php
+
+		-
+			message: '#^Method App\\Models\\MenuPermissionAuditLog\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\MenuPermissionAuditLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\MenuPermissionAuditLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/MenuPermissionAuditLog.php
+
+		-
+			message: '#^Type App\\Models\\Profile in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Profile, App\\Models\\MenuPermissionAuditLog\> in PHPDoc tag @return is not subtype of template type TRelatedModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/MenuPermissionAuditLog.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\Message model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/Message.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\Message model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Message.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\Message model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Message.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\Message model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Message.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\Message model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/Message.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/Message.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\OmniMessage model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/OmniMessage.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\OmniMessage model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/OmniMessage.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\OmniMessage model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/OmniMessage.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\OmniMessage model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/OmniMessage.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\OmniMessage model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/OmniMessage.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/OmniMessage.php
+
+		-
+			message: '#^Method App\\Models\\PdfDeliveryLog\:\:historicoPdf\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, App\\Models\\PdfDeliveryLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, \$this\(App\\Models\\PdfDeliveryLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfDeliveryLog.php
+
+		-
+			message: '#^Method App\\Models\\PdfGenerationLog\:\:historicoPdf\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, App\\Models\\PdfGenerationLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, \$this\(App\\Models\\PdfGenerationLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfGenerationLog.php
+
+		-
+			message: '#^Method App\\Models\\PdfGenerationLog\:\:template\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\PdfTemplate, App\\Models\\PdfGenerationLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\PdfTemplate, \$this\(App\\Models\\PdfGenerationLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfGenerationLog.php
+
+		-
+			message: '#^Method App\\Models\\PdfGenerationLog\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\PdfGenerationLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\PdfGenerationLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfGenerationLog.php
+
+		-
+			message: '#^Method App\\Models\\PdfNumberSequence\:\:company\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\PdfNumberSequence\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\PdfNumberSequence\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfNumberSequence.php
+
+		-
+			message: '#^Method App\\Models\\PdfSignature\:\:historicoPdf\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, App\\Models\\PdfSignature\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, \$this\(App\\Models\\PdfSignature\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfSignature.php
+
+		-
+			message: '#^Method App\\Models\\PdfSignature\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\PdfSignature\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\PdfSignature\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfSignature.php
+
+		-
+			message: '#^Method App\\Models\\PdfSignatureAuditLog\:\:historicoPdf\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, App\\Models\\PdfSignatureAuditLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\HistoricoPdf, \$this\(App\\Models\\PdfSignatureAuditLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfSignatureAuditLog.php
+
+		-
+			message: '#^Method App\\Models\\PdfSignatureAuditLog\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\PdfSignatureAuditLog\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\PdfSignatureAuditLog\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfSignatureAuditLog.php
+
+		-
+			message: '#^Method App\\Models\\PdfTemplate\:\:generationLogs\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfGenerationLog, App\\Models\\PdfTemplate\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PdfGenerationLog, \$this\(App\\Models\\PdfTemplate\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/PdfTemplate.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\PdfTemplate model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/PdfTemplate.php
+
+		-
+			message: '#^Method App\\Models\\Permission\:\:plans\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Plan, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Plan, \$this\(App\\Models\\Permission\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Permission.php
+
+		-
+			message: '#^Method App\\Models\\Permission\:\:roles\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Role, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Role, \$this\(App\\Models\\Permission\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Permission.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Plan, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/Permission.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Role, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/Permission.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\ProfessionalAppointment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/ProfessionalAppointment.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\ProfessionalAppointment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/ProfessionalAppointment.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\ProfessionalAppointment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/ProfessionalAppointment.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\ProfessionalAppointment model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/ProfessionalAppointment.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/ProfessionalAppointment.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\RoleMenuPermission\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Method App\\Models\\Role\:\:marketingBanners\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\MarketingBanner, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\MarketingBanner, \$this\(App\\Models\\Role\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Method App\\Models\\Role\:\:permissions\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Permission, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Permission, \$this\(App\\Models\\Role\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Method App\\Models\\Role\:\:roleMenuPermissions\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\RoleMenuPermission\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\RoleMenuPermission, \$this\(App\\Models\\Role\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Method App\\Models\\Role\:\:users\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, \$this\(App\\Models\\Role\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\MarketingBanner, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Permission, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Class App\\Models\\Profile not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/RoleMenuPermission.php
+
+		-
+			message: '#^Method App\\Models\\RoleMenuPermission\:\:academyCompany\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, App\\Models\\RoleMenuPermission\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\AcademyCompany, \$this\(App\\Models\\RoleMenuPermission\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/RoleMenuPermission.php
+
+		-
+			message: '#^Method App\\Models\\RoleMenuPermission\:\:menu\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Menu, App\\Models\\RoleMenuPermission\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Menu, \$this\(App\\Models\\RoleMenuPermission\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/RoleMenuPermission.php
+
+		-
+			message: '#^Method App\\Models\\RoleMenuPermission\:\:profile\(\) has invalid return type App\\Models\\Profile\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/RoleMenuPermission.php
+
+		-
+			message: '#^Method App\\Models\\RoleMenuPermission\:\:profile\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Profile, App\\Models\\RoleMenuPermission\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\RoleMenuPermission\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/RoleMenuPermission.php
+
+		-
+			message: '#^Type App\\Models\\Profile in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Profile, App\\Models\\RoleMenuPermission\> in PHPDoc tag @return is not subtype of template type TRelatedModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/RoleMenuPermission.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\TrainingPlan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/TrainingPlan.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\TrainingPlan model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/TrainingPlan.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\TrainingPlan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/TrainingPlan.php
+
+		-
+			message: '#^Relation ''professionals'' is not found in App\\Models\\TrainingPlan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/TrainingPlan.php
+
+		-
+			message: '#^Relation ''roles'' is not found in App\\Models\\TrainingPlan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/TrainingPlan.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/TrainingPlan.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$activePlan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:permissions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Relation ''conversation'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Relation ''patient'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Relation ''professional'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Notifications/NewAppointmentNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/CommunicationGroupPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Services\\AI\\Agents\\AnalyticsAgent\:\:\$aiProvider\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AI/Agents/AnalyticsAgent.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$muscle_mass_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AI/Agents/ClinicalAgent.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BodyAssessment\:\:\$visceral_fat\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AI/Agents/ClinicalAgent.php
+
+		-
+			message: '#^Access to an undefined property App\\Services\\AI\\Agents\\ClinicalAgent\:\:\$aiProvider\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AI/Agents/ClinicalAgent.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Nutrition\:\:getLogs\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/AI/Agents/NutritionAgent.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$trainingPlan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AI/Agents/TrainingAgent.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$activity_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$available_daily_time_mins\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$daily_calorie_target\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fitness_notes\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$goal\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$physical_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$training_days_per_week\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$training_location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Called ''count'' on Laravel collection, but could have been retrieved as a query\.$#'
+			identifier: larastan.noUnnecessaryCollectionCall
+			count: 1
+			path: app/Services/AchievementService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\WorkoutSession\:\:\$trainingPlan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Call to an undefined method App\\Services\\Nutrition\:\:getLogs\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Call to static method where\(\) on an unknown class App\\Models\\ExerciseLog\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Call to static method where\(\) on an unknown class App\\Models\\PhysicalAssessment\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Method App\\Services\\Nutrition\:\:dailyTargetKcal\(\) invoked with 1 parameter, 3 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Relation ''trainingPlan'' is not found in App\\Models\\WorkoutSession model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/AdvancedAgentService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 8
+			path: app/Services/AgendaService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AiCreditService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$metadata\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/AiCreditService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ConfigurationCenter/DynamicCrudService.php
+
+		-
+			message: '#^Result of static method Illuminate\\Database\\Connection\:\:transaction\(\) \(void\) is used\.$#'
+			identifier: staticMethod.void
+			count: 1
+			path: app/Services/ConfigurationCenter/EntityService.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/EmailVerificationService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\FoodEntry\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EvolutionStatusService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$daily_calorie_target\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EvolutionStatusService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$goal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EvolutionStatusService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$target_weight_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/EvolutionStatusService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$activity_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$daily_calorie_target\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$has_disease\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$height_cm\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$target_weight_kg\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$uses_medication\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/IntelligenceMotorService.php
+
+		-
+			message: '#^Undefined variable\: \$roleId$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Services/MenuAccessService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$commission_rate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$mercadopago_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$platform_fee_fixed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$platform_fee_percent\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Method App\\Services\\AiCreditService\:\:addCredits\(\) invoked with 6 parameters, 2\-4 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Undefined variable\: \$feeAmount$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Undefined variable\: \$netAmount$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Undefined variable\: \$payment$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Unknown parameter \$throw in call to method Illuminate\\Http\\Client\\Response\:\:json\(\)\.$#'
+			identifier: argument.unknown
+			count: 1
+			path: app/Services/MercadoPagoService.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\InternalEmail\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/MessagingService.php
+
+		-
+			message: '#^Method App\\Services\\MessagingService\:\:sendSystemMessage\(\) has invalid return type App\\Models\\InternalEmail\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Services/MessagingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$activePlan\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/MonetizationService.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\User\:\:isPremium\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/MonetizationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/OmniChatService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/OmniChatService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$trigger_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/OmniChatService.php
+
+		-
+			message: '#^Binary operation "\*" between non\-falsy\-string and 1024 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Services/Operations/SystemHealthService.php
+
+		-
+			message: '#^Binary operation "/" between non\-falsy\-string and non\-falsy\-string results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Services/Operations/SystemHealthService.php
+
+		-
+			message: '#^Binary operation "/" between string and 1024 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Services/Operations/WorkerManagementService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$variables$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Services/PdfTemplateService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$professionalId\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/ProfessionalReportAggregator.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SmartStackAIService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SmartStackAIService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SmartStackAIService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SubscriptionService.php
+
+		-
+			message: '#^Property App\\Models\\Subscription\:\:\$days_overdue \(int\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/SubscriptionService.php

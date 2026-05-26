@@ -19,6 +19,7 @@
             @if(request()->routeIs('admin.roles.*', 'admin.lgpd.*', 'admin.security.*')) 'seguranca', @endif
             @if(request()->routeIs('admin.system-errors', 'admin.settings.email.logs', 'admin.settings.payments.webhooks', 'admin.backups.*')) 'logs', @endif
             @if(request()->routeIs('admin.api-integrations.*', 'admin.settings.email.providers', 'admin.settings.email.templates.*')) 'integracoes', @endif
+            @if(request()->routeIs('admin.configuration-center.*')) 'sistema_avancado', @endif
         ].filter(Boolean),
         toggleMenu(id) {
             if (this.openMenus.includes(id)) {
@@ -399,6 +400,22 @@
                 <li x-show="isVisible('APIs Externas')"><a href="{{ route('admin.api-integrations.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.api-integrations.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">APIs Externas</a></li>
                 <li x-show="isVisible('Provedores SMTP')"><a href="{{ route('admin.settings.email.providers') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.providers') ? 'active' : 'text-zinc-600 hover:text-white' }}">Provedores SMTP</a></li>
                 <li x-show="isVisible('Templates de E-mail')"><a href="{{ route('admin.settings.email.templates.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.templates.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Templates de E-mail</a></li>
+            </ul>
+        </div>
+
+        <!-- GRUPO: SISTEMA AVANÇADO -->
+        <div class="nav-item mb-1" x-show="isGroupVisible(['Sistema', 'Configurações Dinâmicas', 'Entidades', 'Auditoria'])">
+            <button @click="toggleMenu('sistema_avancado')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('sistema_avancado') }">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="cpu-chip" class="w-4 h-4 text-emerald-500"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-emerald-500" x-show="!isCollapsed">Configuration Center</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
+            </button>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('sistema_avancado') && !isCollapsed" x-collapse>
+                <li x-show="isVisible('Dashboard')"><a href="{{ route('admin.configuration-center.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.configuration-center.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Dashboard Central</a></li>
+                <li x-show="isVisible('Entidades')"><a href="{{ route('admin.configuration-center.entities.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.configuration-center.entities.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Gestão de Entidades</a></li>
+                <li x-show="isVisible('Auditoria')"><a href="{{ route('admin.configuration-center.audit.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.configuration-center.audit.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Log de Alterações</a></li>
             </ul>
         </div>
 

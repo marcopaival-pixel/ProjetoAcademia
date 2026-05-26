@@ -10,7 +10,7 @@ use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\CommunicationGroupController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\ExerciseCatalogController;
-use App\Http\Controllers\InternalEmailController;
+
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LoadProgressionController;
 use App\Http\Controllers\MenuPreferenceController;
@@ -102,6 +102,9 @@ Route::prefix('progression')->name('progression.')->group(function () {
 
     Route::prefix('plans')->name('plans.')->group(function () {
         Route::get('/', [TrainingPlanController::class, 'index'])->name('index');
+        Route::get('/import-photo', [\App\Http\Controllers\WorkoutPhotoImportController::class, 'index'])->name('import-photo');
+        Route::post('/process-photo', [\App\Http\Controllers\WorkoutPhotoImportController::class, 'process'])->name('process-photo');
+        Route::post('/save-import', [\App\Http\Controllers\WorkoutPhotoImportController::class, 'save'])->name('save-import');
         Route::get('/target-selection', [TrainingPlanController::class, 'targetSelection'])->name('target-selection');
         Route::post('/target-selection', [TrainingPlanController::class, 'storeTargetSelection'])->name('store-target-selection');
         Route::get('/create', [TrainingPlanController::class, 'create'])->name('create');
@@ -178,6 +181,7 @@ Route::prefix('evolution')->name('evolution.')->group(function () {
     
     Route::middleware('premium')->group(function() {
         Route::post('/analyze', [\App\Http\Controllers\EvolutionController::class, 'analyze'])->name('analyze');
+        Route::get('/ai-report', [\App\Http\Controllers\EvolutionController::class, 'aiReport'])->name('ai-report');
         Route::delete('/{id}', [\App\Http\Controllers\EvolutionController::class, 'destroy'])->name('destroy');
     });
 });

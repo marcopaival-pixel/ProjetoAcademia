@@ -26,6 +26,9 @@ class OmniChatController extends Controller
     public function receiveMessage(Request $request)
     {
         $secret = (string) config('projeto.omni_webhook_secret', '');
+        if ($secret === '' && app()->environment('production')) {
+            return response()->json(['status' => 'error', 'message' => 'Webhook não configurado'], 503);
+        }
         if ($secret !== '') {
             $sent = (string) $request->header('X-Omni-Secret', '');
             if ($sent === '' || ! hash_equals($secret, $sent)) {
