@@ -36,6 +36,11 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\RepresentativeAdminController;
 use App\Http\Controllers\Admin\AppBannerController;
 use App\Http\Controllers\Admin\CommunityModerationController;
+use App\Http\Controllers\Admin\ConfigurationCenter\DashboardController;
+use App\Http\Controllers\Admin\ConfigurationCenter\EntityController;
+use App\Http\Controllers\Admin\ConfigurationCenter\FieldController;
+use App\Http\Controllers\Admin\ConfigurationCenter\DynamicCrudController;
+use App\Http\Controllers\Admin\ConfigurationCenter\AuditController;
 use App\Http\Controllers\OmniChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -495,6 +500,33 @@ Route::prefix('admin')->group(function () {
             Route::post('/post/{post}/status', [CommunityModerationController::class, 'updatePostStatus'])->name('post.status');
             Route::post('/report/{report}/resolve', [CommunityModerationController::class, 'resolveReport'])->name('report.resolve');
             Route::post('/sticker', [CommunityModerationController::class, 'storeSticker'])->name('sticker.store');
+        });
+
+        // Configuration Center (Módulo Avançado)
+        Route::prefix('configuration-center')->name('admin.configuration-center.')
+            ->middleware('permission:configuration-center.access')
+            ->group(function () {
+            Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+            
+            // Gestão de Entidades
+            Route::get('entities/discovery', [EntityController::class, 'discovery'])->name('entities.discovery');
+            Route::post('entities/auto-register', [EntityController::class, 'autoRegister'])->name('entities.auto-register');
+            Route::resource('entities', EntityController::class);
+            Route::resource('entities.fields', FieldController::class)->shallow();
+
+            // Auditoria e Versões
+            Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+            Route::get('/audit/{id}', [AuditController::class, 'show'])->name('audit.show');
+            Route::get('/audit/versions/{entityType}/{entityId}', [AuditController::class, 'versions'])->name('audit.versions');
+
+            // CRUD Dinâmico (Deve ser o último para não conflitar com rotas fixas)
+            Route::get('/{entity}', [DynamicCrudController::class, 'index'])->name('crud.index');
+            Route::get('/{entity}/create', [DynamicCrudController::class, 'create'])->name('crud.create');
+            Route::post('/{entity}', [DynamicCrudController::class, 'store'])->name('crud.store');
+            Route::get('/{entity}/{id}/edit', [DynamicCrudController::class, 'edit'])->name('crud.edit');
+            Route::put('/{entity}/{id}', [DynamicCrudController::class, 'update'])->name('crud.update');
+            Route::delete('/{entity}/{id}', [DynamicCrudController::class, 'destroy'])->name('crud.destroy');
+            Route::post('/{entity}/{id}/restore', [DynamicCrudController::class, 'restore'])->name('crud.restore');
         });
     });
 });

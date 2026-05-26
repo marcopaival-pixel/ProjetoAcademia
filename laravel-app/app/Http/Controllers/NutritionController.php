@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\Nutrition;
 use App\Models\UserProfile;
 use App\Models\FoodEntry;
+use App\Models\MealTemplate;
+use App\Models\MealTemplateItem;
 use App\Models\WeightEntry;
 use App\Models\Supplement;
 use App\Models\WaterEntry;
@@ -452,6 +454,102 @@ class NutritionController extends Controller
         }
 
         $user = $request->user();
+
+        $request->merge([
+            'p_g' => $request->input('p_g', $request->input('protein_g')),
+            'c_g' => $request->input('c_g', $request->input('carbs_g')),
+            'f_g' => $request->input('f_g', $request->input('fat_g')),
+        ]);
+
+        $action = $request->input('action');
+        if ($action === 'save_meal_template') {
+            if (! $user->hasPremiumAccess() && ! $user->isAdministrator()) {
+                return redirect()->route('diary', ['date' => $request->input('template_source_date')])
+                    ->with('error', 'Recurso exclusivo para assinantes Premium.');
+            }
+
+            $data = $request->validate([
+                'template_name' => 'required|string|max:120',
+                'template_source_date' => 'required|date',
+            ]);
+
+            $hasEntries = FoodEntry::query()
+                ->where('user_id', $user->id)
+                ->where('entry_date', $data['template_source_date'])
+                ->exists();
+
+            if (! $hasEntries) {
+                return redirect()->route('diary', ['date' => $data['template_source_date']])
+                    ->with('error', 'Não há refeições nesta data para salvar como modelo.');
+            }
+
+            $template = MealTemplate::create([
+                'user_id' => $user->id,
+                'name' => $data['template_name'],
+            ]);
+
+            $position = 0;
+            FoodEntry::query()
+                ->where('user_id', $user->id)
+                ->where('entry_date', $data['template_source_date'])
+                ->orderBy('id')
+                ->each(function (FoodEntry $entry) use ($template, &$position) {
+                    MealTemplateItem::create([
+                        'meal_template_id' => $template->id,
+                        'meal_type' => $entry->meal_type,
+                        'food_name' => $entry->food_name,
+                        'calories' => $entry->calories,
+                        'protein_g' => $entry->protein_g,
+                        'carbs_g' => $entry->carbs_g,
+                        'fat_g' => $entry->fat_g,
+                        'position' => $position++,
+                    ]);
+                });
+
+            return redirect()->route('diary', [
+                'date' => $data['template_source_date'],
+                'flash' => 'template_saved',
+            ]);
+        }
+
+        if ($action === 'apply_meal_template') {
+            if (! $user->hasPremiumAccess() && ! $user->isAdministrator()) {
+                return redirect()->route('diary', ['date' => $request->input('target_date')])
+                    ->with('error', 'Recurso exclusivo para assinantes Premium.');
+            }
+
+            $data = $request->validate([
+                'meal_template_id' => 'required|integer',
+                'target_date' => 'required|date',
+            ]);
+
+            $template = MealTemplate::query()
+                ->where('id', $data['meal_template_id'])
+                ->where('user_id', $user->id)
+                ->with('items')
+                ->firstOrFail();
+
+            $applied = 0;
+            $template->items->each(function (MealTemplateItem $item) use ($user, $data, &$applied) {
+                FoodEntry::create([
+                    'user_id' => $user->id,
+                    'entry_date' => $data['target_date'],
+                    'meal_type' => $item->meal_type,
+                    'food_name' => $item->food_name,
+                    'calories' => $item->calories,
+                    'protein_g' => $item->protein_g,
+                    'carbs_g' => $item->carbs_g,
+                    'fat_g' => $item->fat_g,
+                ]);
+                $applied++;
+            });
+
+            return redirect()->route('diary', [
+                'date' => $data['target_date'],
+                'flash' => 'template_applied',
+                'n' => $applied,
+            ]);
+        }
 
         // Check if deletion
         if ($request->input('action') === 'delete_food') {

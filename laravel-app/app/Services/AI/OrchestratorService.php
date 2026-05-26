@@ -13,6 +13,7 @@ use App\Services\AI\Agents\AnalyticsAgent;
 use App\Services\AI\Agents\FinanceAgent;
 use App\Services\AI\Agents\SalesAgent;
 use App\Services\AI\Agents\RetentionAgent;
+use App\Services\AI\Agents\VisionAgent;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -46,11 +47,33 @@ class OrchestratorService
                 ];
             }
 
-            // 2. Classificação de Intenção
-            $intent = $context['intent'] ?? $this->classifier->classify($message);
-            $context['clinic_id'] = $clinicId; // Garantir clinic_id no contexto
+            // 2. Fluxo de Visão (Se houver imagem)
+            if (!empty($context['image_path']) || !empty($context['image_base64']) || !empty($context['image_url'])) {
+                $visionAgent = app(VisionAgent::class);
+                $visionResult = $visionAgent->execute($user, $message, $context);
 
-            // 3. Seleção e Execução do Agente
+                if ($visionResult['ok']) {
+                    $structuredData = $visionResult['structured_data'] ?? [];
+                    $intent = $structuredData['document_type'] ?? $intent;
+                    
+                    // Se a visão resolveu o problema (ex: foto de progresso), podemos retornar direto
+                    if ($intent === 'body_progress_photo') {
+                        return array_merge(['status' => 'success', 'intent' => $intent], $visionResult);
+                    }
+
+                    // Caso contrário, injetamos os dados estruturados no contexto para o agente de domínio
+                    $context['vision_data'] = $structuredData;
+                    $message .= "\n[DADOS EXTRAÍDOS DA IMAGEM]: " . json_encode($structuredData);
+                }
+            }
+
+            // 3. Classificação de Intenção (Se ainda não definida pela visão)
+            if ($intent === 'support' || empty($context['vision_data'])) {
+                $intent = $context['intent'] ?? $this->classifier->classify($message);
+            }
+            $context['clinic_id'] = $clinicId;
+
+            // 4. Seleção e Execução do Agente de Domínio
             $agent = $this->resolveAgent($intent);
             $result = $agent->execute($user, $message, $context);
 
@@ -86,8 +109,14 @@ class OrchestratorService
             'finance' => app(FinanceAgent::class),
             'sales' => app(SalesAgent::class),
             'retention' => app(RetentionAgent::class),
+            'vision' => app(VisionAgent::class),
+            'workout_sheet' => app(TrainingAgent::class),
+            'meal_photo' => app(NutritionAgent::class),
+            'bioimpedance_report' => app(ClinicalAgent::class),
+            'lab_exam' => app(ClinicalAgent::class),
             default => app(SupportAgent::class),
         };
+    }
     /**
      * Registra o acesso negado por falta de créditos ou limites do plano.
      */

@@ -31,6 +31,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ['name' => 'pdf.delivery.whatsapp', 'label' => 'Enviar / reenviar PDF por WhatsApp'],
             ['name' => 'pdf.companies.manage', 'label' => 'Gerir empresas e unidades (PDF / multi-tenant)'],
             ['name' => 'pdf.integrations.view', 'label' => 'Ver integrações e configuração técnica PDF'],
+            ['name' => 'configuration-center.access', 'label' => 'Centro de Configuração (CRUD dinâmico e auditoria)'],
         ];
 
         foreach ($permissions as $p) {
@@ -51,6 +52,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'description' => 'Gestão operacional, usuários e configurações da clínica',
                 'permissions' => Permission::whereIn('name', [
                     'admin.access',
+                    'configuration-center.access',
                     'users.view',
                     'pdf.templates.manage',
                     'pdf.documents.generate',

@@ -23,6 +23,7 @@ class AppFeatureSeeder extends Seeder
             ['name' => 'Interpretação de Exames', 'code' => 'ai_exam_interpretation', 'category' => 'ai_credits'],
             ['name' => 'Ajuste de Treino', 'code' => 'ai_workout_adjustment', 'category' => 'ai_credits'],
             ['name' => 'Ajuste de Dieta', 'code' => 'ai_diet_adjustment', 'category' => 'ai_credits'],
+            ['name' => 'Orquestrador IA', 'code' => 'ai_orchestrator', 'category' => 'free'],
         ];
 
         foreach ($features as $feature) {

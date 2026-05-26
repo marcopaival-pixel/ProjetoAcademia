@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\AIOrchestratorLog;
+use Database\Seeders\AppFeatureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -12,43 +13,28 @@ class AIOrchestratorTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(AppFeatureSeeder::class);
+    }
+
     /** @test */
     public function it_can_process_ai_request_and_log_correctly()
     {
-        // 1. Setup: Criar usuário e mockar OpenAI
         $user = User::factory()->create();
         
         Http::fake([
-            'api.openai.com/*' => Http::response([
-                'choices' => [
-                    [
-                        'message' => [
-                            'role' => 'assistant',
-                            'content' => 'support' // Mock para o IntentClassifier
-                        ]
-                    ],
-                    [
-                        'message' => [
-                            'role' => 'assistant',
-                            'content' => 'Resposta do agente de suporte.'
-                        ]
-                    ]
-                ],
-                'usage' => [
-                    'prompt_tokens' => 10,
-                    'completion_tokens' => 20,
-                    'total_tokens' => 30
-                ]
-            ], 200)
+            '*' => Http::response($this->openAiChatFakePayload('Resposta do agente de suporte.'), 200),
         ]);
 
         // 2. Act: Chamar o orquestrador
         $response = $this->actingAs($user)
             ->postJson('/api/ai/orchestrator', [
-                'message' => 'Como faço para ver meu treino?'
+                'message' => 'Como faço para ver meu treino?',
+                'context' => ['intent' => 'support'],
             ]);
 
-        // 3. Assert: Verificar resposta e log
         $response->assertStatus(200)
             ->assertJsonPath('status', 'success');
 

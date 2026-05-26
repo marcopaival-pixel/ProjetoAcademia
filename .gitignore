@@ -1,4 +1,19 @@
 # Chaves, cópias de ambiente e ficheiros de hosting (não versionar)
 docs/CHAVE_GOOGLE.txt
+docs/configuração_provedor.txt
+docs/configuracao_provedor.txt
 .ftpquota
 laravel-app/ - Copia.env
+laravel-app/.env copy.example
+
+# Debug legado (não expor em produção)
+php-app/public/debug.php
+
+# Scratch / artefactos de IA (não versionar)
+brain/
+laravel-app/brain/
+laravel-app/scratch/
+**/scratch/
+
+# Cache PHPStan (gerado localmente)
+laravel-app/storage/phpstan/

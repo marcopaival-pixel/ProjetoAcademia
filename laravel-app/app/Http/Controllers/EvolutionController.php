@@ -159,4 +159,51 @@ class EvolutionController extends Controller
 
         return back()->with('success', 'Registro removido com sucesso.');
     }
+
+    /**
+     * Gera o relatório de acompanhamento de evolução do aluno via IA.
+     */
+    public function aiReport(Request $request, \App\Services\AIFitnessGeneratorService $aiService)
+    {
+        $user = $request->user();
+        if (!$user->hasPremiumAccess()) {
+            return back()->with('error', 'Relatório Inteligente exclusivo para membros Premium.');
+        }
+
+        $cacheKey = "user_{$user->id}_weekly_ai_report_content";
+
+        try {
+            $reportData = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addDays(7), function () use ($aiService, $user) {
+                $result = $aiService->generateEvolutionReport($user);
+                
+                if (!$result['ok']) {
+                    throw new \Exception($result['error']);
+                }
+
+                $jsonStr = $result['report'];
+                // Limpar blocos de markdown caso a IA os coloque (ex: ```json ... ```)
+                $jsonStr = preg_replace('/```json/i', '', $jsonStr);
+                $jsonStr = preg_replace('/```/', '', $jsonStr);
+                $jsonStr = trim($jsonStr);
+
+                $data = json_decode($jsonStr, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+                    // Fallback se a IA falhar no JSON
+                    throw new \Exception('O assistente devolveu um formato inválido de relatório.');
+                }
+
+                return $data;
+            });
+        } catch (\Exception $e) {
+            // Remove do cache caso tenha dado erro antes de salvar, por garantia
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
+            return back()->with('error', 'Falha ao gerar o relatório: ' . $e->getMessage());
+        }
+
+        return view('evolution.ai-report', [
+            'reportData' => $reportData,
+            'user' => $user
+        ]);
+    }
 }

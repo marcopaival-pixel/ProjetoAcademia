@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Configurable;
 
 class ExerciseCatalog extends Model
 {
+    use Configurable;
     protected $table = 'exercises_catalog';
 
     protected $fillable = [

@@ -148,6 +148,14 @@ class ReportMonetizationService
                         'route' => 'report.monthly.pdf',
                         'route_params' => ['month' => Carbon::now()->format('Y-m')],
                     ],
+                    [
+                        'id' => 'full_history',
+                        'label' => 'Histórico Completo',
+                        'icon' => 'fas fa-archive',
+                        'premium' => true,
+                        'route' => 'patient.reports.show',
+                        'route_params' => ['type' => 'full_history'],
+                    ],
                 ],
             ];
         }

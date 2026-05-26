@@ -147,28 +147,28 @@ class AdminAreaController extends Controller
         if ($request->filled('search')) {
             $s = $request->get('search');
             $query->where(function($q) use ($s) {
-                $q->where('id', $s)
-                  ->orWhere('name', 'like', "%{$s}%")
-                  ->orWhere('email', 'like', "%{$s}%")
-                  ->orWhere('cpf', 'like', "%{$s}%");
+                $q->where('users.id', $s)
+                  ->orWhere('users.name', 'like', "%{$s}%")
+                  ->orWhere('users.email', 'like', "%{$s}%")
+                  ->orWhere('users.cpf', 'like', "%{$s}%");
             });
         }
 
         if ($request->filled('cpf')) {
             $cpf = Cpf::normalize($request->get('cpf'));
-            $query->where('cpf', $cpf);
+            $query->where('users.cpf', $cpf);
         }
 
         if ($request->filled('premium')) {
-            $query->where('is_premium', $request->get('premium') === 'yes');
+            $query->where('users.is_premium', $request->get('premium') === 'yes');
         }
 
         if ($request->filled('admin')) {
-            $query->where('is_admin', $request->get('admin') === 'yes');
+            $query->where('users.is_admin', $request->get('admin') === 'yes');
         }
 
         if ($request->filled('profile_id')) {
-            $query->where('profile_id', (int) $request->get('profile_id'));
+            $query->where('users.profile_id', (int) $request->get('profile_id'));
         }
 
         if ($request->filled('profession_id')) {
@@ -255,6 +255,10 @@ class AdminAreaController extends Controller
 
     public function storeUser(Request $request)
     {
+        if ($request->filled('cpf')) {
+            $request->merge(['cpf' => Cpf::normalize($request->input('cpf'))]);
+        }
+
         $rules = [
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
@@ -300,6 +304,9 @@ class AdminAreaController extends Controller
             ]);
             $user->password_hash = Hash::make($data['password']);
             $user->save();
+
+            // Sincronizar o perfil na tabela pivô user_roles
+            $user->roles()->sync([$data['profile_id']]);
 
             if ($data['profile_id'] == 4) {
                 $docPath = null;
@@ -661,6 +668,10 @@ class AdminAreaController extends Controller
             'request_data' => $request->all()
         ]);
 
+        if ($request->filled('cpf')) {
+            $request->merge(['cpf' => Cpf::normalize($request->input('cpf'))]);
+        }
+
         $rules = [
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -725,6 +736,10 @@ class AdminAreaController extends Controller
             }
 
             $user->update($userFields);
+
+            if (isset($userFields['profile_id'])) {
+                $user->roles()->sync([$userFields['profile_id']]);
+            }
 
             // Sincronizar com a tabela user_plans se o plano mudou ou se não houver plano ativo
             $hasActivePlan = $user->userPlans()->where('status', 'active')->exists();
@@ -1376,5 +1391,22 @@ class AdminAreaController extends Controller
         }
 
         return back()->with('success', "Nova senha gerada e enviada com sucesso para o e-mail do usuário. O administrador foi notificado.");
+    }
+
+    /**
+     * Get the validation rules for passwords.
+     *
+     * @param  bool  $requireConfirmation
+     * @return array
+     */
+    protected function getPasswordValidationRules($requireConfirmation = false)
+    {
+        $rules = ['required', 'string', 'min:8'];
+        
+        if ($requireConfirmation) {
+            $rules[] = 'confirmed';
+        }
+        
+        return $rules;
     }
 }

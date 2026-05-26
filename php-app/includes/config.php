@@ -34,5 +34,6 @@ return [
     ],
     'mercadopago' => [
         'access_token' => (string) (getenv('MP_ACCESS_TOKEN') ?: ''),
+        'webhook_secret' => (string) (getenv('MP_WEBHOOK_SECRET') ?: ''),
     ],
 ];

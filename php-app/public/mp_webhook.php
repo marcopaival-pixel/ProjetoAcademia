@@ -11,6 +11,14 @@ $config = require dirname(__DIR__) . '/includes/config.php';
 require_once dirname(__DIR__) . '/includes/db.php';
 require_once dirname(__DIR__) . '/includes/mercadopago.php';
 
+$appEnv = (string) (getenv('APP_ENV') ?: '');
+if ($appEnv === 'production') {
+    http_response_code(410);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Webhook legado desativado. Use POST /mp/webhook na aplicação Laravel.';
+    exit;
+}
+
 $token = (string) ($config['mercadopago']['access_token'] ?? '');
 if ($token === '') {
     http_response_code(503);
