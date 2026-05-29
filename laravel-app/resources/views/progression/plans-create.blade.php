@@ -5,6 +5,7 @@
 @section('content')
 <div x-data="trainingPlanBuilder()" 
      x-init="init()"
+     @add-exercise.window="addExercise($event.detail.id, $event.detail.name, $event.detail.muscles)"
      class="space-y-8 animate-fade-in py-8 px-4 sm:px-6 lg:px-8 max-w-[1200px] mx-auto pb-32">
     
     {{-- Barra de Progresso Superior --}}
@@ -91,27 +92,44 @@
             
             {{-- ETAPA 1: INFORMAÇÕES BÁSICAS --}}
             <div x-show="step === 1" x-transition.opacity.duration.400ms class="space-y-10">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Identificador -->
-                    <div class="space-y-3">
-                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Identificador do Treino</label>
-                        <div class="relative group/select">
-                            <select name="plan_label" x-model="formData.plan_label" class="w-full bg-zinc-950/60 border border-white/5 rounded-2xl px-6 py-5 text-white text-sm outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all appearance-none cursor-pointer">
-                                <option value="" class="bg-zinc-900 text-zinc-500">Nenhum...</option>
-                                <option value="Treino A" class="bg-zinc-900">Treino A</option>
-                                <option value="Treino B" class="bg-zinc-900">Treino B</option>
-                                <option value="Treino C" class="bg-zinc-900">Treino C</option>
-                                <option value="Treino D" class="bg-zinc-900">Treino D</option>
-                                <option value="Treino E" class="bg-zinc-900">Treino E</option>
-                            </select>
-                            <i class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-zinc-600 group-hover/select:text-blue-400 transition-colors pointer-events-none"></i>
+                @if(!empty($selectedTargets))
+                    <div class="bg-blue-600/10 border border-blue-500/20 rounded-3xl p-6">
+                        <h4 class="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <i class="fas fa-bullseye"></i> Foco Muscular Selecionado (Passo Anterior)
+                        </h4>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($selectedTargets as $target)
+                                <span class="px-3 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full text-xs font-bold shadow-lg shadow-blue-500/10">
+                                    {{ is_array($target) ? ($target['name'] ?? 'Músculo') : $target }}
+                                </span>
+                            @endforeach
                         </div>
                     </div>
+                @endif
 
-                    <!-- Nome do Plano -->
-                    <div class="space-y-3">
-                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Nome do Plano <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" x-model="formData.name" class="w-full bg-zinc-950/60 border border-white/5 rounded-2xl px-6 py-5 text-white text-sm outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all placeholder:text-zinc-800" placeholder="Ex: Peito e Tríceps">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Identificador e Título do Treino -->
+                    <div class="col-span-1 md:col-span-2 lg:col-span-3 space-y-3">
+                        <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-2">Título do Treino <span class="text-red-500">*</span></label>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <!-- Identificador -->
+                            <div class="relative group/select w-full sm:w-1/4">
+                                <select name="plan_label" x-model="formData.plan_label" class="w-full bg-zinc-950/60 border border-white/5 rounded-2xl px-6 py-5 text-white text-sm outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all appearance-none cursor-pointer">
+                                    <option value="" class="bg-zinc-900 text-zinc-500">Etiqueta (Opcional)</option>
+                                    <option value="Treino A" class="bg-zinc-900">Treino A</option>
+                                    <option value="Treino B" class="bg-zinc-900">Treino B</option>
+                                    <option value="Treino C" class="bg-zinc-900">Treino C</option>
+                                    <option value="Treino D" class="bg-zinc-900">Treino D</option>
+                                    <option value="Treino E" class="bg-zinc-900">Treino E</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-zinc-600 group-hover/select:text-blue-400 transition-colors pointer-events-none"></i>
+                            </div>
+
+                            <!-- Nome do Plano -->
+                            <div class="w-full sm:w-3/4 relative">
+                                <input type="text" name="name" x-model="formData.name" class="w-full bg-zinc-950/60 border border-white/5 rounded-2xl px-6 py-5 text-white text-sm outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all placeholder:text-zinc-800" placeholder="Ex: Foco em Força, Costas Pesado, Adaptação...">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Objetivo -->
@@ -372,40 +390,75 @@
                             </div>
 
                             <template x-for="(set, setIdx) in exercise.sets" :key="set.tempId">
-                                <div class="grid grid-cols-12 gap-2 bg-zinc-950/80 border border-white/5 rounded-2xl p-2 items-center group/set">
-                                    <div class="col-span-2">
-                                        <select x-model="set.type" class="w-full bg-zinc-900 border-0 rounded-xl text-[10px] font-black text-zinc-400 uppercase focus:ring-1 focus:ring-blue-500/30">
-                                            <option value="work">Trabalho</option>
-                                            <template x-if="isPremium">
-                                                <optgroup label="Avançado">
-                                                    <option value="warmup">Aquecimento</option>
-                                                    <option value="drop">Drop Set</option>
-                                                    <option value="failure">Até a Falha</option>
-                                                    <option value="rest-pause">Rest-Pause</option>
-                                                </optgroup>
-                                            </template>
-                                            <template x-if="!isPremium">
-                                                <option disabled>💎 PRO Only</option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <input type="number" x-model="set.reps" class="w-full bg-zinc-900 border-0 rounded-xl text-white text-center font-bold py-3 focus:ring-1 focus:ring-blue-500/30">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <input type="number" x-model="set.weight" class="w-full bg-zinc-900 border-0 rounded-xl text-white text-center font-bold py-3 focus:ring-1 focus:ring-blue-500/30">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <input type="number" x-model="set.rest" class="w-full bg-zinc-900 border-0 rounded-xl text-zinc-500 text-center font-bold py-3 focus:ring-1 focus:ring-blue-500/30">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <input type="number" x-model="set.rpe" :disabled="!isPremium" :class="!isPremium ? 'opacity-20 cursor-not-allowed' : ''" class="w-full bg-zinc-900 border-0 rounded-xl text-blue-400 text-center font-bold py-3 focus:ring-1 focus:ring-blue-500/30">
-                                    </div>
-                                    <div class="col-span-2 flex items-center gap-2">
-                                        <input type="text" x-model="set.cadence" :disabled="!isPremium" :class="!isPremium ? 'opacity-20 cursor-not-allowed' : ''" class="w-full bg-zinc-900 border-0 rounded-xl text-zinc-500 text-center font-bold py-3 focus:ring-1 focus:ring-blue-500/30 text-[10px]">
-                                        <button type="button" @click="removeSet(exIdx, setIdx)" class="text-zinc-700 hover:text-red-500 transition-colors p-2">
-                                            <i class="fas fa-times"></i>
+                                <div class="bg-zinc-950/80 border border-white/5 rounded-3xl p-5 mb-4 group/set relative transition-all duration-300 hover:border-blue-500/30">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center gap-3">
+                                            <span class="w-8 h-8 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center text-[10px] font-black text-zinc-500" x-text="setIdx + 1"></span>
+                                            <select x-model="set.type" class="bg-transparent border-0 text-[10px] font-black text-zinc-400 uppercase focus:ring-0 appearance-none p-0 cursor-pointer">
+                                                <option value="work">Trabalho</option>
+                                                <template x-if="isPremium">
+                                                    <optgroup label="Avançado">
+                                                        <option value="warmup">Aquecimento</option>
+                                                        <option value="drop">Drop Set</option>
+                                                        <option value="failure">Até a Falha</option>
+                                                        <option value="rest-pause">Rest-Pause</option>
+                                                    </optgroup>
+                                                </template>
+                                                <template x-if="!isPremium">
+                                                    <option disabled>💎 PRO Only</option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                        <button type="button" @click="removeSet(exIdx, setIdx)" class="w-8 h-8 flex items-center justify-center bg-zinc-900 hover:bg-red-500/10 text-zinc-700 hover:text-red-500 border border-white/5 rounded-xl transition-all shadow-inner">
+                                            <i class="fas fa-times text-xs"></i>
                                         </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <!-- Controle de Carga -->
+                                        <div class="space-y-3">
+                                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Peso / Carga Estimada (kg)</label>
+                                            
+                                            <!-- Stepper -->
+                                            <div class="flex items-center justify-between bg-zinc-900 border border-white/5 rounded-2xl p-1">
+                                                <button type="button" @click="set.weight = Math.max(0, (parseFloat(set.weight) || 0) - 1)" class="w-12 h-12 rounded-xl bg-zinc-950/50 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+                                                    <i class="fas fa-minus text-xs"></i>
+                                                </button>
+                                                <input type="number" step="0.5" x-model="set.weight" class="w-20 bg-transparent border-0 text-center text-xl font-black text-white focus:ring-0 p-0 outline-none tabular-nums" placeholder="0">
+                                                <button type="button" @click="set.weight = (parseFloat(set.weight) || 0) + 1" class="w-12 h-12 rounded-xl bg-zinc-950/50 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+                                                    <i class="fas fa-plus text-xs"></i>
+                                                </button>
+                                            </div>
+
+                                            <!-- Slider -->
+                                            <div class="pt-2">
+                                                <input type="range" x-model="set.weight" min="0" max="150" step="1" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-500 transition-all">
+                                            </div>
+                                        </div>
+
+                                        <!-- Outras métricas -->
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="space-y-1">
+                                                <label class="block text-[9px] font-black uppercase text-zinc-500 tracking-widest text-center">Reps</label>
+                                                <input type="number" x-model="set.reps" class="w-full bg-zinc-900 border border-white/5 rounded-2xl p-4 text-center text-lg font-black text-white focus:border-blue-500/50 outline-none shadow-inner" placeholder="0">
+                                            </div>
+                                            <div class="space-y-1">
+                                                <label class="block text-[9px] font-black uppercase text-zinc-500 tracking-widest text-center">Descanso(s)</label>
+                                                <input type="number" x-model="set.rest" class="w-full bg-zinc-900 border border-white/5 rounded-2xl p-4 text-center text-lg font-black text-zinc-500 focus:border-blue-500/50 outline-none shadow-inner" placeholder="60">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Métricas Pro -->
+                                    <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/5">
+                                        <div class="flex items-center justify-between bg-zinc-900/50 rounded-xl p-3 border border-white/5">
+                                            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">RPE</span>
+                                            <input type="number" x-model="set.rpe" :disabled="!isPremium" :class="!isPremium ? 'opacity-20 cursor-not-allowed' : ''" class="w-12 bg-transparent border-0 text-right font-bold text-blue-400 focus:ring-0 p-0 text-sm" placeholder="0">
+                                        </div>
+                                        <div class="flex items-center justify-between bg-zinc-900/50 rounded-xl p-3 border border-white/5">
+                                            <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Cadência</span>
+                                            <input type="text" x-model="set.cadence" :disabled="!isPremium" :class="!isPremium ? 'opacity-20 cursor-not-allowed' : ''" class="w-12 bg-transparent border-0 text-right font-bold text-zinc-400 focus:ring-0 p-0 text-xs uppercase" placeholder="3010">
+                                        </div>
                                     </div>
                                 </div>
                             </template>
@@ -571,6 +624,12 @@
             exercises: [],
             
             init() {
+                // Sugestão automática de nome baseada nos músculos selecionados
+                const suggestedName = "{{ !empty($selectedTargets) ? 'Treino de ' . collect($selectedTargets)->map(fn($t) => is_array($t) ? ($t['name'] ?? '') : $t)->filter()->implode(' e ') : '' }}";
+                if (!this.formData.name && suggestedName) {
+                    this.formData.name = suggestedName;
+                }
+
                 // Hidratação a partir de input antigo (caso validação falhe no servidor)
                 const oldExercises = {!! json_encode(old('exercises_json')) !!};
                 if (oldExercises) {
@@ -587,11 +646,6 @@
                 this.$watch('exercises', () => {
                     this.calculateDuration();
                 }, { deep: true });
-
-                // Escutar evento do modal
-                window.addEventListener('add-exercise', (e) => {
-                    this.addExercise(e.detail.id, e.detail.name, e.detail.muscles);
-                });
 
                 // Auto-save logic
                 setInterval(() => {

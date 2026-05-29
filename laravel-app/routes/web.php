@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BodyAnalysisController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Clinic\ClinicManagementController;
 use App\Http\Controllers\DashboardController;
 
 use App\Http\Controllers\DocumentValidationController;
@@ -64,9 +65,12 @@ Route::get(
 Route::get('/legal/privacy-policy', [PrivacyController::class, 'privacyPolicy'])->name('legal.privacy');
 Route::get('/legal/terms-of-use', [PrivacyController::class, 'termsOfUse'])->name('legal.terms');
 Route::get('/legal/cookies', [PrivacyController::class, 'cookiePolicy'])->name('legal.cookies');
+Route::post('/legal/cookie-consent', [PrivacyController::class, 'storeCookieConsent'])->name('legal.cookie-consent');
+
 Route::middleware('auth')->group(function () {
     Route::get('/legal/download-data', [PrivacyController::class, 'downloadMyData'])->name('privacy.download');
     Route::post('/legal/account-deletion', [PrivacyController::class, 'requestAccountDeletion'])->name('privacy.request-deletion');
+    Route::post('/legal/accept-consent', [PrivacyController::class, 'acceptConsent'])->name('legal.accept-consent');
 });
 
 Route::post('/theme', ThemeController::class)->name('theme');
@@ -113,7 +117,7 @@ foreach ($legacyRedirects as $file => $target) {
     Route::get($file.'.php', fn(Request $request) => redirect($target . ($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301));
 }
 
-Route::post('diary.php', [\App\Http\Controllers\NutritionController::class, 'manageDiary']);
+Route::post('diary.php', [\App\Http\Controllers\NutritionController::class, 'manageDiary'])->middleware('auth');
 
 Route::get('logout.php', function (Request $request) {
     auth()->logout();
@@ -136,14 +140,14 @@ require __DIR__.'/professional.php';
 require __DIR__.'/patient.php';
 require __DIR__.'/representative.php';
 
-// 5. Marketing Banner API (Público/Autenticado)
-Route::post('/api/marketing/banners/{banner}/view', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackView'])->name('api.marketing.banners.view');
-Route::post('/api/marketing/banners/{banner}/click', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackClick'])->name('api.marketing.banners.click');
-Route::post('/api/marketing/banners/{banner}/dismiss', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackDismiss'])->name('api.marketing.banners.dismiss');
-
-// Legado App Banner
-Route::post('/api/marketing/app-banner/lead', [App\Http\Controllers\Admin\AppBannerController::class, 'registerLead'])->name('api.marketing.app-banner.lead');
-Route::post('/api/marketing/app-banner/metric', [App\Http\Controllers\Admin\AppBannerController::class, 'trackMetric'])->name('api.marketing.app-banner.metric');
+// 5. Marketing Banner API (público — throttle anti-abuso)
+Route::middleware('throttle:marketing-tracking')->group(function () {
+    Route::post('/api/marketing/banners/{banner}/view', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackView'])->name('api.marketing.banners.view');
+    Route::post('/api/marketing/banners/{banner}/click', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackClick'])->name('api.marketing.banners.click');
+    Route::post('/api/marketing/banners/{banner}/dismiss', [\App\Http\Controllers\Admin\MarketingBannerController::class, 'trackDismiss'])->name('api.marketing.banners.dismiss');
+    Route::post('/api/marketing/app-banner/lead', [App\Http\Controllers\Admin\AppBannerController::class, 'registerLead'])->name('api.marketing.app-banner.lead');
+    Route::post('/api/marketing/app-banner/metric', [App\Http\Controllers\Admin\AppBannerController::class, 'trackMetric'])->name('api.marketing.app-banner.metric');
+});
 
 // 6. App Core (Rotas Autenticadas Comuns)
 Route::middleware(['auth'])->group(function () {

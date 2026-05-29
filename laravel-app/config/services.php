@@ -73,4 +73,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
 
+    /*
+    | Google Cloud Vision — OCR para importação de treino por foto.
+    | @see App\Services\OCR\GoogleVisionOCRService
+    */
+    'google_vision' => [
+        'key' => env('GOOGLE_VISION_API_KEY'),
+    ],
+
 ];

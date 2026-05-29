@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Timer Flutuante "SaaS Elite" -->
-    <div class="fixed bottom-8 right-8 z-[100] group" x-show="timerActive" x-transition>
-        <div class="bg-zinc-900 border border-emerald-500/30 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-3xl flex items-center gap-6 shadow-emerald-500/10">
+    <div class="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[100] group" x-show="timerActive" x-transition>
+        <div class="bg-zinc-900 border border-emerald-500/30 p-4 md:p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-3xl flex items-center gap-4 md:gap-6 shadow-emerald-500/10">
             <div class="text-center">
                 <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1" x-text="timerPaused ? 'Pausado' : 'Treinando'"></p>
                 <h3 class="text-4xl font-black text-white italic tracking-tighter tabular-nums" x-text="formatTimer(elapsedSeconds)">00:00</h3>
@@ -436,37 +436,126 @@
                         
                         <div class="space-y-3">
                             <template x-for="(set, index) in sets" :key="index">
-                                <div class="grid grid-cols-12 gap-2 group/set">
-                                    <button type="button" @click="toggleComplete(index)" 
-                                            :class="set.completed ? 'bg-emerald-500 text-zinc-950 border-emerald-500' : 'bg-zinc-950 text-zinc-700 border-zinc-800'"
-                                            class="col-span-2 h-12 flex items-center justify-center border rounded-xl text-[10px] font-black transition-all hover:scale-105 shadow-inner">
-                                        <i x-show="set.completed" data-lucide="check" class="w-4 h-4"></i>
-                                        <span x-show="!set.completed" x-text="index + 1"></span>
-                                    </button>
-                                    <input type="number" placeholder="kg" x-model="set.weight" @input="handleDataChange()" 
-                                           @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
-                                           class="col-span-3 bg-zinc-950 border border-zinc-800 rounded-xl text-center text-xs font-black text-white outline-none focus:border-emerald-500/50 shadow-inner tabular-nums">
-                                    <input type="number" placeholder="reps" x-model="set.reps" @input="handleDataChange()" 
-                                           @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
-                                           class="col-span-3 bg-zinc-950 border border-zinc-800 rounded-xl text-center text-xs font-black text-white outline-none focus:border-emerald-500/50 shadow-inner tabular-nums">
+                                <div class="bg-zinc-950/80 border rounded-3xl p-5 transition-all duration-300 relative overflow-hidden group/set mb-4"
+                                     :class="(set.weight > (suggestion * 1.25) && suggestion > 0) ? 'border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : (set.weight > suggestion ? 'border-emerald-500/30' : 'border-zinc-800')">
                                     
-                                    <div class="col-span-3">
-                                        <select x-model="set.rest" @change="handleDataChange()" 
-                                                @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
-                                                class="w-full h-12 bg-zinc-950 border border-zinc-800 rounded-xl text-center text-[10px] font-black text-zinc-500 outline-none appearance-none shadow-inner uppercase tracking-tighter">
-                                            <option value="30">30s</option>
-                                            <option value="45">45s</option>
-                                            <option value="60">60s</option>
-                                            <option value="90">90s</option>
-                                            <option value="120">120s</option>
-                                        </select>
-                                    </div>
+                                    <!-- Alerta de Sobrecarga Background -->
+                                    <div class="absolute inset-0 bg-rose-500/5 transition-opacity duration-300" x-show="(set.weight > (suggestion * 1.25) && suggestion > 0)" style="display: none;"></div>
 
-                                    <button type="button" @click="removeSet(index)" class="col-span-1 h-12 flex items-center justify-center bg-zinc-900 hover:bg-rose-500/10 text-zinc-700 hover:text-rose-500 border border-zinc-800 rounded-xl transition-all opacity-0 group-hover/set:opacity-100 shadow-inner">
-                                        <i data-lucide="x" class="w-3 h-3"></i>
-                                    </button>
+                                    <div class="relative z-10 flex flex-col gap-5">
+                                        <!-- Header da Série -->
+                                        <div class="flex items-center justify-between">
+                                            <button type="button" @click="toggleComplete(index)" 
+                                                    :class="set.completed ? 'bg-emerald-500 text-zinc-950 border-emerald-500' : 'bg-zinc-900 text-zinc-400 border-zinc-800'"
+                                                    class="flex items-center justify-center border w-8 h-8 rounded-xl text-[10px] font-black transition-all hover:scale-105 shadow-inner">
+                                                <i x-show="set.completed" data-lucide="check" class="w-4 h-4"></i>
+                                                <span x-show="!set.completed" x-text="index + 1"></span>
+                                            </button>
+                                            
+                                            <button type="button" @click="removeSet(index)" class="w-8 h-8 flex items-center justify-center bg-zinc-900 hover:bg-rose-500/10 text-zinc-700 hover:text-rose-500 border border-zinc-800 rounded-xl transition-all shadow-inner">
+                                                <i data-lucide="x" class="w-3 h-3"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Controles Principais (Mobile-First) -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            
+                                            <!-- Controle de Carga -->
+                                            <div class="space-y-3">
+                                                <div class="flex items-center justify-between">
+                                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Carga (kg)</label>
+                                                    <span x-show="(set.weight > (suggestion * 1.25) && suggestion > 0)" class="text-[9px] font-black uppercase text-rose-500 animate-pulse flex items-center gap-1" style="display: none;">
+                                                        <i data-lucide="alert-triangle" class="w-3 h-3"></i> Sobrecarga
+                                                    </span>
+                                                    <span x-show="set.weight > suggestion && !(set.weight > (suggestion * 1.25)) && suggestion > 0" class="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-1" style="display: none;">
+                                                        <i data-lucide="trending-up" class="w-3 h-3"></i> Evolução
+                                                    </span>
+                                                </div>
+                                                
+                                                <!-- Stepper -->
+                                                <div class="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-2xl p-1 relative overflow-hidden">
+                                                    <button type="button" @click="set.weight = Math.max(0, (parseFloat(set.weight) || 0) - 1); handleDataChange()" class="w-12 h-12 rounded-xl bg-zinc-950/50 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors active:scale-95 z-10">
+                                                        <i data-lucide="minus" class="w-4 h-4"></i>
+                                                    </button>
+                                                    
+                                                    <input type="number" step="0.5" x-model="set.weight" @input="handleDataChange()" @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
+                                                        class="w-20 bg-transparent border-0 text-center text-xl font-black text-white focus:ring-0 p-0 outline-none z-10 tabular-nums">
+                                                    
+                                                    <button type="button" @click="set.weight = (parseFloat(set.weight) || 0) + 1; handleDataChange()" class="w-12 h-12 rounded-xl bg-zinc-950/50 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors active:scale-95 z-10">
+                                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Slider Moderno -->
+                                                <div class="pt-2">
+                                                    <input type="range" x-model="set.weight" @input="handleDataChange()" min="0" max="150" step="1" 
+                                                        class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400 transition-all">
+                                                </div>
+                                            </div>
+
+                                            <!-- Reps e Descanso -->
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <!-- Repetições -->
+                                                <div class="space-y-1">
+                                                    <label class="block text-[9px] font-black uppercase text-zinc-500 tracking-widest text-center">Reps</label>
+                                                    <input type="number" x-model="set.reps" @input="handleDataChange()" @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
+                                                        class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center text-lg font-black text-white focus:border-emerald-500/50 outline-none shadow-inner tabular-nums"
+                                                        placeholder="0">
+                                                </div>
+
+                                                <!-- Descanso -->
+                                                <div class="space-y-1">
+                                                    <label class="block text-[9px] font-black uppercase text-zinc-500 tracking-widest text-center">Descanso</label>
+                                                    <select x-model="set.rest" @change="handleDataChange()" @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
+                                                        class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center text-xs font-black text-emerald-500 outline-none appearance-none shadow-inner uppercase tracking-tighter">
+                                                        <option value="30">30s</option>
+                                                        <option value="45">45s</option>
+                                                        <option value="60">60s</option>
+                                                        <option value="90">90s</option>
+                                                        <option value="120">120s</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Esforço e Velocidade -->
+                                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                                <!-- RPE por Série -->
+                                                <div class="space-y-1 relative group/rpe">
+                                                    <div class="flex items-center justify-center gap-1 mb-1">
+                                                        <label class="block text-[9px] font-black uppercase text-zinc-500 tracking-widest text-center">Esforço (1-10)</label>
+                                                        <template x-if="!isPremium">
+                                                            <i data-lucide="lock" class="w-3 h-3 text-amber-500"></i>
+                                                        </template>
+                                                    </div>
+                                                    <input type="number" min="1" max="10" x-model="set.rpe" @input="handleDataChange()" @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
+                                                        class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center text-sm font-black focus:border-emerald-500/50 outline-none shadow-inner tabular-nums"
+                                                        :class="isPremium ? 'text-amber-500' : 'text-zinc-600 opacity-50 cursor-not-allowed'"
+                                                        placeholder="Ex: 8" :disabled="!isPremium">
+                                                </div>
+
+                                                <!-- Cadência -->
+                                                <div class="space-y-1 relative group/cadence">
+                                                    <div class="flex items-center justify-center gap-1 mb-1">
+                                                        <label class="block text-[9px] font-black uppercase text-zinc-500 tracking-widest text-center">Ritmo</label>
+                                                        <template x-if="!isPremium">
+                                                            <i data-lucide="lock" class="w-3 h-3 text-amber-500"></i>
+                                                        </template>
+                                                    </div>
+                                                    <input type="text" x-model="set.cadence" @input="handleDataChange()" @keydown.enter.prevent="index === sets.length - 1 ? addSet() : focusNextSetInput($event)"
+                                                        class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center text-sm font-black focus:border-emerald-500/50 outline-none shadow-inner"
+                                                        :class="isPremium ? 'text-white' : 'text-zinc-600 opacity-50 cursor-not-allowed'"
+                                                        placeholder="Ex: 3010" :disabled="!isPremium">
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
                                 </div>
                             </template>
+                        </div>
+                        
+                        <div class="mt-6 pt-4 border-t border-zinc-900/50 text-center">
+                            <p class="text-[8px] text-zinc-500 font-black uppercase tracking-widest italic">* VELOCIDADE: EX 3010 (3S DESCIDA, 0S PAUSA, 1S SUBIDA)</p>
                         </div>
                     </div>
 
@@ -766,7 +855,7 @@
 
             // --- Set Management ---
             addSet() {
-                this.sets.push({ weight: '', reps: '', rest: '60', completed: false });
+                this.sets.push({ weight: '', reps: '', rest: '60', rpe: '', cadence: '', completed: false });
             },
 
             duplicateLastSet() {

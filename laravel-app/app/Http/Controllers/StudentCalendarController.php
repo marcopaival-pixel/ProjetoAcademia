@@ -23,24 +23,26 @@ class StudentCalendarController extends Controller
         $nextMonth = $currentDate->copy()->addMonth();
 
         // Buscar dias com treinos
-        $entries = DB::table('exercise_entries')
+        $exercises = DB::table('exercise_entries')
             ->where('user_id', $uid)
             ->whereMonth('entry_date', $month)
             ->whereYear('entry_date', $year)
-            ->select('entry_date', DB::raw('count(*) as count'))
-            ->groupBy('entry_date')
-            ->get()
-            ->keyBy('entry_date');
+            ->get();
+
+        $entries = $exercises->groupBy('entry_date')->map(function ($dayExercises) {
+            return (object) ['count' => $dayExercises->count(), 'items' => $dayExercises];
+        });
 
         // Buscar dias com registros de nutrição (opcional, para um calendário unificado)
-        $nutritionEntries = DB::table('food_entries')
+        $foods = DB::table('food_entries')
             ->where('user_id', $uid)
             ->whereMonth('entry_date', $month)
             ->whereYear('entry_date', $year)
-            ->select('entry_date', DB::raw('count(*) as count'))
-            ->groupBy('entry_date')
-            ->get()
-            ->keyBy('entry_date');
+            ->get();
+
+        $nutritionEntries = $foods->groupBy('entry_date')->map(function ($dayFoods) {
+            return (object) ['count' => $dayFoods->count(), 'items' => $dayFoods];
+        });
 
         return view('student.calendar', [
             'month' => $month,

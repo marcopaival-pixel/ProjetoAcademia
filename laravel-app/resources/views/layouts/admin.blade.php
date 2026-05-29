@@ -62,7 +62,7 @@
     </style>
     @stack('styles')
 </head>
-<body class="admin-panel-body">
+<body class="admin-panel-body overflow-x-hidden">
     {{-- Barra de Retorno PaivaTech (Versão Robusta) --}}
     <div id="paiva-backlink-bar" class="bg-[#080a0f] border-b border-zinc-900/50 py-2.5 px-6 sm:px-8 flex items-center justify-between relative z-[2000] animate-fade-in" style="display: none;">
         <div class="flex items-center gap-4">

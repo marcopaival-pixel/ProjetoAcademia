@@ -551,6 +551,12 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
                 'payload' => ['payment_id' => $id, 'plan' => $plan]
             ]);
 
+            // Disparar emissão de Nota Fiscal assincronamente (se houver gateway configurado)
+            \App\Jobs\IssueSubscriptionInvoice::dispatch($paymentModel);
+
+            // Limpar cache do MRR/Dashboard para refletir o novo pagamento
+            app(\App\Services\SaaSMetricsService::class)->clearCache();
+
             return ['ok' => true, 'message' => 'Crédito aplicado com sucesso.'];
         });
     }

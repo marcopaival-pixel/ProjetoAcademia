@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FoodEntry;
 use App\Models\UserConsent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,7 @@ class PrivacyController extends Controller
         }
 
         $profile = $user->profile;
-        $meals = $user->foodEntries()->with('food')->get();
+        $meals = $user->foodEntries()->get();
         $exercises = $user->exerciseEntries()->get();
         
         $loadLogs = DB::table('load_logs')->where('user_id', $user->id)->get();
@@ -44,9 +45,9 @@ class PrivacyController extends Controller
                 'weight' => $profile->weight ?? '?',
                 'height' => $profile->height ?? '?',
             ],
-            'meals' => $meals->map(fn($m) => [
-                'date' => $m->date,
-                'food' => $m->food->name ?? '?',
+            'meals' => $meals->map(fn (FoodEntry $m) => [
+                'date' => $m->entry_date?->format('Y-m-d') ?? (string) $m->entry_date,
+                'food' => $m->food_name ?? '?',
                 'amount' => $m->amount,
                 'calories' => $m->calories,
             ]),
@@ -105,5 +106,40 @@ class PrivacyController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    /** Cookie banner preferences — persisted for authenticated users (LGPD audit trail). */
+    public function storeCookieConsent(Request $request)
+    {
+        $validated = $request->validate([
+            'analytics' => ['required', 'boolean'],
+            'marketing' => ['required', 'boolean'],
+            'preferences' => ['required', 'boolean'],
+        ]);
+
+        $prefsPayload = [
+            'schema' => '1.0',
+            'essential' => true,
+            'analytics' => $validated['analytics'],
+            'marketing' => $validated['marketing'],
+            'preferences' => $validated['preferences'],
+        ];
+
+        if (Auth::check()) {
+            UserConsent::create([
+                'user_id' => Auth::id(),
+                'consent_type' => 'cookies',
+                'version' => json_encode($prefsPayload, JSON_UNESCAPED_UNICODE),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+            ]);
+        }
+
+        $request->session()->put('cookie_consent', $prefsPayload);
+
+        return response()->json([
+            'success' => true,
+            'preferences' => $prefsPayload,
+        ]);
     }
 }

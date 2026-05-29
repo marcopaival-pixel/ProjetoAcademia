@@ -55,23 +55,50 @@ class BodyAnalysisController extends Controller
         return response()->json([
             'success' => true,
             'analysis_id' => $analysis->id,
-            'summary' => $aiSummary,
+            'summary' => $aiSummary['summary'] ?? '',
+            'diet' => $aiSummary['diet'] ?? '',
+            'workout' => $aiSummary['workout'] ?? '',
+            'exercises' => $aiSummary['exercises'] ?? [],
         ]);
     }
 
     private function generateAiSummary($metrics)
     {
-        if (empty($metrics)) return "Nenhuma alteração significativa detectada.";
+        $response = [
+            'summary' => 'Proporções ótimas detectadas! Continue com o plano atual.',
+            'diet' => 'Manter dieta normocalórica com foco em hidratação e ingestão adequada de macronutrientes.',
+            'workout' => 'Foco em manutenção muscular e mobilidade. Nenhum exercício corretivo severo necessário.',
+            'exercises' => ['Agachamento Livre', 'Desenvolvimento', 'Levantamento Terra']
+        ];
+
+        if (empty($metrics)) return $response;
 
         $summary = [];
+        $workout = [];
+        $diet = 'Aumentar a ingestão de proteínas magras para apoiar a recuperação muscular (mínimo 1.8g/kg).';
+        $exercises = [];
+
         if (isset($metrics['asymmetry_shoulders']) && $metrics['asymmetry_shoulders'] > 5) {
-            $summary[] = "Detectada assimetria significativa nos ombros. Foco em exercícios unilaterais.";
+            $summary[] = "Detectada assimetria significativa nos ombros.";
+            $workout[] = "Foco intenso em exercícios unilaterais para equilibrar a musculatura do deltóide.";
+            $exercises[] = "Desenvolvimento Arnold Unilateral";
+            $exercises[] = "Elevação Lateral com Halter (Lado Fraco Primeiro)";
         }
         if (isset($metrics['posture_score']) && $metrics['posture_score'] < 70) {
-            $summary[] = "Sua postura apresenta inclinação excessiva. Fortaleça o paravertebral.";
+            $summary[] = "Sua postura apresenta inclinação excessiva.";
+            $workout[] = "Fortaleça o core e a musculatura paravertebral. Melhore o alongamento da cadeia anterior.";
+            $exercises[] = "Remada Curvada";
+            $exercises[] = "Hiperextensão Lombar";
         }
 
-        return !empty($summary) ? implode(' ', $summary) : "Proporções ótimas detectadas! Continue com o plano atual.";
+        if (!empty($summary)) {
+            $response['summary'] = implode(' ', $summary);
+            $response['workout'] = implode(' ', $workout);
+            $response['exercises'] = $exercises;
+            $response['diet'] = $diet;
+        }
+
+        return $response;
     }
 
     public function compare(Request $request)

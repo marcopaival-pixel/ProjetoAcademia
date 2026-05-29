@@ -60,7 +60,7 @@
         }
     }
 @endphp
-<body class="{{ $experienceClass }} {{ request()->is('professional*') ? 'portal-pro' : '' }} {{ request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected') ? 'min-h-screen overflow-x-hidden overflow-y-auto' : '' }}">
+<body class="overflow-x-hidden {{ $experienceClass }} {{ request()->is('professional*') ? 'portal-pro' : '' }} {{ request()->routeIs('login', 'register', 'password.*', 'verification.notice', 'registration.pending', 'registration.rejected') ? 'min-h-screen overflow-y-auto' : '' }}">
     {{-- Barra de Retorno PaivaTech (Versão Robusta) --}}
     <div id="paiva-backlink-bar" class="bg-[#080a0f] border-b border-zinc-900/50 py-2.5 px-6 sm:px-8 flex items-center justify-between relative z-[2000] animate-fade-in" style="display: none;">
         <div class="flex items-center gap-4">
@@ -525,5 +525,6 @@
     </style>
     @endif
     @include('partials.js-masks')
+    <x-cookie-consent />
 </body>
 </html>

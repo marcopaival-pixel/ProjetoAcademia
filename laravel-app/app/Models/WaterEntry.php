@@ -8,11 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WaterEntry extends Model
 {
     use Traits\BelongsToCompany;
-    protected $companyColumn = 'user_id';
+    use Traits\FillsTenantColumns;
+    use Traits\HasClinic;
+
     const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
+        'clinic_id',
+        'academy_company_id',
         'entry_date',
         'drank_at',
         'amount_ml',

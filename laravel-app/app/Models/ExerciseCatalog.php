@@ -18,10 +18,15 @@ class ExerciseCatalog extends Model
         'instructions',
         'video_url',
         'is_active',
+        'tips',
+        'common_mistakes',
+        'video_type',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'tips' => 'array',
+        'common_mistakes' => 'array',
     ];
 
     public function muscles()

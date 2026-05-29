@@ -11,11 +11,8 @@ class MuscleSeeder extends Seeder
 {
     public function run(): void
     {
-        // Disable foreign key checks for clean seeding
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('muscles')->truncate();
-        DB::table('muscle_groups')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // Removemos o truncate() para proteger os dados em produção
+        // As inserções usarão updateOrCreate para não duplicar dados.
 
         $groups = [
             ['id' => 1, 'name' => 'Ombros', 'region' => 'Membros Superiores'],
@@ -37,7 +34,7 @@ class MuscleSeeder extends Seeder
         ];
 
         foreach ($groups as $group) {
-            MuscleGroup::create($group);
+            MuscleGroup::updateOrCreate(['id' => $group['id']], $group);
         }
 
         $muscles = [
@@ -111,7 +108,7 @@ class MuscleSeeder extends Seeder
         ];
 
         foreach ($muscles as $muscle) {
-            Muscle::create($muscle);
+            Muscle::updateOrCreate(['id' => $muscle['id']], $muscle);
         }
     }
 }

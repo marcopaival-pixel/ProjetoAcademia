@@ -8,11 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ExerciseEntry extends Model
 {
     use Traits\BelongsToCompany;
-    protected $companyColumn = 'user_id';
+    use Traits\FillsTenantColumns;
+    use Traits\HasClinic;
+
     const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
+        'clinic_id',
+        'academy_company_id',
         'entry_date',
         'activity_type',
         'duration_min',

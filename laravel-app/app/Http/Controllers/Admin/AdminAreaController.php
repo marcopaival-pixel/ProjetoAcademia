@@ -44,17 +44,11 @@ class AdminAreaController extends Controller
         
         // Métrica Financeira: Total de Créditos do Mercado Pago
         $totalRevenue = \App\Models\MercadoPagoCredit::sum('transaction_amount');
-        $activeSubscriptions = \App\Models\MercadoPagoSubscription::where('status', 'authorized')->get();
         
-        // Cálculo de MRR (Monthly Recurring Revenue)
-        $mrr = 0;
-        foreach ($activeSubscriptions as $sub) {
-            if ($sub->plan_code === 'monthly') {
-                $mrr += 19.9;
-            } elseif ($sub->plan_code === 'yearly') {
-                $mrr += (149.9 / 12);
-            }
-        }
+        // Utilizando o novo serviço com cache para escalabilidade
+        $saasMetrics = app(\App\Services\SaaSMetricsService::class);
+        $mrr = $saasMetrics->calculateMRR();
+        $activeSubsCount = $saasMetrics->getActiveSubscriptionsCount();
 
         // Assinaturas a expirar nos próximos 15 dias
         $expiringCount = User::where('is_premium', true)
@@ -85,7 +79,7 @@ class AdminAreaController extends Controller
             'total_admins' => User::where('is_admin', true)->count(),
             'total_premium' => User::where('is_premium', true)->count(),
             'total_revenue' => $totalRevenue,
-            'active_subs' => $activeSubscriptions->count(),
+            'active_subs' => $activeSubsCount,
             'mrr' => $mrr,
             'expiring_soon' => $expiringCount,
             'this_month_revenue' => $thisMonthRevenue,
@@ -894,11 +888,31 @@ class AdminAreaController extends Controller
             'equipment' => 'nullable|string|max:64',
             'difficulty' => 'required|string|max:24',
             'instructions' => 'nullable|string',
-            'video_url' => 'nullable|url',
-            'is_active' => 'boolean',
+            'video_type' => 'required|in:none,youtube,upload,gif',
+            'video_url' => 'nullable|string',
+            'video_file' => 'nullable|file|mimes:mp4,gif,webm|max:20480',
+            'tips' => 'nullable|string',
+            'common_mistakes' => 'nullable|string',
+            'is_active' => 'nullable',
         ]);
 
         $data['is_active'] = $request->has('is_active');
+        
+        if ($request->hasFile('video_file')) {
+            $data['video_url'] = '/storage/' . $request->file('video_file')->store('exercises/videos', 'public');
+        }
+
+        if (isset($data['tips'])) {
+            $data['tips'] = array_values(array_filter(array_map('trim', explode("\n", $data['tips']))));
+        } else {
+            $data['tips'] = [];
+        }
+        
+        if (isset($data['common_mistakes'])) {
+            $data['common_mistakes'] = array_values(array_filter(array_map('trim', explode("\n", $data['common_mistakes']))));
+        } else {
+            $data['common_mistakes'] = [];
+        }
 
         $exercise = ExerciseCatalog::create($data);
 
@@ -942,11 +956,31 @@ class AdminAreaController extends Controller
             'equipment' => 'nullable|string|max:64',
             'difficulty' => 'required|string|max:24',
             'instructions' => 'nullable|string',
-            'video_url' => 'nullable|url',
-            'is_active' => 'boolean',
+            'video_type' => 'required|in:none,youtube,upload,gif',
+            'video_url' => 'nullable|string',
+            'video_file' => 'nullable|file|mimes:mp4,gif,webm|max:20480',
+            'tips' => 'nullable|string',
+            'common_mistakes' => 'nullable|string',
+            'is_active' => 'nullable',
         ]);
 
         $data['is_active'] = $request->has('is_active');
+        
+        if ($request->hasFile('video_file')) {
+            $data['video_url'] = '/storage/' . $request->file('video_file')->store('exercises/videos', 'public');
+        }
+
+        if (isset($data['tips'])) {
+            $data['tips'] = array_values(array_filter(array_map('trim', explode("\n", $data['tips']))));
+        } else {
+            $data['tips'] = [];
+        }
+        
+        if (isset($data['common_mistakes'])) {
+            $data['common_mistakes'] = array_values(array_filter(array_map('trim', explode("\n", $data['common_mistakes']))));
+        } else {
+            $data['common_mistakes'] = [];
+        }
 
         $exercise->update($data);
 

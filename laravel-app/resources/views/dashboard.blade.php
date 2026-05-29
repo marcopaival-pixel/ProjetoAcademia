@@ -16,7 +16,7 @@
                     <span class="text-zinc-700">•</span>
                     <span class="text-zinc-500 text-xs font-bold">{{ now()->translatedFormat('d \d\e F, Y') }}</span>
                 </div>
-                <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
+                <h1 class="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
                     Força, <span
                         class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-600">{{ explode(' ', Auth::user()->name)[0] }}</span>!
                 </h1>
@@ -122,7 +122,7 @@
                                     class="{{ $performanceStatus['risk_level'] === 'danger' ? 'text-red-500' : ($performanceStatus['risk_level'] === 'high' ? 'text-amber-500' : 'text-emerald-500') }} transition-all duration-1000 shadow-[0_0_15px_rgba(0,0,0,0.5)]" />
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-4xl font-black text-white tracking-tighter">{{ $performanceStatus['acwr'] }}</span>
+                            <span class="text-3xl md:text-4xl font-black text-white tracking-tighter">{{ $performanceStatus['acwr'] }}</span>
                             <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Nível de Carga</span>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                             <span class="text-zinc-500">•</span>
                             <span class="text-zinc-400 text-xs font-bold uppercase tracking-tighter">Análise Bio-Rítmica Ativa</span>
                         </div>
-                        <h2 class="text-3xl font-black text-white italic tracking-tighter leading-none uppercase">Prontidão para Treino</h2>
+                        <h2 class="text-2xl md:text-3xl font-black text-white italic tracking-tighter leading-none uppercase">Prontidão para Treino</h2>
                         <p class="text-zinc-400 text-sm font-medium leading-relaxed max-w-xl">
                             {{ $performanceStatus['recommendation'] }}
                         </p>
@@ -179,7 +179,7 @@
                                         class="{{ $isPremium ? 'text-emerald-500' : 'text-amber-500' }} transition-all duration-1000" />
                             </svg>
                             <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <span class="text-3xl font-black text-white tabular-nums">{{ $aiCreditWallet->balance }}</span>
+                                <span class="text-2xl md:text-3xl font-black text-white tabular-nums">{{ $aiCreditWallet->balance }}</span>
                                 <span class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Créditos IA</span>
                             </div>
                         </div>
@@ -312,7 +312,7 @@
                                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                                     <div class="relative">
                                         <span
-                                            class="text-8xl font-black text-white tracking-tight tabular-nums">{{ number_format($remaining) }}</span>
+                                            class="text-6xl md:text-8xl font-black text-white tracking-tight tabular-nums">{{ number_format($remaining) }}</span>
                                         <span class="absolute -top-3 -right-8 text-emerald-400 font-bold text-lg leading-none">kcal</span>
                                     </div>
                                     <span

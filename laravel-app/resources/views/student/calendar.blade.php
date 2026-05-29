@@ -3,7 +3,22 @@
 @section('title', 'Calendário de Evolução — NexShape')
 
 @section('content')
-<div class="py-10 space-y-10 animate-fade-in mx-auto px-4 md:px-0">
+<div class="py-10 space-y-10 animate-fade-in mx-auto px-4 md:px-0" x-data="{ 
+    modalOpen: false, 
+    selectedDateStr: '', 
+    selectedDateFormatted: '',
+    selectedExercises: [], 
+    selectedNutrition: [],
+    entriesData: {{ \Illuminate\Support\Js::from($entries) }},
+    nutritionData: {{ \Illuminate\Support\Js::from($nutritionEntries) }},
+    openModal(dateStr, dateFormatted) {
+        this.selectedDateStr = dateStr;
+        this.selectedDateFormatted = dateFormatted;
+        this.selectedExercises = this.entriesData[dateStr] ? this.entriesData[dateStr].items : [];
+        this.selectedNutrition = this.nutritionData[dateStr] ? this.nutritionData[dateStr].items : [];
+        this.modalOpen = true;
+    }
+}">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-white/5">
         <div class="space-y-4">
@@ -59,8 +74,8 @@
                     @endphp
 
                     <div class="relative aspect-square group">
-                        <a href="{{ route('dashboard', ['date' => $dateStr]) }}" 
-                           class="absolute inset-0 flex flex-col items-center justify-center rounded-3xl border transition-all duration-300 
+                        <button type="button" @click="openModal('{{ $dateStr }}', '{{ $day->translatedFormat('d \d\e F \d\e Y') }}')" 
+                           class="w-full absolute inset-0 flex flex-col items-center justify-center rounded-3xl border transition-all duration-300 outline-none
                            {{ !$isCurrentMonth ? 'opacity-20 pointer-events-none' : 'opacity-100' }}
                            {{ $isToday ? 'bg-emerald-500 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)] z-10 scale-105' : 'bg-zinc-900/60 border-white/5 hover:border-emerald-500/30 hover:bg-zinc-800' }}">
                             
@@ -76,7 +91,7 @@
                                     <div class="w-1.5 h-1.5 rounded-full {{ $isToday ? 'bg-zinc-200' : 'bg-blue-500' }}"></div>
                                 @endif
                             </div>
-                        </a>
+                        </button>
                         
                         @if($hasWorkout || $hasNutrition)
                             <div class="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
@@ -153,6 +168,124 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Daily Details Modal -->
+    <div x-show="modalOpen" x-cloak class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+         
+         <!-- Modal Container -->
+         <div class="bg-zinc-900 border border-white/10 rounded-[2rem] w-full max-w-2xl shadow-2xl overflow-hidden relative"
+              @click.outside="modalOpen = false"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+              x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+              x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+              x-transition:leave-end="opacity-0 translate-y-4 scale-95">
+              
+              <!-- Header -->
+              <div class="flex items-center justify-between p-6 border-b border-white/5 bg-zinc-900/50">
+                  <div>
+                      <h3 class="text-2xl font-black text-white italic tracking-tighter uppercase" x-text="selectedDateFormatted"></h3>
+                      <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-1">Resumo do dia</p>
+                  </div>
+                  <button @click="modalOpen = false" class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors">
+                      <i class="fas fa-times"></i>
+                  </button>
+              </div>
+
+              <!-- Content -->
+              <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-8">
+                  
+                  <!-- Treinos -->
+                  <div>
+                      <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <i class="fas fa-dumbbell"></i> Atividades Físicas (<span x-text="selectedExercises.length"></span>)
+                      </h4>
+                      
+                      <template x-if="selectedExercises.length > 0">
+                          <div class="space-y-3">
+                              <template x-for="exercise in selectedExercises" :key="exercise.id">
+                                  <div class="bg-zinc-950/50 border border-white/5 rounded-2xl p-4 flex flex-col gap-2">
+                                      <div class="flex justify-between items-start">
+                                          <strong class="text-white text-sm font-bold uppercase tracking-wide" x-text="exercise.activity_type || 'Treino'"></strong>
+                                          <span class="text-xs text-zinc-500 font-medium" x-text="exercise.duration_min + ' min'"></span>
+                                      </div>
+                                      <div class="flex items-center gap-4 mt-2">
+                                          <div class="text-[10px] text-emerald-400 font-black tracking-widest bg-emerald-400/10 px-2 py-1 rounded-lg" x-show="exercise.calories_burned">
+                                              <i class="fas fa-fire mr-1"></i> <span x-text="exercise.calories_burned + ' kcal'"></span>
+                                          </div>
+                                          <div class="text-[10px] text-zinc-400 font-medium" x-show="exercise.notes" x-text="exercise.notes"></div>
+                                      </div>
+                                  </div>
+                              </template>
+                          </div>
+                      </template>
+                      
+                      <template x-if="selectedExercises.length === 0">
+                          <div class="text-center p-6 bg-zinc-950/30 rounded-2xl border border-white/5 border-dashed">
+                              <i class="fas fa-bed text-zinc-600 text-2xl mb-2"></i>
+                              <p class="text-xs text-zinc-500 font-medium">Nenhum treino registrado neste dia.</p>
+                          </div>
+                      </template>
+                  </div>
+
+                  <!-- Nutrição -->
+                  <div>
+                      <h4 class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <i class="fas fa-utensils"></i> Registros de Nutrição (<span x-text="selectedNutrition.length"></span>)
+                      </h4>
+                      
+                      <template x-if="selectedNutrition.length > 0">
+                          <div class="space-y-3">
+                              <template x-for="food in selectedNutrition" :key="food.id">
+                                  <div class="bg-zinc-950/50 border border-white/5 rounded-2xl p-4 flex flex-col gap-2">
+                                      <div class="flex justify-between items-start">
+                                          <strong class="text-white text-sm font-bold capitalize" x-text="food.food_name || food.meal_type || 'Refeição'"></strong>
+                                          <span class="text-xs text-blue-400 font-medium bg-blue-500/10 px-2 py-1 rounded-lg" x-text="food.calories + ' kcal'"></span>
+                                      </div>
+                                      <div class="grid grid-cols-3 gap-2 mt-2">
+                                          <div class="text-[9px] text-zinc-400 font-bold tracking-widest bg-zinc-900 p-2 rounded-lg text-center">
+                                              <span class="text-red-400 block mb-1">PROT</span> <span x-text="(food.protein_g || 0) + 'g'"></span>
+                                          </div>
+                                          <div class="text-[9px] text-zinc-400 font-bold tracking-widest bg-zinc-900 p-2 rounded-lg text-center">
+                                              <span class="text-yellow-400 block mb-1">CARB</span> <span x-text="(food.carbs_g || 0) + 'g'"></span>
+                                          </div>
+                                          <div class="text-[9px] text-zinc-400 font-bold tracking-widest bg-zinc-900 p-2 rounded-lg text-center">
+                                              <span class="text-orange-400 block mb-1">GORD</span> <span x-text="(food.fat_g || 0) + 'g'"></span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </template>
+                          </div>
+                      </template>
+                      
+                      <template x-if="selectedNutrition.length === 0">
+                          <div class="text-center p-6 bg-zinc-950/30 rounded-2xl border border-white/5 border-dashed">
+                              <i class="fas fa-leaf text-zinc-600 text-2xl mb-2"></i>
+                              <p class="text-xs text-zinc-500 font-medium">Nenhum registro alimentar neste dia.</p>
+                          </div>
+                      </template>
+                  </div>
+
+              </div>
+              
+              <!-- Footer Actions -->
+              <div class="p-6 border-t border-white/5 bg-zinc-900/80 flex items-center justify-between">
+                  <a :href="'{{ route('dashboard') }}?date=' + selectedDateStr" class="text-[10px] text-zinc-400 font-black uppercase tracking-widest hover:text-white transition-colors">
+                      Ir para o Dashboard
+                  </a>
+                  <button @click="modalOpen = false" class="px-6 py-2 bg-emerald-500 text-zinc-900 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20">
+                      Fechar
+                  </button>
+              </div>
+         </div>
     </div>
 </div>
 

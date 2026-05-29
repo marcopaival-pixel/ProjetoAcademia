@@ -261,6 +261,57 @@
         </div>
 
         <div class="section">
+            <div class="section-header"><div class="section-title">Índices Clínicos Avançados</div></div>
+            <div class="metrics-grid">
+                <!-- Água Corporal -->
+                <div class="metric-item">
+                    <div class="metric-info">
+                        <div class="metric-name">Água Corporal Total (ACT)</div>
+                        <div style="font-size:8px; color:#a1a1aa;">Soma de água intra e extracelular</div>
+                    </div>
+                    <div class="metric-data">
+                        @php $act = ($assessment->icw_l ?? 0) + ($assessment->ecw_l ?? 0); @endphp
+                        <span class="metric-val">{{ $act > 0 ? number_format($act, 1, ',', '.') : '--' }}</span>
+                        <span class="metric-unit">L</span>
+                    </div>
+                    <div class="metric-bar-container">
+                        <div class="progress-bg"><div class="progress-fill" style="width: {{ $act > 0 ? 60 : 0 }}%;"></div></div>
+                    </div>
+                </div>
+
+                <!-- TMB -->
+                <div class="metric-item">
+                    <div class="metric-info">
+                        <div class="metric-name">Taxa Metabólica Basal (TMB)</div>
+                        <div style="font-size:8px; color:#a1a1aa;">Energia mínima para manter as funções vitais em repouso</div>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-val">{{ $assessment->basal_metabolic_rate ?? '--' }}</span>
+                        <span class="metric-unit">kcal</span>
+                    </div>
+                    <div class="metric-bar-container">
+                        <div class="progress-bg"><div class="progress-fill" style="width: 70%; background: #3b82f6;"></div></div>
+                    </div>
+                </div>
+
+                <!-- Gordura Visceral -->
+                <div class="metric-item">
+                    <div class="metric-info">
+                        <div class="metric-name">Nível de Gordura Visceral</div>
+                        <div style="font-size:8px; color:#a1a1aa;">Gordura acumulada na região abdominal interna</div>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-val">{{ $assessment->visceral_fat_level ?? '--' }}</span>
+                        <span class="metric-unit">nível</span>
+                    </div>
+                    <div class="metric-bar-container">
+                        <div class="progress-bg"><div class="progress-fill {{ ($assessment->visceral_fat_level ?? 0) > 9 ? 'danger' : 'warning' }}" style="width: {{ min(($assessment->visceral_fat_level ?? 5) * 5, 100) }}%;"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
             <div class="section-header"><div class="section-title">Distribuição Segmental de Massa Magra</div></div>
             <table class="segmental-table">
                 <tr>

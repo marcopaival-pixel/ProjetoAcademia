@@ -60,6 +60,9 @@ jobs:
       - name: Run PHPStan
         run: composer phpstan
 
+      - name: Run Laravel Pint (style check)
+        run: vendor/bin/pint --test
+
       - name: Run PHPUnit
         env:
           DB_CONNECTION: mysql
@@ -76,6 +79,57 @@ jobs:
           name: nexshape-public-build
           path: laravel-app/public/build/
           if-no-files-found: error
+
+  release-package:
+    runs-on: ubuntu-latest
+    needs: validate
+    defaults:
+      run:
+        working-directory: laravel-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, pdo_mysql, curl, fileinfo, zip
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: laravel-app/package-lock.json
+
+      - name: Build deploy bundle
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction
+          npm ci
+          npm run build
+
+      - name: Create deploy archive
+        run: |
+          mkdir -p /tmp/nexshape-deploy
+          for d in app bootstrap config database public resources routes vendor; do
+            cp -r "$d" /tmp/nexshape-deploy/
+          done
+          cp artisan composer.json composer.lock /tmp/nexshape-deploy/
+          rm -rf /tmp/nexshape-deploy/tests /tmp/nexshape-deploy/node_modules /tmp/nexshape-deploy/public/build.zip 2>/dev/null || true
+          cd /tmp && tar -czf nexshape-deploy.tar.gz nexshape-deploy
+
+      - name: Upload full deploy artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexshape-deploy-bundle
+          path: /tmp/nexshape-deploy.tar.gz
+          if-no-files-found: error
+
+      - name: Deploy instructions
+        run: |
+          echo "Download artefacto nexshape-deploy-bundle e extrair no servidor."
+          echo "FTP manual: ver docs/DEPLOY_NEXSHAPE.md"
+          echo "Deploy FTP automatico requer secrets FTP_HOST, FTP_USER, FTP_PASS (nao configurados neste workflow)."
 
   backup-restore-reminder:
     runs-on: ubuntu-latest
