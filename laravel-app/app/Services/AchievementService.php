@@ -128,4 +128,13 @@ class AchievementService
             ];
         });
     }
+
+    public static function check($userId)
+    {
+        $user = User::find($userId);
+        if (!$user) return;
+        
+        $service = app(self::class);
+        $service->getUserBadges($user);
+    }
 }

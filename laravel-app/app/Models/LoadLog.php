@@ -9,9 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class LoadLog extends Model
 {
     use HasFactory;
+    use Traits\BelongsToCompany;
+    use Traits\FillsTenantColumns;
+    use Traits\HasClinic;
 
     protected $fillable = [
         'user_id',
+        'clinic_id',
+        'academy_company_id',
         'training_plan_exercise_id',
         'exercise_id',
         'log_date',

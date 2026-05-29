@@ -1,5 +1,5 @@
-<header class="topbar bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900 px-8 h-20 flex items-center justify-between sticky top-0 z-[100] shadow-2xl">
-    <div class="topbar-left flex items-center gap-6">
+<header class="topbar bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900 px-4 sm:px-6 md:px-8 h-16 md:h-20 flex items-center justify-between sticky top-0 z-[100] shadow-2xl">
+    <div class="topbar-left flex items-center gap-3 md:gap-6">
         <button id="toggleSidebar" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600 hover:text-emerald-500 hover:border-emerald-500/20 transition-all shadow-inner" aria-label="Toggle Sidebar">
             <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
@@ -87,7 +87,7 @@
         @endif
     </div>
 
-    <div class="topbar-right flex items-center gap-6">
+    <div class="topbar-right flex items-center gap-3 md:gap-6">
 
         <!-- AI Credits / Buy Credits -->
         @auth
@@ -145,7 +145,7 @@
                     <span class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-rose-500 rounded-full border-2 border-emerald-500 animate-pulse"></span>
                 @endif
             </div>
-            <span class="text-[10px] font-black uppercase tracking-[0.2em]">Mensagens</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] hidden md:inline">Mensagens</span>
             @if($unreadMessagesCount > 0)
                 <span class="bg-zinc-950 text-emerald-500 text-[8px] font-black px-1.5 py-0.5 rounded-lg">{{ $unreadMessagesCount }}</span>
             @endif

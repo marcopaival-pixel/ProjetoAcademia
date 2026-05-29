@@ -82,7 +82,25 @@
                         </div>
                         
                         <div class="flex-1">
-                            <h3 class="text-white font-black text-lg mb-1">{{ $exercise->catalogExercise->name }}</h3>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                                <h3 class="text-white font-black text-lg">{{ $exercise->catalogExercise->name }}</h3>
+                                <button type="button" 
+                                        data-exercise="{{ json_encode([
+                                            'name' => $exercise->catalogExercise->name,
+                                            'muscle_group' => $exercise->catalogExercise->muscle_group,
+                                            'video_url' => $exercise->catalogExercise->video_url,
+                                            'video_type' => $exercise->catalogExercise->video_type,
+                                            'tips' => $exercise->catalogExercise->tips,
+                                            'common_mistakes' => $exercise->catalogExercise->common_mistakes,
+                                            'instructions' => $exercise->catalogExercise->instructions,
+                                            'muscles' => $exercise->catalogExercise->muscles->pluck('name')->toArray()
+                                        ]) }}"
+                                        onclick="openExecutionModal(JSON.parse(this.getAttribute('data-exercise')))"
+                                        class="w-max px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Ver execução
+                                </button>
+                            </div>
                             <p class="text-[11px] text-zinc-500 font-bold uppercase tracking-widest">{{ $exercise->catalogExercise->muscle_group }}</p>
                         </div>
 
@@ -181,4 +199,7 @@
     }
     body { background-color: #0b0e14; }
 </style>
+
+@include('progression.partials.execution-modal')
+
 @endsection

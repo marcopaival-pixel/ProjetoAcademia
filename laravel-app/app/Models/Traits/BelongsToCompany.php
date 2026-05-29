@@ -50,13 +50,17 @@ trait BelongsToCompany
 
         // Evento de criação para definir automaticamente a empresa
         static::creating(function ($model) {
-            $clinicId = \App\Support\TenantContext::get();
-            if ($clinicId) {
-                $column = property_exists($model, 'companyColumn') ? $model->companyColumn : 'academy_company_id';
-                
-                if ($column !== 'user_id' && !$model->{$column}) {
-                    $model->{$column} = $clinicId;
-                }
+            $column = property_exists($model, 'companyColumn') ? $model->companyColumn : 'academy_company_id';
+
+            if ($column === 'user_id' || ! empty($model->{$column})) {
+                return;
+            }
+
+            $companyId = \App\Support\TenantContext::getCompanyId()
+                ?? Auth::user()?->academy_company_id;
+
+            if ($companyId) {
+                $model->{$column} = $companyId;
             }
         });
     }

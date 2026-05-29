@@ -73,10 +73,10 @@
                             @endif
                         </div>
                         
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <p class="text-white font-black text-lg truncate">{{ $rank->name }}</p>
-                                <span class="px-2 py-0.5 bg-zinc-800 text-zinc-400 text-[7px] font-black uppercase tracking-widest rounded-md border border-white/5">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-white font-black text-lg leading-tight break-words">{{ $rank->name }}</p>
+                                <span class="px-2 py-0.5 bg-zinc-800 text-zinc-400 text-[7px] font-black uppercase tracking-widest rounded-md border border-white/5 whitespace-nowrap">
                                     {{ $rank->category }}
                                 </span>
                             </div>
@@ -135,8 +135,8 @@
                     <div class="w-10 h-10 flex items-center justify-center font-black text-lg @if($index == 0) text-amber-400 @elseif($index == 1) text-zinc-300 @elseif($index == 2) text-amber-700 @else text-zinc-600 @endif">
                         {{ $index + 1 }}º
                     </div>
-                    <div class="flex-1">
-                        <p class="text-white font-bold text-sm">{{ $rank->name }}</p>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white font-bold text-sm leading-tight break-words">{{ $rank->name }}</p>
                         <div class="h-1.5 w-full bg-zinc-900 rounded-full mt-2 overflow-hidden border border-white/5">
                             <div class="h-full bg-blue-500 rounded-full" style="width: {{ $rank->workout_days > 0 ? ($rank->workout_days / 31) * 100 : 0 }}%"></div>
                         </div>
@@ -171,9 +171,9 @@
                     <div class="w-12 h-12 flex items-center justify-center text-2xl">
                         @if($index == 0) 🥇 @elseif($index == 1) 🥈 @elseif($index == 2) 🥉 @else <span class="text-zinc-700 font-black text-sm">{{ $index+1 }}º</span> @endif
                     </div>
-                    <div class="flex-1">
-                        <p class="text-white font-black text-base">{{ $rank->user_name }}</p>
-                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{{ $rank->exercise_name }}</p>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white font-black text-base leading-tight break-words">{{ $rank->user_name }}</p>
+                        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest break-words">{{ $rank->exercise_name }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-amber-400 font-black text-lg tabular-nums">{{ number_format($rank->max_one_rm, 1, ',', '.') }}</p>
@@ -208,8 +208,8 @@
                     <div class="w-10 h-10 flex items-center justify-center font-black text-lg text-zinc-600">
                         {{ $index + 1 }}º
                     </div>
-                    <div class="flex-1">
-                        <p class="text-white font-bold text-sm">{{ $rank->name }}</p>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white font-bold text-sm leading-tight break-words">{{ $rank->name }}</p>
                         <div class="flex gap-1 mt-2">
                             @for($i=0; $i<$rank->logs_count; $i++)
                                 <div class="h-1 flex-1 bg-emerald-500/60 rounded-full"></div>

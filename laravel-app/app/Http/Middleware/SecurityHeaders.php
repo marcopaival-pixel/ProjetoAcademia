@@ -65,6 +65,7 @@ class SecurityHeaders
             "font-src 'self' data: https://fonts.gstatic.com https://fonts.bunny.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "img-src 'self' data: blob: https:",
             $connectSrc,
+            "frame-src 'self' https://www.youtube.com https://player.vimeo.com https://vimeo.com https://youtu.be",
             "frame-ancestors 'self'",
             "form-action 'self'",
             "base-uri 'self'",

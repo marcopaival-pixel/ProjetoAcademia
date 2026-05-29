@@ -26,7 +26,8 @@ class ProgressionService
                 'suggested_weight' => $lastWeight, 
                 'message' => 'Inicie com a carga base para calibração.',
                 'indicator' => 'maintain',
-                'confidence' => 100
+                'confidence' => 100,
+                'max_safe_weight' => $lastWeight > 0 ? round($lastWeight * 1.5, 1) : 100,
             ];
         }
 
@@ -34,12 +35,16 @@ class ProgressionService
         $avgRPE = $lastLogs->avg('rpe') ?: 8; // Default 8 if not recorded
         $allMetTarget = $lastLogs->every(fn($log) => $log->reps_done >= $targetReps);
         
+        // Lógica de limite seguro (Evitar sobrecarga - máx +20% a +25%)
+        $maxSafeWeight = round($lastWeight * 1.25, 1);
+
         // Lógica de Inteligência Neural (RPE-Based)
         $suggestion = [
             'suggested_weight' => $lastWeight,
             'message' => '📊 Consistência boa. Domine a técnica antes de evoluir.',
             'indicator' => 'maintain',
-            'confidence' => 85
+            'confidence' => 85,
+            'max_safe_weight' => $maxSafeWeight,
         ];
 
         if ($allMetTarget) {
@@ -49,26 +54,29 @@ class ProgressionService
                 $increase = max(2.5, round($lastWeight * 0.10 / 0.5) * 0.5);
                 $suggestion = [
                     'suggested_weight' => $lastWeight + $increase,
-                    'message' => '🚀 Carga muito leve detectada. Aumento agressivo sugerido (+10%).',
+                    'message' => '🚀 Carga muito leve. Aumento recomendado para estimular hipertrofia (+10%).',
                     'indicator' => 'increase',
-                    'confidence' => 95
+                    'confidence' => 95,
+                    'max_safe_weight' => $maxSafeWeight,
                 ];
             } elseif ($avgRPE <= 8) {
                 // Zona ideal
                 $increase = max(1.0, round($lastWeight * 0.05 / 0.5) * 0.5);
                 $suggestion = [
                     'suggested_weight' => $lastWeight + $increase,
-                    'message' => '✅ Zona de hipertrofia ideal. Sugerimos progressão moderada (+5%).',
+                    'message' => '✅ Zona de hipertrofia ideal. Evolução sólida detectada (+5%).',
                     'indicator' => 'increase',
-                    'confidence' => 90
+                    'confidence' => 90,
+                    'max_safe_weight' => $maxSafeWeight,
                 ];
             } elseif ($avgRPE >= 9.5) {
                 // Limite
                 $suggestion = [
                     'suggested_weight' => $lastWeight,
-                    'message' => '⚖️ Limite de esforço atingido. Mantenha a carga para consolidação.',
+                    'message' => '⚖️ Limite de esforço atingido. Mantenha a carga para evitar falha do SNC.',
                     'indicator' => 'maintain',
-                    'confidence' => 80
+                    'confidence' => 80,
+                    'max_safe_weight' => $maxSafeWeight,
                 ];
             }
         } else {
@@ -78,17 +86,19 @@ class ProgressionService
                 $decrease = round($lastWeight * 0.15 / 0.5) * 0.5;
                 $suggestion = [
                     'suggested_weight' => max(0, $lastWeight - $decrease),
-                    'message' => '⚠️ Volume insuficiente. Deload estratégico sugerido para evitar platô.',
+                    'message' => '⚠️ Sobrecarga detectada. Deload sugerido para recuperar amplitude de movimento.',
                     'indicator' => 'decrease',
-                    'confidence' => 98
+                    'confidence' => 98,
+                    'max_safe_weight' => $maxSafeWeight,
                 ];
             } else {
                 // Ligeiramente abaixo
                 $suggestion = [
                     'suggested_weight' => $lastWeight,
-                    'message' => '🔄 Quase lá! Tente completar as repetições com esta carga antes de subir.',
+                    'message' => '🔄 Quase lá! Concentre-se na execução perfeita com a mesma carga.',
                     'indicator' => 'maintain',
-                    'confidence' => 75
+                    'confidence' => 75,
+                    'max_safe_weight' => $maxSafeWeight,
                 ];
             }
         }

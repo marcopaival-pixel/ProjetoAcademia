@@ -93,6 +93,10 @@ class AppServiceProvider extends ServiceProvider
             return \Illuminate\Cache\RateLimiting\Limit::perHour(20)->by($uid > 0 ? 'privacy-u-'.$uid : 'privacy-ip-'.$request->ip());
         });
 
+        \Illuminate\Support\Facades\RateLimiter::for('marketing-tracking', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by('mkt-ip-'.$request->ip());
+        });
+
         // Feature and Plan Directives
         \Illuminate\Support\Facades\Blade::if('feature', function ($key) {
             return auth()->check() && auth()->user()->hasFeature($key);

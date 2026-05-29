@@ -65,14 +65,14 @@
                                 <div class="small fw-bold">{{ $item->created_at->format('d/m/Y') }}</div>
                                 <div class="text-info" style="font-size:0.7rem">{{ $item->view_type }}</div>
                             </div>
-                            <button class="btn btn-sm btn-ghost" onclick="loadAnalysis({{ $item->id }})"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-sm btn-ghost" onclick="loadAnalysis({{ $item->id }}, this.closest('.history-item'))"><i class="fas fa-eye"></i></button>
                         </div>
                     @endforeach
                     @if($history->isEmpty())
                         <p class="muted text-center small py-3">Nenhum histórico.</p>
                     @endif
                 </div>
-                <button class="btn btn-outline-info w-full mt-3" onclick="compareMode()">Comparar Fotos</button>
+                <button class="btn btn-outline-info w-full mt-3" id="btnCompare" onclick="compareMode()">Comparar Fotos</button>
             </div>
 
             <div class="card glass ai-insights" id="aiInsightsCard">
@@ -81,10 +81,65 @@
                     Faça upload de uma foto para que a IA identifique sua postura, simetria e pontos de desenvolvimento.
                 </p>
                 <div class="actions-inline d-none" id="analysisActions">
-                    <button class="btn btn-sm btn-ghost" onclick="showSuggestions()">Ver Dieta/Treino Sugerido</button>
+                    <button class="btn btn-sm btn-outline-info mt-3 w-full" onclick="showSuggestions()"><i class="fas fa-magic me-2"></i>Ver Dieta/Treino Sugerido</button>
                 </div>
             </div>
         </aside>
+    </div>
+</div>
+
+<!-- Modal de Sugestões Tecnológico -->
+<div id="aiSuggestionsModal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-zinc-950/80 backdrop-blur-sm px-4" style="display: none;">
+    <div class="bg-zinc-900 border border-white/10 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up relative">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-blue-500"></div>
+        
+        <div class="p-6 md:p-8 flex items-center justify-between border-b border-white/5">
+            <div>
+                <h3 class="text-2xl font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fas fa-brain text-emerald-500"></i> Protocolo Inteligente
+                </h3>
+                <p class="text-xs text-zinc-400 mt-1 uppercase tracking-widest">Baseado na sua última análise anatômica</p>
+            </div>
+            <button onclick="document.getElementById('aiSuggestionsModal').style.display = 'none'" class="text-zinc-500 hover:text-white transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 bg-zinc-950/30">
+            <!-- Treino Sugerido -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                        <i class="fas fa-dumbbell text-lg"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-white uppercase tracking-widest">Treino Recomendado</h4>
+                </div>
+                <div class="p-5 rounded-xl bg-zinc-900/50 border border-white/5">
+                    <p id="modalWorkoutText" class="text-sm text-zinc-300 leading-relaxed mb-4"></p>
+                    <div class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Exercícios Foco:</div>
+                    <ul id="modalExercisesList" class="space-y-2"></ul>
+                </div>
+            </div>
+
+            <!-- Dieta Sugerida -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                        <i class="fas fa-apple-alt text-lg"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-white uppercase tracking-widest">Diretriz Nutricional</h4>
+                </div>
+                <div class="p-5 rounded-xl bg-zinc-900/50 border border-white/5 h-full">
+                    <p id="modalDietText" class="text-sm text-zinc-300 leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-white/5 bg-zinc-900/80 flex justify-end gap-3">
+            <button onclick="document.getElementById('aiSuggestionsModal').style.display = 'none'" class="px-5 py-2.5 rounded-lg text-sm font-bold text-zinc-400 hover:text-white transition-colors">
+                Fechar
+            </button>
+        </div>
     </div>
 </div>
 
@@ -229,19 +284,106 @@
         if (data.success) {
             document.getElementById('aiSummaryText').textContent = data.summary;
             document.getElementById('analysisActions').classList.remove('d-none');
+            // Salvar dados no escopo da janela para uso no modal
+            window.currentAiData = data;
         } else {
             if (data.code === 'credits_exceeded') {
                 window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
             } else {
-                alert(data.error || 'Erro ao processar análise.');
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.error || 'Erro ao processar análise.', type: 'error' } }));
             }
             overlay.classList.remove('hidden'); // Show upload button again
         }
     }
 
-    function loadAnalysis(id) {
-        // Lógica para recarregar uma análise do histórico no canvas
-        window.location.reload(); // Simplificado para este demo
+    let isCompareMode = false;
+    let selectedForCompare = [];
+
+    function loadAnalysis(id, element) {
+        if (!isCompareMode) {
+            // Lógica para recarregar uma análise do histórico no canvas
+            window.location.reload(); // Simplificado para este demo
+            return;
+        }
+
+        if (selectedForCompare.includes(id)) {
+            // Deselecionar
+            selectedForCompare = selectedForCompare.filter(i => i !== id);
+            if(element) element.style.border = '';
+            return;
+        }
+
+        if (selectedForCompare.length < 2) {
+            selectedForCompare.push(id);
+            if(element) element.style.border = '2px solid #3d9cf5'; // cyber accent color
+
+            if (selectedForCompare.length === 1) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Primeira foto selecionada. Agora selecione a 2ª foto do histórico.', type: 'success' } }));
+            } else if (selectedForCompare.length === 2) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Gerando comparativo...', type: 'success' } }));
+                setTimeout(() => {
+                    window.location.href = `{{ route('body-analysis.compare') }}?id1=${selectedForCompare[0]}&id2=${selectedForCompare[1]}`;
+                }, 500);
+            }
+        }
+    }
+
+    function compareMode() {
+        isCompareMode = !isCompareMode;
+        const btn = document.getElementById('btnCompare');
+        
+        if (isCompareMode) {
+            selectedForCompare = [];
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Modo Comparação Ativo: Selecione a 1ª foto no histórico.', type: 'success' } }));
+            if(btn) {
+                btn.textContent = "Cancelar Comparação";
+                btn.classList.remove('btn-outline-info');
+                btn.classList.add('btn-danger');
+            }
+        } else {
+            selectedForCompare = [];
+            if(btn) {
+                btn.textContent = "Comparar Fotos";
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-outline-info');
+            }
+            // Limpa bordas
+            document.querySelectorAll('.history-item').forEach(el => {
+                el.style.border = '';
+            });
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Modo Comparação Cancelado.', type: 'success' } }));
+        }
+    }
+
+    function showSuggestions() {
+        if (!window.currentAiData) {
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhuma análise recente encontrada. Faça o upload primeiro.', type: 'error' } }));
+            return;
+        }
+        
+        // Preencher Modal
+        document.getElementById('modalWorkoutText').textContent = window.currentAiData.workout || 'Nenhuma sugestão de treino disponível.';
+        document.getElementById('modalDietText').textContent = window.currentAiData.diet || 'Nenhuma diretriz nutricional disponível.';
+        
+        const exercisesList = document.getElementById('modalExercisesList');
+        exercisesList.innerHTML = '';
+        
+        if (window.currentAiData.exercises && window.currentAiData.exercises.length > 0) {
+            window.currentAiData.exercises.forEach(ex => {
+                const li = document.createElement('li');
+                li.className = 'text-xs text-zinc-400 flex items-center gap-2';
+                li.innerHTML = `<i class="fas fa-check text-blue-500"></i> ${ex}`;
+                exercisesList.appendChild(li);
+            });
+        } else {
+            exercisesList.innerHTML = '<li class="text-xs text-zinc-500 italic">Treino base livre focado no plano atual.</li>';
+        }
+
+        // Exibir Modal
+        const modal = document.getElementById('aiSuggestionsModal');
+        if(modal) {
+            modal.style.display = 'flex';
+        }
     }
 </script>
 @endsection

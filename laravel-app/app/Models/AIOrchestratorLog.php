@@ -4,17 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Traits\FillsTenantColumns;
 use App\Models\Traits\HasClinic;
 
 class AIOrchestratorLog extends Model
 {
-    use HasClinic;
+    use FillsTenantColumns, HasClinic;
 
     protected $table = 'ai_orchestrator_logs';
 
     protected $fillable = [
         'user_id',
         'clinic_id',
+        'academy_company_id',
         'agent_name',
         'model_name',
         'user_message',
