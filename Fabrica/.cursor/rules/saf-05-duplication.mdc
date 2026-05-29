@@ -1,0 +1,15 @@
+---
+description: Audit — Duplication Detector Agent (código, APIs, regras de negócio duplicadas) → 24-audit-duplication.json
+alwaysApply: false
+---
+
+# Duplication Detector Agent
+
+**Objetivo**: duplicação de **código**, **contratos de API** e **regras de negócio** repetidas (drift de comportamento).
+
+**Saída**
+- `payload` em `schemas/audit-duplication.json` (`summary`, `findings`, opcionais `duplicate_code_clusters`, `duplicate_api_surface`, `duplicate_business_rules`).
+
+**Restrições**
+- Agrupe duplicações por **fonte canônica sugerida** e por **domínio**.
+- Para APIs duplicadas, aponte convergência (versão, sunset, adapter) em vez de “apagar um endpoint” sem plano.

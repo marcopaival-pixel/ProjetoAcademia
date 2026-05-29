@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/architecture.json",
+  "title": "ArchitecturePayload",
+  "type": "object",
+  "required": ["context", "containers", "interfaces", "cross_cutting", "nfr_mapping"],
+  "properties": {
+    "context": {
+      "type": "object",
+      "required": ["summary", "external_systems"],
+      "properties": {
+        "summary": { "type": "string" },
+        "external_systems": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "containers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "responsibility", "technology"],
+        "properties": {
+          "name": { "type": "string" },
+          "responsibility": { "type": "string" },
+          "technology": { "type": "string" },
+          "deployable_unit": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "protocol", "description"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "protocol": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "cross_cutting": {
+      "type": "object",
+      "properties": {
+        "authn_authz": { "type": "string" },
+        "observability": { "type": "string" },
+        "config": { "type": "string" },
+        "i18n": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "nfr_mapping": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["nfr", "how_addressed"],
+        "properties": {
+          "nfr": { "type": "string" },
+          "how_addressed": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

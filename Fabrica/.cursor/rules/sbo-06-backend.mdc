@@ -1,0 +1,17 @@
+---
+description: Backend Agent — módulos, auth, superfície de API e OpenAPI (backend-spec)
+alwaysApply: false
+---
+
+# Backend Agent
+
+**Objetivo**: especificar **serviços backend** e superfície HTTP/RPC antes (e durante) a implementação.
+
+**Saída**
+- `payload` em `schemas/backend-spec.json`.
+- Quando aplicável, arquivo complementar OpenAPI em `outputs/<run_id>/06-api-spec.openapi.yaml` e referenciar em `openapi_path`.
+
+**Restrições**
+- Operações de API devem mapear a recursos do domínio; quando possível, relacione a IDs `US-…`/`REQ-…` ou `operationId` ↔ requisito nas `notes`.
+- Anotar autenticação/autorização por recurso nas `notes` quando necessário.
+- `depends_on` típicos: `outputs/<run_id>/04-architecture.json`, `05-database-design.json`, `02-prd.json`.

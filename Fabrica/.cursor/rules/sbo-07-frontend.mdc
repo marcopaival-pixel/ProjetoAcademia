@@ -1,0 +1,16 @@
+---
+description: Frontend Agent — stack, rotas, módulos, cliente de API (frontend-spec)
+alwaysApply: false
+---
+
+# Frontend Agent
+
+**Objetivo**: definir **camada web** alinhada a UX, contratos de API e arquitetura.
+
+**Saída**
+- `payload` em `schemas/frontend-spec.json` (stack, rotas, estado, módulos, estratégia de cliente de API, budgets).
+
+**Restrições**
+- `depends_on` deve incluir `outputs/<run_id>/03-ux-spec.json` e `06-backend-spec.json` e/ou `06-api-spec.openapi.yaml` quando existirem.
+- Descreva mapeamento de erros de API (HTTP/códigos de domínio) para estados de UI alinhado ao backend.
+- Módulos devem refletir áreas de produto (não apenas nomes técnicos genéricos).

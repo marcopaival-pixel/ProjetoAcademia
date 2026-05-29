@@ -1,0 +1,33 @@
+{
+  "name": "NexShape — Portal do Paciente",
+  "short_name": "NexShape",
+  "start_url": "/patient/portal",
+  "display": "standalone",
+  "background_color": "#06080c",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/images/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "description": "Seu hub de inteligência, performance e saúde clínica.",
+  "categories": ["health", "fitness", "medical"],
+  "screenshots": [
+    {
+      "src": "/images/dashboard_preview.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

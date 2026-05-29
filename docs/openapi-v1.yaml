@@ -1,0 +1,117 @@
+openapi: 3.0.3
+info:
+  title: NexShape API v1
+  version: 1.0.0
+  description: API REST autenticada com Laravel Sanctum (Bearer token).
+servers:
+  - url: '{baseUrl}/api/v1'
+    variables:
+      baseUrl:
+        default: https://app.example.com
+paths:
+  /health:
+    get:
+      summary: Health check público
+      responses:
+        '200':
+          description: OK
+  /auth/token:
+    post:
+      summary: Emitir token de acesso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                device_name: { type: string }
+      responses:
+        '200':
+          description: Token emitido
+  /me:
+    get:
+      summary: Perfil do utilizador autenticado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Perfil
+        '401':
+          description: Não autenticado
+  /training-plans:
+    get:
+      summary: Listar planos de treino do utilizador
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de planos
+  /training-plans/{id}:
+    get:
+      summary: Detalhe do plano de treino
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Plano com exercícios
+        '403':
+          description: Bloqueado por limite do plano
+  /payments/status:
+    get:
+      summary: Estado dos gateways de pagamento (sem segredos)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Gateways e métodos disponíveis
+  /nutrition/diary:
+    get:
+      summary: Diário alimentar por data
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Entradas e totais do dia
+  /workout-sessions:
+    get:
+      summary: Listar sessões de treino (RPE)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, maximum: 90, default: 30 }
+      responses:
+        '200':
+          description: Lista de sessões
+    post:
+      summary: Registar ou atualizar sessão por data
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_date, rpe_score]
+              properties:
+                session_date: { type: string, format: date }
+                rpe_score: { type: integer, minimum: 1, maximum: 10 }
+                mood: { type: string }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Sessão gravada
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum

@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+use App\Models\Traits\BelongsToCompany;
+
+class PatientTreatmentPlan extends Model
+{
+    use HasFactory, Traits\HasClinic;
+
+
+    protected $fillable = [
+        'patient_id',
+        'professional_id',
+        'diagnosis',
+        'objectives',
+        'care_plan',
+        'orientations',
+        'is_active'
+    ];
+
+    public function patient()
+    {
+        return $this->belongsTo(User::class, 'patient_id');
+    }
+
+    public function professional()
+    {
+        return $this->belongsTo(User::class, 'professional_id');
+    }
+}

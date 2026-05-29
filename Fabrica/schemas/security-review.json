@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/security-review.json",
+  "title": "SecurityReviewPayload",
+  "type": "object",
+  "required": ["threat_model", "controls", "findings", "compliance_notes"],
+  "properties": {
+    "threat_model": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["asset", "threat", "mitigation"],
+        "properties": {
+          "asset": { "type": "string" },
+          "threat": { "type": "string" },
+          "mitigation": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "implementation"],
+        "properties": {
+          "area": { "type": "string" },
+          "implementation": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "title", "recommendation"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info"]
+          },
+          "title": { "type": "string" },
+          "recommendation": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "compliance_notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

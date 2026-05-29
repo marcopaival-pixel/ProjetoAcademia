@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/evolution-code-analysis.json",
+  "title": "EvolutionCodeAnalysisPayload",
+  "type": "object",
+  "required": ["summary", "items"],
+  "properties": {
+    "summary": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "risk_level", "description"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string" },
+          "risk_level": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "description": { "type": "string" },
+          "action": {
+            "type": "string",
+            "description": "Análise, recomendação ou estado da ação."
+          },
+          "pull_request": {
+            "type": "object",
+            "properties": {
+              "branch": { "type": "string" },
+              "url": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "duplicate_code": { "type": "array", "items": { "type": "string" } },
+    "unused_symbols": { "type": "array", "items": { "type": "string" } },
+    "technical_debt": { "type": "array", "items": { "type": "string" } },
+    "bad_practices": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

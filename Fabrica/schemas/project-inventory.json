@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/project-inventory.json",
+  "title": "ProjectInventoryPayload",
+  "type": "object",
+  "required": [
+    "repo_summary",
+    "tech_stack",
+    "reuse_candidates",
+    "gaps",
+    "risks",
+    "recommended_next_steps"
+  ],
+  "properties": {
+    "repo_summary": { "type": "string" },
+    "tech_stack": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "reuse_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path_glob", "reuse_strategy"],
+        "properties": {
+          "name": { "type": "string" },
+          "path_glob": { "type": "string" },
+          "reuse_strategy": {
+            "type": "string",
+            "enum": ["extend", "wrap", "fork", "replace", "none"]
+          },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "gaps": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "recommended_next_steps": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

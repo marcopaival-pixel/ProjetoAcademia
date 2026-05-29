@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fabrica.local/schemas/audit-consolidated-report.json",
+  "title": "AuditConsolidatedReportPayload",
+  "type": "object",
+  "required": [
+    "system_overview",
+    "critical_issues",
+    "medium_issues",
+    "low_issues",
+    "remove_candidates",
+    "redundant_features",
+    "recommended_improvements",
+    "refactoring_roadmap",
+    "technical_debt"
+  ],
+  "properties": {
+    "system_overview": { "type": "string" },
+    "critical_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "description", "recommendation"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "recommendation": { "type": "string" },
+          "source_agents": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Artefatos ou agentes que originaram o achado."
+          },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "medium_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "description", "recommendation"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "recommendation": { "type": "string" },
+          "source_agents": { "type": "array", "items": { "type": "string" } },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "low_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "description", "recommendation"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "recommendation": { "type": "string" },
+          "source_agents": { "type": "array", "items": { "type": "string" } },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "remove_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "reason", "risk_notes"],
+        "properties": {
+          "target": {
+            "type": "string",
+            "description": "Módulo, pacote, feature flag ou caminho."
+          },
+          "reason": { "type": "string" },
+          "risk_notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "redundant_features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "rationale", "suggestion"],
+        "properties": {
+          "name": { "type": "string" },
+          "rationale": { "type": "string" },
+          "suggestion": {
+            "type": "string",
+            "description": "Merge, desligar, migrar usuários, etc."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "recommended_improvements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "expected_benefit", "priority"],
+        "properties": {
+          "title": { "type": "string" },
+          "expected_benefit": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2", "P3"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "refactoring_roadmap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "phase",
+          "name",
+          "goals",
+          "steps",
+          "production_safe_default"
+        ],
+        "properties": {
+          "phase": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string" },
+          "goals": { "type": "string" },
+          "steps": { "type": "array", "items": { "type": "string" } },
+          "exit_criteria": { "type": "array", "items": { "type": "string" } },
+          "production_safe_default": {
+            "type": "boolean",
+            "description": "Se falso, exigir mitigações explícitas antes de aplicar."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "technical_debt": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "builder_integration": {
+      "type": "object",
+      "description": "Como devolver o ciclo ao System Builder Factory.",
+      "required": ["next_builder_actions"],
+      "properties": {
+        "target_builder_run_id": { "type": "string" },
+        "artifacts_to_refresh": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ex.: 04-architecture.json, 09-security-review.json"
+        },
+        "next_builder_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

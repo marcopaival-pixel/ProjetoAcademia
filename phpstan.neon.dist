@@ -1,0 +1,22 @@
+includes:
+
+    - vendor/larastan/larastan/extension.neon
+
+    - phpstan-baseline.neon
+
+
+
+parameters:
+
+    level: 3
+
+    paths:
+
+        - app
+
+    excludePaths:
+
+        - app/Livewire/Pulse/AIUsageCard.php
+
+    tmpDir: storage/phpstan
+
