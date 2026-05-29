@@ -9,11 +9,15 @@ use Illuminate\Database\Eloquent\Builder;
 class FoodEntry extends Model
 {
     use Traits\BelongsToCompany;
-    protected $companyColumn = 'user_id';
+    use Traits\FillsTenantColumns;
+    use Traits\HasClinic;
+
     const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
+        'clinic_id',
+        'academy_company_id',
         'entry_date',
         'meal_type',
         'food_name',

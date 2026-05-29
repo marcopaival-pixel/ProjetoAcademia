@@ -127,12 +127,6 @@ parameters:
 			path: app/Http/Controllers/Admin/AdminAreaController.php
 
 		-
-			message: '#^Call to an undefined method App\\Http\\Controllers\\Admin\\AdminAreaController\:\:getPasswordValidationRules\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Http/Controllers/Admin/AdminAreaController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Admin\\AdminAreaController\:\:users\(\) should return Illuminate\\View\\View but returns Illuminate\\Http\\JsonResponse\.$#'
 			identifier: return.type
 			count: 1
@@ -439,30 +433,6 @@ parameters:
 			path: app/Http/Controllers/Clinic/BillingController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Clinic/ClinicManagementController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$logo_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Clinic/ClinicManagementController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Clinic/ClinicManagementController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Clinic/ClinicManagementController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\ExerciseEntry\:\:\$time\.$#'
 			identifier: property.notFound
 			count: 1
@@ -574,12 +544,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$suggestion\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Http/Controllers/LoadProgressionController.php
-
-		-
-			message: '#^Call to an undefined static method App\\Services\\AchievementService\:\:check\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
 			path: app/Http/Controllers/LoadProgressionController.php
 
 		-
@@ -797,24 +761,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/PlanoController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/PrivacyController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$calories\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/PrivacyController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/PrivacyController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bf_percent\.$#'
@@ -2097,7 +2043,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Services/AIFitnessGeneratorService.php
 
 		-
@@ -2115,7 +2061,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$goal\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 4
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$height_cm\.$#'
+			identifier: property.notFound
+			count: 1
 			path: app/Services/AIFitnessGeneratorService.php
 
 		-
@@ -2131,9 +2083,15 @@ parameters:
 			path: app/Services/AIFitnessGeneratorService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$training_days_per_week\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$target_weight_kg\.$#'
 			identifier: property.notFound
 			count: 1
+			path: app/Services/AIFitnessGeneratorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$training_days_per_week\.$#'
+			identifier: property.notFound
+			count: 2
 			path: app/Services/AIFitnessGeneratorService.php
 
 		-
@@ -2398,12 +2356,6 @@ parameters:
 			message: '#^Access to an undefined property App\\Models\\User\:\:\$activePlan\.$#'
 			identifier: property.notFound
 			count: 3
-			path: app/Services/MonetizationService.php
-
-		-
-			message: '#^Call to an undefined method App\\Models\\User\:\:isPremium\(\)\.$#'
-			identifier: method.notFound
-			count: 1
 			path: app/Services/MonetizationService.php
 
 		-

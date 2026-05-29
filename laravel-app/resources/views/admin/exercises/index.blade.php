@@ -14,7 +14,7 @@
                     <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Expansão do Banco de Dados</p>
                 </header>
 
-                <form action="{{ route('admin.exercises.store') }}" method="POST" class="space-y-6">
+                <form action="{{ route('admin.exercises.store') }}" method="POST" class="space-y-6" enctype="multipart/form-data">
                     @csrf
                     <div class="space-y-2">
                         <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Nome do Exercício</label>
@@ -52,6 +52,39 @@
                     </div>
 
                     <x-muscle-selector />
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Instruções de Execução</label>
+                        <textarea name="instructions" rows="2" class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all"></textarea>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Dicas (Uma por linha)</label>
+                        <textarea name="tips" rows="3" placeholder="Ex: Mantenha o abdômen contraído..." class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all"></textarea>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Erros Comuns (Um por linha)</label>
+                        <textarea name="common_mistakes" rows="3" placeholder="Ex: Curvar as costas..." class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all"></textarea>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Tipo de Vídeo</label>
+                        <select name="video_type" id="create_video_type" onchange="toggleVideoFields(this.value, 'create')" required class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-xs outline-none focus:ring-2 focus:ring-blue-600 transition-all appearance-none">
+                            <option value="none">Sem Vídeo</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="upload">Upload (MP4)</option>
+                            <option value="gif">GIF Animado (URL)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2" id="create_video_url_div" style="display: none;">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">URL (YouTube / GIF)</label>
+                        <input type="text" name="video_url" placeholder="https://..." class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                    </div>
+                    <div class="space-y-2" id="create_video_file_div" style="display: none;">
+                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Arquivo de Vídeo</label>
+                        <input type="file" name="video_file" accept="video/mp4,video/webm,image/gif" class="w-full bg-zinc-950 border border-white/5 p-3 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                    </div>
 
                     <div class="flex items-center gap-3 p-4 bg-zinc-950/50 rounded-2xl border border-white/5">
                         <input type="checkbox" id="is_active" name="is_active" checked class="w-5 h-5 rounded-lg border-white/10 bg-zinc-900 text-blue-600 focus:ring-blue-600">
@@ -141,6 +174,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleVideoFields(type, prefix) {
+        const urlDiv = document.getElementById(prefix + '_video_url_div');
+        const fileDiv = document.getElementById(prefix + '_video_file_div');
+        if (type === 'youtube' || type === 'gif') {
+            urlDiv.style.display = 'block';
+            fileDiv.style.display = 'none';
+        } else if (type === 'upload') {
+            urlDiv.style.display = 'none';
+            fileDiv.style.display = 'block';
+        } else {
+            urlDiv.style.display = 'none';
+            fileDiv.style.display = 'none';
+        }
+    }
+</script>
 
 <style>
     .animate-fade-in { animation: fadeIn 0.8s ease-out; }

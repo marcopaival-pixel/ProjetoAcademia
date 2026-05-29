@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BodyAnalysis extends Model
 {
-    use Traits\HasClinic;
     use HasFactory;
+    use Traits\FillsTenantColumns;
+    use Traits\HasClinic;
 
     protected $table = 'body_analyses';
 
@@ -17,6 +18,8 @@ class BodyAnalysis extends Model
 
     protected $fillable = [
         'user_id',
+        'clinic_id',
+        'academy_company_id',
         'photo_path',
         'view_type',
         'landmarks',
@@ -27,6 +30,7 @@ class BodyAnalysis extends Model
     protected $casts = [
         'landmarks' => 'array',
         'metrics' => 'array',
+        'ai_summary' => 'array',
         'created_at' => 'datetime',
     ];
 

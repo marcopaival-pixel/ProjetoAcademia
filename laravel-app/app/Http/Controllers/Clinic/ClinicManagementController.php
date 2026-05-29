@@ -15,9 +15,9 @@ class ClinicManagementController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $company = $user->academyCompany;
+        $company = AcademyCompany::query()->find($user->academy_company_id);
 
-        if (!$company) {
+        if (! $company) {
             return back()->with('error', 'Você não está vinculado a uma empresa/conta.');
         }
 
@@ -54,7 +54,11 @@ class ClinicManagementController extends Controller
     public function storeClinic(Request $request)
     {
         $user = Auth::user();
-        $company = $user->academyCompany;
+        $company = AcademyCompany::query()->find($user->academy_company_id);
+
+        if (! $company) {
+            return back()->with('error', 'Você não está vinculado a uma empresa/conta.');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',

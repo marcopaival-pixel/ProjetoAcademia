@@ -156,3 +156,39 @@ rg "Schema::create\('" laravel-app/database/migrations -o
 ```
 
 Documento principal: `dicionario_dados.md` — atualizar quando possível fundindo este suplemento.
+
+---
+
+## Suplemento 2026-05-27 (tenant empresa em IA + análises)
+
+**Migração:** `2026_05_27_100000_add_academy_company_id_to_ai_and_body_tables.php`
+
+| Tabela | Coluna nova | Trait / model |
+|--------|-------------|---------------|
+| `ai_orchestrator_logs` | `academy_company_id` | `AIOrchestratorLog` — `FillsTenantColumns`, `HasClinic` |
+| `body_analyses` | `academy_company_id` | `BodyAnalysis` — `FillsTenantColumns`, `HasClinic` |
+| `ai_chats` | `academy_company_id` | `AIChat` — `FillsTenantColumns`, `HasClinic` |
+
+**Nota:** `ai_vision_logs` já tinha `academy_company_id` desde `2026_05_21_160000`.
+
+**Inventário total estimado:** ~196 tabelas (229 migrações). Tabelas ainda sem `academy_company_id` em domínios legados (`food_entries`, `exercise_entries`, etc.) — isolamento via `user_id` + tenant do utilizador.
+
+---
+
+## Suplemento 2026-05-27 (tenant em tracking legado)
+
+**Migração:** `2026_05_27_120000_add_tenant_columns_to_tracking_entries.php`
+
+| Tabela | Colunas | Models |
+|--------|---------|--------|
+| `food_entries` | `clinic_id`, `academy_company_id` | `FoodEntry` |
+| `exercise_entries` | idem | `ExerciseEntry` |
+| `water_entries` | idem | `WaterEntry` |
+| `weight_entries` | idem | `WeightEntry` |
+| `load_logs` | idem | `LoadLog` |
+
+Backfill automático a partir de `users.academy_company_id` e `users.clinic_id`. Traits: `BelongsToCompany`, `FillsTenantColumns`, `HasClinic`.
+
+**Correção trait:** `BelongsToCompany` passa a preencher `academy_company_id` via `TenantContext::getCompanyId()` (não `clinic_id`).
+
+

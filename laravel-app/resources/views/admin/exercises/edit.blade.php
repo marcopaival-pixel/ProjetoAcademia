@@ -5,7 +5,7 @@
 @section('content')
     <div class="card" style="max-width: 600px;">
         <h2 style="margin-top: 0; font-size: 1.125rem;">Atualizar Informações</h2>
-        <form action="{{ route('admin.exercises.update', $exercise->id) }}" method="POST">
+        <form action="{{ route('admin.exercises.update', $exercise->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             
             <div class="form-group">
@@ -51,6 +51,39 @@
                 <textarea id="instructions" name="instructions" rows="4">{{ old('instructions', $exercise->instructions) }}</textarea>
             </div>
 
+            <div class="form-group">
+                <label for="tips">Dicas (Uma por linha)</label>
+                <textarea id="tips" name="tips" rows="4">{{ old('tips', is_array($exercise->tips) ? implode("\n", $exercise->tips) : $exercise->tips) }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="common_mistakes">Erros Comuns (Um por linha)</label>
+                <textarea id="common_mistakes" name="common_mistakes" rows="4">{{ old('common_mistakes', is_array($exercise->common_mistakes) ? implode("\n", $exercise->common_mistakes) : $exercise->common_mistakes) }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="video_type">Tipo de Vídeo</label>
+                <select id="edit_video_type" name="video_type" onchange="toggleVideoFields(this.value, 'edit')" required>
+                    <option value="none" {{ $exercise->video_type == 'none' || !$exercise->video_type ? 'selected' : '' }}>Sem Vídeo</option>
+                    <option value="youtube" {{ $exercise->video_type == 'youtube' ? 'selected' : '' }}>YouTube</option>
+                    <option value="upload" {{ $exercise->video_type == 'upload' ? 'selected' : '' }}>Upload (MP4)</option>
+                    <option value="gif" {{ $exercise->video_type == 'gif' ? 'selected' : '' }}>GIF Animado (URL)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="edit_video_url_div" style="display: {{ in_array($exercise->video_type, ['youtube', 'gif']) ? 'block' : 'none' }};">
+                <label for="video_url">URL do Vídeo</label>
+                <input type="text" id="video_url" name="video_url" value="{{ old('video_url', $exercise->video_url) }}">
+            </div>
+
+            <div class="form-group" id="edit_video_file_div" style="display: {{ $exercise->video_type == 'upload' ? 'block' : 'none' }};">
+                <label for="video_file">Substituir Arquivo de Vídeo</label>
+                <input type="file" id="video_file" name="video_file" accept="video/mp4,video/webm,image/gif">
+                @if($exercise->video_type == 'upload' && $exercise->video_url)
+                    <small style="display:block;margin-top:0.5rem;color:#888;">Vídeo atual salvo. Envie novo arquivo apenas se desejar substituir.</small>
+                @endif
+            </div>
+
             <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin: 1.5rem 0;">
                 <input type="checkbox" id="is_active" name="is_active" {{ $exercise->is_active ? 'checked' : '' }} style="width: auto;">
                 <label for="is_active" style="margin: 0;">Disponível no app (Ativo)</label>
@@ -63,3 +96,20 @@
         </form>
     </div>
 @endsection
+
+<script>
+    function toggleVideoFields(type, prefix) {
+        const urlDiv = document.getElementById(prefix + '_video_url_div');
+        const fileDiv = document.getElementById(prefix + '_video_file_div');
+        if (type === 'youtube' || type === 'gif') {
+            urlDiv.style.display = 'block';
+            fileDiv.style.display = 'none';
+        } else if (type === 'upload') {
+            urlDiv.style.display = 'none';
+            fileDiv.style.display = 'block';
+        } else {
+            urlDiv.style.display = 'none';
+            fileDiv.style.display = 'none';
+        }
+    }
+</script>

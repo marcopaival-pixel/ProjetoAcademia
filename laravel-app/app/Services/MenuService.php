@@ -257,7 +257,7 @@ class MenuService
                     ['name' => 'calendar', 'label' => 'Agenda', 'route' => 'calendar', 'icon' => 'calendar-days'],
                     ['name' => 'leaderboard', 'label' => 'Ranking Global', 'route' => 'leaderboard.index', 'icon' => 'award'],
                     ['name' => 'trophies', 'label' => 'Conquistas', 'route' => 'trophies.index', 'icon' => 'trophy', 'premium' => true],
-                    ['name' => 'plano', 'label' => 'Minha Assinatura', 'route' => 'plano', 'icon' => 'credit-card'],
+                    ['name' => 'plano', 'label' => 'Central Financeira', 'route' => 'patient.subscription.index', 'icon' => 'credit-card'],
                     ['name' => 'report', 'label' => 'Relatórios PDF', 'route' => 'report', 'icon' => 'file-text', 'premium' => true],
                     ['name' => 'active-rest', 'label' => 'Descanso Ativo', 'route' => 'active-rest.index', 'icon' => 'refresh-cw'],
                     ['name' => 'academia', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'play-circle'],

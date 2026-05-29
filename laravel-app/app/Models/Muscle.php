@@ -23,4 +23,13 @@ class Muscle extends Model
     {
         return $this->belongsToMany(ExerciseCatalog::class, 'exercise_muscles', 'muscle_id', 'exercise_id');
     }
+
+    protected static function booted()
+    {
+        static::deleting(function ($muscle) {
+            if (!auth()->check() || !auth()->user()->isAdministrator()) {
+                abort(403, 'Apenas administradores podem excluir músculos do sistema. Esta tabela é protegida.');
+            }
+        });
+    }
 }

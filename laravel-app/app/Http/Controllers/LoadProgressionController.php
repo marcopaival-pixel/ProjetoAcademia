@@ -63,6 +63,9 @@ class LoadProgressionController extends Controller
             'logs.*.training_plan_exercise_id' => 'required|exists:training_plan_exercises,id',
             'logs.*.exercise_id' => 'required|exists:exercises_catalog,id',
             'logs.*.sets' => 'required|array|min:1',
+            'logs.*.sets.*.weight' => 'nullable|numeric|min:0',
+            'logs.*.sets.*.reps' => 'nullable|integer|min:0',
+            'logs.*.sets.*.failure' => 'nullable',
             'logs.*.sets.*.rpe' => 'nullable|integer|min:1|max:10',
         ], [
             'date.required' => 'A data do registro é obrigatória.',
@@ -73,7 +76,7 @@ class LoadProgressionController extends Controller
 
         foreach ($validated['logs'] as $exLog) {
             foreach ($exLog['sets'] as $setIndex => $setData) {
-                if (empty($setData['weight']) || empty($setData['reps'])) continue;
+                if (!isset($setData['weight']) || $setData['weight'] === '' || empty($setData['reps'])) continue;
 
                 LoadLog::create([
                     'user_id' => Auth::id(),

@@ -30,6 +30,8 @@ npm run build
 
 Ou execute `deploy.bat` (inclui migrate local — confirme a base antes de correr).
 
+**Pacote completo (CI ou local):** `scripts/prepare-deploy-package.ps1` gera ZIP em `dist/` com `vendor`, `public/build` e pastas de runtime.
+
 **Crítico:** enviar `public/build/` para o servidor após o build Vite.
 
 ---
@@ -48,6 +50,7 @@ Ou execute `deploy.bat` (inclui migrate local — confirme a base antes de corre
 
 - `.env` (criar no servidor)
 - `node_modules/`, `tests/`, `.git/`
+- `public/build.zip` ou outros `.zip` em `public/`
 - `storage/logs/*` (manter pastas vazias com permissão de escrita)
 
 ---
@@ -69,6 +72,8 @@ OMNI_WEBHOOK_SECRET=... # obrigatório para /omnichannel/webhook
 QUEUE_CONNECTION=database  # ou redis se disponível
 SESSION_DRIVER=database    # ou redis
 CACHE_STORE=database       # ou redis
+SESSION_ENCRYPT=true
+SESSION_SECURE_COOKIE=true
 
 # Redis (quando disponível)
 REDIS_HOST=127.0.0.1
@@ -76,6 +81,23 @@ REDIS_PORT=6379
 ```
 
 Referência completa: `laravel-app/.env.example` e [AUDITORIA_360_2026-05-21.md](./AUDITORIA_360_2026-05-21.md).
+
+### Checklist de secrets (produção)
+
+| Variável | Obrigatório quando | Onde obter |
+|----------|-------------------|------------|
+| `APP_KEY` | Sempre | `php artisan key:generate` |
+| `MP_ACCESS_TOKEN` | Pagamentos ativos | Painel Mercado Pago |
+| `MP_WEBHOOK_SECRET` | Pagamentos ativos | MP → Webhooks → chave secreta |
+| `OMNI_WEBHOOK_SECRET` | Widget omnichannel | Definir valor forte (32+ chars) |
+| `OPENAI_API_KEY` | Chat / IA / import treino | platform.openai.com |
+| `MAIL_*` | E-mail transacional | SMTP do provedor |
+| `GOOGLE_CLIENT_*` | Login Google | Google Cloud Console |
+| `GOOGLE_VISION_API_KEY` | OCR importação treino | Google Cloud Vision API |
+| `BACKUP_*` / `AWS_BACKUP_*` | Backup S3 | Bucket dedicado |
+| `REDIS_*` | Cache/sessão/filas Redis | Servidor Redis |
+| `SESSION_ENCRYPT=true` | Sempre em prod | `.env.example.production` |
+| `SESSION_SECURE_COOKIE=true` | HTTPS em prod | `.env.example.production` |
 
 ---
 
@@ -252,6 +274,7 @@ composer phpstan-baseline # só após alterações grandes no legado
 ## Referências
 
 - [AUDITORIA_360_2026-05-21.md](./AUDITORIA_360_2026-05-21.md)
+- [MONITORAMENTO.md](./MONITORAMENTO.md)
 - [API_V1.md](../laravel-app/docs/API_V1.md)
 - [dicionario_dados_suplemento_2026-05.md](../laravel-app/docs/dicionario_dados_suplemento_2026-05.md)
 - `laravel-app/deploy.bat`, `laravel-app/optimize_server.sh`
