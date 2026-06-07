@@ -8,10 +8,12 @@ Runbook operacional para homologação, piloto e comercialização. Complementa 
 
 ```bash
 # Homologação (staging)
-php artisan app:release:verify --target=homologacao --with-tests
+php artisan app:release:verify --target=homologacao
+composer test
 
 # Produção (após homologação aprovada em /admin/deploy)
-php artisan app:release:verify --target=production --with-tests
+php artisan app:release:verify --target=production
+composer test
 
 # Registar homologação aprovada (bootstrap)
 php artisan db:seed --class=DeployHomologBootstrapSeeder
