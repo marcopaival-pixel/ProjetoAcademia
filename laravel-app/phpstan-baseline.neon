@@ -2407,24 +2407,6 @@ parameters:
 			path: app/Services/ProfessionalReportAggregator.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$birth_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SmartStackAIService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sex\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SmartStackAIService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weight_kg\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SmartStackAIService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 2

@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Traits\FiltersByRepresentative;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class WithdrawalRequest extends Model
 {
-    use HasFactory;
+    use FiltersByRepresentative, HasFactory;
 
     protected $fillable = [
         'representative_id',
@@ -33,5 +35,12 @@ class WithdrawalRequest extends Model
     public function representative(): BelongsTo
     {
         return $this->belongsTo(User::class, 'representative_id');
+    }
+
+    public function commissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Commission::class, 'commission_withdrawal')
+            ->withPivot('amount_applied')
+            ->withTimestamps();
     }
 }

@@ -2,6 +2,8 @@
 
 Documento operacional para publicar e manter a aplicação em `laravel-app/`. Alinhado a `deploy.bat`, `optimize_server.sh` e auditoria 360° (maio/2026).
 
+**Go-live (fases A–D):** ver `laravel-app/docs/GO_LIVE_CHECKLIST.md`. Staging automatizado (Windows): `laravel-app/scripts/staging-release.ps1`.
+
 ---
 
 ## Pré-requisitos

@@ -49,7 +49,8 @@ class ReportsModuleTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('patient.reports.show', ['type' => 'full_history']))
-            ->assertRedirect(route('plano'));
+            ->assertRedirect(route('patient.reports.index'))
+            ->assertSessionHas('premium_required', true);
     }
 
     public function test_professional_show_unknown_type_returns_404_when_premium(): void

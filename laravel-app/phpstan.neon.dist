@@ -20,3 +20,5 @@ parameters:
 
     tmpDir: storage/phpstan
 
+    reportUnmatchedIgnoredErrors: false
+
