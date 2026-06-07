@@ -22,9 +22,16 @@ php artisan route:cache
 php artisan view:cache
 
 Write-Host "`n[5/6] Verificacao de release..." -ForegroundColor Yellow
-php artisan app:release:verify --target=homologacao --with-tests
+php artisan app:release:verify --target=homologacao
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Verificacao falhou. Corrija antes de expor staging." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "`n[5b/6] PHPUnit..." -ForegroundColor Yellow
+composer test
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Testes falharam." -ForegroundColor Red
     exit 1
 }
 
