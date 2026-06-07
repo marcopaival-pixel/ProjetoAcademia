@@ -96,16 +96,44 @@ class CheckoutController extends Controller
                     ]);
                 }
 
-                // 3. Se for plano pago, criar preferência no Gateway
+                $referralCodeStr = session('referral_code') ?? $request->input('referral_code');
+                $referralCode = null;
+                $discountAmount = 0.0;
+                $representativeId = null;
+                $resolvedReferral = null;
+
+                if ($referralCodeStr) {
+                    $resolvedReferral = app(\App\Services\ReferralCodeResolver::class)->resolve(
+                        $referralCodeStr,
+                        (int) $request->plan_id
+                    );
+                    if ($resolvedReferral !== null) {
+                        $discountAmount = $resolvedReferral['discount_amount'];
+                        $representativeId = $resolvedReferral['representative_id'];
+                        $referralCode = $resolvedReferral['referral_code'];
+                        if ($referralCode === null && $resolvedReferral['profile']) {
+                            $user->representative_id = $representativeId;
+                            $user->save();
+                        }
+                    }
+                }
+
                 $gateway = $this->paymentManager->driver();
-                $checkout = $gateway->createSubscription($user, $plan);
+                $checkoutOptions = [];
+                if ($discountAmount > 0) {
+                    $checkoutOptions['referral_discount'] = $discountAmount;
+                    if ($referralCodeStr) {
+                        $checkoutOptions['referral_code'] = $referralCodeStr;
+                    }
+                }
+                $checkout = $gateway->createSubscription($user, $plan, $checkoutOptions);
 
                 if (!$checkout['ok']) {
                     throw new \Exception($checkout['error'] ?? 'Erro no gateway de pagamento.');
                 }
 
                 // Criar assinatura pendente
-                Subscription::updateOrCreate(
+                $subscription = Subscription::updateOrCreate(
                     ['user_id' => $user->id],
                     [
                         'plan_id' => $plan->id,
@@ -115,6 +143,44 @@ class CheckoutController extends Controller
                         'gateway_type' => $gateway->getIdentifier(),
                     ]
                 );
+
+                if ($representativeId) {
+                    $clinicId = $user->clinic_id ?? null;
+                    if ($clinicId) {
+                        \App\Models\Clinic::where('id', $clinicId)->update([
+                            'representative_code_used' => $referralCode?->code ?? $referralCodeStr,
+                            'applied_discount_rate' => $discountAmount,
+                            'representative_id' => $representativeId,
+                        ]);
+                        if ($referralCode) {
+                            $referralCode->markAsUsed($clinicId);
+                        }
+                    }
+
+                    $commissionRate = $this->resolveRepresentativeCommissionRate(
+                        $representativeId,
+                        $resolvedReferral['profile'] ?? null
+                    );
+
+                    app(\App\Services\CommissionService::class)->recordAwaitingPayment(
+                        $representativeId,
+                        $user->id,
+                        $subscription->id,
+                        $clinicId,
+                        (float) $plan->price,
+                        $commissionRate,
+                        ($plan->price - $discountAmount) * ($commissionRate / 100),
+                        'Checkout com código: '.($referralCodeStr ?? '').' / Plano: '.$plan->name
+                    );
+
+                    \App\Models\RepresentativeAudit::create([
+                        'user_id' => $user->id,
+                        'action' => 'Utilizou Código de Indicação',
+                        'entity_type' => 'ReferralCode',
+                        'entity_id' => $referralCode?->id,
+                        'new_values' => ['code' => $referralCodeStr, 'plan' => $plan->name],
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,
@@ -158,8 +224,70 @@ class CheckoutController extends Controller
                 'payload' => ['plan_name' => $plan->name, 'action' => 'direct_activation'],
             ]);
 
+            $referralCodeStr = session('referral_code') ?? request()->input('referral_code');
+            if ($referralCodeStr) {
+                $resolved = app(\App\Services\ReferralCodeResolver::class)->resolve($referralCodeStr, (int) $plan->id);
+                if ($resolved !== null) {
+                    $representativeId = $resolved['representative_id'];
+                    $referralCode = $resolved['referral_code'];
+                    $discountAmount = $resolved['discount_amount'];
+                    $clinicId = $user->clinic_id ?? null;
+
+                    if ($clinicId && $referralCode) {
+                        \App\Models\Clinic::where('id', $clinicId)->update([
+                            'representative_code_used' => $referralCode->code,
+                            'applied_discount_rate' => $discountAmount,
+                            'representative_id' => $representativeId,
+                        ]);
+                        $referralCode->markAsUsed($clinicId);
+                    }
+
+                    $commissionRate = $this->resolveRepresentativeCommissionRate(
+                        $representativeId,
+                        $resolved['profile'] ?? null
+                    );
+
+                    app(\App\Services\CommissionService::class)->recordAwaitingPayment(
+                        $representativeId,
+                        $user->id,
+                        $subscription->id,
+                        $clinicId,
+                        (float) $plan->price,
+                        $commissionRate,
+                        ($plan->price - $discountAmount) * ($commissionRate / 100),
+                        'Ativação gratuita com código: '.$referralCodeStr.' / Plano: '.$plan->name
+                    );
+
+                    \App\Models\RepresentativeAudit::create([
+                        'user_id' => $user->id,
+                        'action' => 'Utilizou Código de Indicação (Gratuito)',
+                        'entity_type' => 'ReferralCode',
+                        'entity_id' => $referralCode?->id,
+                        'new_values' => ['code' => $referralCodeStr, 'plan' => $plan->name],
+                    ]);
+                }
+            }
+
             return $subscription;
         });
+    }
+
+    /**
+     * Taxa de comissão do representante sem depender do escopo global de User.
+     */
+    private function resolveRepresentativeCommissionRate(
+        int $representativeId,
+        ?\App\Models\RepresentativeProfile $profileFromResolver = null
+    ): float {
+        if ($profileFromResolver) {
+            return (float) $profileFromResolver->commission_rate;
+        }
+
+        $profile = \App\Models\RepresentativeProfile::withoutGlobalScopes()
+            ->where('user_id', $representativeId)
+            ->first();
+
+        return $profile ? (float) $profile->commission_rate : 0.0;
     }
 
     /**

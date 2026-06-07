@@ -2,11 +2,23 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToScopedParent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PatientAccessToken extends Model
 {
+    use BelongsToScopedParent;
+
+    protected static function scopedParentRelationName(): string
+    {
+        return 'patient';
+    }
+
+    protected static function scopedParentTenantColumnName(): string
+    {
+        return 'academy_company_id';
+    }
     protected $fillable = [
         'patient_id',
         'type',
