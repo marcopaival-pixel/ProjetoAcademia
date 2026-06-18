@@ -8,11 +8,13 @@ use App\Models\Subscription;
 use App\Models\Plan;
 use App\Models\CreditoCompra;
 use App\Models\AiCreditPackage;
-use App\Models\Commission;
-use App\Services\FinancialLogService;
+use App\Models\AiCreditTransaction;
 use App\Services\AiCreditService;
+use App\Services\CommissionService;
+use App\Services\FinancialLogService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class PaymentProcessor
 {
@@ -26,11 +28,20 @@ class PaymentProcessor
             $gateway = $data['gateway'];
             $gatewayId = $data['gateway_id'];
             $amount = $data['amount'];
-            $reference = $data['reference'] ?? ''; // e.g., "monthly", "yearly", "credits:1"
-            
+            $reference = $data['reference'] ?? '';
+
+            $alreadyProcessed = Payment::query()
+                ->where('gateway', $gateway)
+                ->where('gateway_id', $gatewayId)
+                ->where('status', 'paid')
+                ->exists();
+
+            if ($alreadyProcessed) {
+                return ['ok' => true, 'message' => 'Pagamento já processado.'];
+            }
+
             $user = User::findOrFail($userId);
-            
-            // 1. Create or Update Payment record
+
             $payment = Payment::updateOrCreate(
                 ['gateway' => $gateway, 'gateway_id' => $gatewayId],
                 [
@@ -44,6 +55,8 @@ class PaymentProcessor
                 ]
             );
 
+            $subscription = null;
+
             // 2. Determine Action
             if (str_starts_with($reference, 'ai_credits:')) {
                 $packageId = (int) str_replace('ai_credits:', '', $reference);
@@ -52,11 +65,13 @@ class PaymentProcessor
                 $compraId = (int) str_replace('credits:', '', $reference);
                 $this->processGeneralCredits($user, $compraId, $gatewayId);
             } else {
-                $this->processSubscription($user, $reference, $gateway, $gatewayId);
+                $subscription = $this->processSubscription($user, $reference, $gateway, $gatewayId);
             }
 
-            // 3. Process Commission
-            $this->processCommission($user, $payment);
+            if ($subscription !== null) {
+                $payment->update(['subscription_id' => $subscription->id]);
+                app(CommissionService::class)->recordOnPayment($user, $payment, $subscription);
+            }
 
             // 4. Financial Log
             FinancialLogService::log([
@@ -72,13 +87,18 @@ class PaymentProcessor
         });
     }
 
-    protected function processSubscription(User $user, string $planCode, string $gateway, string $gatewayId)
+    protected function processSubscription(User $user, string $planCode, string $gateway, string $gatewayId): Subscription
     {
         $plan = Plan::where('name', $planCode)->first() ?? Plan::first();
         
+        $lookup = $gatewayId !== ''
+            ? ['gateway_type' => $gateway, 'gateway_id' => $gatewayId]
+            : ['user_id' => $user->id, 'gateway_type' => $gateway];
+
         $subscription = Subscription::updateOrCreate(
-            ['user_id' => $user->id],
+            $lookup,
             [
+                'user_id' => $user->id,
                 'plan_id' => $plan->id,
                 'status' => Subscription::STATUS_FIN_ATIVO,
                 'gateway_id' => $gatewayId,
@@ -93,18 +113,39 @@ class PaymentProcessor
             'premium_expires_at' => $subscription->end_date
         ]);
 
-        return $subscription;
+        return $subscription->fresh(['plan']);
+    }
+
+    public function applyAiCreditsPurchase(User $user, int $packageId, string $gatewayId, string $gateway = 'mercadopago'): void
+    {
+        $this->processAiCredits($user, $packageId, $gatewayId, $gateway);
+    }
+
+    public function applyGeneralCreditsPurchase(User $user, int $compraId, string $gatewayId): void
+    {
+        $this->processGeneralCredits($user, $compraId, $gatewayId);
     }
 
     protected function processAiCredits(User $user, int $packageId, string $gatewayId, string $gateway)
     {
+        $alreadyCredited = AiCreditTransaction::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'purchase')
+            ->where('reference_id', $gatewayId)
+            ->exists();
+
+        if ($alreadyCredited) {
+            return;
+        }
+
         $package = AiCreditPackage::find($packageId);
         if ($package) {
             app(AiCreditService::class)->addCredits(
-                $user, 
-                $package->credits, 
-                'purchase', 
-                "Compra de créditos IA: {$package->name} (Gateway: {$gateway})"
+                $user,
+                $package->credits,
+                'purchase',
+                "Compra de créditos IA: {$package->name} (Gateway: {$gateway})",
+                $gatewayId
             );
         }
     }
@@ -112,37 +153,16 @@ class PaymentProcessor
     protected function processGeneralCredits(User $user, int $compraId, string $gatewayId)
     {
         $compra = CreditoCompra::find($compraId);
-        if ($compra && $compra->status === 'PENDENTE') {
-            $compra->update(['status' => 'PAGO', 'gateway_id' => $gatewayId]);
-            $user->increment('creditos', $compra->quantidade);
-            
-            // Também adiciona ao novo sistema de créditos de IA se aplicável
-            app(AiCreditService::class)->addCredits(
-                $user, 
-                $compra->quantidade, 
-                'purchase', 
-                "Compra de créditos gerais convertidos para IA"
-            );
+        if (! $compra || $compra->status !== 'PENDENTE' || (int) $compra->user_id !== (int) $user->id) {
+            return;
+        }
+
+        $compra->update(['status' => 'PAGO', 'payment_id' => $gatewayId]);
+        $user->increment('creditos', $compra->quantidade);
+
+        if (Schema::hasColumn('users', 'ai_credits')) {
+            $user->increment('ai_credits', $compra->quantidade);
         }
     }
 
-    protected function processCommission(User $user, Payment $payment)
-    {
-        $representativeId = $user->representative_id;
-        if (!$representativeId) return;
-
-        $rate = (float) config('projeto.default_commission_rate', 10.00);
-        $commissionAmount = ($payment->amount * $rate) / 100;
-
-        Commission::create([
-            'representative_id' => $representativeId,
-            'user_id' => $user->id,
-            'payment_id' => $payment->id,
-            'base_amount' => $payment->amount,
-            'commission_rate' => $rate,
-            'commission_amount' => $commissionAmount,
-            'status' => Commission::STATUS_PENDENTE,
-            'available_at' => now()->addDays(7),
-        ]);
-    }
 }

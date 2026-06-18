@@ -3,49 +3,61 @@
 namespace App\Services;
 
 use App\Models\MercadoPagoSubscription;
+use App\Models\Plan;
 use App\Models\Subscription;
-use App\Models\User;
+use App\Support\SubscriptionStatus;
 use Illuminate\Support\Facades\Cache;
 
 class SaaSMetricsService
 {
     /**
      * Calcula o MRR (Monthly Recurring Revenue) com cache de 6 horas.
-     * Retorna o valor base do faturamento recorrente.
      */
     public function calculateMRR(): float
     {
         return Cache::remember('saas_metrics_mrr', 360, function () {
-            // Em um cenário real de alta escala, usaríamos queries SQL agregadas.
-            // Para manter compatibilidade com o atual:
-            $activeSubs = MercadoPagoSubscription::where('status', 'authorized')->get();
-            $mrr = 0;
+            $mrr = 0.0;
 
-            foreach ($activeSubs as $sub) {
-                if ($sub->plan_code === 'monthly') {
-                    $mrr += 19.9; // Ideal: buscar do Plan Model
-                } elseif ($sub->plan_code === 'yearly') {
-                    $mrr += (149.9 / 12);
-                }
+            $subscriptions = Subscription::with('plan')
+                ->whereCanonicalStatus(...SubscriptionStatus::mrrEligible())
+                ->get();
+
+            foreach ($subscriptions as $subscription) {
+                $mrr += $this->monthlyValueForPlan($subscription->plan, '');
+            }
+
+            $mpUserIds = $subscriptions->pluck('user_id')->filter()->unique();
+
+            $mpSubs = MercadoPagoSubscription::where('status', 'authorized')
+                ->when($mpUserIds->isNotEmpty(), fn ($q) => $q->whereNotIn('user_id', $mpUserIds))
+                ->get();
+
+            foreach ($mpSubs as $mpSub) {
+                $plan = $this->resolvePlanByCode((string) $mpSub->plan_code);
+                $mrr += $this->monthlyValueForPlan($plan, (string) $mpSub->plan_code);
             }
 
             return round($mrr, 2);
         });
     }
 
-    /**
-     * Retorna a quantidade de assinaturas ativas com cache de 6 horas.
-     */
     public function getActiveSubscriptionsCount(): int
     {
         return Cache::remember('saas_metrics_active_subs', 360, function () {
-            return MercadoPagoSubscription::where('status', 'authorized')->count();
+            $platformUserIds = Subscription::whereCanonicalStatus(...SubscriptionStatus::mrrEligible())
+                ->pluck('user_id')
+                ->filter()
+                ->unique();
+
+            $mpOnlyCount = MercadoPagoSubscription::where('status', 'authorized')
+                ->when($platformUserIds->isNotEmpty(), fn ($q) => $q->whereNotIn('user_id', $platformUserIds))
+                ->distinct('user_id')
+                ->count('user_id');
+
+            return $platformUserIds->count() + $mpOnlyCount;
         });
     }
 
-    /**
-     * Limpa o cache das métricas, ideal para chamar em webhooks de pagamento aprovado.
-     */
     public function clearCache(): void
     {
         Cache::forget('saas_metrics_mrr');
@@ -53,26 +65,80 @@ class SaaSMetricsService
         Cache::forget('saas_metrics_churn_rate');
     }
 
-    /**
-     * Exemplo de cálculo de Churn Rate Mensal.
-     * (Assinaturas Canceladas no Mês Atual) / (Assinaturas Ativas no Início do Mês)
-     */
     public function getChurnRate(): float
     {
         return Cache::remember('saas_metrics_churn_rate', 360, function () {
-            $cancelledThisMonth = MercadoPagoSubscription::whereIn('status', ['cancelled', 'canceled'])
+            $cancelledThisMonth = Subscription::whereCanonicalStatus(SubscriptionStatus::CANCELLED)
+                ->whereMonth('cancelled_at', now()->month)
+                ->whereYear('cancelled_at', now()->year)
+                ->count();
+
+            $mpCancelled = MercadoPagoSubscription::whereIn('status', ['cancelled', 'canceled'])
                 ->whereMonth('updated_at', now()->month)
                 ->whereYear('updated_at', now()->year)
                 ->count();
 
-            // Total histórico (ativas + canceladas neste mês) - Simplificação
-            $totalBase = MercadoPagoSubscription::whereIn('status', ['authorized', 'cancelled', 'canceled'])->count();
+            $cancelled = $cancelledThisMonth + $mpCancelled;
 
-            if ($totalBase === 0) {
-                return 0.0;
+            $activeBase = Subscription::whereCanonicalStatus(...SubscriptionStatus::mrrEligible())->count()
+                + MercadoPagoSubscription::where('status', 'authorized')->count();
+
+            $totalBase = max(1, $activeBase + $cancelled);
+
+            return round(($cancelled / $totalBase) * 100, 2);
+        });
+    }
+
+    private function resolvePlanByCode(string $planCode): ?Plan
+    {
+        if ($planCode === '') {
+            return null;
+        }
+
+        return Plan::query()
+            ->where('name', $planCode)
+            ->orWhere('name', 'like', '%'.$planCode.'%')
+            ->orderBy('id')
+            ->first();
+    }
+
+    private function monthlyValueForPlan(?Plan $plan, string $fallbackCode): float
+    {
+        if ($plan) {
+            $price = (float) $plan->price;
+
+            if ($this->isAnnualPlan($plan, $fallbackCode)) {
+                return $price / 12;
             }
 
-            return round(($cancelledThisMonth / $totalBase) * 100, 2);
-        });
+            return $price;
+        }
+
+        return match ($fallbackCode) {
+            'yearly', 'anual', 'annual' => 149.9 / 12,
+            'monthly', 'mensal' => 19.9,
+            default => 0.0,
+        };
+    }
+
+    private function isAnnualPlan(Plan $plan, string $fallbackCode): bool
+    {
+        $needles = ['yearly', 'anual', 'annual', 'ano'];
+
+        $haystacks = [
+            strtolower((string) $plan->type),
+            strtolower((string) $plan->name),
+            strtolower($fallbackCode),
+        ];
+
+        foreach ($haystacks as $value) {
+            foreach ($needles as $needle) {
+                if ($value !== '' && str_contains($value, $needle)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

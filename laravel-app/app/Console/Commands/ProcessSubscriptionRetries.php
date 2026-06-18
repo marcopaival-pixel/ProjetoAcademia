@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Subscription;
 use App\Services\SubscriptionService;
+use App\Support\SubscriptionStatus;
 
 class ProcessSubscriptionRetries extends Command
 {
@@ -13,12 +14,10 @@ class ProcessSubscriptionRetries extends Command
 
     public function handle(SubscriptionService $service)
     {
-        $overdueSubscriptions = Subscription::whereIn('status', [
-                Subscription::STATUS_OVERDUE, 
-                Subscription::STATUS_PENDING,
-                Subscription::FIN_ATRASADO,
-                Subscription::FIN_PENDENTE
-            ])
+        $overdueSubscriptions = Subscription::whereCanonicalStatus(
+            SubscriptionStatus::OVERDUE,
+            SubscriptionStatus::PENDING
+        )
             ->where('next_billing_date', '<=', now())
             ->get();
 
