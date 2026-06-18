@@ -113,7 +113,7 @@ class RoleMenuPermissionController extends Controller
 
         MenuPermissionAuditLog::create([
             'user_id' => $actor->id,
-            'profile_id' => $profileId,
+            'role_id' => $profileId,
             'academy_company_id' => $companyId,
             'action' => 'role_menu_permissions.update',
             'payload' => [

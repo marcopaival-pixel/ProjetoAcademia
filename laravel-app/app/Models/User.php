@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use App\Support\SubscriptionStatus;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -271,7 +272,8 @@ class User extends Authenticatable
             return asset('storage/' . $this->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->initials) . '&color=10b981&background=09090b&bold=true&font-size=0.4';
+        $color = $this->hasRole('paciente') ? '3b82f6' : '10b981';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->initials) . '&color=' . $color . '&background=09090b&bold=true&font-size=0.4';
     }
 
     /**
@@ -372,6 +374,11 @@ class User extends Authenticatable
     public function isAdministrator(): bool
     {
         return (bool) $this->is_admin;
+    }
+
+    public function isProfessional(): bool
+    {
+        return $this->hasRole(['professional', 'instructor', 'supervisor']);
     }
 
     public function hasAdminPanelAccess(): bool
@@ -503,14 +510,14 @@ class User extends Authenticatable
     public function patients(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'pacientes', 'profissional_id', 'user_id')
-            ->withPivot('data_cadastro', 'status', 'empresa_id')
+            ->withPivot('data_cadastro', 'data_fim', 'motivo_desvinculacao', 'status', 'empresa_id', 'id')
             ->withTimestamps();
     }
 
     public function professionals(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'pacientes', 'user_id', 'profissional_id')
-            ->withPivot('data_cadastro', 'status', 'empresa_id')
+            ->withPivot('data_cadastro', 'data_fim', 'motivo_desvinculacao', 'status', 'empresa_id', 'id')
             ->withTimestamps();
     }
 
@@ -552,10 +559,10 @@ class User extends Authenticatable
     public function currentSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
-            ->where('status', 'active')
-            ->where(function($query) {
+            ->whereCanonicalStatus(...SubscriptionStatus::premiumEligible())
+            ->where(function ($query) {
                 $query->whereNull('end_date')
-                      ->orWhere('end_date', '>=', now()->toDateString());
+                    ->orWhere('end_date', '>=', now()->toDateString());
             })
             ->latest('id');
     }
@@ -729,6 +736,11 @@ class User extends Authenticatable
     public function representative(): BelongsTo
     {
         return $this->belongsTo(User::class, 'representative_id');
+    }
+
+    public function representativeProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(RepresentativeProfile::class);
     }
 
     public function referrals(): HasMany

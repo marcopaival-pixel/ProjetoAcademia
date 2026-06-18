@@ -8,6 +8,9 @@ use App\Models\AcademyCompany;
 use App\Models\Subscription;
 use App\Models\FinancialLog;
 use App\Models\MercadoPagoCredit;
+use App\Models\Payment;
+use App\Services\FinancialMetricsService;
+use App\Support\SubscriptionStatus;
 use App\Models\AiCreditUsageLog;
 use App\Models\AiCreditPurchaseLog;
 use App\Models\Plan;
@@ -19,45 +22,48 @@ class FinancialDashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('admin.financial.dashboard');
+
         $period = $request->get('period', 'month'); // month, year, all
         $startDate = $this->getStartDate($period);
+        $financial = app(FinancialMetricsService::class);
+
+        $reconciliation = app(\App\Services\PaymentReconciliationService::class)->analyze(7, now()->subDays(30));
 
         $metrics = [
-            'total_revenue' => MercadoPagoCredit::sum('transaction_amount'),
-            'monthly_revenue' => MercadoPagoCredit::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('transaction_amount'),
-            'period_revenue' => MercadoPagoCredit::where('created_at', '>=', $startDate)->sum('transaction_amount'),
-            
-            'paid_invoices' => MercadoPagoCredit::count(),
-            'pending_invoices' => Subscription::whereIn('status', [Subscription::FIN_PENDENTE, Subscription::STATUS_PENDING])->count(),
-            
+            'total_revenue' => $financial->totalRevenue(),
+            'daily_revenue' => $financial->dailyRevenue(),
+            'monthly_revenue' => $financial->monthlyRevenue(),
+            'period_revenue' => $financial->revenueSince($startDate),
+            'average_ticket' => $financial->averageTicket(),
+            'estimated_ltv' => $financial->estimatedLtv(),
+            'estimated_cac' => $financial->estimatedCac(),
+            'revenue_by_plan' => $financial->revenueByPlan(),
+            'revenue_by_gateway' => $financial->revenueByGateway(),
+            'reconciliation' => $reconciliation,
+
+            'paid_invoices' => $financial->paidPaymentsCount(),
+            'legacy_mp_revenue' => $this->legacyRevenueExcludingPayments(),
+            'pending_invoices' => Subscription::whereCanonicalStatus(SubscriptionStatus::PENDING)->count(),
+
             'active_users' => User::where('status', 'active')->count(),
-            'delinquent_users' => Subscription::whereIn('status', [Subscription::FIN_ATRASADO, Subscription::STATUS_OVERDUE])->count(),
+            'delinquent_users' => Subscription::whereCanonicalStatus(...SubscriptionStatus::delinquent())->count(),
             'blocked_users' => User::where('status', 'blocked')->count(),
-            
+
             'active_clinics' => AcademyCompany::where('is_active', true)->count(),
-            'delinquent_clinics' => AcademyCompany::whereHas('subscriptions', function($q) {
-                $q->whereIn('status', [Subscription::FIN_ATRASADO, Subscription::STATUS_OVERDUE]);
+            'delinquent_clinics' => AcademyCompany::whereHas('subscriptions', function ($q) {
+                $q->whereCanonicalStatus(...SubscriptionStatus::delinquent());
             })->count(),
             
             'ai_credits_sold' => AiCreditPurchaseLog::sum('credits_amount'),
             'ai_credits_used' => AiCreditUsageLog::sum('credits_consumed'),
             
-            'revenue_by_plan' => MercadoPagoCredit::select('plan_code as name', DB::raw('sum(transaction_amount) as revenue'))
-                ->groupBy('plan_code')
-                ->get(),
-            'revenue_by_clinic' => AcademyCompany::join('users', 'users.academy_company_id', '=', 'academy_companies.id')
-                ->join('mercadopago_payment_credits', 'mercadopago_payment_credits.user_id', '=', 'users.id')
-                ->select('academy_companies.name', 'academy_companies.city', DB::raw('sum(mercadopago_payment_credits.transaction_amount) as revenue'))
-                ->groupBy('academy_companies.id', 'academy_companies.name', 'academy_companies.city')
-                ->orderBy('revenue', 'desc')
-                ->limit(10)
-                ->get(),
+            'revenue_by_clinic' => $financial->revenueByClinic(10),
         ];
 
-        // Receita por tipo
         $metrics['revenue_by_type'] = [
-            'subscription' => MercadoPagoCredit::where('plan_code', '!=', 'ai_credits')->sum('transaction_amount'),
-            'ai_credits' => MercadoPagoCredit::where('plan_code', 'ai_credits')->sum('transaction_amount'),
+            'payments_table' => $financial->totalRevenue(),
+            'legacy_mercadopago_credits' => $this->legacyRevenueExcludingPayments(),
         ];
 
         return view('admin.financial.dashboard', compact('metrics', 'period'));
@@ -65,6 +71,8 @@ class FinancialDashboardController extends Controller
 
     public function management(Request $request)
     {
+        $this->authorize('admin.financial.management');
+
         $query = Subscription::with(['user', 'company', 'plan']);
 
         if ($request->filled('search')) {
@@ -85,6 +93,8 @@ class FinancialDashboardController extends Controller
 
     public function reports(Request $request)
     {
+        $this->authorize('admin.financial.reports');
+
         $type = $request->get('type', 'revenue'); // revenue, delinquency, blocked, ai_credits, subscriptions
         
         // Lógica para cada relatório
@@ -113,6 +123,8 @@ class FinancialDashboardController extends Controller
 
     public function processAction(Subscription $subscription, $action, Request $request)
     {
+        $this->authorize('admin.financial.management');
+
         $service = app(\App\Services\SubscriptionService::class);
         $reason = $request->get('reason', 'Ação manual do administrador');
 
@@ -146,11 +158,16 @@ class FinancialDashboardController extends Controller
 
     private function getRevenueReport(Request $request)
     {
-        return MercadoPagoCredit::with('user.academyCompany')
-            ->when($request->filled('start_date'), fn($q) => $q->where('created_at', '>=', $request->start_date))
-            ->when($request->filled('end_date'), fn($q) => $q->where('created_at', '<=', $request->end_date))
-            ->when($request->filled('company_id'), function($q) use ($request) {
-                $q->whereHas('user', fn($qu) => $qu->where('academy_company_id', $request->company_id));
+        return Payment::with(['user.academyCompany'])
+            ->whereIn('status', [
+                Subscription::STATUS_FIN_ATIVO,
+                'paid',
+                'approved',
+            ])
+            ->when($request->filled('start_date'), fn ($q) => $q->where('created_at', '>=', $request->start_date))
+            ->when($request->filled('end_date'), fn ($q) => $q->where('created_at', '<=', $request->end_date))
+            ->when($request->filled('company_id'), function ($q) use ($request) {
+                $q->whereHas('user', fn ($qu) => $qu->where('academy_company_id', $request->company_id));
             })
             ->latest()
             ->get();
@@ -159,7 +176,7 @@ class FinancialDashboardController extends Controller
     private function getDelinquencyReport(Request $request)
     {
         return Subscription::with(['user', 'company', 'plan'])
-            ->whereIn('status', [Subscription::FIN_ATRASADO, Subscription::FIN_SUSPENSO, Subscription::FIN_BLOQUEADO, Subscription::STATUS_OVERDUE])
+            ->whereCanonicalStatus(...SubscriptionStatus::delinquent())
             ->when($request->filled('company_id'), fn($q) => $q->where('academy_company_id', $request->company_id))
             ->latest()
             ->get();
@@ -194,5 +211,24 @@ class FinancialDashboardController extends Controller
             ->when($request->filled('company_id'), fn($q) => $q->where('academy_company_id', $request->company_id))
             ->latest()
             ->get();
+    }
+
+    /**
+     * Receita legada MP excluindo valores já importados na tabela payments.
+     */
+    private function legacyRevenueExcludingPayments(): float
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('mercadopago_payment_credits')) {
+            return 0.0;
+        }
+
+        return (float) MercadoPagoCredit::query()
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('payments')
+                    ->where('gateway', 'mercadopago')
+                    ->whereRaw('payments.gateway_id = CAST(mercadopago_payment_credits.mp_payment_id AS CHAR)');
+            })
+            ->sum('transaction_amount');
     }
 }

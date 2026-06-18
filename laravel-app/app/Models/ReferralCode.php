@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Models\Traits\FiltersByRepresentative;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class ReferralCode extends Model
 {
@@ -62,11 +64,25 @@ class ReferralCode extends Model
 
     public function markAsUsed(int $clinicId): void
     {
-        $this->update([
-            'status' => self::STATUS_UTILIZADO,
-            'used_at' => now(),
-            'clinic_id' => $clinicId
-        ]);
+        $updated = DB::table('referral_codes')
+            ->where('id', $this->id)
+            ->whereIn('status', [self::STATUS_DISPONIVEL, self::STATUS_RESERVADO])
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->update([
+                'status' => self::STATUS_UTILIZADO,
+                'used_at' => now(),
+                'clinic_id' => $clinicId,
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            throw new ModelNotFoundException('Código de indicação inválido, expirado ou já utilizado.');
+        }
+
+        $this->refresh();
     }
 
     public static function generateUniqueCode(User $representative): string

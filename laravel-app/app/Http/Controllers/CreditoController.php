@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CreditoPacote;
-use App\Models\CreditoCompra;
-use App\Models\SystemSetting;
 use App\Contracts\PaymentGatewayInterface;
+use App\Models\CreditoCompra;
+use App\Models\CreditoPacote;
+use App\Models\SystemSetting;
+use App\Services\FinancialLogService;
+use App\Services\Payment\PaymentProcessor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class CreditoController extends Controller
 {
@@ -89,28 +93,36 @@ class CreditoController extends Controller
     }
 
     /**
-     * Webhook do Mercado Pago
+     * @deprecated Use o webhook unificado (payment/webhook ou mp/webhook). Sem rota registada.
      */
     public function webhook(Request $request)
     {
-        // Log ou processar notificação
+        Log::warning('CreditoController::webhook obsoleto — use o pipeline unificado de pagamentos.');
+
         $topic = $request->query('topic');
         $id = $request->query('id');
 
         if ($topic === 'payment' || $request->has('data')) {
             $paymentId = $id ?? $request->input('data.id');
             $payment = $this->gateway->fetchPayment($paymentId);
-            
+
             if ($payment['ok']) {
                 $payData = $payment['payment'];
                 $ref = $payData['external_reference'] ?? '';
-                
-                if (str_starts_with($ref, 'credits:')) {
-                    $compraId = str_replace('credits:', '', $ref);
+
+                if (str_starts_with($ref, 'credits:') && ($payData['status'] ?? '') === 'approved') {
+                    $compraId = (int) str_replace('credits:', '', $ref);
                     $compra = CreditoCompra::find($compraId);
-                    
-                    if ($compra && $compra->status === 'PENDENTE' && $payData['status'] === 'approved') {
-                        $this->approvePurchase($compra);
+
+                    if ($compra && $compra->status === 'PENDENTE') {
+                        app(PaymentProcessor::class)->processApproved([
+                            'user_id' => $compra->user_id,
+                            'gateway' => $this->gateway->getIdentifier(),
+                            'gateway_id' => (string) $paymentId,
+                            'amount' => (float) ($payData['transaction_amount'] ?? $compra->valor),
+                            'reference' => $ref,
+                            'payload' => $payData,
+                        ]);
                     }
                 }
             }
@@ -121,14 +133,26 @@ class CreditoController extends Controller
 
     private function approvePurchase(CreditoCompra $compra)
     {
+        if ($compra->status === 'PAGO') {
+            return;
+        }
+
         $compra->update(['status' => 'PAGO']);
-        
+
         $user = $compra->user;
         $user->increment('creditos', $compra->quantidade);
-        
-        // Também atualizar ai_credits para manter compatibilidade se necessário
-        if (\Schema::hasColumn('users', 'ai_credits')) {
+
+        if (Schema::hasColumn('users', 'ai_credits')) {
             $user->increment('ai_credits', $compra->quantidade);
         }
+
+        FinancialLogService::log([
+            'user_id' => $user->id,
+            'action' => 'PAYMENT_RECEIVED',
+            'amount' => (float) $compra->valor,
+            'transaction_id' => $compra->payment_id ?? ('manual-credits-'.$compra->id),
+            'origin' => 'credito_manual',
+            'observation' => 'Compra de créditos (modo teste ou aprovação manual)',
+        ]);
     }
 }

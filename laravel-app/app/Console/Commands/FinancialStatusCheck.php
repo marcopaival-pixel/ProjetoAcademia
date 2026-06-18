@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Subscription;
 use App\Services\SubscriptionService;
 use App\Services\FinancialLogService;
+use App\Support\SubscriptionStatus;
 
 class FinancialStatusCheck extends Command
 {
@@ -14,12 +15,10 @@ class FinancialStatusCheck extends Command
 
     public function handle(SubscriptionService $service)
     {
-        $overdueSubscriptions = Subscription::whereIn('status', [
-                Subscription::FIN_ATRASADO,
-                Subscription::STATUS_OVERDUE,
-                Subscription::FIN_PENDENTE,
-                Subscription::STATUS_PENDING
-            ])
+        $overdueSubscriptions = Subscription::whereCanonicalStatus(
+            SubscriptionStatus::OVERDUE,
+            SubscriptionStatus::PENDING
+        )
             ->whereNotNull('last_attempt_at')
             ->get();
 
@@ -29,21 +28,21 @@ class FinancialStatusCheck extends Command
             
             $oldStatus = $sub->status;
 
-            if ($days >= 15 && $sub->status !== Subscription::FIN_BLOQUEADO) {
+            if ($days >= 15 && $sub->canonicalStatus() !== SubscriptionStatus::BLOCKED) {
                 $service->block($sub, 'Bloqueio automático por 15+ dias de inadimplência.');
                 $this->warn("Assinatura #{$sub->id} BLOQUEADA (15+ dias)");
-            } elseif ($days >= 10 && $sub->status !== Subscription::FIN_SUSPENSO && $sub->status !== Subscription::FIN_BLOQUEADO) {
+            } elseif ($days >= 10 && ! in_array($sub->canonicalStatus(), [SubscriptionStatus::SUSPENDED, SubscriptionStatus::BLOCKED], true)) {
                 $service->suspend($sub, 'Suspensão automática por 10+ dias de inadimplência.');
                 $this->info("Assinatura #{$sub->id} SUSPENSA (10+ dias)");
-            } elseif ($days >= 5 && $sub->status !== Subscription::FIN_ATRASADO && $sub->status !== Subscription::FIN_SUSPENSO && $sub->status !== Subscription::FIN_BLOQUEADO) {
-                $sub->status = Subscription::FIN_ATRASADO;
+            } elseif ($days >= 5 && ! in_array($sub->canonicalStatus(), [SubscriptionStatus::OVERDUE, SubscriptionStatus::SUSPENDED, SubscriptionStatus::BLOCKED], true)) {
+                $sub->status = SubscriptionStatus::OVERDUE;
                 $sub->save();
-                
+
                 FinancialLogService::log([
                     'user_id' => $sub->user_id,
                     'action' => 'STATUS_AUTO_UPDATE',
                     'status_before' => $oldStatus,
-                    'status_after' => Subscription::FIN_ATRASADO,
+                    'status_after' => SubscriptionStatus::OVERDUE,
                     'observation' => 'Atualização automática para ATRASADO (5+ dias)'
                 ]);
                 $this->info("Assinatura #{$sub->id} marcada como ATRASADA (5+ dias)");

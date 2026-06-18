@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\TrainingPlan;
 use App\Models\User;
+use App\Support\PatientAccessGuard;
 use Illuminate\Auth\Access\Response;
 
 class TrainingPlanPolicy
@@ -19,9 +20,22 @@ class TrainingPlanPolicy
     /**
      * Determine whether the user can view the model.
      */
+    private function adminCanAccessPlan(User $user, TrainingPlan $trainingPlan): bool
+    {
+        if (! $user->isAdministrator()) {
+            return false;
+        }
+
+        $owner = User::find($trainingPlan->user_id);
+
+        return $owner !== null && PatientAccessGuard::patientBelongsToImpersonatedTenant($owner);
+    }
+
     public function view(User $user, TrainingPlan $trainingPlan): bool
     {
-        if ($user->isAdministrator()) return true;
+        if ($this->adminCanAccessPlan($user, $trainingPlan)) {
+            return true;
+        }
         if ($user->id === $trainingPlan->user_id) return true;
         if ($user->id === $trainingPlan->creator_id) return true;
 
@@ -42,7 +56,9 @@ class TrainingPlanPolicy
      */
     public function update(User $user, TrainingPlan $trainingPlan): bool
     {
-        if ($user->isAdministrator()) return true;
+        if ($this->adminCanAccessPlan($user, $trainingPlan)) {
+            return true;
+        }
         if ($user->id === $trainingPlan->user_id) return true;
         if ($user->id === $trainingPlan->creator_id) return true;
 
@@ -54,7 +70,9 @@ class TrainingPlanPolicy
      */
     public function delete(User $user, TrainingPlan $trainingPlan): bool
     {
-        if ($user->isAdministrator()) return true;
+        if ($this->adminCanAccessPlan($user, $trainingPlan)) {
+            return true;
+        }
         if ($user->id === $trainingPlan->user_id) return true;
         if ($user->id === $trainingPlan->creator_id) return true;
 

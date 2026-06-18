@@ -2,43 +2,67 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToCompany;
+use App\Support\SubscriptionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subscription extends Model
 {
-    const STATUS_ACTIVE = 'active';
-    const STATUS_PENDING = 'pending';
-    const STATUS_OVERDUE = 'overdue';
-    const STATUS_SUSPENDED = 'suspended';
-    const STATUS_CANCELLED_SCHEDULED = 'cancelled_scheduled';
-    const STATUS_CANCELLED = 'cancelled';
-    const STATUS_EXPIRED = 'expired';
-    const STATUS_BLOCKED = 'blocked';
+    use BelongsToCompany;
+    use SoftDeletes;
 
-    // Status padronizados sugeridos pelo usuário (SaaS Premium)
-    const STATUS_FIN_PENDENTE = 'PENDENTE';
-    const STATUS_FIN_AGUARDANDO = 'AGUARDANDO';
-    const STATUS_FIN_ATIVO = 'ATIVO';
-    const STATUS_FIN_RECUSADO = 'RECUSADO';
-    const STATUS_FIN_CANCELADO = 'CANCELADO';
+    public const STATUS_ACTIVE = SubscriptionStatus::ACTIVE;
 
-    // Compatibilidade com código legado
-    const FIN_ATIVO = 'ATIVO';
-    const FIN_PENDENTE = 'PENDENTE';
-    const FIN_ATRASADO = 'ATRASADO';
-    const FIN_SUSPENSO = 'SUSPENSO';
-    const FIN_BLOQUEADO = 'BLOQUEADO';
+    public const STATUS_PENDING = SubscriptionStatus::PENDING;
+
+    public const STATUS_OVERDUE = SubscriptionStatus::OVERDUE;
+
+    public const STATUS_SUSPENDED = SubscriptionStatus::SUSPENDED;
+
+    public const STATUS_CANCELLED_SCHEDULED = SubscriptionStatus::CANCELLED_SCHEDULED;
+
+    public const STATUS_CANCELLED = SubscriptionStatus::CANCELLED;
+
+    public const STATUS_EXPIRED = SubscriptionStatus::EXPIRED;
+
+    public const STATUS_BLOCKED = SubscriptionStatus::BLOCKED;
+
+    public const STATUS_FIN_PENDENTE = SubscriptionStatus::PENDING;
+
+    public const STATUS_FIN_AGUARDANDO = SubscriptionStatus::TRIALING;
+
+    public const STATUS_FIN_ATIVO = SubscriptionStatus::ACTIVE;
+
+    public const STATUS_FIN_RECUSADO = SubscriptionStatus::DECLINED;
+
+    public const STATUS_FIN_CANCELADO = SubscriptionStatus::CANCELLED;
+
+    /** @deprecated Use SubscriptionStatus::ACTIVE */
+    public const FIN_ATIVO = SubscriptionStatus::ACTIVE;
+
+    /** @deprecated Use SubscriptionStatus::PENDING */
+    public const FIN_PENDENTE = SubscriptionStatus::PENDING;
+
+    /** @deprecated Use SubscriptionStatus::OVERDUE */
+    public const FIN_ATRASADO = SubscriptionStatus::OVERDUE;
+
+    /** @deprecated Use SubscriptionStatus::SUSPENDED */
+    public const FIN_SUSPENSO = SubscriptionStatus::SUSPENDED;
+
+    /** @deprecated Use SubscriptionStatus::BLOCKED */
+    public const FIN_BLOQUEADO = SubscriptionStatus::BLOCKED;
 
     protected $fillable = [
-        'user_id', 
+        'user_id',
         'academy_company_id',
-        'plan_id', 
+        'plan_id',
         'gateway_id',
         'gateway_type',
-        'start_date', 
-        'end_date', 
-        'status', 
+        'start_date',
+        'end_date',
+        'status',
         'payment_method',
         'billing_type',
         'max_professionals',
@@ -53,7 +77,7 @@ class Subscription extends Model
         'refunded_at',
         'refunded_amount',
         'reason_for_suspension',
-        'days_overdue'
+        'days_overdue',
     ];
 
     protected $casts = [
@@ -65,6 +89,15 @@ class Subscription extends Model
         'refunded_at' => 'datetime',
         'refunded_amount' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Subscription $subscription) {
+            if ($subscription->status !== null) {
+                $subscription->status = SubscriptionStatus::normalize($subscription->status);
+            }
+        });
+    }
 
     public function company(): BelongsTo
     {
@@ -96,37 +129,40 @@ class Subscription extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function canonicalStatus(): string
+    {
+        return SubscriptionStatus::normalize($this->status);
+    }
+
+    public function scopeWhereCanonicalStatus($query, string ...$statuses)
+    {
+        return SubscriptionStatus::scopeWhereStatusIn($query, $statuses);
+    }
+
     public function isActive(): bool
     {
-        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_CANCELLED_SCHEDULED, self::FIN_ATIVO, self::STATUS_FIN_ATIVO]) && 
-               ($this->end_date === null || $this->end_date->isFuture() || $this->end_date->isToday());
+        return SubscriptionStatus::grantsPremiumAccess($this->status, $this->end_date);
     }
 
     /**
-     * Retorna o status financeiro padronizado.
+     * Status financeiro legível (baseado no status canônico + dias em atraso).
      */
     public function getFinancialStatus(): string
     {
-        if ($this->status === self::STATUS_ACTIVE || $this->status === self::FIN_ATIVO) {
-            return self::FIN_ATIVO;
+        $status = $this->canonicalStatus();
+
+        if ($this->days_overdue >= 15 || $status === SubscriptionStatus::BLOCKED) {
+            return SubscriptionStatus::BLOCKED;
         }
 
-        if ($this->days_overdue >= 15 || $this->status === self::FIN_BLOQUEADO || $this->status === self::STATUS_BLOCKED) {
-            return self::FIN_BLOQUEADO;
+        if ($this->days_overdue >= 10 || $status === SubscriptionStatus::SUSPENDED) {
+            return SubscriptionStatus::SUSPENDED;
         }
 
-        if ($this->days_overdue >= 10 || $this->status === self::FIN_SUSPENSO || $this->status === self::STATUS_SUSPENDED) {
-            return self::FIN_SUSPENSO;
+        if ($this->days_overdue >= 5 || $status === SubscriptionStatus::OVERDUE) {
+            return SubscriptionStatus::OVERDUE;
         }
 
-        if ($this->days_overdue >= 5 || $this->status === self::FIN_ATRASADO || $this->status === self::STATUS_OVERDUE) {
-            return self::FIN_ATRASADO;
-        }
-
-        if ($this->status === self::STATUS_PENDING || $this->status === self::FIN_PENDENTE) {
-            return self::FIN_PENDENTE;
-        }
-
-        return strtoupper($this->status);
+        return $status;
     }
 }

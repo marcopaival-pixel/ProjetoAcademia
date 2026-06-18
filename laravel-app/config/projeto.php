@@ -32,4 +32,10 @@ return [
         'monthly' => (float) env('PRICE_PREMIUM_MONTHLY', 29.9),
         'yearly'  => (float) env('PRICE_PREMIUM_YEARLY', 299.0),
     ],
+
+    /** Escrita na tabela legada mercadopago_payment_credits (desligado por padrão). */
+    'legacy_mp_credits_write' => (bool) env('LEGACY_MP_CREDITS_WRITE', false),
+
+    /** Expiração de tokens Sanctum emitidos via API v1 (dias). 0 = sem expiração. */
+    'api_token_expiration_days' => max(0, (int) env('API_TOKEN_EXPIRATION_DAYS', 30)),
 ];

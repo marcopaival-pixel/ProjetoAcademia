@@ -65,7 +65,10 @@ class AcademyCompany extends Model
 
     public function activeSubscription()
     {
-        return $this->subscriptions()->where('status', 'active')->latest()->first();
+        return $this->subscriptions()
+            ->whereCanonicalStatus(\App\Support\SubscriptionStatus::ACTIVE)
+            ->latest()
+            ->first();
     }
 
     public function users(): HasMany

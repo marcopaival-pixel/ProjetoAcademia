@@ -31,7 +31,10 @@ class AuditController extends Controller
 
     public function show($id)
     {
-        $log = AuditLog::with('user')->findOrFail($id);
+        $query = AuditLog::with('user')->where('id', $id);
+        $this->applyTenantScope($query);
+        $log = $query->firstOrFail();
+
         return view('admin.configuration-center.audit.show', compact('log'));
     }
 
