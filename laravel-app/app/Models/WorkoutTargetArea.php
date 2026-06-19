@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class WorkoutTargetArea extends Model
 {
     use HasFactory;
+    use Traits\BelongsToUserCompany;
 
     protected $fillable = [
         'user_id',

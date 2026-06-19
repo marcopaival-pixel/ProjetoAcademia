@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CommunityReaction extends Model
 {
+    use Traits\BelongsToUserCompany;
     protected $fillable = [
         'reactable_type',
         'reactable_id',

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MarketingBannerDismissal extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'banner_id',
         'user_id',

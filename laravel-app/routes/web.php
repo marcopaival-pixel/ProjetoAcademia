@@ -45,8 +45,23 @@ use Illuminate\Support\Facades\Route;
 // 0. Monitoramento e Saúde
 Route::get('/health', [App\Http\Controllers\HealthCheckController::class, 'index'])->name('health.check');
 
+Route::get('/app/subscription/return/{status}', function (string $status) {
+    $allowed = ['success', 'pending', 'cancelled', 'failure'];
+    if (! in_array($status, $allowed, true)) {
+        abort(404);
+    }
+
+    return redirect()->away("nexshape://subscription/{$status}");
+})->where('status', 'success|pending|cancelled|failure')->name('app.subscription.return');
+
 // 1. Home e Páginas Públicas
 Route::get('/', HomeController::class)->name('home');
+
+// Link de Indicação (Representantes)
+Route::get('/ref/{code}', function ($code) {
+    session(['referral_code' => $code]);
+    return redirect()->route('plano', ['ref' => $code]);
+})->name('referral.link');
 
 // MODO DEMONSTRAÇÃO (indisponível em APP_ENV=production)
 Route::prefix('demo')->name('demo.')->middleware('block.demo.prod')->group(function () {
@@ -98,6 +113,13 @@ Route::prefix('proposal')->name('public.proposal.')->group(function () {
 });
 
 // 2. Busca de Alimentos (autenticado + throttle)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/secure-files/{type}/{id}', [\App\Http\Controllers\SecureFileController::class, 'show'])
+        ->where('type', 'evolution|body-analysis|gallery|patient-document')
+        ->whereNumber('id')
+        ->name('secure-files.show');
+});
+
 Route::middleware(['auth', 'throttle:openfoodfacts'])->group(function () {
     Route::get('/api/food/search', [FoodLookupController::class, 'search'])->name('food.search');
     Route::get('/api/food/product/{code}', [FoodLookupController::class, 'product'])->name('food.product');
@@ -150,7 +172,7 @@ Route::middleware('throttle:marketing-tracking')->group(function () {
 });
 
 // 6. App Core (Rotas Autenticadas Comuns)
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'active_patient', 'panel.isolation'])->group(function () {
 
 
     // Dashboard e Busca
@@ -168,9 +190,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [ProfileController::class, 'update'])->name('update');
         Route::get('/blocked', [ProfileController::class, 'blockedUsers'])->name('blocked');
         
-        // Seleção de Perfil
+        // Seleção de Perfil e Especialidade
         Route::get('/selection', [\App\Http\Controllers\Auth\ProfileSelectionController::class, 'index'])->name('selection');
         Route::post('/select', [\App\Http\Controllers\Auth\ProfileSelectionController::class, 'select'])->name('select');
+        Route::post('/switch-specialty', [\App\Http\Controllers\SpecialtyContextController::class, 'switch'])->name('switch-specialty');
     });
 
     // Seleção de Clínica (Tenant Context)
@@ -237,6 +260,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('/api/ai/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('ai.orchestrator.api');
+    Route::get('/api/ai/orchestrator/status/{jobKey}', [\App\Http\Controllers\AI\OrchestratorController::class, 'status'])->name('api.ai.orchestrator.status');
 
     Route::middleware('premium')->group(function () {
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.page');

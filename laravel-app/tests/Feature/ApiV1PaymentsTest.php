@@ -30,7 +30,7 @@ class ApiV1PaymentsTest extends TestCase
             'enable_boleto' => false,
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->administrator()->create();
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/v1/payments/status')->assertOk();

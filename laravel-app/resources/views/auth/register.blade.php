@@ -264,6 +264,13 @@
                                 oninput="maskCnpj(this)">
                         </div>
 
+                        <div class="space-y-3 group" x-show="tipo_acesso === 'manager'" x-cloak>
+                            <label for="referral_code" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Código do Representante (Opcional)</label>
+                            <input id="referral_code" name="referral_code" type="text" value="{{ old('referral_code', session('referral_code')) }}"
+                                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
+                                placeholder="CÓDIGO (EX: MARCO001)">
+                        </div>
+
                         <div class="space-y-3 group">
                             <label for="phone" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Telefone Sinc</label>
                             <input id="phone" name="phone" type="text" value="{{ old('phone') }}"

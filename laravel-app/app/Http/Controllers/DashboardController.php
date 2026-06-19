@@ -12,6 +12,7 @@ use App\Models\TrainingPlan;
 use App\Models\LoadLog;
 use App\Models\BodyAssessment;
 use App\Models\HealthAlert;
+use App\Services\PanelAccessService;
 use App\Services\ProgressionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,26 +25,11 @@ class DashboardController extends Controller
     public function show(Request $request): View|RedirectResponse
     {
         $user = $request->user();
-        $activeRole = session('active_role');
+        $panels = app(PanelAccessService::class);
+        $currentPanel = $panels->currentPanel($user);
 
-        // Redirecionamento baseado em perfil
-        if ($user->isAdministrator()) {
-            // Se for admin mas solicitou ver o painel de utilizador ou escolheu um perfil de utilizador específico
-            if (($activeRole === 'admin' || !$activeRole) && !$request->has('view_as_user')) {
-                return redirect()->route('admin.dashboard');
-            }
-        }
-
-        if ($activeRole === 'professional' || ($user->hasRole(['professional', 'instructor']) && !$activeRole)) {
-            return redirect()->route('professional.dashboard');
-        }
-
-        if (in_array($activeRole, ['manager', 'receptionist', 'supervisor']) || ($user->hasRole(['manager', 'receptionist', 'supervisor']) && !$activeRole)) {
-            return redirect()->route('agenda.index');
-        }
-
-        if ($activeRole === 'paciente' || ($user->hasRole('paciente') && !$user->hasRole('aluno') && !$activeRole)) {
-            return redirect()->route('patient.unified.dashboard');
+        if ($currentPanel !== PanelAccessService::PANEL_STUDENT) {
+            return redirect($panels->homeRouteForPanel($currentPanel));
         }
 
         $uid = (int) $user->id;
@@ -138,7 +124,7 @@ class DashboardController extends Controller
 
             $nextTraining = TrainingPlan::where('user_id', $uid)->where('is_active', true)->first();
 
-            $prsCount = LoadLog::query()->from('load_logs as l1')
+            $prsCount = LoadLog::withoutGlobalScopes()->from('load_logs as l1')
                 ->join('load_logs as l2', function($join) { $join->on('l1.exercise_id', '=', 'l2.exercise_id')->on('l1.user_id', '=', 'l2.user_id')->on('l1.log_date', '>', 'l2.log_date'); })
                 ->where('l1.user_id', $uid)->where('l1.log_date', '>=', now()->subDays(30))
                 ->select('l1.exercise_id', 'l1.log_date')->groupBy('l1.exercise_id', 'l1.log_date')

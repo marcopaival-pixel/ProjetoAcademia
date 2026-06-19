@@ -10,7 +10,7 @@
             <div class="space-y-3">
                 <nav class="flex items-center gap-2 text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
                     <a href="{{ route('professional.patients.index') }}"
-                        class="hover:text-blue-400 transition-colors">Paciente Cadastrado</a>
+                        class="hover:text-blue-400 transition-colors">{{ $patientLabel }} Cadastrado</a>
                     <span>
                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path>
@@ -531,3 +531,5 @@
         }
     </style>
 @endsection
+
+

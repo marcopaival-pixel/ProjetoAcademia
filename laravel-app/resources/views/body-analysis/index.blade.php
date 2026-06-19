@@ -60,7 +60,7 @@
                 <div class="history-list mt-3">
                     @foreach($history as $item)
                         <div class="history-item glass p-2 mb-2 rounded d-flex align-items-center gap-2">
-                            <img src="{{ Storage::url($item->photo_path) }}" class="rounded" width="40" height="40" style="object-fit:cover">
+                            <img src="{{ route('secure-files.show', ['type' => 'body-analysis', 'id' => $item->id]) }}" class="rounded" width="40" height="40" style="object-fit:cover">
                             <div class="flex-grow-1">
                                 <div class="small fw-bold">{{ $item->created_at->format('d/m/Y') }}</div>
                                 <div class="text-info" style="font-size:0.7rem">{{ $item->view_type }}</div>

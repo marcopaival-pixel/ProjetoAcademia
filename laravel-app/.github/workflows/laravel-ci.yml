@@ -1,0 +1,75 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [main, master, homologacao, desenvolvimento]
+  pull_request:
+    branches: [main, master, homologacao, desenvolvimento]
+
+jobs:
+  test-and-analyse:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, mysql, bcmath
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php -r "file_put_contents('.env', preg_replace('/^DB_.*$/m', '', file_get_contents('.env')));"
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=testing" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=root" >> .env
+
+      - name: Create testing database
+        run: php artisan app:db:prepare-testing
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: PHPUnit
+        run: composer test
+
+      - name: Tenant isolation audit
+        run: php artisan app:audit:tenant
+
+      - name: PHPStan
+        run: composer phpstan

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoleMenuPermission extends Model
 {
+    use BelongsToCompany;
     protected $table = 'role_menu_permissions';
 
     protected $fillable = [

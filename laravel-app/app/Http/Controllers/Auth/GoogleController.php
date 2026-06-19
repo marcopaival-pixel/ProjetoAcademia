@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\AuthAuditLog;
+use App\Services\Operations\AuthAuditService;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
@@ -39,6 +41,8 @@ class GoogleController extends Controller
                     ->orWhere('email', $googleUser->email)
                     ->first();
 
+        $isNewUser = false;
+
         try {
             DB::beginTransaction();
 
@@ -57,6 +61,8 @@ class GoogleController extends Controller
                 
                 $user->save();
             } else {
+                $isNewUser = true;
+
                 // 3. Cadastro Automático
                 // Criar um username único baseado no nome
                 $username = Str::slug($googleUser->name) . '.' . Str::random(4);
@@ -95,6 +101,15 @@ class GoogleController extends Controller
 
             Auth::login($user);
 
+            app(AuthAuditService::class)->log(
+                $isNewUser ? AuthAuditLog::EVENT_OAUTH_REGISTER : AuthAuditLog::EVENT_OAUTH_LOGIN,
+                $user->id,
+                $user->email,
+                true,
+                request(),
+                ['provider' => 'google']
+            );
+
             // Redirecionamento baseado no papel
             if ($user->hasRole('professional')) {
                 return redirect()->route('professional.dashboard');
@@ -104,6 +119,16 @@ class GoogleController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
+
+            app(AuthAuditService::class)->log(
+                AuthAuditLog::EVENT_OAUTH_LOGIN,
+                null,
+                $googleUser->email ?? null,
+                false,
+                request(),
+                ['provider' => 'google', 'error' => $e->getMessage()]
+            );
+
             return redirect()->route('login')->with('error', 'Erro ao processar login social: ' . $e->getMessage());
         }
     }

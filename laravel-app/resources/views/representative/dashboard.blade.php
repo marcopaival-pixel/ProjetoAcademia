@@ -28,50 +28,75 @@
                     </div>
                 </div>
             </div>
+
+            <a href="{{ route('representative.simulator.index') }}" class="p-4 bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 rounded-3xl flex items-center gap-3 transition-colors shadow-lg shadow-emerald-500/20">
+                <i data-lucide="calculator" class="w-5 h-5"></i>
+                <span class="text-[10px] font-black uppercase tracking-widest">Simulador de Vendas</span>
+            </a>
         </div>
     </div>
 
-    {{-- Stats Grid --}}
+    {{-- Painel de Clínicas e Vendas --}}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest font-black mb-1">Total de Clínicas Vendidas</p>
+            <h4 class="text-2xl font-black text-white">{{ $clinicsCount }}</h4>
+        </div>
+        <div class="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest font-black mb-1">Clínicas Ativas</p>
+            <h4 class="text-2xl font-black text-emerald-500">{{ $activeClinicsCount }}</h4>
+        </div>
+        <div class="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest font-black mb-1">Clínicas Inadimplentes</p>
+            <h4 class="text-2xl font-black text-red-500">{{ $defaultingClinicsCount }}</h4>
+        </div>
+        <div class="bg-zinc-900/40 p-5 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest font-black mb-1">Vendas do Mês</p>
+            <h4 class="text-2xl font-black text-blue-500">{{ $salesThisMonth }}</h4>
+        </div>
+    </div>
+
+    {{-- Stats Grid Financeiro --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {{-- Total Ganhos --}}
+        {{-- Total Vendido --}}
         <div class="bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all"></div>
-            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Total Acumulado</p>
-            <h3 class="text-3xl font-black text-white tracking-tighter">R$ {{ number_format($totalEarned, 2, ',', '.') }}</h3>
+            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Total Vendido</p>
+            <h3 class="text-3xl font-black text-white tracking-tighter">R$ {{ number_format($totalSoldValue, 2, ',', '.') }}</h3>
             <div class="mt-4 flex items-center gap-2 text-emerald-500 text-[10px] font-bold uppercase tracking-widest">
                 <i data-lucide="trending-up" class="w-3 h-3"></i>
-                Histórico Geral
+                Meta: R$ {{ number_format($monthlyGoal, 2, ',', '.') }}
             </div>
         </div>
 
-        {{-- Pendente --}}
+        {{-- Pendente (Garantia/Liberação) --}}
         <div class="bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-amber-500/30 transition-all duration-500">
-            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Aguardando (Garantia)</p>
+            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Comissão Prevista</p>
             <h3 class="text-3xl font-black text-white tracking-tighter">R$ {{ number_format($pendingAmount, 2, ',', '.') }}</h3>
             <div class="mt-4 flex items-center gap-2 text-amber-500 text-[10px] font-bold uppercase tracking-widest">
                 <i data-lucide="clock" class="w-3 h-3"></i>
-                Em processamento
+                Aguardando Pagamento da Clínica
             </div>
         </div>
 
-        {{-- Disponível --}}
+        {{-- Disponível / Próximo Pagamento --}}
         <div class="bg-emerald-500 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-xl shadow-emerald-500/10 hover:shadow-emerald-500/20 transition-all duration-500">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-            <p class="text-[10px] font-black text-zinc-950/50 uppercase tracking-[0.2em] mb-2">Disponível para Saque</p>
-            <h3 class="text-3xl font-black text-zinc-950 tracking-tighter">R$ {{ number_format($availableAmount, 2, ',', '.') }}</h3>
-            <button class="mt-4 flex items-center gap-2 bg-zinc-950 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-transform">
+            <p class="text-[10px] font-black text-zinc-950/50 uppercase tracking-[0.2em] mb-2">Próximo Pagamento</p>
+            <h3 class="text-3xl font-black text-zinc-950 tracking-tighter">R$ {{ number_format($nextPaymentValue, 2, ',', '.') }}</h3>
+            <a href="{{ route('representative.withdraw.form') }}" class="mt-4 inline-flex items-center gap-2 bg-zinc-950 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-transform">
                 <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
-                Solicitar Resgate
-            </button>
+                Solicitar Saque
+            </a>
         </div>
 
         {{-- Pago --}}
         <div class="bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
-            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Total Pago</p>
+            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Comissão Paga</p>
             <h3 class="text-3xl font-black text-white tracking-tighter">R$ {{ number_format($paidAmount, 2, ',', '.') }}</h3>
             <div class="mt-4 flex items-center gap-2 text-blue-500 text-[10px] font-bold uppercase tracking-widest">
                 <i data-lucide="check-circle" class="w-3 h-3"></i>
-                Transferências concluídas
+                Já transferido
             </div>
         </div>
     </div>
@@ -123,34 +148,32 @@
             </div>
         </div>
 
-        {{-- Últimas Indicações --}}
+        {{-- Próximas Liberações --}}
         <div class="space-y-6">
             <div class="flex items-center justify-between">
-                <h2 class="text-xs font-black text-white uppercase tracking-[0.3em] italic">Novas <span class="text-emerald-500">Indicações</span></h2>
-                <a href="{{ route('representative.referrals') }}" class="text-[10px] font-black text-zinc-600 hover:text-emerald-500 uppercase tracking-widest transition-colors">Ver Tudo</a>
+                <h2 class="text-xs font-black text-white uppercase tracking-[0.3em] italic">Próximas <span class="text-amber-500">Liberações</span></h2>
+                <a href="{{ route('representative.commissions') }}" class="text-[10px] font-black text-zinc-600 hover:text-amber-500 uppercase tracking-widest transition-colors">Ver Tudo</a>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
-                @forelse($referrals as $referral)
+                @forelse($upcomingReleases as $release)
                 <div class="bg-zinc-900/30 border border-zinc-900 p-5 rounded-3xl flex items-center justify-between hover:bg-zinc-900/50 transition-all group">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-zinc-950 rounded-2xl border border-zinc-800 flex items-center justify-center text-zinc-700 group-hover:text-emerald-500 group-hover:border-emerald-500/20 transition-all">
-                            <i data-lucide="user" class="w-6 h-6"></i>
+                        <div class="w-12 h-12 bg-zinc-950 rounded-2xl border border-zinc-800 flex items-center justify-center text-zinc-700 group-hover:text-amber-500 group-hover:border-amber-500/20 transition-all">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">{{ $referral->name }}</h4>
-                            <p class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest italic">Cadastrado em {{ $referral->created_at->format('d/m/Y') }}</p>
+                            <h4 class="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">{{ $release->user->name ?? 'Cliente' }}</h4>
+                            <p class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest italic">Criado em {{ $release->created_at->format('d/m/Y') }}</p>
                         </div>
                     </div>
                     <div class="flex flex-col items-end">
-                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest {{ $referral->is_premium ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500' }}">
-                            {{ $referral->is_premium ? 'Plano Ativo' : 'Free' }}
-                        </span>
+                        <span class="text-sm font-black text-amber-500">R$ {{ number_format($release->commission_amount, 2, ',', '.') }}</span>
                     </div>
                 </div>
                 @empty
                 <div class="bg-zinc-900/30 border border-zinc-900 p-10 rounded-[2rem] text-center text-zinc-600 font-medium italic">
-                    Compartilhe seu link para começar a ganhar!
+                    Nenhuma comissão pendente no momento.
                 </div>
                 @endforelse
             </div>
@@ -162,11 +185,14 @@
 <script>
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            if (window.showToast) {
-                window.showToast('Link de indicação copiado!', 'success');
-            } else {
-                alert('Link copiado!');
-            }
+            window.dispatchEvent(new CustomEvent('toast', { 
+                detail: { message: 'Link de indicação copiado com sucesso!', type: 'success' } 
+            }));
+        }).catch(err => {
+            window.dispatchEvent(new CustomEvent('toast', { 
+                detail: { message: 'Erro ao copiar o link.', type: 'error' } 
+            }));
+            console.error('Erro ao copiar', err);
         });
     }
 </script>

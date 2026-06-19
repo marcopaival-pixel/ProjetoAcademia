@@ -141,10 +141,10 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2 relative">
                             <div class="relative rounded-2xl overflow-hidden aspect-[3/4] bg-zinc-900">
-                                <img src="{{ asset('storage/' . $pair['first']->photo_path) }}" class="w-full h-full object-cover grayscale opacity-60" alt="Antes">
+                                <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['first']->id]) }}" class="w-full h-full object-cover grayscale opacity-60" alt="Antes">
                             </div>
                             <div class="relative rounded-2xl overflow-hidden aspect-[3/4] bg-zinc-900 border border-emerald-500/30">
-                                <img src="{{ asset('storage/' . $pair['last']->photo_path) }}" class="w-full h-full object-cover" alt="Depois">
+                                <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['last']->id]) }}" class="w-full h-full object-cover" alt="Depois">
                             </div>
                         </div>
                     </div>
@@ -166,7 +166,7 @@
                         @foreach($monthPhotos as $photo)
                             <div class="relative group bg-zinc-950 border border-zinc-800 rounded-[2rem] overflow-hidden shadow-2xl transition-all hover:border-emerald-500/30">
                                 <div class="aspect-[3/4] relative overflow-hidden">
-                                    <img src="{{ asset('storage/' . $photo->photo_path) }}" alt="Foto de Evolução" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">
+                                    <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $photo->id]) }}" alt="Foto de Evolução" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">
                                     <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent flex flex-col justify-end p-6 opacity-90 group-hover:opacity-100 transition-opacity">
                                         <span class="text-white font-black text-sm tracking-tighter tabular-nums">{{ \Carbon\Carbon::parse($photo->registered_date)->format('d/m/Y') }}</span>
                                         @if($photo->weight_kg)
@@ -272,11 +272,11 @@
                 @php($pair = reset($evolutionPhotos))
                 <div class="grid grid-cols-2 gap-2 pt-4">
                     <div class="rounded-2xl overflow-hidden aspect-square border border-white/5 relative">
-                        <img src="{{ asset('storage/' . $pair['first']->photo_path) }}" class="w-full h-full object-cover grayscale opacity-50">
+                        <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['first']->id]) }}" class="w-full h-full object-cover grayscale opacity-50">
                         <div class="absolute bottom-1 left-2 text-[6px] font-black uppercase text-zinc-500">Antes</div>
                     </div>
                     <div class="rounded-2xl overflow-hidden aspect-square border border-emerald-500/30 relative">
-                        <img src="{{ asset('storage/' . $pair['last']->photo_path) }}" class="w-full h-full object-cover">
+                        <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['last']->id]) }}" class="w-full h-full object-cover">
                         <div class="absolute bottom-1 right-2 text-[6px] font-black uppercase text-emerald-400">Depois</div>
                     </div>
                 </div>

@@ -9,6 +9,10 @@ class HomeController extends Controller
 {
     public function __invoke(\Illuminate\Http\Request $request): View|\Illuminate\Http\RedirectResponse
     {
+        if ($request->has('ref')) {
+            session(['referral_code' => $request->query('ref')]);
+        }
+
         $user = $request->user();
         
         // Obter um plano de cada tipo para o resumo da home

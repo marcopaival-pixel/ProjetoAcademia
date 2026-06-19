@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class UserConsent extends Model
 {
     use HasFactory;
+    use Traits\BelongsToUserCompany;
 
     protected $table = 'user_consents';
     public $timestamps = false; // Solo created_at

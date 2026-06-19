@@ -35,7 +35,7 @@
                 <div class="space-y-4">
                     <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-2">Tipo de Relatório</label>
                     <select name="report_type" class="w-full h-16 bg-zinc-950 border border-zinc-800 rounded-3xl px-8 text-white font-black text-sm appearance-none focus:border-blue-500/50 transition-all">
-                        <option value="complete_analytics">Performance de Alunos (Completo)</option>
+                        <option value="complete_analytics">Performance de {{ $patientsLabel }} (Completo)</option>
                         <option value="detailed_finance">Financeiro Detalhado</option>
                         <option value="management_reports">Gestão & Churn</option>
                     </select>
@@ -105,3 +105,6 @@
     }
 </style>
 @endsection
+
+
+

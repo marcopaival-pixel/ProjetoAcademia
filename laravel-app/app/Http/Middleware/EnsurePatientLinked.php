@@ -53,7 +53,7 @@ class EnsurePatientLinked
                     }
 
                     // Verifica o vínculo na tabela associativa
-                    $isLinked = $user->patients()->where('paciente_id', $patient->id)->exists();
+                    $isLinked = $user->patients()->wherePivot('user_id', $patient->id)->exists();
                     
                     if (!$isLinked) {
                         return abort(403, 'Acesso negado. Este paciente não está vinculado ao seu perfil.');

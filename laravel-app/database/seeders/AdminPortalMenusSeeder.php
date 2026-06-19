@@ -35,6 +35,8 @@ class AdminPortalMenusSeeder extends Seeder
             ['name' => 'admin_nav_training', 'label' => 'Gestão da Academia', 'route' => 'admin.training.*', 'match_mode' => 'pattern', 'order' => 320],
             ['name' => 'admin_nav_exercises', 'label' => 'Catálogo de Exercícios', 'route' => 'admin.exercises.*', 'match_mode' => 'pattern', 'order' => 400],
             ['name' => 'admin_nav_announcements', 'label' => 'Comunicados / Avisos', 'route' => 'admin.announcements*', 'match_mode' => 'pattern', 'order' => 410],
+            ['name' => 'admin_nav_backups', 'label' => 'Backup', 'route' => 'admin.backups.*', 'match_mode' => 'pattern', 'order' => 495],
+            ['name' => 'admin_nav_deploy', 'label' => 'Deploy', 'route' => 'admin.deploy.*', 'match_mode' => 'pattern', 'order' => 496],
             ['name' => 'admin_nav_system_errors', 'label' => 'Logs de Erros', 'route' => 'admin.system-errors*', 'match_mode' => 'pattern', 'order' => 500],
             ['name' => 'admin_nav_ai', 'label' => 'Monitoramento IA', 'route' => 'admin.ai.monitoring', 'match_mode' => 'exact', 'order' => 510],
             ['name' => 'admin_nav_lgpd', 'label' => 'Privacidade / LGPD', 'route' => 'admin.lgpd.*', 'match_mode' => 'pattern', 'order' => 520],

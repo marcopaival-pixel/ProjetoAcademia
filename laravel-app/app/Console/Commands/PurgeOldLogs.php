@@ -8,68 +8,70 @@ use Illuminate\Support\Facades\Schema;
 
 class PurgeOldLogs extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'app:purge-old-logs {--days=30 : Quantidade de dias de logs a manter} {--force : Executar sem confirmação}';
+    protected $signature = 'app:purge-old-logs {--days= : Sobrescreve retenção global (dias)} {--force : Executar sem confirmação}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Remove registros antigos de tabelas de log para economizar espaço e melhorar performance.';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        $days = (int) $this->option('days');
+        $globalDays = $this->option('days') !== null ? (int) $this->option('days') : null;
         $force = (bool) $this->option('force');
 
-        if ($days < 1) {
-            $this->error('A quantidade de dias deve ser pelo menos 1.');
-            return 1;
-        }
-
-        if (! $force && ! $this->confirm("Deseja realmente remover logs com mais de {$days} dias?")) {
-            $this->info('Operação cancelada.');
-            return 0;
-        }
-
-        $cutoffDate = now()->subDays($days)->format('Y-m-d H:i:s');
-        
         $tables = [
-            'admin_logs'           => 'created_at',
-            'log_envio_email'      => 'created_at',
-            'system_errors'        => 'created_at',
-            'pdf_generation_logs'  => 'created_at',
-            'api_integration_logs' => 'created_at',
-            'omnichannel_logs'     => 'created_at', // Tabela comum mas verificar se existe
+            'admin_logs' => config('observability.retention_days.admin_logs', 30),
+            'log_envio_email' => config('observability.retention_days.log_envio_email', 30),
+            'system_errors' => config('observability.retention_days.system_errors', 15),
+            'pdf_generation_logs' => config('observability.retention_days.pdf_generation_logs', 30),
+            'api_integration_logs' => config('observability.retention_days.api_integration_logs', 30),
+            'api_access_logs' => config('observability.retention_days.api_access_logs', 30),
+            'auth_audit_logs' => config('observability.retention_days.auth_audit_logs', 90),
+            'client_error_logs' => config('observability.retention_days.client_error_logs', 15),
+            'omnichannel_logs' => 30,
+            'financial_logs' => config('observability.retention_days.financial_logs', 365),
+            'audit_logs' => config('observability.retention_days.audit_logs', 180),
+            'representative_audits' => config('observability.retention_days.representative_audits', 365),
+            'menu_permission_audit_logs' => config('observability.retention_days.menu_permission_audit_logs', 180),
+            'pdf_signature_audit_logs' => config('observability.retention_days.pdf_signature_audit_logs', 365),
+            'admin_clinic_access_logs' => config('observability.retention_days.admin_clinic_access_logs', 180),
         ];
 
-        foreach ($tables as $table => $column) {
-            if (Schema::hasTable($table)) {
-                $this->info("Limpando tabela: {$table}...");
-                
-                try {
-                    $count = DB::table($table)
-                        ->where($column, '<', $cutoffDate)
-                        ->delete();
-                    
-                    $this->info("Removidos {$count} registros de {$table}.");
-                } catch (\Throwable $e) {
-                    $this->error("Erro ao limpar {$table}: " . $e->getMessage());
-                }
-            } else {
+        if (! $force && ! $this->confirm('Deseja remover logs antigos conforme política de retenção?')) {
+            $this->info('Operação cancelada.');
+
+            return self::SUCCESS;
+        }
+
+        foreach ($tables as $table => $defaultDays) {
+            if (! Schema::hasTable($table)) {
                 $this->warn("Tabela não encontrada: {$table}. Pulando.");
+
+                continue;
+            }
+
+            $days = $globalDays ?? (int) $defaultDays;
+            if ($days < 1) {
+                continue;
+            }
+
+            $cutoffDate = now()->subDays($days)->format('Y-m-d H:i:s');
+            $column = $table === 'log_envio_email' ? 'data_envio' : 'created_at';
+
+            if (! Schema::hasColumn($table, $column)) {
+                $column = 'created_at';
+            }
+
+            $this->info("Limpando {$table} (> {$days} dias)...");
+
+            try {
+                $count = DB::table($table)->where($column, '<', $cutoffDate)->delete();
+                $this->info("Removidos {$count} registros de {$table}.");
+            } catch (\Throwable $e) {
+                $this->error("Erro ao limpar {$table}: ".$e->getMessage());
             }
         }
 
         $this->info('Limpeza de logs concluída.');
-        return 0;
+
+        return self::SUCCESS;
     }
 }

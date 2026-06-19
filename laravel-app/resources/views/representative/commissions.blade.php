@@ -17,11 +17,13 @@
                 <thead>
                     <tr class="border-b border-zinc-900/50">
                         <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Data</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Usuário</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Plano/Serviço</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Base</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Comissão (%)</th>
-                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Ganhos</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Clínica/Usuário</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Valor Venda</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Comissão</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Gerado</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Já Pago</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Pendente</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Previsto Para</th>
                         <th class="px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Status</th>
                     </tr>
                 </thead>
@@ -33,21 +35,29 @@
                         </td>
                         <td class="px-8 py-6">
                             <div class="flex flex-col">
-                                <span class="text-sm font-bold text-white">{{ $commission->user->name }}</span>
-                                <span class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">{{ $commission->user->email }}</span>
+                                <span class="text-sm font-bold text-white">{{ $commission->clinic ? $commission->clinic->name : ($commission->user ? $commission->user->name : '-') }}</span>
+                                <span class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">{{ $commission->subscription?->plan?->name ?? 'Venda Direta' }}</span>
                             </div>
-                        </td>
-                        <td class="px-8 py-6">
-                            <span class="text-sm font-bold text-white">{{ $commission->subscription?->plan?->name ?? 'Venda Direta' }}</span>
                         </td>
                         <td class="px-8 py-6">
                             <span class="text-sm font-bold text-zinc-500">R$ {{ number_format($commission->base_amount, 2, ',', '.') }}</span>
                         </td>
                         <td class="px-8 py-6">
-                            <span class="text-sm font-bold text-zinc-500">{{ number_format($commission->commission_rate, 1) }}%</span>
+                            <span class="text-sm font-bold text-zinc-500">
+                                {{ $commission->commission_type === 'percentual' ? number_format($commission->commission_rate, 1) . '%' : 'Fixa' }}
+                            </span>
                         </td>
                         <td class="px-8 py-6">
                             <span class="text-sm font-black text-emerald-500">R$ {{ number_format($commission->commission_amount, 2, ',', '.') }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-sm font-black text-blue-500">R$ {{ number_format($commission->paid_amount, 2, ',', '.') }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-sm font-black text-amber-500">R$ {{ number_format($commission->pending_amount, 2, ',', '.') }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-sm font-bold text-zinc-400">{{ $commission->available_at ? $commission->available_at->format('d/m/Y') : '-' }}</span>
                         </td>
                         <td class="px-8 py-6">
                             <span class="px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest 

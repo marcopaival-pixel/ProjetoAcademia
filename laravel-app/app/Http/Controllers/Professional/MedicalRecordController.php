@@ -265,8 +265,12 @@ class MedicalRecordController extends Controller
      */
     public function downloadReport(User $patient, MedicalReport $report, DompdfPdfService $pdfService)
     {
-        $this->checkLink($patient);
-        
+        $this->authorize('view', $report);
+
+        if ((int) $report->patient_id !== (int) $patient->id) {
+            abort(403, 'Laudo não pertence a este paciente.');
+        }
+
         $html = view('professional.medical-records.reports.pdf', compact('patient', 'report'))->render();
         return $pdfService->generate($html, "laudo-{$report->id}.pdf");
     }
@@ -276,8 +280,12 @@ class MedicalRecordController extends Controller
      */
     public function downloadCertificate(User $patient, MedicalCertificate $certificate, DompdfPdfService $pdfService)
     {
-        $this->checkLink($patient);
-        
+        $this->authorize('view', $certificate);
+
+        if ((int) $certificate->patient_id !== (int) $patient->id) {
+            abort(403, 'Atestado não pertence a este paciente.');
+        }
+
         $html = view('professional.medical-records.certificates.pdf', compact('patient', 'certificate'))->render();
         return $pdfService->generate($html, "atestado-{$certificate->id}.pdf");
     }
@@ -287,9 +295,8 @@ class MedicalRecordController extends Controller
      */
     public function prescriptionsJson(User $patient)
     {
-        // Aqui não usamos checkLink restrito ao profissional logado para permitir visão multidisciplinar
-        // Mas podemos restringir à clínica se necessário. Por enquanto, visão geral do prontuário do paciente.
-        
+        $this->checkLink($patient);
+
         $prescriptions = $patient->medicalPrescriptions()
             ->with('specialty')
             ->latest('date')
@@ -318,3 +325,5 @@ class MedicalRecordController extends Controller
         }
     }
 }
+
+

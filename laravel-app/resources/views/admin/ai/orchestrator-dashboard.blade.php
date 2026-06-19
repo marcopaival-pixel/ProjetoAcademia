@@ -17,7 +17,7 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <form action="{{ route('admin.ai.orchestrator.dashboard') }}" method="GET" class="flex items-center gap-2">
+            <form action="{{ route('admin.financial.ai-credits.orchestrator.dashboard') }}" method="GET" class="flex items-center gap-2">
                 <select name="days" onchange="this.form.submit()" class="bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl outline-none focus:border-emerald-500/50 transition-all">
                     <option value="7" {{ $days == 7 ? 'selected' : '' }}>Últimos 7 dias</option>
                     <option value="30" {{ $days == 30 ? 'selected' : '' }}>Últimos 30 dias</option>

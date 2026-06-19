@@ -23,37 +23,32 @@ class CommissionClawbackService
     private function clawbackCommission(Commission $commission, Payment $payment): void
     {
         if ($commission->status === Commission::STATUS_PAGO) {
-            $clawback = Commission::create([
-                'representative_id' => $commission->representative_id,
-                'user_id' => $commission->user_id,
-                'clinic_id' => $commission->clinic_id,
-                'payment_id' => $payment->id,
-                'subscription_id' => $commission->subscription_id,
+            $commission->update([
                 'base_amount' => -abs((float) $commission->base_amount),
-                'commission_rate' => $commission->commission_rate,
-                'commission_type' => $commission->commission_type,
                 'commission_amount' => -abs((float) $commission->commission_amount),
                 'status' => Commission::STATUS_CLAWBACK,
-                'notes' => "Clawback automático da comissão #{$commission->id} (estorno pagamento #{$payment->id})",
+                'notes' => trim(($commission->notes ?? '')." [Clawback automático por estorno do pagamento #{$payment->id}]"),
             ]);
 
             RepresentativeAudit::create([
                 'user_id' => $commission->representative_id,
                 'action' => 'commission_clawback',
                 'entity_type' => Commission::class,
-                'entity_id' => $clawback->id,
+                'entity_id' => $commission->id,
                 'new_values' => [
-                    'original_commission_id' => $commission->id,
-                    'amount' => $clawback->commission_amount,
                     'payment_id' => $payment->id,
+                    'amount' => $commission->commission_amount,
                 ],
             ]);
 
-            Log::info('[CommissionClawback] Clawback automático gerado.', [
+            Log::info('[CommissionClawback] Clawback automático aplicado na comissão original.', [
                 'commission_id' => $commission->id,
-                'clawback_id' => $clawback->id,
-                'amount' => $clawback->commission_amount,
+                'amount' => $commission->commission_amount,
             ]);
+
+            app(CommissionMetricsService::class)->clearCache();
+
+            return;
         }
 
         $commission->update([

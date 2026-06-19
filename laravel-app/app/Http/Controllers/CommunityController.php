@@ -68,6 +68,14 @@ class CommunityController extends Controller
             ? CommunityPost::findOrFail($id) 
             : \App\Models\CommunityComment::findOrFail($id);
 
+        if ($reactable instanceof CommunityPost) {
+            if (! $this->communityService->canUserAccessPost(Auth::user(), $reactable)) {
+                abort(403, 'Acesso negado a esta publicação.');
+            }
+        } elseif ($reactable->post && ! $this->communityService->canUserAccessPost(Auth::user(), $reactable->post)) {
+            abort(403, 'Acesso negado a esta publicação.');
+        }
+
         $reaction = $reactable->reactions()->where('user_id', Auth::id())->where('emoji', $request->emoji)->first();
 
         if ($reaction) {
@@ -89,6 +97,10 @@ class CommunityController extends Controller
     public function comment(Request $request, CommunityPost $post)
     {
         $request->validate(['content' => 'required|string|max:500']);
+
+        if (! $this->communityService->canUserAccessPost(Auth::user(), $post)) {
+            abort(403, 'Acesso negado a esta publicação.');
+        }
 
         $post->comments()->create([
             'user_id' => Auth::id(),

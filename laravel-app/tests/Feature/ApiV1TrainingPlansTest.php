@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\TrainingPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,14 +14,33 @@ class ApiV1TrainingPlansTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Role::firstOrCreate(['name' => 'aluno'], ['label' => 'Aluno']);
+    }
+
+    private function studentUser(): User
+    {
+        $user = User::factory()->create();
+        $user->assignRole('aluno');
+        $permission = Permission::firstOrCreate(
+            ['name' => 'portal.access'],
+            ['label' => 'Acesso ao Portal Usuário']
+        );
+        $user->permissions()->syncWithoutDetaching([$permission->id]);
+
+        return $user;
+    }
+
     public function test_training_plans_index_requires_authentication(): void
     {
         $this->getJson('/api/v1/training-plans')->assertUnauthorized();
     }
 
-    public function test_training_plans_index_returns_own_plans_for_admin_user(): void
+    public function test_training_plans_index_returns_own_plans_for_student(): void
     {
-        $user = User::factory()->administrator()->create();
+        $user = $this->studentUser();
         $plan = TrainingPlan::create([
             'user_id' => $user->id,
             'creator_id' => $user->id,
@@ -37,7 +58,7 @@ class ApiV1TrainingPlansTest extends TestCase
 
     public function test_training_plans_show_returns_detail(): void
     {
-        $user = User::factory()->administrator()->create();
+        $user = $this->studentUser();
         $plan = TrainingPlan::create([
             'user_id' => $user->id,
             'creator_id' => $user->id,
@@ -55,8 +76,8 @@ class ApiV1TrainingPlansTest extends TestCase
 
     public function test_training_plans_show_denies_other_users_plan(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = $this->studentUser();
+        $other = $this->studentUser();
         $plan = TrainingPlan::create([
             'user_id' => $owner->id,
             'creator_id' => $owner->id,

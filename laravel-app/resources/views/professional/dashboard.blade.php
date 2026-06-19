@@ -1,515 +1,328 @@
 @extends('layouts.app')
 
-@section('title', 'Portal Pro — NexShape Business')
+@section('title', 'Dashboard Executivo — NEX SHAPE PRO')
 
 @section('content')
-<div class="py-10 space-y-12 animate-dashboard-entry mx-auto px-4 md:px-6" x-data="{ showFinance: true }">
-    <!-- App Promotion Banner -->
-    <x-marketing.promo-banner />
-
-    <!-- Quick Actions Bar (New Tool) -->
-    <div class="flex flex-wrap items-center gap-4 p-4 bg-zinc-900/60 backdrop-blur-2xl rounded-3xl border border-white/5 shadow-2xl overflow-x-auto no-scrollbar">
-        <span class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] px-4 border-r border-white/5 mr-2">Ações Rápidas</span>
-        
-        <a href="{{ route('professional.profile.edit') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
-            <i data-lucide="user-cog" class="w-4 h-4"></i> MEU PERFIL
-        </a>
-        <a href="{{ route('professional.patients.create') }}" class="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all text-[10px] shrink-0 border border-emerald-400/20 shadow-lg shadow-emerald-500/10">
-            <i data-lucide="user-plus" class="w-4 h-4"></i> NOVO PACIENTE
-        </a>
-        <a href="{{ route('exercise') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
-            <i data-lucide="dumbbell" class="w-4 h-4"></i> PRESCREVER TREINO
-        </a>
-        <a href="{{ route('nutrition.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
-            <i data-lucide="utensils" class="w-4 h-4"></i> NOVA DIETA
-        </a>
-        <a href="{{ route('assessments.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-zinc-300 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-white/5">
-            <i data-lucide="clipboard-check" class="w-4 h-4"></i> AVALIAÇÃO
-        </a>
-        <a href="{{ route('professional.evolution.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-emerald-400 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-emerald-500/10 shadow-lg shadow-emerald-500/5">
-            <i data-lucide="line-chart" class="w-4 h-4"></i> HUB EVOLUÇÃO
-        </a>
-        <a href="{{ route('kb.index') }}" class="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-emerald-400 font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] shrink-0 border border-emerald-500/10">
-            <i data-lucide="help-circle" class="w-4 h-4"></i> CENTRAL DE AJUDA
-        </a>
-
-        <div class="ml-auto flex items-center gap-3 pr-4">
-            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest" x-text="showFinance ? 'PRIVACIDADE OFF' : 'PRIVACIDADE ON'"></span>
-            <button @click="showFinance = !showFinance" class="w-12 h-6 rounded-full bg-zinc-800 relative transition-all border border-white/5" :class="!showFinance ? 'bg-emerald-600' : 'bg-zinc-800'">
-                <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-md" :class="!showFinance ? 'left-7' : 'left-1'"></div>
-            </button>
-        </div>
-    </div>
-
-    <!-- Header Strategy: Professional Glass Header -->
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-8 border-b border-white/5">
-        <div class="space-y-4">
-            <div class="flex items-center gap-3">
-                <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">Unidade Clínica Ativa</span>
-                <span class="text-zinc-600">•</span>
-                <span class="text-zinc-400 text-xs font-bold">{{ now()->translatedFormat('d \d\e F, Y') }}</span>
-            </div>
-            <h1 class="text-6xl font-black tracking-tighter text-white leading-none">
-                Gestão Clínica de <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-teal-500">Alta Performance</span>
+<div class="py-10 space-y-8 animate-dashboard-entry mx-auto px-4 lg:px-8 max-w-[1600px]">
+    
+    <!-- SEÇÃO DE BOAS-VINDAS GERAL -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 bg-zinc-900/60 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700 pointer-events-none"></div>
+        <div class="relative z-10 space-y-2">
+            <h1 class="text-4xl font-black text-white tracking-tighter">
+                Seja bem-vindo ao NexShape, <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">{{ explode(' ', $professional->name)[0] }}</span>
             </h1>
-            <p class="text-zinc-500 font-medium max-w-2xl text-lg">Bem-vindo ao centro de inteligência NexShape. Analisamos seus dados para potencializar a retenção e os resultados dos seus pacientes.</p>
+            <p class="text-zinc-400 font-medium text-lg">
+                <i data-lucide="calendar" class="w-4 h-4 inline-block mr-1 -mt-1 text-zinc-500"></i> {{ now()->translatedFormat('d \d\e F \d\e Y') }} 
+                <span class="mx-2 text-zinc-700">•</span> 
+                <i data-lucide="clock" class="w-4 h-4 inline-block mr-1 -mt-1 text-zinc-500"></i> {{ now()->format('H:i') }}
+            </p>
+            <p class="text-emerald-400/80 text-sm font-bold uppercase tracking-widest mt-2">
+                Resumo de Hoje: {{ count($todayAppointments) }} consultas agendadas, {{ $pendingAssessmentsCount }} avaliações pendentes, {{ $unreadMessagesCount }} mensagens não lidas.
+            </p>
         </div>
-        
-        <div class="flex flex-wrap items-center gap-4">
-            <div class="flex gap-3 p-2 bg-zinc-900/40 backdrop-blur-2xl rounded-[2rem] border border-white/5 shadow-2xl">
-                <a href="{{ route('professional.patients.index') }}" class="group relative px-8 py-4 bg-emerald-600 text-white font-black rounded-2xl overflow-hidden transition-all hover:pr-12 active:scale-95 shadow-lg shadow-emerald-500/20">
-                    <span class="relative z-10">PACIENTES</span>
-                    <i data-lucide="arrow-right" class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 transition-all"></i>
-                </a>
-                <a href="{{ route('professional.ai-wizard.index') }}" class="px-8 py-4 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white font-black rounded-2xl transition-all border border-white/5">IA WIZARD</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tier & Patient Limit Status -->
-    @php
-        $currentPlan = auth()->user()->professionalPlan;
-        $maxPatients = $currentPlan->max_patients ?? 0;
-        $usagePercent = $maxPatients > 0 ? ($stats['total_patients'] / $maxPatients) * 100 : 0;
-    @endphp
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-gradient-to-r from-emerald-600/5 to-transparent p-8 rounded-[3rem] border border-emerald-500/10">
-        <div class="lg:col-span-4">
-            <h4 class="text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Plano Atual</h4>
-            <div class="flex items-center gap-4">
-                <span class="text-3xl font-black text-white italic uppercase">{{ $currentPlan->name ?? 'Grátis' }}</span>
-                @if($maxPatients > 0 && $usagePercent >= 80)
-                    <span class="px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-black rounded-full border border-amber-500/20 animate-pulse">LIMITE PRÓXIMO</span>
-                @endif
-            </div>
-        </div>
-        <div class="lg:col-span-6">
-            <div class="flex justify-between items-end mb-3">
-                <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Capacidade de Pacientes</span>
-                <span class="text-sm font-black text-white">{{ $stats['total_patients'] }} <span class="text-zinc-600">/</span> {{ $maxPatients > 0 ? $maxPatients : '∞' }}</span>
-            </div>
-            <div class="h-3 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
-                <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all duration-1000" style="width: {{ $maxPatients > 0 ? min(100, $usagePercent) : 100 }}%"></div>
-            </div>
-        </div>
-        <div class="lg:col-span-2 text-right">
-            <button class="px-6 py-3 bg-white text-zinc-900 font-black rounded-2xl hover:bg-emerald-400 hover:text-white transition-all text-xs shadow-xl">UPGRADE</button>
-        </div>
-    </div>
-
-    <!-- Readiness Alert Banner -->
-    @if(!$readiness['is_ready'])
-    <div class="bg-gradient-to-r from-amber-600 to-orange-700 p-6 rounded-[2.5rem] border border-amber-500/20 shadow-2xl animate-pulse-slow">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-6">
-                <div class="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-[1.5rem] flex items-center justify-center border border-white/20 shadow-xl">
-                    <i class="fas fa-exclamation-triangle text-3xl text-amber-300"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-black text-white italic tracking-tighter leading-none uppercase">Configuração Incompleta</h3>
-                    <p class="text-sm font-medium text-amber-100 mt-2">Sua conta ainda não está totalmente pronta para operar. Conclua os itens abaixo para liberar todas as funcionalidades.</p>
-                </div>
-            </div>
-            <a href="#readiness-checklist" class="px-8 py-4 bg-white text-zinc-900 font-black rounded-2xl hover:bg-zinc-900 hover:text-white transition-all text-xs shadow-2xl">
-                CONCLUIR AGORA
+        <div class="relative z-10 flex gap-4">
+            <a href="{{ route('professional.profile.edit') }}" class="w-14 h-14 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl flex items-center justify-center transition-all border border-white/5 shadow-lg">
+                <i data-lucide="user" class="w-6 h-6"></i>
             </a>
+            <div class="text-right flex flex-col justify-center">
+                <span class="text-[10px] font-black uppercase text-zinc-500 tracking-widest">NEXLINK ID</span>
+                <span class="text-xl font-black text-white">{{ $professional->professional_code }}</span>
+            </div>
         </div>
     </div>
-    @endif
 
-    <!-- Main Content Grid -->
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div class="lg:col-span-8 space-y-10">
-            <!-- Readiness Checklist Section -->
-            <div id="readiness-checklist">
-                @include('professional.partials.readiness_checklist')
+    @if(!$activePatient)
+        <!-- ESTADO: NENHUM PACIENTE SELECIONADO -->
+        <div class="flex flex-col items-center justify-center p-12 bg-zinc-900/40 backdrop-blur-md rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-950/50 pointer-events-none"></div>
+            <div class="w-20 h-20 mb-6 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/50 relative z-10">
+                <i data-lucide="users" class="w-10 h-10 text-zinc-500"></i>
             </div>
-
-            <!-- Growth Chart & Financials -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Chart Area -->
-                <div class="md:col-span-2 bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
-                    <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                    <div class="flex justify-between items-start mb-10">
-                        <div>
-                            <h3 class="text-xl font-black text-white leading-none">Adesão Diária</h3>
-                            <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-2">Engajamento médio da base (7d)</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                           <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                           <span class="text-[10px] text-zinc-400 font-bold uppercase">% ENGAGE</span>
-                        </div>
-                    </div>
-                    
-                    <div class="h-64">
-                        <canvas id="engagementChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Financial Card -->
-                <div class="bg-zinc-900/60 border border-white/5 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
-                    <div class="relative z-10">
-                        <h4 class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-4">Estimativa SaaS Business</h4>
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-1 italic">FATURAMENTO (MÊS)</p>
-                                <span class="text-4xl font-black text-white italic tracking-tighter transition-all" :class="!showFinance && 'blur-md select-none'">
-                                    {{ $stats['revenue_month'] }}
-                                </span>
-                            </div>
-                            
-                            <div class="pt-6 border-t border-white/5">
-                                <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-1 italic">PROJEÇÃO (CAPACIDADE)</p>
-                                <span class="text-2xl font-black text-zinc-400 italic tracking-tighter transition-all" :class="!showFinance && 'blur-md select-none'">
-                                    {{ $stats['projected_revenue'] }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-8 flex items-center justify-between">
-                        <div class="px-4 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase">
-                           +{{ $stats['growth'] }}% GROW
-                        </div>
-                        <i data-lucide="landmark" class="text-zinc-800 w-10 h-10"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Key Metrics Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                @php
-                    $metrics = [
-                        ['label' => 'Pacientes', 'val' => $stats['total_patients'], 'sub' => 'Base Cadastrada', 'color' => 'emerald', 'icon' => 'users'],
-                        ['label' => 'Ativos (7d)', 'val' => $stats['active_patients'], 'sub' => $stats['inactive_patients'] . ' sem logs', 'color' => 'teal', 'icon' => 'user-check'],
-                        ['label' => 'Treinos Ativos', 'val' => $stats['active_workouts'], 'sub' => 'Vigentes hoje', 'color' => 'emerald', 'icon' => 'dumbbell'],
-                        ['label' => 'Pendências', 'val' => $stats['pending_assessments'], 'sub' => 'Ações necessárias', 'color' => 'rose', 'icon' => 'alert-triangle'],
-                    ];
-                @endphp
-
-                @foreach($metrics as $m)
-                <div class="group relative bg-zinc-900/60 backdrop-blur-2xl border border-white/5 p-8 rounded-[3rem] overflow-hidden transition-all hover:border-{{ $m['color'] }}-500/30 hover:-translate-y-1 shadow-xl">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-{{ $m['color'] }}-500/5 blur-3xl rounded-full"></div>
-                    <div class="flex items-center justify-between mb-4">
-                        <p class="text-zinc-500 font-black text-[10px] uppercase tracking-widest">{{ $m['label'] }}</p>
-                        <i data-lucide="{{ $m['icon'] }}" class="text-{{ $m['color'] }}-500/40 w-4 h-4"></i>
-                    </div>
-                    <h3 class="text-5xl font-black text-white mt-1 tracking-tighter">{{ $m['val'] }}</h3>
-                    <p class="text-{{ $m['color'] }}-400 text-[10px] font-bold uppercase mt-2 opacity-80 group-hover:opacity-100 transition-opacity">{{ $m['sub'] }}</p>
-                </div>
-                @endforeach
-            </div>
-
-            <!-- Agenda do Dia -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl">
-                <div class="flex items-center justify-between mb-10">
-                    <div>
-                        <h3 class="text-2xl font-black text-white">Agenda do Dia</h3>
-                        <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Sessões e atendimentos agendados</p>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    @forelse($todayAppointments as $app)
-                    <div class="flex items-center gap-6 p-6 bg-white/5 rounded-3xl border border-white/5 hover:border-emerald-500/20 transition-all cursor-pointer group">
-                        <div class="text-right w-20">
-                            <p class="text-xl font-black text-white leading-none">{{ \Carbon\Carbon::parse($app->appointment_at)->format('H:i') }}</p>
-                            <p class="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">UTC-3</p>
-                        </div>
-                        <div class="w-px h-12 bg-zinc-800"></div>
-                        <div class="flex-1">
-                            <h4 class="text-white font-black text-lg leading-tight group-hover:text-emerald-400 transition-colors">{{ $app->patient?->name ?? 'Paciente Externo' }}</h4>
-                            <p class="text-xs text-zinc-500 font-medium">{{ $app->service_type ?? 'Consulta Geral' }}</p>
-                        </div>
-                        <span class="px-4 py-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black rounded-xl border border-emerald-500/10">CONFIRMADO</span>
-                    </div>
-                    @empty
-                    <div class="py-12 text-center">
-                        <div class="w-20 h-20 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <i data-lucide="calendar-x" class="w-8 h-8 text-zinc-700"></i>
-                        </div>
-                        <h4 class="text-zinc-500 font-black text-lg">Nenhum atendimento para hoje</h4>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Tabela de Aderência -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 overflow-hidden shadow-2xl">
-                <div class="flex items-center justify-between mb-10 px-4">
-                    <h3 class="text-2xl font-black text-white leading-none">Aderência Recente</h3>
-                    <a href="{{ route('professional.patients.index') }}" class="text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:text-white transition-colors">Ver Todos &rarr;</a>
-                </div>
-                
-                <div class="overflow-x-auto px-4">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-zinc-700 text-[10px] font-black uppercase tracking-[0.3em] border-b border-white/5">
-                                <th class="pb-6">PACIENTE</th>
-                                <th class="pb-6">SAÚDE & ENGAJAMENTO</th>
-                                <th class="pb-6">STATUS</th>
-                                <th class="pb-6">PRONTUÁRIO</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-white/5">
-                            @foreach($recentPatients as $p)
-                            <tr class="group hover:bg-white/5 transition-all cursor-pointer">
-                                <td class="py-10">
-                                    <div class="flex items-center gap-6">
-                                        <div class="w-16 h-16 rounded-[1.75rem] bg-gradient-to-tr {{ $p['color'] }} flex items-center justify-center text-white font-black text-xl shadow-2xl group-hover:scale-110 transition-transform">
-                                            {{ $p['initials'] }}
-                                        </div>
-                                        <div>
-                                            <p class="text-white font-black text-xl group-hover:text-emerald-400 transition-colors">{{ $p['name'] }}</p>
-                                            <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">{{ $p['bio'] }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="flex items-center gap-8">
-                                        <div class="flex flex-col">
-                                            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Health Score</span>
-                                            <span class="text-xl font-black text-white italic tracking-tighter">{{ $p['health_score'] }}%</span>
-                                        </div>
-                                        <div class="space-y-2 w-32">
-                                            <div class="flex justify-between items-end">
-                                                <span class="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Engage</span>
-                                                <span class="text-[10px] font-black text-white">{{ $p['engage'] }}%</span>
-                                            </div>
-                                            <div class="h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
-                                                <div class="h-full bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]" style="width: {{ $p['engage'] }}%"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="px-3 py-1 rounded-lg {{ $p['health_score'] > 70 ? 'bg-emerald-500/10 text-emerald-500' : ($p['health_score'] > 40 ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500') }} text-[9px] font-black uppercase tracking-widest border {{ $p['health_score'] > 70 ? 'border-emerald-500/20' : ($p['health_score'] > 40 ? 'border-amber-500/20' : 'border-rose-500/20') }}">
-                                        {{ $p['status'] }}
-                                    </span>
-                                </td>
-                                <td class="text-right pr-6">
-                                    <div class="flex gap-2 justify-end">
-                                        <a href="{{ route('professional.patients.show', $p['id']) }}" class="p-4 bg-zinc-800 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all border border-white/5 flex items-center gap-2">
-                                            <i data-lucide="file-text" class="w-4 h-4"></i>
-                                            <span class="text-[9px] font-black uppercase">Ver Prontuário</span>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+            <h2 class="text-3xl font-black text-white tracking-tighter mb-2 relative z-10 text-center">Nenhum {{ strtolower($patientLabel) }} selecionado</h2>
+            <p class="text-zinc-400 font-medium text-center max-w-lg mb-8 relative z-10">Para realizar ações clínicas como prescrever treinos ou avaliações, você precisa selecionar um {{ strtolower($patientLabel) }} primeiro.</p>
+            
+            <div class="flex items-center gap-4 relative z-10" x-data>
+                <button @click="$dispatch('open-global-patient-selector')" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    Selecionar {{ $patientLabel }}
+                </button>
+                <a href="{{ route('professional.patients.create') }}" class="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all border border-zinc-700 flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-500"></i>
+                    Cadastrar
+                </a>
             </div>
         </div>
-
-        <!-- Right Side: Sidebar Widgets -->
-        <div class="lg:col-span-4 space-y-10">
-            <!-- Professional IQ Card -->
-            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 p-10 rounded-[4rem] shadow-2xl text-white relative overflow-hidden group">
-                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all"></div>
-                <div class="relative z-10 text-center">
-                    <div class="flex flex-col items-center mb-8">
-                        <div class="w-20 h-20 bg-white/20 backdrop-blur-xl rounded-[2rem] flex items-center justify-center border border-white/20 mb-4 shadow-3xl">
-                            <i data-lucide="brain" class="w-10 h-10"></i>
-                        </div>
-                        <h3 class="text-2xl font-black italic tracking-tighter">NEXSENSE INTEL</h3>
-                        <p class="text-[9px] font-bold uppercase tracking-[0.3em] opacity-60">Insight Automático Ativo</p>
-                    </div>
-
-                    <div class="space-y-6">
-                        @foreach($tasks as $task)
-                        <div class="p-6 bg-white/10 backdrop-blur-md rounded-[2.5rem] border border-white/10 hover:bg-white/20 transition-all cursor-pointer text-left group/task">
-                            <div class="flex gap-5">
-                                <div class="mt-1.5 w-3 h-3 rounded-full shrink-0 {{ $task['priority'] === 'danger' ? 'bg-red-400 animate-ping' : ($task['priority'] === 'warning' ? 'bg-amber-400' : 'bg-blue-400') }} shadow-lg"></div>
-                                <div>
-                                    <p class="text-sm font-black leading-tight group-hover/task:text-emerald-200 transition-colors">{{ $task['msg'] }}</p>
-                                    @if(isset($task['type']))
-                                        <p class="text-[9px] font-bold uppercase opacity-50 mt-1 italic tracking-widest">{{ $task['type'] }} alert</p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-
-                        @if(empty($tasks))
-                        <div class="py-10">
-                           <i data-lucide="check-circle" class="w-10 h-10 mx-auto opacity-20 mb-4"></i>
-                           <p class="text-sm font-bold opacity-80 italic">Tudo em conformidade.</p>
-                        </div>
+    @else
+        <!-- ESTADO: PACIENTE SELECIONADO -->
+        <div class="bg-emerald-950/20 backdrop-blur-2xl p-8 rounded-[3rem] border border-emerald-500/20 shadow-[0_0_50px_-12px_rgba(16,185,129,0.1)] relative overflow-hidden group">
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col md:flex-row gap-8 items-start relative z-10">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">{{ mb_strtoupper($patientLabel) }} ATIVO NO CONTEXTO</span>
+                        @if($activePatientStats['status'] === 'Ativo')
+                            <span class="flex items-center gap-1 text-[9px] font-black text-emerald-500 uppercase tracking-widest"><i data-lucide="check-circle" class="w-3 h-3"></i> Ativo</span>
+                        @else
+                            <span class="flex items-center gap-1 text-[9px] font-black text-zinc-500 uppercase tracking-widest"><i data-lucide="clock" class="w-3 h-3"></i> Inativo</span>
                         @endif
                     </div>
-
-                    <a href="{{ route('professional.ai-wizard.index') }}" class="mt-10 flex items-center justify-between w-full p-2 pr-6 bg-white text-zinc-900 font-black rounded-3xl hover:bg-zinc-900 hover:text-white transition-all group/btn shadow-2xl">
-                        <div class="h-12 w-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-zinc-900 transition-colors">
-                            <i data-lucide="wand-2" class="w-5 h-5"></i>
+                    
+                    <div class="flex items-center gap-6">
+                        <div class="w-20 h-20 rounded-2xl overflow-hidden border-2 border-emerald-500/30 shrink-0">
+                            <img src="{{ $activePatient->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode($activePatient->name).'&color=10b981&background=09090b&bold=true' }}" alt="Avatar" class="w-full h-full object-cover">
                         </div>
-                        <span class="text-[10px]">IA WIZARD HUB</span>
-                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </a>
+                        <div>
+                            <h2 class="text-3xl font-black text-white tracking-tighter">{{ $activePatient->name }}</h2>
+                            <p class="text-sm font-bold text-emerald-400/80">{{ $activePatientStats['active_plan'] }}</p>
+                            <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Último Acesso: {{ $activePatient->last_activity_at ? \Carbon\Carbon::parse($activePatient->last_activity_at)->diffForHumans() : 'Nunca' }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Cards Rapidas do Paciente -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full md:w-auto">
+                    <div class="p-4 bg-zinc-900/50 rounded-2xl border border-white/5">
+                        <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Última Avaliação</p>
+                        <p class="text-sm font-bold text-white">{{ $activePatientStats['last_assessment'] }}</p>
+                    </div>
+                    <div class="p-4 bg-zinc-900/50 rounded-2xl border border-white/5">
+                        <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Próxima Consulta</p>
+                        <p class="text-sm font-bold text-white">{{ $activePatientStats['next_appointment'] }}</p>
+                    </div>
+                    <div class="p-4 bg-zinc-900/50 rounded-2xl border border-white/5">
+                        <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Último Treino</p>
+                        <p class="text-sm font-bold text-white">{{ $activePatientStats['last_training'] }}</p>
+                    </div>
+                    <div class="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex flex-col justify-center items-center group-hover:bg-emerald-500/20 transition-all cursor-pointer">
+                        <a href="{{ route('professional.patients.show', $activePatient->id) }}" class="text-emerald-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                            Abrir Prontuário <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Social Intelligence -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl">
-                <h3 class="text-xl font-black text-white mb-8">Social Intelligence</h3>
-                <div class="space-y-6">
-                    @forelse($birthdayPatients as $bp)
-                    <div class="flex items-center gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] hover:bg-emerald-500/10 transition-all">
-                        <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg">
-                            🎂
+            <!-- Ações Clínicas Liberadas -->
+            <div class="mt-8 border-t border-white/5 pt-6">
+                <h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-4">Ações Clínicas para {{ explode(' ', $activePatient->name)[0] }}</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+                    <a href="{{ route('progression.plans.index') }}" class="flex flex-col items-center justify-center p-3 bg-zinc-950/50 rounded-2xl border border-white/5 hover:border-emerald-500/50 transition-all text-center">
+                        <i data-lucide="dumbbell" class="w-5 h-5 text-emerald-400 mb-2"></i>
+                        <span class="text-[9px] font-black text-zinc-300 uppercase leading-tight">Criar Treino</span>
+                    </a>
+                    <a href="{{ route('assessments.index') }}" class="flex flex-col items-center justify-center p-3 bg-zinc-950/50 rounded-2xl border border-white/5 hover:border-emerald-500/50 transition-all text-center">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-emerald-400 mb-2"></i>
+                        <span class="text-[9px] font-black text-zinc-300 uppercase leading-tight">Avaliações</span>
+                    </a>
+                    <a href="{{ route('professional.patients.index') }}" class="flex flex-col items-center justify-center p-3 bg-zinc-950/50 rounded-2xl border border-white/5 hover:border-emerald-500/50 transition-all text-center">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400 mb-2"></i>
+                        <span class="text-[9px] font-black text-zinc-300 uppercase leading-tight">Evolução</span>
+                    </a>
+                    <a href="{{ route('professional.patients.index') }}" class="flex flex-col items-center justify-center p-3 bg-zinc-950/50 rounded-2xl border border-white/5 hover:border-emerald-500/50 transition-all text-center">
+                        <i data-lucide="folder" class="w-5 h-5 text-emerald-400 mb-2"></i>
+                        <span class="text-[9px] font-black text-zinc-300 uppercase leading-tight">Arquivos</span>
+                    </a>
+                    <a href="{{ route('messages.index') }}" class="flex flex-col items-center justify-center p-3 bg-zinc-950/50 rounded-2xl border border-white/5 hover:border-emerald-500/50 transition-all text-center">
+                        <i data-lucide="message-square" class="w-5 h-5 text-emerald-400 mb-2"></i>
+                        <span class="text-[9px] font-black text-zinc-300 uppercase leading-tight">Mensagens</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ATALHOS RÁPIDOS GLOBAIS (Produtividade) -->
+    <div>
+        <h3 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-4 ml-2">Atalhos de Produtividade</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+            @foreach($quickShortcuts as $shortcut)
+            <a href="{{ $shortcut['route'] }}" class="flex flex-col items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-md rounded-3xl border border-white/5 hover:border-{{ $shortcut['color'] }}-500/50 hover:bg-{{ $shortcut['color'] }}-500/10 transition-all group shadow-lg aspect-square text-center">
+                <div class="w-10 h-10 mb-3 rounded-full bg-{{ $shortcut['color'] }}-500/10 text-{{ $shortcut['color'] }}-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="{{ $shortcut['icon'] }}" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-black text-zinc-300 uppercase leading-tight group-hover:text-white transition-colors">{{ $shortcut['label'] }}</span>
+            </a>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- MAIN GRID (2 COLUMNS) - DASHBOARD OPERACIONAL -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        
+        <!-- LEFT COLUMN: Alunos & Indicadores -->
+        <div class="xl:col-span-8 space-y-8">
+            
+            <!-- MEUS PACIENTES / ALUNOS -->
+            <div class="bg-zinc-900/40 backdrop-blur-2xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-black text-white tracking-tighter">{{ mb_strtoupper($patientsLabel) }}</h2>
+                    <a href="{{ route('professional.patients.index') }}" class="text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:text-white transition-colors">Gerenciar Base &rarr;</a>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="p-6 bg-emerald-500/5 rounded-3xl border border-emerald-500/10 hover:border-emerald-500/30 transition-colors">
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2">Ativos</p>
+                        <p class="text-4xl font-black text-emerald-400 tracking-tighter">{{ $activePatientsCount }}</p>
+                    </div>
+                    <div class="p-6 bg-rose-500/5 rounded-3xl border border-rose-500/10 hover:border-rose-500/30 transition-colors">
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2">Inativos</p>
+                        <p class="text-4xl font-black text-rose-400 tracking-tighter">{{ $inactivePatientsCount }}</p>
+                    </div>
+                    <div class="p-6 bg-blue-500/5 rounded-3xl border border-blue-500/10 hover:border-blue-500/30 transition-colors">
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2">Novos (Mês)</p>
+                        <p class="text-4xl font-black text-blue-400 tracking-tighter">+{{ $newPatientsMonth }}</p>
+                    </div>
+                    <div class="p-6 bg-amber-500/5 rounded-3xl border border-amber-500/10 hover:border-amber-500/30 transition-colors">
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2">Aniversariantes</p>
+                        <p class="text-4xl font-black text-amber-400 tracking-tighter">{{ $birthdayPatientsCount }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATENDIMENTOS E INDICADORES -->
+            <div class="bg-zinc-900/40 backdrop-blur-2xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+                <h2 class="text-2xl font-black text-white tracking-tighter mb-8">Atendimentos & Indicadores</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="p-5 bg-white/5 rounded-3xl border border-white/5 text-center">
+                        <i data-lucide="dumbbell" class="w-6 h-6 text-emerald-400 mx-auto mb-2"></i>
+                        <p class="text-3xl font-black text-white tracking-tighter">{{ $activeWorkoutsCount }}</p>
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mt-1">Treinos Ativos</p>
+                    </div>
+                    <div class="p-5 bg-white/5 rounded-3xl border border-white/5 text-center">
+                        <i data-lucide="clipboard-list" class="w-6 h-6 text-purple-400 mx-auto mb-2"></i>
+                        <p class="text-3xl font-black text-white tracking-tighter">{{ $assessmentsMonthCount }}</p>
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mt-1">Av. no Mês</p>
+                    </div>
+                    <div class="p-5 bg-white/5 rounded-3xl border border-white/5 text-center">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-blue-400 mx-auto mb-2"></i>
+                        <p class="text-3xl font-black text-white tracking-tighter">{{ $appointmentsCompletedMonth }}</p>
+                        <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mt-1">Consultas Concluídas</p>
+                    </div>
+                    <div class="p-5 bg-emerald-500/10 rounded-3xl border border-emerald-500/20 text-center">
+                        <i data-lucide="dollar-sign" class="w-6 h-6 text-emerald-400 mx-auto mb-2"></i>
+                        <p class="text-xl font-black text-emerald-400 tracking-tighter mt-1">R$ {{ number_format($revenueMonth, 2, ',', '.') }}</p>
+                        <p class="text-emerald-500/70 text-[9px] font-black uppercase tracking-widest mt-1">Receita Mensal</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATIVIDADE RECENTE -->
+            <div class="bg-zinc-900/40 backdrop-blur-2xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+                <h2 class="text-2xl font-black text-white tracking-tighter mb-8">Atividade Recente</h2>
+                <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-zinc-800 before:to-transparent">
+                    @foreach($recentActivities as $act)
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-zinc-950 bg-{{ $act['color'] }}-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                            <i data-lucide="{{ $act['icon'] }}" class="w-4 h-4"></i>
                         </div>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-white/5 border border-white/5 shadow-lg group-hover:bg-white/10 transition-colors">
+                            <div class="flex items-center justify-between mb-1">
+                                <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">{{ $act['time'] }}</p>
+                            </div>
+                            <p class="text-sm font-bold text-white">{{ $act['text'] }}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- RIGHT COLUMN: Agenda, Pendências, Atenção, Dicas -->
+        <div class="xl:col-span-4 space-y-8">
+            
+            <!-- AGENDA DE HOJE -->
+            <div class="bg-zinc-900/60 backdrop-blur-2xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-black text-white tracking-tighter">Agenda de Hoje</h2>
+                    <span class="px-3 py-1 bg-blue-500/10 text-blue-400 text-[9px] font-black uppercase rounded-full border border-blue-500/20">{{ count($todayAppointments) }} Sessões</span>
+                </div>
+                
+                <div class="space-y-4 mb-6">
+                    @forelse($todayAppointments as $app)
+                    <div class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <div class="text-center w-14">
+                            <p class="text-lg font-black text-white leading-none">{{ \Carbon\Carbon::parse($app->appointment_at)->format('H:i') }}</p>
+                        </div>
+                        <div class="w-px h-8 bg-zinc-800"></div>
                         <div class="flex-1">
-                            <p class="text-white font-black text-sm">{{ $bp->name }}</p>
-                            <p class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Aniversariante hoje!</p>
+                            <p class="text-sm font-black text-white truncate">{{ $app->patient?->name ?? 'Externo' }}</p>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-0.5">{{ $app->service_type ?? 'Consulta Geral' }}</p>
                         </div>
-                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $bp->phone ?? '') }}?text=Parabéns pelo seu dia, {{ explode(' ', $bp->name)[0] }}! Muita saúde e bons treinos. 🚀" target="_blank" class="w-12 h-12 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all">
-                             <i data-lucide="message-circle" class="w-5 h-5"></i>
-                        </a>
                     </div>
                     @empty
-                    <div class="py-6 text-center">
-                        <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em]">Nenhum aniversário hoje</p>
+                    <div class="text-center py-8">
+                        <i data-lucide="calendar-x" class="w-10 h-10 text-zinc-700 mx-auto mb-3"></i>
+                        <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Nenhuma consulta hoje</p>
                     </div>
                     @endforelse
                 </div>
+
+                <a href="{{ route('agenda.index') }}" class="block w-full text-center py-4 bg-zinc-800 text-white font-black rounded-2xl hover:bg-zinc-700 transition-all text-[10px] uppercase tracking-[0.2em] shadow-lg">
+                    Ver Agenda Completa
+                </a>
             </div>
 
-            <!-- Central de Ajuda & Suporte -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl relative overflow-hidden group/kb">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-600/10 rounded-full blur-2xl group-hover/kb:bg-emerald-600/20 transition-all"></div>
-                <div class="relative z-10">
-                    <h3 class="text-xl font-black text-white mb-2 leading-none italic uppercase">Suporte & Tutoriais</h3>
-                    <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] mb-8">Base de Conhecimento NexShape</p>
-                    
-                    <div class="space-y-4">
-                        <a href="{{ route('kb.index') }}" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-emerald-600/10 hover:border-emerald-500/30 transition-all group/item">
-                            <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center text-zinc-500 group-hover/item:text-emerald-400">
-                                <i data-lucide="book-open" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <p class="text-white font-black text-xs leading-tight">Guia de Primeiros Passos</p>
-                                <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">Aprenda a configurar sua clínica</p>
-                            </div>
-                        </a>
-                        <a href="{{ route('kb.index') }}" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-emerald-600/10 hover:border-emerald-500/30 transition-all group/item">
-                            <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center text-zinc-500 group-hover/item:text-emerald-400">
-                                <i data-lucide="video" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <p class="text-white font-black text-xs leading-tight">Vídeo Aulas & Dicas</p>
-                                <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">Tutoriais em vídeo</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    <a href="{{ route('kb.index') }}" class="mt-8 block text-center py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-500 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20">
-                        Acessar Central Completa
-                    </a>
-                </div>
-            </div>
-
-            <!-- NexLink ID -->
-            <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-10 shadow-2xl overflow-hidden relative group/qr">
-                <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover/qr:opacity-100 transition-opacity"></div>
-                <div class="relative z-10 text-center">
-                    <h3 class="text-lg font-black text-white mb-1 leading-none italic uppercase">NexLink ID</h3>
-                    <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] mb-8">Vínculo Direto</p>
-                    
-                    <div class="p-6 bg-zinc-950 rounded-[2.5rem] border border-white/10 inline-block mx-auto mb-6 shadow-3xl group-hover/qr:scale-105 transition-transform">
-                        <img src="{{ $qrCodeUrl }}" alt="QR Code" class="w-32 h-32 rounded-xl">
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="inline-flex items-center gap-3 bg-zinc-950 px-6 py-3 rounded-2xl border border-white/10 group/code cursor-pointer" onclick="copyCode('{{ $professionalCode }}')">
-                            <span class="text-2xl font-black text-emerald-400 tracking-tighter">{{ $professionalCode }}</span>
-                            <i data-lucide="copy" class="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors"></i>
+            <!-- COMUNICAÇÃO E PENDÊNCIAS -->
+            <div class="bg-zinc-900/60 backdrop-blur-2xl p-8 rounded-[3rem] border border-rose-500/10 shadow-2xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl group-hover:bg-rose-500/10 transition-all pointer-events-none"></div>
+                <h2 class="text-2xl font-black text-white tracking-tighter mb-8 relative z-10">Comunicação & Tarefas</h2>
+                
+                <div class="space-y-3 relative z-10">
+                    <div class="flex items-center justify-between p-4 bg-rose-500/5 rounded-2xl border border-rose-500/10">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="clipboard-x" class="w-4 h-4 text-rose-400"></i>
+                            <span class="text-sm font-bold text-white">Avaliações Pendentes</span>
                         </div>
-                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest px-4">Código Profissional</p>
+                        <span class="text-rose-400 font-black">{{ $pendingAssessmentsCount }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                            <span class="text-sm font-bold text-white">Consultas Pendentes</span>
+                        </div>
+                        <span class="text-amber-400 font-black">{{ $pendingAppointmentsCount }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="message-circle" class="w-4 h-4 text-blue-400"></i>
+                            <span class="text-sm font-bold text-white">Mensagens Não Lidas</span>
+                        </div>
+                        <span class="text-blue-400 font-black">{{ $unreadMessagesCount }}</span>
                     </div>
                 </div>
             </div>
+
+            <!-- DICAS INTELIGENTES (NexSense) -->
+            <div class="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-2xl p-8 rounded-[3rem] border border-indigo-500/20 shadow-2xl relative">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center border border-indigo-500/30">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-indigo-400"></i>
+                    </div>
+                    <h2 class="text-xl font-black text-white tracking-tighter">Dicas Inteligentes</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    @foreach($smartTips as $tip)
+                    <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <p class="text-sm font-medium text-indigo-100">{{ $tip }}</p>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('engagementChart').getContext('2d');
-    
-    // Gradient setup
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
-    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($engagementLabels) !!},
-            datasets: [{
-                label: 'Engajamento %',
-                data: {!! json_encode($engagementData) !!},
-                borderColor: '#3b82f6',
-                borderWidth: 4,
-                tension: 0.4,
-                fill: true,
-                backgroundColor: gradient,
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#18181b',
-                    titleFont: { size: 12, weight: 'bold' },
-                    bodyFont: { size: 12 },
-                    padding: 12,
-                    displayColors: false,
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.y + '% Engajamento';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
-                    ticks: { color: '#52525b', font: { size: 10, weight: 'bold' }, stepSize: 20 }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#52525b', font: { size: 10, weight: 'bold' } }
-                }
-            }
-        }
-    });
-});
-
-function copyCode(code) {
-    navigator.clipboard.writeText(code);
-    // Podia adicionar um toast aqui
-}
-</script>
-@endpush
-
 <style>
-@keyframes dashboard-entry { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.animate-dashboard-entry { animation: dashboard-entry 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+@keyframes dashboard-entry { 
+    from { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(10px); } 
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 
+}
+.animate-dashboard-entry { 
+    animation: dashboard-entry 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+}
 </style>
 @endsection
-

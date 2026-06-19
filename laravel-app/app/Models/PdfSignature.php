@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PdfSignature extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'historico_pdf_id',
         'user_id',

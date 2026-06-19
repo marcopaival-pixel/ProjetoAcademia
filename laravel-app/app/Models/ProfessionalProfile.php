@@ -13,6 +13,7 @@ class ProfessionalProfile extends Model
     protected $fillable = [
         'user_id',
         'profession_id',
+        'especialidade_id',
         'specialty',
         'about',
         'service_types',
@@ -40,6 +41,7 @@ class ProfessionalProfile extends Model
         'work_start_time',
         'work_end_time',
         'is_public',
+        'use_finance_module',
     ];
 
     protected $casts = [
@@ -47,6 +49,7 @@ class ProfessionalProfile extends Model
         'service_types' => 'array',
         'work_days' => 'array',
         'is_public' => 'boolean',
+        'use_finance_module' => 'boolean',
         'consultation_price' => 'decimal:2',
     ];
 
@@ -58,6 +61,16 @@ class ProfessionalProfile extends Model
     public function profession(): BelongsTo
     {
         return $this->belongsTo(Profession::class);
+    }
+
+    public function especialidade(): BelongsTo
+    {
+        return $this->belongsTo(Especialidade::class);
+    }
+
+    public function especialidades(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Especialidade::class, 'professional_profile_especialidade');
     }
 
     public function creator(): BelongsTo

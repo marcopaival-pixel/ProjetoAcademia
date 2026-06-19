@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\PdfWhatsAppDispatcher;
 use App\Services\TransactionalMailService;
 use App\Support\MailSendType;
+use App\Support\QueueNames;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,7 +25,9 @@ class SendPdfDocumentDeliveriesJob implements ShouldQueue
 
     public function __construct(
         public int $historicoPdfId
-    ) {}
+    ) {
+        $this->onQueue(QueueNames::pdf());
+    }
 
     public function handle(PdfWhatsAppDispatcher $whatsApp): void
     {

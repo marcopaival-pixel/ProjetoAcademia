@@ -14,7 +14,9 @@ class ChatController extends Controller
 {
     public function __construct(
         private \App\Services\AI\OrchestratorService $orchestrator,
-        private \App\Services\AgentActionDispatcher $actionDispatcher
+        private \App\Services\AgentActionDispatcher $actionDispatcher,
+        private \App\Services\KnowledgeBaseResolverService $knowledgeBase,
+        private \App\Services\IntelligenceLibraryService $libraryService
     ) {}
     
     /**
@@ -63,10 +65,57 @@ class ChatController extends Controller
             'message' => $validated['message'],
         ]);
 
-        // Chamar Orquestrador Central
-        $result = $this->orchestrator->run($user, $validated['message'], [
+        $message = $validated['message'];
+        $forceIa = $request->boolean('force_ia');
+
+        // 1) Biblioteca interna → 2) Base de conhecimento → 3) Orquestrador (LLM)
+        if (! $forceIa) {
+            $libraryHit = $this->libraryService->consultar($message, 'CHAT', 'GERAL');
+            if ($libraryHit) {
+                $assistantMessage = $libraryHit->conteudo;
+                AIChat::create([
+                    'user_id' => $user->id,
+                    'role' => 'assistant',
+                    'message' => $assistantMessage,
+                ]);
+
+                return response()->json([
+                    'ok' => true,
+                    'message' => $assistantMessage,
+                    'action' => null,
+                    'source' => 'library',
+                    'chat_quota' => $this->chatQuotaPayload($user),
+                ]);
+            }
+
+            $kbHit = $this->knowledgeBase->resolve($message);
+            if ($kbHit !== null) {
+                $assistantMessage = $kbHit['message'];
+                AIChat::create([
+                    'user_id' => $user->id,
+                    'role' => 'assistant',
+                    'message' => $assistantMessage,
+                ]);
+
+                return response()->json([
+                    'ok' => true,
+                    'message' => $assistantMessage,
+                    'action' => null,
+                    'source' => 'knowledge_base',
+                    'chat_quota' => $this->chatQuotaPayload($user),
+                ]);
+            }
+        }
+
+        $chatHistory = $this->buildChatHistory($user->id);
+
+        $result = $this->orchestrator->run($user, $message, [
             'source' => 'chat_page',
-            'clinicId' => $user->academy_company_id
+            'clinicId' => $user->academy_company_id,
+            'clinic_id' => $user->clinic_id,
+            'feature_code' => 'ai_chat',
+            'chat_history' => $chatHistory,
+            'force_ia' => $forceIa,
         ]);
 
         if ($result['status'] === 'error') {
@@ -237,6 +286,28 @@ class ChatController extends Controller
             ->where('role', 'user')
             ->where('created_at', '>=', now()->startOfDay())
             ->count();
+    }
+
+    /**
+     * Histórico compacto para memória conversacional (sliding window).
+     *
+     * @return array<int, array{role: string, content: string}>
+     */
+    private function buildChatHistory(int $userId): array
+    {
+        $limit = config('ai.chat_history_messages', 6);
+
+        return AIChat::where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
+            ->reverse()
+            ->map(fn ($chat) => [
+                'role' => $chat->role === 'assistant' ? 'assistant' : 'user',
+                'content' => (string) $chat->message,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

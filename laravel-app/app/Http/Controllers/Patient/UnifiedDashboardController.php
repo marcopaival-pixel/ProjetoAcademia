@@ -109,7 +109,11 @@ class UnifiedDashboardController extends Controller
         }
 
         // 5. Alertas e Pendências
-        $unreadMessages = \App\Models\InternalEmail::where('recipient_id', $patient->id)
+        $unreadMessages = \App\Models\Message::whereHas('conversation', function($q) use ($patient) {
+                $q->where('user_one_id', $patient->id)
+                  ->orWhere('user_two_id', $patient->id);
+            })
+            ->where('sender_id', '!=', $patient->id)
             ->where('is_read', false)
             ->count();
 

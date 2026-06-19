@@ -39,7 +39,7 @@
         <div>
             <h4 class="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">Atenção Necessária</h4>
             <p class="text-orange-200/60 font-medium text-lg leading-relaxed max-w-3xl">
-                Identificamos <span class="text-white font-black">{{ $data['total_at_risk'] }} alunos</span> com alto risco de evasão. Eles não registram atividades há mais de 15 dias. Uma abordagem proativa agora pode evitar o cancelamento.
+                Identificamos <span class="text-white font-black">{{ $data['total_at_risk'] }} {{ mb_strtolower($patientsLabel) }}</span> com alto risco de evasão. Eles não registram atividades há mais de 15 dias. Uma abordagem proativa agora pode evitar o cancelamento.
             </p>
         </div>
     </div>
@@ -48,7 +48,7 @@
     <!-- Churn Risk List -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-[3.5rem] overflow-hidden shadow-2xl">
         <div class="p-10 border-b border-zinc-800 flex items-center justify-between">
-            <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Alunos em <span class="text-orange-500">Risco</span></h3>
+            <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">{{ $patientsLabel }} em <span class="text-orange-500">Risco</span></h3>
             <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Inativos > 15 dias</span>
         </div>
         
@@ -56,7 +56,7 @@
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-zinc-950/50">
-                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Aluno</th>
+                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">{{ $patientLabel }}</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Última Atividade</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Nível de Risco</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-right">Ação</th>
@@ -90,13 +90,13 @@
                         </td>
                         <td class="py-6 px-10 text-right">
                             <a href="{{ route('professional.patients.show', $student['id']) }}" class="text-[10px] font-black text-orange-500 uppercase tracking-widest hover:text-white transition-colors">
-                                Recuperar Aluno
+                                Recuperar {{ $patientLabel }}
                             </a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="p-20 text-center text-zinc-600 italic">Parabéns! Nenhum aluno com risco de churn identificado no momento.</td>
+                        <td colspan="4" class="p-20 text-center text-zinc-600 italic">Parabéns! Nenhum {{ mb_strtolower($patientLabel) }} com risco de churn identificado no momento.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -113,3 +113,6 @@
     }
 </style>
 @endsection
+
+
+

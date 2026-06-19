@@ -14,9 +14,14 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function show(Request $request): View
+    public function show(Request $request): View|\Illuminate\Http\RedirectResponse
     {
         $user = $request->user();
+        
+        if (session('active_role') === 'representative' || ($user->hasRole('representative') && session('active_role') === null)) {
+            return redirect()->route('representative.profile.index');
+        }
+
         $isPremium = $user->hasPremiumAccess();
         $isPurePatient = $user->hasRole('paciente') && !$user->hasRole('aluno') && !$user->isAdministrator();
 

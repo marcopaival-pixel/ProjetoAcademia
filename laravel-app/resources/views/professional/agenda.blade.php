@@ -99,7 +99,7 @@
                 <div class="glass-card rounded-[2.5rem] p-8 border-dashed border-zinc-800 bg-transparent">
                     <h3 class="text-sm font-black uppercase tracking-widest mb-4">Dica NexShape</h3>
                     <p class="text-[10px] text-zinc-500 leading-relaxed font-bold uppercase tracking-wider">
-                        Mantenha sua agenda sempre atualizada para que seus alunos possam encontrar os melhores horários para atendimento.
+                        Mantenha sua agenda sempre atualizada para que seus {{ mb_strtolower($patientsLabel) }} possam encontrar os melhores horários para atendimento.
                     </p>
                 </div>
             </div>
@@ -190,3 +190,6 @@ function updateStatus(id, status) {
 }
 </script>
 @endsection
+
+
+

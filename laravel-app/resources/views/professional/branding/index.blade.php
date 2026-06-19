@@ -15,7 +15,7 @@
             <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
                 Branding <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-blue-400">Studio</span>
             </h1>
-            <p class="text-zinc-500 font-medium max-w-xl">Sua marca, sua plataforma. Personalize a experiência visual dos seus pacientes em todos os touchpoints.</p>
+            <p class="text-zinc-500 font-medium max-w-xl">Sua marca, sua plataforma. Personalize a experiência visual dos seus {{ mb_strtolower($patientsLabel) }} em todos os touchpoints.</p>
         </div>
         
         <div class="flex flex-wrap items-center gap-4">
@@ -88,9 +88,9 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <!-- Preview Cartão do App do Paciente -->
+                <!-- Preview Cartão do App do {{ $patientLabel }} -->
                 <div class="space-y-6">
-                    <p class="text-center text-[10px] text-zinc-600 font-black uppercase tracking-widest">Interface Mobile do Paciente</p>
+                    <p class="text-center text-[10px] text-zinc-600 font-black uppercase tracking-widest">Interface Mobile do {{ $patientLabel }}</p>
                     <div class="bg-black rounded-[4rem] border-[12px] border-zinc-900 p-8 aspect-[9/16] relative overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] mx-auto w-full max-w-[320px]">
                         <div class="space-y-8">
                             <div class="flex items-center justify-between">
@@ -209,3 +209,6 @@
     input[type="color"]::-webkit-color-swatch { border: none; border-radius: 12px; }
 </style>
 @endsection
+
+
+

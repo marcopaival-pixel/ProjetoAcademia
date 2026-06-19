@@ -47,7 +47,8 @@ class MenuService
                     'dashboard', 'patients', 'exercise', 'diary', 'assessments', 'calendar', 'report',
                     'messages', 'presence', 'plano', 'nutrition', 'weight', 'hydration',
                     'chat', 'leaderboard', 'active-rest', 'evolution', 'trophies', 'body-analysis', 
-                    'patient.professionals.search', 'community', 'hydration', 'health-metrics'
+                    'patient.professionals.search', 'community', 'hydration', 'health-metrics',
+                    'finance_dashboard', 'finance_entries', 'finance_categories', 'finance_reports'
                 ],
                 'aluno' => [
                     'progression.plans', 'diary', 'assessments', 'calendar', 'plano',
@@ -180,6 +181,7 @@ class MenuService
                 'icon' => 'shield-check',
                 'items' => $this->prepareItems($user, [
                     ['name' => 'admin_dashboard', 'label' => 'Painel Admin', 'route' => 'admin.dashboard', 'icon' => 'shield'],
+                    ['name' => 'executive_dashboard', 'label' => 'Dashboard Executivo IA', 'route' => 'admin.executive.dashboard', 'icon' => 'sparkles'],
                     ['name' => 'users_manage', 'label' => 'Gestão de Usuários', 'route' => 'admin.users', 'icon' => 'users'],
                     ['name' => 'pdf_companies', 'label' => 'Empresas & Unidades', 'route' => 'admin.pdf-companies.index', 'icon' => 'building'],
                     ['name' => 'settings', 'label' => 'Configurações', 'route' => 'admin.settings', 'icon' => 'settings'],
@@ -218,22 +220,136 @@ class MenuService
 
         // 3. Portal do Profissional (Profissional, instrutor ou admin explorando)
         if (($user->hasRole(['professional', 'instructor']) && (!$activeRole || $activeRole === 'professional')) || ($isAdmin && $activeRole === 'professional')) {
-            $groups[] = [
-                'id' => 'professional',
-                'label' => 'Portal do Profissional',
-                'icon' => 'user-cog',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'prof_dashboard', 'label' => 'Painel de Controle', 'route' => 'professional.dashboard', 'icon' => 'layout-dashboard'],
-                    ['name' => 'prof_agenda', 'label' => 'Minha Agenda', 'route' => 'agenda.index', 'icon' => 'calendar'],
-                    ['name' => 'prof_patients', 'label' => 'Meus Pacientes', 'route' => 'professional.patients.index', 'icon' => 'users'],
-                    ['name' => 'prof_library', 'label' => 'Biblioteca de Exercícios', 'route' => 'exercise.catalog', 'icon' => 'book-open-check'],
-                    ['name' => 'prof_protocols', 'label' => 'Protocolos de Treino', 'route' => 'progression.plans.index', 'icon' => 'dumbbell'],
-                    ['name' => 'prof_assessments', 'label' => 'Avaliações Físicas', 'route' => 'assessments.index', 'icon' => 'activity'],
-                    ['name' => 'prof_import_workout', 'label' => 'Importar Treino (IA)', 'route' => 'progression.plans.import-photo', 'icon' => 'camera', 'premium' => true],
-                    ['name' => 'hydration', 'label' => 'Nex Hydra', 'route' => 'hydration.index', 'icon' => 'droplet'],
-                    ['name' => 'omnichat_prof', 'label' => 'Atendimento Omni', 'route' => 'admin.omnichannel', 'icon' => 'messages-square'],
-                ], $isPremium),
+            
+            $enabledModules = [];
+            $hasSpecialtyConfig = false;
+            
+            if ($user->professionalProfile) {
+                $specialtyId = session('active_specialty_id');
+                $specialty = null;
+                
+                if ($specialtyId) {
+                    $specialty = \App\Models\Especialidade::find($specialtyId);
+                } else {
+                    $specialty = $user->professionalProfile->especialidade;
+                }
+
+                if ($specialty && !empty($specialty->enabled_modules)) {
+                    $enabledModules = is_string($specialty->enabled_modules) ? json_decode($specialty->enabled_modules, true) : $specialty->enabled_modules;
+                    $hasSpecialtyConfig = true;
+                }
+            }
+
+            $moduleMapping = [
+                'prof_agenda' => 'agenda',
+                'prof_patients' => 'patients',
+                'prof_assessments' => 'assessments',
+                'prof_protocols' => 'protocols',
+                'prof_library' => 'library',
+                'prof_import_workout' => 'ai_tools',
+                'hydration' => 'ai_tools',
+                'prof_evolution' => 'evolution',
             ];
+
+            $filterByModule = function($items) use ($enabledModules, $hasSpecialtyConfig, $moduleMapping) {
+                if (!$hasSpecialtyConfig) return $items;
+                return array_values(array_filter($items, function($item) use ($enabledModules, $moduleMapping) {
+                    $moduleName = $moduleMapping[$item['name']] ?? null;
+                    if (!$moduleName) return true; // Mostra por padrão se não tiver mapeamento restrito
+                    return in_array($moduleName, $enabledModules);
+                }));
+            };
+
+            // GESTÃO
+            $gestaoItems = $filterByModule([
+                ['name' => 'prof_dashboard', 'label' => 'Dashboard', 'route' => 'professional.dashboard', 'icon' => 'layout-dashboard'],
+                ['name' => 'prof_agenda', 'label' => 'Agenda', 'route' => 'agenda.index', 'icon' => 'calendar'],
+                ['name' => 'prof_patients', 'label' => 'Pacientes', 'route' => 'professional.patients.index', 'icon' => 'users'],
+            ]);
+            if (!empty($gestaoItems)) {
+                $groups[] = [
+                    'id' => 'professional_management',
+                    'label' => 'Gestão',
+                    'icon' => 'briefcase',
+                    'items' => $this->prepareItems($user, $gestaoItems, $isPremium),
+                ];
+            }
+
+            // ATENDIMENTO
+            $atendimentoItems = $filterByModule([
+                ['name' => 'prof_assessments', 'label' => 'Avaliações', 'route' => 'assessments.index', 'icon' => 'clipboard-list'],
+                ['name' => 'prof_protocols', 'label' => 'Protocolos de Treino', 'route' => 'progression.plans.index', 'icon' => 'dumbbell'],
+                ['name' => 'prof_library', 'label' => 'Biblioteca de Exercícios', 'route' => 'exercise.catalog', 'icon' => 'book-open-check'],
+                ['name' => 'prof_files', 'label' => 'Arquivos do Paciente', 'route' => 'professional.patients.index', 'icon' => 'folder-open'],
+                ['name' => 'prof_evolution', 'label' => 'Evolução Clínica', 'route' => 'professional.patients.index', 'icon' => 'trending-up'],
+            ]);
+            if (!empty($atendimentoItems)) {
+                $groups[] = [
+                    'id' => 'professional_clinical',
+                    'label' => 'Atendimento',
+                    'icon' => 'stethoscope',
+                    'items' => $this->prepareItems($user, $atendimentoItems, $isPremium),
+                ];
+            }
+
+            // INTELIGÊNCIA ARTIFICIAL
+            $aiItems = $filterByModule([
+                ['name' => 'prof_import_workout', 'label' => 'Importar Treino IA', 'route' => 'progression.plans.import-photo', 'icon' => 'camera', 'premium' => true],
+                ['name' => 'hydration', 'label' => 'Nex Hydra', 'route' => 'hydration.index', 'icon' => 'droplet'],
+            ]);
+            if (!empty($aiItems)) {
+                $groups[] = [
+                    'id' => 'professional_ai',
+                    'label' => 'Inteligência Artificial',
+                    'icon' => 'sparkles',
+                    'items' => $this->prepareItems($user, $aiItems, $isPremium),
+                ];
+            }
+
+            // COMUNICAÇÃO
+            $commsItems = $filterByModule([
+                ['name' => 'messages', 'label' => 'Mensagens', 'route' => 'messages.index', 'icon' => 'mail'],
+                ['name' => 'omnichat_prof', 'label' => 'Atendimento Omni', 'route' => 'admin.omnichannel', 'icon' => 'messages-square'],
+            ]);
+            if (!empty($commsItems)) {
+                $groups[] = [
+                    'id' => 'professional_communication',
+                    'label' => 'Comunicação',
+                    'icon' => 'message-square',
+                    'items' => $this->prepareItems($user, $commsItems, $isPremium),
+                ];
+            }
+
+            // FINANCEIRO
+            if ($user->professionalProfile && $user->professionalProfile->use_finance_module && (!$hasSpecialtyConfig || in_array('finance', $enabledModules))) {
+                $financeItems = [
+                    ['name' => 'finance_dashboard', 'label' => 'Financeiro (Resumo)', 'route' => 'professional.finance.dashboard', 'icon' => 'bar-chart-2'],
+                    ['name' => 'finance_entries', 'label' => 'Lançamentos', 'route' => 'professional.finance.entries.index', 'icon' => 'list'],
+                    ['name' => 'finance_categories', 'label' => 'Categorias', 'route' => 'professional.finance.categories.index', 'icon' => 'tags'],
+                    ['name' => 'finance_reports', 'label' => 'Relatórios', 'route' => 'professional.finance.reports.index', 'icon' => 'pie-chart'],
+                ];
+                $groups[] = [
+                    'id' => 'professional_finance',
+                    'label' => 'Financeiro',
+                    'icon' => 'dollar-sign',
+                    'items' => $this->prepareItems($user, $financeItems, $isPremium),
+                ];
+            }
+
+            // CONFIGURAÇÕES
+            $settingsItems = $filterByModule([
+                ['name' => 'prof_profile', 'label' => 'Perfil', 'route' => 'professional.profile.edit', 'icon' => 'user'],
+                ['name' => 'prof_preferences', 'label' => 'Preferências', 'route' => 'professional.profile.edit', 'icon' => 'sliders'],
+                ['name' => 'prof_integrations', 'label' => 'Integrações', 'route' => 'professional.profile.edit', 'icon' => 'link'],
+            ]);
+            if (!empty($settingsItems)) {
+                $groups[] = [
+                    'id' => 'professional_settings',
+                    'label' => 'Configurações',
+                    'icon' => 'settings',
+                    'items' => $this->prepareItems($user, $settingsItems, $isPremium),
+                ];
+            }
         }
 
         // 4. Painel do Aluno / Atleta (Aluno ou admin explorando)
@@ -262,7 +378,7 @@ class MenuService
                     ['name' => 'active-rest', 'label' => 'Descanso Ativo', 'route' => 'active-rest.index', 'icon' => 'refresh-cw'],
                     ['name' => 'academia', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'play-circle'],
                     ['name' => 'health-metrics', 'label' => 'Saúde (Wearables)', 'route' => 'health-metrics.index', 'icon' => 'heart', 'premium' => true],
-                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check', 'premium' => true],
+                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check'],
                 ], $isPremium),
             ];
         }
@@ -278,7 +394,7 @@ class MenuService
                     ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'file-text'],
                     ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'file-input'],
                     ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'calendar-check'],
-                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check', 'premium' => true],
+                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check'],
                 ], $isPremium),
             ];
         }
@@ -288,25 +404,47 @@ class MenuService
             $groups[] = [
                 'id' => 'representative',
                 'label' => 'Portal do Representante',
-                'icon' => 'handshake',
+                'icon' => 'briefcase',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'rep_dashboard', 'label' => 'Minhas Vendas', 'route' => 'representative.dashboard', 'icon' => 'bar-chart-3'],
-                    ['name' => 'rep_clients', 'label' => 'Meus Clientes', 'route' => 'representative.referrals', 'icon' => 'users'],
+                    ['name' => 'rep_dashboard', 'label' => 'Dashboard', 'route' => 'representative.dashboard', 'icon' => 'bar-chart-3'],
+                    ['name' => 'rep_leads', 'label' => 'Meus Leads', 'route' => 'representative.leads.index', 'icon' => 'target'],
+                    ['name' => 'rep_proposals', 'label' => 'Propostas', 'route' => 'representative.proposals.index', 'icon' => 'file-text'],
+                    ['name' => 'rep_contracts', 'label' => 'Contratos', 'route' => 'representative.contracts.index', 'icon' => 'file-signature'],
+                    ['name' => 'rep_clinics', 'label' => 'Clínicas Vendidas', 'route' => 'representative.clinics.index', 'icon' => 'hospital'],
+                    ['name' => 'rep_agenda', 'label' => 'Agenda', 'route' => 'representative.agenda.index', 'icon' => 'calendar'],
+                    ['name' => 'rep_reports', 'label' => 'Relatórios', 'route' => 'representative.reports.index', 'icon' => 'pie-chart'],
+                ], $isPremium),
+            ];
+            
+            // Adicionar grupo secundário para Comissões e Indicações
+            $groups[] = [
+                'id' => 'representative_finance',
+                'label' => 'Financeiro Comercial',
+                'icon' => 'dollar-sign',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'rep_commissions', 'label' => 'Comissões', 'route' => 'representative.commissions', 'icon' => 'wallet'],
+                    ['name' => 'rep_withdraw', 'label' => 'Saques', 'route' => 'representative.withdraw.form', 'icon' => 'arrow-up-right'],
+                    ['name' => 'rep_clients', 'label' => 'Indicações', 'route' => 'representative.referrals', 'icon' => 'users'],
                 ], $isPremium),
             ];
         }
 
         // 7. Atendimento & Ajuda
-        $groups[] = [
-            'id' => 'support',
-            'label' => 'Suporte e Ajuda',
-            'icon' => 'help-circle',
-            'items' => $this->prepareItems($user, [
-                ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'life-buoy'],
-                ['name' => 'kb_index', 'label' => 'Ajuda', 'route' => 'kb.index', 'icon' => 'book-open'],
-                ['name' => 'legal_terms', 'label' => 'Privacidade', 'route' => 'legal.terms', 'icon' => 'shield'],
-            ], $isPremium),
-        ];
+        $isActingAsPatient = ($user->hasRole('paciente') && (!$activeRole || $activeRole === 'paciente')) || ($isAdmin && $activeRole === 'paciente');
+        $isActingAsRepresentative = ($user->hasRole('representative') && (!$activeRole || $activeRole === 'representative'));
+
+        if (!$isActingAsPatient && !$isActingAsRepresentative) {
+            $groups[] = [
+                'id' => 'support',
+                'label' => 'Suporte e Ajuda',
+                'icon' => 'help-circle',
+                'items' => $this->prepareItems($user, [
+                    ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'life-buoy'],
+                    ['name' => 'kb_index', 'label' => 'Ajuda', 'route' => 'kb.index', 'icon' => 'book-open'],
+                    ['name' => 'legal_terms', 'label' => 'Privacidade', 'route' => 'legal.terms', 'icon' => 'shield'],
+                ], $isPremium),
+            ];
+        }
 
         return $groups;
     }
@@ -385,17 +523,20 @@ class MenuService
             
             // Medical Language Adaptation for Clinic Experience
             if ($isClinic) {
+                $clientTerm = __t('Paciente');
+                $clientTermPlural = $clientTerm === 'Aluno' ? 'Alunos' : ($clientTerm === 'Cliente' ? 'Clientes' : 'Pacientes');
+
                 $medicalMap = [
-                    'Pacientes' => 'Pacientes',
-                    'Membros' => 'Pacientes',
-                    'Alunos' => 'Pacientes',
-                    'Meus Alunos' => 'Meus Pacientes',
-                    'Agenda' => 'Agenda de Consultas',
-                    'Treinos' => 'Prescrições / Treinos',
-                    'Meus Treinos' => 'Conduta Clínica',
-                    'Dashboard' => 'Painel Clínico',
-                    'Meu Perfil' => 'Prontuário Profissional',
-                    'Evolução' => 'Evolução Clínica',
+                    'Pacientes' => $clientTermPlural,
+                    'Membros' => $clientTermPlural,
+                    'Alunos' => $clientTermPlural,
+                    'Meus Alunos' => 'Meus ' . $clientTermPlural,
+                    'Agenda' => 'Agenda de ' . ($clientTerm === 'Paciente' ? 'Consultas' : 'Atendimentos'),
+                    'Treinos' => $clientTerm === 'Paciente' ? 'Prescrições / Condutas' : 'Treinos',
+                    'Meus Treinos' => $clientTerm === 'Paciente' ? 'Conduta Clínica' : 'Meus Treinos',
+                    'Dashboard' => $clientTerm === 'Paciente' ? 'Painel Clínico' : 'Painel Principal',
+                    'Meu Perfil' => 'Perfil Profissional',
+                    'Evolução' => $clientTerm === 'Paciente' ? 'Evolução Clínica' : 'Evolução',
                 ];
                 $label = $medicalMap[$label] ?? $label;
             }

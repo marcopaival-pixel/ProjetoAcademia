@@ -38,7 +38,7 @@
     <div class="patient-info">
         <table>
             <tr>
-                <td width="60%"><span class="label">Paciente:</span><br><strong>{{ $patient->name }}</strong></td>
+                <td width="60%"><span class="label">{{ $patientLabel }}:</span><br><strong>{{ $patient->name }}</strong></td>
                 <td width="40%"><span class="label">CPF/ID:</span><br><strong>{{ $patient->cpf ?: '---' }}</strong></td>
             </tr>
         </table>
@@ -77,9 +77,12 @@
     </div>
 
     <div class="footer">
-        <p>Este documento é uma via digital de orientação ao paciente, gerada via plataforma <strong>{{ config('app.name') }}</strong>.</p>
+        <p>Este documento é uma via digital de orientação ao {{ mb_strtolower($patientLabel) }}, gerada via plataforma <strong>{{ config('app.name') }}</strong>.</p>
         <p>A autenticidade deste documento pode ser validada pelo profissional responsável.</p>
         <p>&copy; {{ date('Y') }} - NEX SHAPE PRO PERFORMANCE</p>
     </div>
 </body>
 </html>
+
+
+

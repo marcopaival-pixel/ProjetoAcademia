@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MarketingBannerClick extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'banner_id',
         'user_id',

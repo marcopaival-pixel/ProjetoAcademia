@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\OmniConversation;
 use App\Services\OmniChatService;
+use App\Support\QueueNames;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,6 +25,7 @@ class OmniProcessMessage implements ShouldQueue
     {
         $this->conversation = $conversation;
         $this->content = $content;
+        $this->onQueue(QueueNames::webhooks());
     }
 
     /**

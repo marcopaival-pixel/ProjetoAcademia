@@ -120,6 +120,41 @@ UPTIME_MONITOR_URL=https://www.seudominio.com.br/up
 
 ---
 
+## 10. Observabilidade avançada (implementado — maio/2026)
+
+Config central: `laravel-app/config/observability.php` (variáveis em `.env.example`).
+
+| Recurso | Rota admin | Tabela / origem |
+|---------|------------|-----------------|
+| Logs admin | `/admin/observability/admin-logs` | `admin_logs` |
+| Auditoria auth | `/admin/observability/auth-logs` | `auth_audit_logs` |
+| Logs API v1 | `/admin/observability/api-logs` | `api_access_logs` |
+| Erros JavaScript | `/admin/observability/client-errors` | `client_error_logs` |
+| Logs e-mail | `/admin/settings/email/logs` | `log_envio_email` |
+
+**API:** middleware `LogApiAccess` + `AssignRequestId` em rotas `/api/*`.  
+**Frontend:** `resources/js/logger.js` → `POST /api/v1/client-errors`.  
+**Alertas:** `AlertDispatcher` (e-mail + Slack via `SLACK_OPS_WEBHOOK_URL`).  
+**Retenção:** `php artisan app:purge-old-logs --force` (políticas por tabela em `observability.retention_days`).  
+**Deploy:** `php artisan app:deploy:checklist` valida health endpoints e `SystemHealthService`.  
+**Relatório compliance:** `php artisan app:audit:report --days=7` → JSON em `storage/app/reports/`.  
+**Filas nomeadas:** `default`, `pdf`, `ai`, `webhooks` — ver `App\Support\QueueNames` e `docs/supervisor-nexshape.conf.example`.
+
+### Laravel Horizon (produção Linux + Redis)
+
+Requer `ext-pcntl` e `ext-posix` (não disponível no Windows/XAMPP). Em servidor Linux:
+
+```bash
+composer require laravel/horizon
+php artisan horizon:install
+# .env: QUEUE_CONNECTION=redis, HORIZON_ENABLED=true
+php artisan horizon
+```
+
+Proteger `/horizon` — apenas administradores (`AppServiceProvider` registra `Horizon::auth` quando o pacote está instalado). Não expor publicamente em produção.
+
+---
+
 ## Referências
 
 - `config/monitoring.php` — URLs e flags documentadas

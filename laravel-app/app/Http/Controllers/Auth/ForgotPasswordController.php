@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\AuthAuditLog;
+use App\Services\Operations\AuthAuditService;
 use App\Services\TransactionalMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -47,8 +49,25 @@ class ForgotPasswordController extends Controller
                 'email_requested' => $request->email,
             ]);
 
+            app(AuthAuditService::class)->log(
+                AuthAuditLog::EVENT_PASSWORD_RESET_REQUEST,
+                User::where('email', $request->email)->value('id'),
+                $request->email,
+                true,
+                $request
+            );
+
             return back()->with('status', __($status));
         }
+
+        app(AuthAuditService::class)->log(
+            AuthAuditLog::EVENT_PASSWORD_RESET_REQUEST,
+            null,
+            $request->email,
+            false,
+            $request,
+            ['status' => $status]
+        );
 
         return back()->withErrors(['email' => __($status)]);
     }

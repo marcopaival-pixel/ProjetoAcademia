@@ -42,6 +42,7 @@
             @php
                 $menuItems = [
                     ['route' => 'professional.patients.medical-records.summary', 'label' => 'Resumo', 'icon' => 'fas fa-id-badge'],
+                    ['route' => 'professional.patients.trainings.index', 'label' => 'Treinos', 'icon' => 'fas fa-dumbbell'],
                     ['route' => 'professional.patients.medical-records.evolutions.index', 'label' => 'Evolução / Atendimentos', 'icon' => 'fas fa-notes-medical'],
                     ['route' => 'professional.patients.medical-records.reports.index', 'label' => 'Laudos', 'icon' => 'fas fa-file-medical-alt'],
                     ['route' => 'professional.patients.medical-records.prescriptions.index', 'label' => 'Receitas', 'icon' => 'fas fa-prescription-bottle-alt'],
@@ -64,3 +65,6 @@
     @yield('medical-content')
 </div>
 @endsection
+
+
+

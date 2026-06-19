@@ -64,7 +64,7 @@
                  :class="plan.name.includes('Premium') || plan.name.includes('Pro') ? 'border-emerald-500/40' : ''">
 
                 <div x-show="plan.name.includes('Premium') || plan.name.includes('Pro')" class="absolute top-0 right-0 p-8">
-                    <span class="bg-emerald-500 text-zinc-950 text-[9px] font-black px-5 py-2 rounded-full shadow-2xl tracking-widest uppercase italic">Elite</span>
+                    <span class="bg-emerald-500 text-zinc-950 text-[9px] font-black px-5 py-2 rounded-full shadow-2xl tracking-widest uppercase italic animate-pulse">Mais Popular</span>
                 </div>
 
                 <!-- Badge Plano Atual — Regra 5 -->
@@ -84,10 +84,15 @@
                     </div>
                 </div>
 
-                <div class="flex items-baseline gap-2 mb-10">
-                    <span class="text-zinc-600 text-xs font-black uppercase">R$</span>
-                    <span class="text-6xl font-black text-white tracking-tighter" x-text="pagamentoAtivo ? parseFloat(plan.price).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'"></span>
-                    <span class="text-zinc-700 text-[10px] font-black uppercase tracking-widest">/ mês</span>
+                <div class="space-y-1 mb-10">
+                    <template x-if="pagamentoAtivo && plan.price > 0">
+                        <p class="text-[10px] font-black text-rose-500 line-through uppercase tracking-widest" x-text="'De R$ ' + parseFloat(plan.price * 1.3).toLocaleString('pt-BR', {minimumFractionDigits: 2})"></p>
+                    </template>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-zinc-600 text-xs font-black uppercase">R$</span>
+                        <span class="text-6xl font-black text-white tracking-tighter" x-text="pagamentoAtivo ? parseFloat(plan.price).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'"></span>
+                        <span class="text-zinc-700 text-[10px] font-black uppercase tracking-widest">/ mês</span>
+                    </div>
                 </div>
 
                 <div class="w-full space-y-4 mb-12">
@@ -144,14 +149,13 @@
                                 <button @click="window.location.href = '{{ route('checkout.index', '') }}/' + plan.id"
                                         class="w-full py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all"
                                         :class="(plan.price > 0 || !pagamentoAtivo) ? 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400 shadow-xl shadow-emerald-500/10' : 'bg-zinc-800 text-zinc-600 border border-zinc-700 cursor-not-allowed'">
-                                    <span x-text="(plan.price > 0 || !pagamentoAtivo) ? 'COMEÇAR AGORA' : 'PLANO BASE'"></span>
+                                    <span x-text="(!pagamentoAtivo || plan.price == 0) ? 'COMEÇAR TESTE GRÁTIS' : 'ASSINAR COM DESCONTO'"></span>
                                 </button>
                                 <button @click="openModal(plan)" class="text-center text-[9px] text-zinc-600 font-black uppercase tracking-widest hover:text-white transition-colors">Detalhes do Protocolo</button>
                             </div>
                         </template>
                     @else
-                        <button @click="window.location.href = '{{ route('checkout.index', '') }}/' + plan.id" class="w-full py-5 bg-emerald-500 text-zinc-950 font-black text-[11px] uppercase tracking-[0.3em] rounded-[2rem] hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10">
-                            COMEÇAR AGORA
+                        <button @click="window.location.href = '{{ route('checkout.index', '') }}/' + plan.id" class="w-full py-5 bg-emerald-500 text-zinc-950 font-black text-[11px] uppercase tracking-[0.3em] rounded-[2rem] hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10" x-text="(!pagamentoAtivo || plan.price == 0) ? 'COMEÇAR TESTE GRÁTIS' : 'ASSINAR COM DESCONTO'">
                         </button>
                     @endauth
                 </div>
@@ -268,6 +272,52 @@
                  <h4 class="text-white font-black text-sm tracking-widest uppercase italic">Sem Fidelidade</h4>
                  <p class="text-zinc-600 text-[10px] leading-relaxed uppercase font-black tracking-tighter">Cancele ou mude de nível a qualquer momento sem taxas ocultas.</p>
              </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="max-w-4xl mx-auto pt-16 border-t border-zinc-900" x-data="{ activeFaq: null }">
+        <h3 class="text-4xl font-black text-white text-center tracking-tighter uppercase italic mb-12">Perguntas Frequentes</h3>
+        <div class="space-y-4">
+            <div class="bg-zinc-950/50 border border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-emerald-500/20 cursor-pointer" @click="activeFaq = activeFaq === 1 ? null : 1">
+                <div class="p-6 flex justify-between items-center">
+                    <h4 class="text-white font-black uppercase tracking-widest text-sm">Posso cancelar a qualquer momento?</h4>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-emerald-500 transition-transform" :class="activeFaq === 1 ? 'rotate-180' : ''"></i>
+                </div>
+                <div class="px-6 pb-6 text-zinc-500 font-medium text-sm leading-relaxed" x-show="activeFaq === 1" x-collapse>
+                    Sim. Nossa plataforma não possui fidelidade oculta. Você pode cancelar ou alterar seu plano diretamente pelo painel quando quiser, sem burocracia.
+                </div>
+            </div>
+            
+            <div class="bg-zinc-950/50 border border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-emerald-500/20 cursor-pointer" @click="activeFaq = activeFaq === 2 ? null : 2">
+                <div class="p-6 flex justify-between items-center">
+                    <h4 class="text-white font-black uppercase tracking-widest text-sm">Como funciona a Inteligência Artificial (NexNeural)?</h4>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-emerald-500 transition-transform" :class="activeFaq === 2 ? 'rotate-180' : ''"></i>
+                </div>
+                <div class="px-6 pb-6 text-zinc-500 font-medium text-sm leading-relaxed" x-show="activeFaq === 2" x-collapse>
+                    A IA analisa dados inseridos como esforço percebido (RPE) e biometria, recomendando ajustes de carga ou dieta dinamicamente para acelerar seus resultados sem risco de lesão.
+                </div>
+            </div>
+            
+            <div class="bg-zinc-950/50 border border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-emerald-500/20 cursor-pointer" @click="activeFaq = activeFaq === 3 ? null : 3">
+                <div class="p-6 flex justify-between items-center">
+                    <h4 class="text-white font-black uppercase tracking-widest text-sm">Preciso de um cartão de crédito para testar?</h4>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-emerald-500 transition-transform" :class="activeFaq === 3 ? 'rotate-180' : ''"></i>
+                </div>
+                <div class="px-6 pb-6 text-zinc-500 font-medium text-sm leading-relaxed" x-show="activeFaq === 3" x-collapse>
+                    Se você escolher o plano gratuito ou iniciar o Modo Demonstração, nenhum cartão de crédito será exigido. Pague apenas quando tiver certeza do valor que entregamos.
+                </div>
+            </div>
+            
+            <div class="bg-zinc-950/50 border border-zinc-800 rounded-2xl overflow-hidden transition-all hover:border-emerald-500/20 cursor-pointer" @click="activeFaq = activeFaq === 4 ? null : 4">
+                <div class="p-6 flex justify-between items-center">
+                    <h4 class="text-white font-black uppercase tracking-widest text-sm">Para quem é o plano Business?</h4>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-emerald-500 transition-transform" :class="activeFaq === 4 ? 'rotate-180' : ''"></i>
+                </div>
+                <div class="px-6 pb-6 text-zinc-500 font-medium text-sm leading-relaxed" x-show="activeFaq === 4" x-collapse>
+                    Desenhado para clínicas e grandes academias que desejam unificar prontuários, aumentar o LTV dos pacientes e ter controle total através de uma única interface premium.
+                </div>
+            </div>
         </div>
     </div>
 </div>

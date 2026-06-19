@@ -106,6 +106,7 @@ class TenantIsolationAuditor
         'PaymentSetting',
         'OmniCompany',
         'CreditoPacote',
+        'DeviceToken',
     ];
 
     /**

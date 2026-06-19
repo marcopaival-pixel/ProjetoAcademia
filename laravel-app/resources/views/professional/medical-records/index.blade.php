@@ -7,7 +7,7 @@
     </div>
     
     <h2 class="text-3xl font-black text-white mb-4 tracking-tight">Prontuário de <span class="text-blue-500">{{ $patient->name }}</span></h2>
-    <p class="text-zinc-400 font-medium max-w-xl mx-auto mb-10">Utilize o menu acima para navegar entre as seções do prontuário, registrar novos atendimentos, emitir laudos e gerenciar a documentação clínica do paciente.</p>
+    <p class="text-zinc-400 font-medium max-w-xl mx-auto mb-10">Utilize o menu acima para navegar entre as seções do prontuário, registrar novos atendimentos, emitir laudos e gerenciar a documentação clínica do {{ mb_strtolower($patientLabel) }}.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         <div class="p-6 bg-zinc-800/50 border border-zinc-800 rounded-3xl text-left">
@@ -28,3 +28,6 @@
     </div>
 </div>
 @endsection
+
+
+

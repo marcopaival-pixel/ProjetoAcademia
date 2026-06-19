@@ -17,19 +17,37 @@ class RepresentativeDashboardController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        // Resumo Financeiro
+        // Minhas Vendas e Recebimentos (Comissões)
         $commissions = Commission::where('representative_id', $user->id)->get();
         
         $totalEarned = $commissions->where('status', '!=', Commission::STATUS_CANCELADO)->sum('commission_amount');
-        $pendingAmount = $commissions->where('status', Commission::STATUS_PENDENTE)->sum('commission_amount');
+        $pendingAmount = $commissions->whereIn('status', [Commission::STATUS_PENDENTE, Commission::STATUS_AGUARDANDO_PAGAMENTO, Commission::STATUS_CARENCIA])->sum('commission_amount');
         $availableAmount = $commissions->where('status', Commission::STATUS_DISPONIVEL)->sum('commission_amount');
         $paidAmount = $commissions->where('status', Commission::STATUS_PAGO)->sum('commission_amount');
 
-        // Indicações (últimos 10)
-        $referrals = User::where('representative_id', $user->id)
-            ->latest()
-            ->take(10)
-            ->get();
+        // Métricas do Dashboard Comercial
+        $clinicsCount = \App\Models\Clinic::where('representative_id', $user->id)->count();
+        $activeClinicsCount = \App\Models\Clinic::where('representative_id', $user->id)->where('sale_status', 'ativa')->count();
+        $defaultingClinicsCount = \App\Models\Clinic::where('representative_id', $user->id)->where('sale_status', 'inadimplente')->count();
+        
+        $salesThisMonth = \App\Models\Clinic::where('representative_id', $user->id)
+            ->whereMonth('sale_date', now()->month)
+            ->whereYear('sale_date', now()->year)
+            ->count();
+
+        // Próximas liberações (Valor previsto para próximo pagamento)
+        $nextPaymentValue = Commission::where('representative_id', $user->id)
+            ->where('status', Commission::STATUS_DISPONIVEL)
+            ->sum('commission_amount');
+
+        $leadsCount = \App\Models\Lead::where('responsavel_id', $user->id)->count();
+        $proposalsCount = \App\Models\CommercialProposal::where('representative_id', $user->id)->count();
+        $contractsCount = \App\Models\Contract::where('representative_id', $user->id)->count();
+        $activeContractsCount = \App\Models\Contract::where('representative_id', $user->id)->where('status', 'ativo')->count();
+        $totalSoldValue = \App\Models\CommercialProposal::where('representative_id', $user->id)->where('status', 'aceita')->sum('valor');
+
+        $salesConversion = $leadsCount > 0 ? round(($contractsCount / $leadsCount) * 100, 2) : 0;
+        $monthlyGoal = 10000; // Meta mensal mockada ou configurável no perfil
 
         // Comissões (últimas 10)
         $latestCommissions = Commission::with(['user', 'payment'])
@@ -38,17 +56,36 @@ class RepresentativeDashboardController extends Controller
             ->take(10)
             ->get();
 
+        // Próximas liberações
+        $upcomingReleases = Commission::where('representative_id', $user->id)
+            ->where('status', Commission::STATUS_PENDENTE)
+            ->orderBy('created_at', 'asc') // ideal seria uma data de previsão
+            ->take(5)
+            ->get();
+
         // Link de indicação
-        $refCode = $user->username ?: $user->professional_code ?: $user->id;
-        $referralLink = route('home', ['ref' => $refCode]);
+        $refCode = $user->representativeProfile->code ?? $user->username ?? $user->professional_code ?? $user->id;
+        $referralLink = route('referral.link', ['code' => $refCode]);
 
         return view('representative.dashboard', compact(
             'totalEarned',
             'pendingAmount',
             'availableAmount',
             'paidAmount',
-            'referrals',
+            'clinicsCount',
+            'activeClinicsCount',
+            'defaultingClinicsCount',
+            'salesThisMonth',
+            'nextPaymentValue',
+            'leadsCount',
+            'proposalsCount',
+            'contractsCount',
+            'activeContractsCount',
+            'totalSoldValue',
+            'salesConversion',
+            'monthlyGoal',
             'latestCommissions',
+            'upcomingReleases',
             'referralLink'
         ));
     }
@@ -72,6 +109,17 @@ class RepresentativeDashboardController extends Controller
             ->paginate(20);
 
         return view('representative.referrals', compact('referrals'));
+    }
+
+    public function myCodes(Request $request): View
+    {
+        $user = auth()->user();
+        $codes = \App\Models\ReferralCode::where('representative_id', $user->id)
+            ->with(['commercialProposal', 'clinic'])
+            ->latest()
+            ->paginate(20);
+
+        return view('representative.my_codes', compact('codes'));
     }
 
     public function withdrawForm(): View

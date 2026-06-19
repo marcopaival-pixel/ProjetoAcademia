@@ -19,8 +19,10 @@ class ProfessionalProfileController extends Controller
             'registration_expiry_date' => now()->addYear(),
             'profession_id' => 1, // Default or find first
         ]);
+        $professions = \App\Models\Profession::all();
+        $especialidades = \App\Models\Especialidade::all();
 
-        return view('professional.profile.edit', compact('user', 'profile'));
+        return view('professional.profile.edit', compact('user', 'profile', 'professions', 'especialidades'));
     }
 
     public function update(Request $request)
@@ -56,6 +58,7 @@ class ProfessionalProfileController extends Controller
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             
             // Dados Profissionais
+            'profession_id' => 'required|exists:professions,id',
             'experience_years' => 'nullable|integer|min:0',
             'education' => 'nullable|string',
             'registration_number' => 'required|string',
@@ -85,8 +88,9 @@ class ProfessionalProfileController extends Controller
             'work_start_time' => 'nullable|date_format:H:i',
             'work_end_time' => 'nullable|date_format:H:i',
             
-            // Visibilidade
+            // Visibilidade e Módulos
             'is_public' => 'nullable|boolean',
+            'use_finance_module' => 'nullable|boolean',
         ], $messages, $attributes);
 
         // Update User
@@ -108,7 +112,7 @@ class ProfessionalProfileController extends Controller
 
         // Prepare data for profile update
         $profileData = $request->only([
-            'experience_years', 'education', 'registration_number', 'council', 
+            'profession_id', 'experience_years', 'education', 'registration_number', 'council', 
             'registration_uf', 'about', 'offered_services', 'specialty',
             'service_types', 'consultation_price', 'appointment_duration', 
             'appointment_interval', 'company_name', 'clinic_address', 
@@ -117,6 +121,7 @@ class ProfessionalProfileController extends Controller
         ]);
 
         $profileData['is_public'] = $request->boolean('is_public');
+        $profileData['use_finance_module'] = $request->boolean('use_finance_module');
         
         if (isset($data['professional_photo_path'])) {
             $profileData['professional_photo_path'] = $data['professional_photo_path'];
@@ -153,3 +158,5 @@ class ProfessionalProfileController extends Controller
         return back()->with('success', 'Perfil atualizado com sucesso!');
     }
 }
+
+

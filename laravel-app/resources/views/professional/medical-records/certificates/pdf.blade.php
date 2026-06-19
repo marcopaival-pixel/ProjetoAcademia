@@ -23,7 +23,7 @@
         <p>Atesto, para os devidos fins, a pedido do interessado, que o(a) Sr(a). <strong>{{ $patient->name }}</strong>, 
         inscrito(a) no CPF sob o nº <strong>{{ $patient->cpf }}</strong>, foi atendido(a) nesta data por este profissional.</p>
         
-        <p>O referido paciente apresenta <strong>{{ $certificate->reason }}</strong>, necessitando de um período de 
+        <p>O referido {{ mb_strtolower($patientLabel) }} apresenta <strong>{{ $certificate->reason }}</strong>, necessitando de um período de 
         afastamento de suas atividades habituais por um prazo de <strong>{{ $certificate->period ?: '---' }}</strong>, 
         contados a partir de <strong>{{ $certificate->start_date->format('d/m/Y') }}</strong>.</p>
         
@@ -47,3 +47,6 @@
     </div>
 </body>
 </html>
+
+
+

@@ -52,6 +52,6 @@ class ApiV1AuthTest extends TestCase
 
         $this->getJson('/api/v1/me')
             ->assertOk()
-            ->assertJsonPath('email', $user->email);
+            ->assertJsonPath('data.email', $user->email);
     }
 }

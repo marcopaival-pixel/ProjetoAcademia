@@ -16,7 +16,7 @@
             <div>
                 <h5 class="text-xs font-black text-white uppercase tracking-widest">Você excedeu o limite do plano atual</h5>
                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
-                    Há <span class="text-red-500">{{ $surplus }}</span> {{ $resource === 'patients' ? 'pacientes' : ($resource === 'workouts' ? 'treinos' : $resource) }} bloqueados. Faça upgrade para reativá-los.
+                    Há <span class="text-red-500">{{ $surplus }}</span> {{ $resource === 'patients' ? (isset($patientsLabel) ? mb_strtolower($patientsLabel) : 'pacientes/alunos') : ($resource === 'workouts' ? 'treinos' : $resource) }} bloqueados. Faça upgrade para reativá-los.
                 </p>
             </div>
         </div>

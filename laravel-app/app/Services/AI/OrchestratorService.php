@@ -4,6 +4,7 @@ namespace App\Services\AI;
 
 use App\Models\User;
 use App\Models\AIOrchestratorLog;
+use App\Services\AiCreditService;
 use App\Services\MonetizationService;
 use App\Services\AI\Agents\TrainingAgent;
 use App\Services\AI\Agents\NutritionAgent;
@@ -21,90 +22,218 @@ class OrchestratorService
 {
     public function __construct(
         private IntentClassifierService $classifier,
-        private MonetizationService $monetization
+        private KeywordIntentRouter $keywordRouter,
+        private MonetizationService $monetization,
+        private AiCreditService $creditService,
     ) {}
 
     /**
-     * Ponto de entrada principal para orquestração de IA
+     * Ponto de entrada principal para orquestração de IA.
      */
     public function run(User $user, string $message, array $context = []): array
     {
-        $startTime = microtime(true);
-        $clinicId = $context['clinic_id'] ?? $user->clinic_id ?? null;
+        $clinicId = $context['clinic_id'] ?? $context['clinicId'] ?? $user->clinic_id ?? null;
         $intent = 'support';
+        $cacheKey = null;
 
         try {
+            // 0. Cache de resposta (economia de tokens) — isolado por utilizador/tenant
+            $context['user_id'] = $user->id;
+            if (empty($context['force_ia']) && ! AiCreditService::shouldSkipResponseCache($context)) {
+                $cacheKey = AiCreditService::buildCacheKey($message, $context, $user->id);
+                $cached = $this->creditService->getCachedResponse($cacheKey);
+                if ($cached !== null) {
+                    return [
+                        'status' => 'success',
+                        'message' => $cached,
+                        'intent' => $context['intent'] ?? 'cached',
+                        'cached' => true,
+                        'tokens' => 0,
+                        'cost' => 0,
+                    ];
+                }
+            }
+
             // 1. Validação de Acesso (Monetização e Plano)
             $access = $this->monetization->checkAccess($user, 'ai_orchestrator');
-            if (!$access['allowed']) {
+            if (! $access['allowed'] && ! $user->isAdministrator()) {
                 $reason = $access['message'] ?? 'Limite de IA atingido.';
                 $this->logAccessDenied($user, $intent, $message, $reason, $clinicId);
 
                 return [
                     'status' => 'limit_reached',
                     'message' => $reason,
-                    'intent' => $intent
+                    'intent' => $intent,
                 ];
             }
 
-            // 2. Fluxo de Visão (Se houver imagem)
-            if (!empty($context['image_path']) || !empty($context['image_base64']) || !empty($context['image_url'])) {
+            // 2. Limite USD diário (governança)
+            if ($this->exceedsDailyBudget($clinicId)) {
+                $reason = 'Limite diário de custo de IA atingido para esta clínica.';
+                $this->logAccessDenied($user, $intent, $message, $reason, $clinicId);
+
+                return [
+                    'status' => 'limit_reached',
+                    'message' => $reason,
+                    'intent' => $intent,
+                ];
+            }
+
+            // 3. Fluxo de Visão (Se houver imagem)
+            if (! empty($context['image_path']) || ! empty($context['image_base64']) || ! empty($context['image_url'])) {
                 $visionAgent = app(VisionAgent::class);
                 $visionResult = $visionAgent->execute($user, $message, $context);
 
                 if ($visionResult['ok']) {
                     $structuredData = $visionResult['structured_data'] ?? [];
                     $intent = $structuredData['document_type'] ?? $intent;
-                    
-                    // Se a visão resolveu o problema (ex: foto de progresso), podemos retornar direto
+
                     if ($intent === 'body_progress_photo') {
                         return array_merge(['status' => 'success', 'intent' => $intent], $visionResult);
                     }
 
-                    // Caso contrário, injetamos os dados estruturados no contexto para o agente de domínio
                     $context['vision_data'] = $structuredData;
-                    $message .= "\n[DADOS EXTRAÍDOS DA IMAGEM]: " . json_encode($structuredData);
+                    $message .= "\n[DADOS EXTRAÍDOS DA IMAGEM]: ".json_encode($structuredData);
                 }
             }
 
-            // 3. Classificação de Intenção (Se ainda não definida pela visão)
-            if ($intent === 'support' || empty($context['vision_data'])) {
-                $intent = $context['intent'] ?? $this->classifier->classify($message);
-            }
+            // 4. Resolução de intenção: explícita → keywords → LLM (fallback)
+            $intent = $this->resolveIntent($message, $context, $intent);
             $context['clinic_id'] = $clinicId;
+            $context['resolved_intent'] = $intent;
 
-            // 4. Seleção e Execução do Agente de Domínio
+            // 5. Verificar créditos antes de agentes que consomem LLM
+            $featureCode = $context['feature_code'] ?? config('ai.default_feature_code', 'ai_chat');
+            if ($this->agentRequiresCredits($intent) && ! $user->isAdministrator()) {
+                if (! $this->creditService->hasCredits($user, $featureCode)) {
+                    $reason = 'Créditos de IA insuficientes para esta operação.';
+                    $this->logAccessDenied($user, $intent, $message, $reason, $clinicId);
+
+                    return [
+                        'status' => 'limit_reached',
+                        'message' => $reason,
+                        'intent' => $intent,
+                    ];
+                }
+            }
+
+            // 6. Seleção e Execução do Agente de Domínio
             $agent = $this->resolveAgent($intent);
             $result = $agent->execute($user, $message, $context);
 
-            // 4. Registro de Uso de Cota (Monetização)
+            if (! ($result['ok'] ?? false)) {
+                return [
+                    'status' => 'error',
+                    'error' => $result['error'] ?? 'Erro desconhecido no agente.',
+                    'intent' => $intent,
+                ];
+            }
+
+            // 7. Debitar créditos e registrar uso (billing unificado)
+            $tokensUsed = (int) ($result['tokens'] ?? 0);
+            if ($tokensUsed > 0 && ! $user->isAdministrator()) {
+                $this->creditService->consume($user, $featureCode, [
+                    'intent' => $intent,
+                    'source' => $context['source'] ?? 'orchestrator',
+                    'tokens' => $tokensUsed,
+                ], $cacheKey);
+            }
+
+            // 8. Cache de resposta bem-sucedida (sem PII de terceiros)
+            if ($cacheKey && ! empty($result['message']) && $tokensUsed > 0 && ! AiCreditService::shouldSkipResponseCache($context)) {
+                $this->creditService->cacheResponse(
+                    $cacheKey,
+                    $result['message'],
+                    config('ai.response_cache_ttl', 86400)
+                );
+            }
+
+            // 9. Registro de Uso de Cota (Monetização)
             $this->monetization->logUsage($user, 'ai_orchestrator');
 
-            // 5. Retorno Estruturado
             return array_merge([
-                'status' => $result['ok'] ? 'success' : 'error',
-                'intent' => $intent
+                'status' => 'success',
+                'intent' => $intent,
             ], $result);
 
         } catch (Exception $e) {
-            Log::error("Erro no NexShape Orchestrator: " . $e->getMessage());
+            Log::error('Erro no NexShape Orchestrator: '.$e->getMessage());
+
             return [
                 'status' => 'error',
                 'error' => $e->getMessage(),
-                'intent' => $intent
+                'intent' => $intent,
             ];
         }
     }
 
-    /**
-     * Resolve a instância do agente baseado na intenção
-     */
+    private function resolveIntent(string $message, array $context, string $currentIntent): string
+    {
+        if (! empty($context['intent'])) {
+            return $context['intent'];
+        }
+
+        if ($currentIntent !== 'support' && ! empty($context['vision_data'])) {
+            return $currentIntent;
+        }
+
+        $keywordIntent = $this->keywordRouter->resolve($message);
+        if ($keywordIntent !== null) {
+            return $keywordIntent;
+        }
+
+        if (config('ai.llm_classifier_enabled', true)) {
+            return $this->classifier->classify($message);
+        }
+
+        return 'support';
+    }
+
+    private function agentRequiresCredits(string $intent): bool
+    {
+        $noCreditIntents = config('ai.disabled_intents', ['finance', 'sales', 'retention']);
+
+        if (in_array($intent, $noCreditIntents, true)) {
+            return false;
+        }
+
+        if ($intent === 'analytics') {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function exceedsDailyBudget(?int $clinicId): bool
+    {
+        $globalLimit = (float) config('ai.limits.daily_usd_global', 0);
+        $clinicLimit = (float) config('ai.limits.daily_usd_per_clinic', 0);
+
+        if ($globalLimit > 0) {
+            $todayGlobal = (float) AIOrchestratorLog::whereDate('created_at', today())->sum('cost_usd');
+            if ($todayGlobal >= $globalLimit) {
+                return true;
+            }
+        }
+
+        if ($clinicLimit > 0 && $clinicId) {
+            $todayClinic = (float) AIOrchestratorLog::where('clinic_id', $clinicId)
+                ->whereDate('created_at', today())
+                ->sum('cost_usd');
+            if ($todayClinic >= $clinicLimit) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function resolveAgent(string $intent)
     {
         return match ($intent) {
             'training' => app(TrainingAgent::class),
             'nutrition' => app(NutritionAgent::class),
-            'clinical' => app(ClinicalAgent::class),
+            'clinical', 'bioimpedance_report', 'lab_exam' => app(ClinicalAgent::class),
             'analytics' => app(AnalyticsAgent::class),
             'finance' => app(FinanceAgent::class),
             'sales' => app(SalesAgent::class),
@@ -112,14 +241,10 @@ class OrchestratorService
             'vision' => app(VisionAgent::class),
             'workout_sheet' => app(TrainingAgent::class),
             'meal_photo' => app(NutritionAgent::class),
-            'bioimpedance_report' => app(ClinicalAgent::class),
-            'lab_exam' => app(ClinicalAgent::class),
             default => app(SupportAgent::class),
         };
     }
-    /**
-     * Registra o acesso negado por falta de créditos ou limites do plano.
-     */
+
     private function logAccessDenied(User $user, string $intent, string $message, string $reason, ?int $clinicId): void
     {
         try {
@@ -129,17 +254,17 @@ class OrchestratorService
                 'agent_name' => $intent,
                 'model_name' => 'none',
                 'user_message' => $message,
-                'ai_response' => 'ACCESS_DENIED: ' . $reason,
+                'ai_response' => 'ACCESS_DENIED: '.$reason,
                 'status' => 'limit_reached',
                 'error_message' => $reason,
                 'input_tokens' => 0,
                 'output_tokens' => 0,
                 'total_tokens' => 0,
                 'cost_usd' => 0,
-                'execution_time_ms' => 0
+                'execution_time_ms' => 0,
             ]);
         } catch (Exception $e) {
-            Log::error("Falha ao salvar log de acesso negado no Orchestrator: " . $e->getMessage());
+            Log::error('Falha ao salvar log de acesso negado no Orchestrator: '.$e->getMessage());
         }
     }
 }

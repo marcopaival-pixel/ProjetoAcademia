@@ -23,6 +23,10 @@ trait FillsTenantColumns
                 $model->academy_company_id = $user->academy_company_id
                     ?? TenantContext::getCompanyId();
             }
+
+            if (property_exists($model, 'clinic_id') && empty($model->clinic_id)) {
+                $model->clinic_id = TenantContext::get() ?? $user->clinic_id;
+            }
         });
     }
 }

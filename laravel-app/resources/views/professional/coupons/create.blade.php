@@ -32,12 +32,12 @@
                 @error('name') <p class="text-red-500 text-[10px] font-black mt-1 ml-1">{{ $message }}</p> @enderror
             </div>
 
-            <!-- Seleção de Paciente -->
+            <!-- Seleção de {{ $patientLabel }} -->
             <div class="space-y-2">
-                <label for="patient_id" class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1">Paciente Destinatário</label>
+                <label for="patient_id" class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1">{{ $patientLabel }} Destinatário</label>
                 <div class="relative">
                     <select name="patient_id" id="patient_id" required class="w-full bg-zinc-950 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold appearance-none focus:outline-none focus:border-blue-500/50 transition-all shadow-inner">
-                        <option value="" disabled selected>Selecione um paciente...</option>
+                        <option value="" disabled selected>Selecione um {{ mb_strtolower($patientLabel) }}...</option>
                         @foreach($patients as $patient)
                             <option value="{{ $patient->id }}">{{ $patient->name }}</option>
                         @endforeach
@@ -90,3 +90,6 @@
     </div>
 </div>
 @endsection
+
+
+

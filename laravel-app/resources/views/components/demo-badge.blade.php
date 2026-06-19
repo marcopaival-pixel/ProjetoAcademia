@@ -70,20 +70,7 @@
                             @endif
                         </button>
 
-                        <!-- Perfil Clínica -->
-                        <button name="profile" value="gestor" 
-                            class="group relative flex items-center gap-4 p-3 rounded-[1.5rem] border transition-all {{ $currentProfile === 'gestor' ? 'bg-amber-50 border-amber-200 ring-2 ring-amber-500/20 dark:bg-amber-500/10 dark:border-amber-500/40' : 'bg-white border-zinc-100 hover:border-amber-200 dark:bg-zinc-800/50 dark:border-zinc-700 dark:hover:border-amber-500/30' }}">
-                            <div class="w-12 h-12 flex-shrink-0 rounded-2xl flex items-center justify-center {{ $currentProfile === 'gestor' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-400 group-hover:text-amber-500' }} transition-all">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-xs font-black uppercase tracking-widest {{ $currentProfile === 'gestor' ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-500 dark:text-zinc-400' }}">Visão Clínica</p>
-                                <p class="text-[10px] text-zinc-400 font-medium leading-tight">Controle e Unidades</p>
-                            </div>
-                            @if($currentProfile === 'gestor')
-                                <span class="absolute right-4 px-2 py-0.5 bg-amber-500 text-[8px] font-black text-white uppercase rounded-full shadow-sm">Ativo</span>
-                            @endif
-                        </button>
+
                     </div>
                 </form>
 

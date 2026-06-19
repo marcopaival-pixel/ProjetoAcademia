@@ -1,13 +1,10 @@
 /.phpunit.cache
 /node_modules
 /public/build
-/public/build.zip
-/public/*.zip
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
-/storage/phpstan/
 /vendor
 .env
 .env.backup
@@ -16,21 +13,15 @@
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
+auth.json
 npm-debug.log
 yarn-error.log
-/auth.json
 /.fleet
 /.idea
 /.nova
 /.vscode
 /.zed
 
-# Cópia local de exemplos de env (duplicata acidental)
-/.env copy.example
-
-# Scripts de debug / diagnóstico (não versionar; risco se expostos em produção)
-public/php_ok.php
-public/debug-bootstrap.php
-debug_home.php
-scratch_diagnostic.php
-scratch_test_logs.php
+# Sensível / local
+cacert.pem
+ - Copia.env

@@ -17,7 +17,7 @@
             <div>
                 <h1 class="text-4xl font-black text-white tracking-tighter uppercase italic">Analytics <span class="text-emerald-500">Pro</span></h1>
                 <p class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-                    Performance Coletiva • {{ $data['total_students'] }} Alunos Monitorados
+                    Performance Coletiva • {{ $data['total_students'] }} {{ $patientsLabel }} Monitorados
                 </p>
             </div>
         </div>
@@ -79,11 +79,11 @@
 
         <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/5 blur-[50px] rounded-full"></div>
-            <span class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] mb-4 block">Alunos Ativos</span>
+            <span class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] mb-4 block">{{ $patientsLabel }} Ativos</span>
             <div class="flex items-baseline gap-2">
                 <span class="text-5xl font-black text-emerald-500 italic tracking-tighter tabular-nums">{{ $data['active_students'] }}</span>
             </div>
-            <p class="text-[9px] font-black text-zinc-700 mt-4 uppercase tracking-widest">Alunos com registros ativos</p>
+            <p class="text-[9px] font-black text-zinc-700 mt-4 uppercase tracking-widest">{{ $patientsLabel }} com registros ativos</p>
         </div>
     </div>
 
@@ -98,7 +98,7 @@
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-zinc-950/50">
-                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Aluno</th>
+                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">{{ $patientLabel }}</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Treinos</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Dias Nutri</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Aderência GERAL</th>
@@ -160,3 +160,6 @@
     }
 </style>
 @endsection
+
+
+

@@ -231,6 +231,14 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-4">
+                        <a href="{{ route('patient.access-logs') }}" class="flex items-center justify-between p-6 bg-zinc-950 border border-zinc-800 rounded-3xl group hover:border-blue-500/20 transition-all">
+                            <div class="space-y-1">
+                                <p class="text-xs font-black text-white uppercase tracking-widest group-hover:text-blue-500 transition-colors">Histórico de Acessos</p>
+                                <p class="text-[9px] text-zinc-600 font-bold uppercase">Auditoria LGPD e visualizações</p>
+                            </div>
+                            <i data-lucide="list-tree" class="w-5 h-5 text-zinc-700 group-hover:text-blue-500 transition-colors"></i>
+                        </a>
+
                         <a href="{{ route('privacy.download') }}" class="flex items-center justify-between p-6 bg-zinc-950 border border-zinc-800 rounded-3xl group hover:border-emerald-500/20 transition-all">
                             <div class="space-y-1">
                                 <p class="text-xs font-black text-white uppercase tracking-widest group-hover:text-emerald-500 transition-colors">Portabilidade de Dados</p>

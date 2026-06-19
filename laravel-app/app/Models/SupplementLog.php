@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SupplementLog extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'user_id',
         'supplement_id',

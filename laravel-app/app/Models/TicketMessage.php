@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class TicketMessage extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'support_ticket_id',
         'user_id',

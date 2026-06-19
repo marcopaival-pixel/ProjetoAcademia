@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BodyAnalysis;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Services\SecureFileService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -30,15 +31,8 @@ class BodyAnalysisController extends Controller
             'metrics' => 'nullable|json',
         ]);
 
-        if (!auth()->user()->consumeAiCredit('analyze_body_photo', ['view_type' => $request->view_type])) {
-            return response()->json([
-                'success' => false,
-                'code' => 'credits_exceeded',
-                'error' => 'Créditos insuficientes para realizar a análise corporal.'
-            ], 403);
-        }
-
-        $path = $request->file('image')->store('body-analyses', 'public');
+        // Análise postural por regras (sem LLM) — não consome créditos de IA
+        $path = app(SecureFileService::class)->storeSensitiveFile($request->file('image'), 'body-analyses');
 
         // Lógica de sugestão simulada baseada nas métricas recebidas (assimetrias, postura)
         $aiSummary = $this->generateAiSummary(json_decode($request->metrics, true));
@@ -59,6 +53,7 @@ class BodyAnalysisController extends Controller
             'diet' => $aiSummary['diet'] ?? '',
             'workout' => $aiSummary['workout'] ?? '',
             'exercises' => $aiSummary['exercises'] ?? [],
+            'source' => 'rule_engine',
         ]);
     }
 
@@ -103,8 +98,10 @@ class BodyAnalysisController extends Controller
 
     public function compare(Request $request)
     {
-        $analysis_1 = BodyAnalysis::findOrFail($request->id1);
-        $analysis_2 = BodyAnalysis::findOrFail($request->id2);
+        $userId = Auth::id();
+
+        $analysis_1 = BodyAnalysis::where('user_id', $userId)->findOrFail($request->id1);
+        $analysis_2 = BodyAnalysis::where('user_id', $userId)->findOrFail($request->id2);
 
         return view('body-analysis.compare', compact('analysis_1', 'analysis_2'));
     }

@@ -77,7 +77,7 @@
                 </h3>
                 <div class="space-y-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
                     @php
-                        $alerts = \App\Models\HealthAlert::where('user_id', auth()->id())->latest()->take(5)->get();
+                        $alerts = \App\Models\HealthAlert::where('user_id', $targetUser->id)->latest()->take(5)->get();
                     @endphp
                     @forelse($alerts as $alert)
                         <div class="p-4 rounded-2xl bg-zinc-900 border {{ $alert->severity === 'danger' ? 'border-red-500/20' : ($alert->severity === 'warning' ? 'border-amber-500/20' : 'border-blue-500/20') }} flex gap-4 animate-fade-in-up">
@@ -109,10 +109,10 @@
                         <div class="relative w-20 h-20">
                             <svg class="w-full h-full transform -rotate-90">
                                 <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent" class="text-zinc-800" />
-                                <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent" class="text-emerald-500" stroke-dasharray="{{ 226 * ((auth()->user()->health_score ?? 50) / 100) }} 226" />
+                                <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent" class="text-emerald-500" stroke-dasharray="{{ 226 * (($targetUser->health_score ?? 50) / 100) }} 226" />
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-xl font-black text-white">{{ auth()->user()->health_score ?? '--' }}%</span>
+                                <span class="text-xl font-black text-white">{{ $targetUser->health_score ?? '--' }}%</span>
                             </div>
                         </div>
                         <div>
@@ -166,7 +166,7 @@
     <div x-show="tab === 'history'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
         @forelse($assessments as $index => $assessment)
             @php
-                $isLocked = Auth::user()->isResourceOverLimit('assessments', $assessment->id);
+                $isLocked = $targetUser->isResourceOverLimit('assessments', $assessment->id);
             @endphp
             <div class="group relative bg-zinc-900 border {{ $isLocked ? 'border-rose-500/30' : 'border-zinc-800' }} p-8 rounded-[2rem] overflow-hidden transition-all hover:border-emerald-500/20 shadow-xl">
                 @if($isLocked)

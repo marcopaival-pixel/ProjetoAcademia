@@ -2,11 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToCompany;
+use App\Models\Traits\FillsTenantColumns;
+use App\Models\Traits\HasClinic;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RecordVersion extends Model
 {
+    use BelongsToCompany;
+    use FillsTenantColumns;
+    use HasClinic;
+
     public $timestamps = false;
 
     protected $fillable = [

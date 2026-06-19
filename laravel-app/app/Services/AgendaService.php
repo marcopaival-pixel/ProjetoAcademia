@@ -176,14 +176,17 @@ class AgendaService
 
     private function enforceProfileCreationRules(User $user, $targetPatientId, $professionalId)
     {
-        $profile = strtolower($user->profile->name);
-
-        if ($profile === 'aluno') {
-            if ($targetPatientId != $user->id) {
-                throw ValidationException::withMessages(['error' => 'Aluno não pode agendar para outros usuários.']);
+        if ($user->hasRole(['aluno', 'paciente'])) {
+            if ((int) $targetPatientId !== (int) $user->id) {
+                throw ValidationException::withMessages(['patient_id' => 'Agendamento permitido apenas para o próprio aluno.']);
             }
-            // Aluno validando com matricula (student_id / patient_id) já garantido pelo guard.
-        } elseif ($profile === 'professional' || $profile === 'instructor') {
+
+            return true;
+        }
+
+        $profile = strtolower($user->profile?->name ?? $user->getRoleNames()->first() ?? '');
+
+        if ($profile === 'professional' || $profile === 'instructor') {
             if ($professionalId != $user->id) {
                 throw ValidationException::withMessages(['error' => 'Profissional só pode agendar em sua própria agenda.']);
             }
@@ -197,22 +200,39 @@ class AgendaService
 
     private function enforceProfileCancellationRules(User $user, ProfessionalAppointment $appointment)
     {
-        $profile = strtolower($user->profile->name);
+        $profile = strtolower($user->profile->name ?? '');
 
-        if ($profile === 'aluno') {
-            if ($appointment->patient_id != $user->id) {
-                throw ValidationException::withMessages(['error' => 'Aluno não pode cancelar agendamento de terceiros.']);
-            }
-        } elseif ($profile === 'professional' || $profile === 'instructor') {
-            if ($appointment->professional_id != $user->id) {
+        if ($profile === 'aluno' || $user->hasRole('paciente')) {
+            throw ValidationException::withMessages(['error' => 'Paciente não possui permissão para cancelar agendamentos via portal.']);
+        }
+
+        if ($profile === 'professional' || $profile === 'instructor') {
+            if ((int) $appointment->professional_id !== (int) $user->id) {
                 throw ValidationException::withMessages(['error' => 'Profissional não pode cancelar agendamento de outros.']);
             }
+
+            return;
         }
+
+        if ((int) $appointment->patient_id === (int) $user->id) {
+            return;
+        }
+
+        if ($user->hasRole(['manager', 'supervisor', 'receptionist']) || $user->isAdministrator()) {
+            $professional = User::find($appointment->professional_id);
+            if ($professional && (int) $professional->academy_company_id === (int) $user->academy_company_id) {
+                return;
+            }
+        }
+
+        throw ValidationException::withMessages(['error' => 'Você não tem permissão para cancelar este agendamento.']);
     }
 
     private function enforcePlanLimitations(User $user, Carbon $appointmentAt)
     {
-        if (strtolower($user->profile->name) !== 'aluno') return;
+        if (strtolower($user->profile->name ?? '') !== 'aluno' && ! $user->hasRole('aluno')) {
+            return;
+        }
 
         $plan = $user->plan ? strtolower($user->plan->name) : 'free';
 
@@ -264,11 +284,11 @@ class AgendaService
 
     private function logAction(User $user, string $action)
     {
-        Log::info("[AGENDA] UserID: {$user->id} | Perfil: {$user->profile->name} | Action: {$action}");
-        // Podemos inserir no DB em AdminLog ou um AgendaLog específico se necessário
+        $profileName = $user->getRoleNames()[0] ?? 'user';
+        Log::info("[AGENDA] UserID: {$user->id} | Perfil: {$profileName} | Action: {$action}");
         \App\Models\AdminLog::create([
             'user_id' => $user->id,
-            'action' => "AGENDA: " . $action,
+            'action' => "AGENDA: " . $action . " (Por: {$user->name} - Perfil: {$profileName})",
             'ip_address' => request()->ip(),
             'created_at' => now(),
         ]);

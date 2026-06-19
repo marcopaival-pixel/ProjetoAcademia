@@ -18,7 +18,7 @@
             <h1 class="text-5xl font-black tracking-tighter text-white">
                 Módulo de <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Relatórios</span>
             </h1>
-            <p class="text-zinc-500 font-medium mt-4 text-lg max-w-2xl">Acesse insights detalhados sobre sua base de pacientes, performance técnica e saúde financeira.</p>
+            <p class="text-zinc-500 font-medium mt-4 text-lg max-w-2xl">Acesse insights detalhados sobre sua base de {{ mb_strtolower($patientsLabel) }}, performance técnica e saúde financeira.</p>
         </div>
 
         @if(!$isPremium)
@@ -152,3 +152,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection
+
+
+

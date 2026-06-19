@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SecureFileService;
 use Illuminate\Http\Request;
 use App\Models\EvolutionPhoto;
 
@@ -97,7 +98,7 @@ class EvolutionController extends Controller
             }
         }
         
-        $path = $request->file('photo')->store('evolution', 'public');
+        $path = app(SecureFileService::class)->storeSensitiveFile($request->file('photo'), 'evolution');
         
         EvolutionPhoto::create([
             'user_id' => $user->id,
@@ -135,8 +136,10 @@ class EvolutionController extends Controller
             'intent' => 'clinical',
             'type' => 'evolution_analysis',
             'clinicId' => $user->academy_company_id,
-            'photo_1_url' => asset('storage/' . $photo1->photo_path),
-            'photo_2_url' => asset('storage/' . $photo2->photo_path),
+            'clinic_id' => $user->clinic_id,
+            'feature_code' => 'assessment_comparison',
+            'photo_1_url' => route('secure-files.show', ['type' => 'evolution', 'id' => $photo1->id]),
+            'photo_2_url' => route('secure-files.show', ['type' => 'evolution', 'id' => $photo2->id]),
         ]);
 
         if ($result['status'] === 'success') {
@@ -154,7 +157,7 @@ class EvolutionController extends Controller
         $user = auth()->user();
         $photo = EvolutionPhoto::where('user_id', $user->id)->findOrFail($id);
 
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($photo->photo_path);
+        app(SecureFileService::class)->deleteFile($photo->photo_path);
         $photo->delete();
 
         return back()->with('success', 'Registro removido com sucesso.');
@@ -163,47 +166,62 @@ class EvolutionController extends Controller
     /**
      * Gera o relatório de acompanhamento de evolução do aluno via IA.
      */
-    public function aiReport(Request $request, \App\Services\AIFitnessGeneratorService $aiService)
-    {
+    public function aiReport(
+        Request $request,
+        \App\Services\EvolutionReportService $reportService,
+        \App\Services\AIFitnessGeneratorService $aiService
+    ) {
         $user = $request->user();
-        if (!$user->hasPremiumAccess()) {
+        if (! $user->hasPremiumAccess()) {
             return back()->with('error', 'Relatório Inteligente exclusivo para membros Premium.');
         }
 
-        $cacheKey = "user_{$user->id}_weekly_ai_report_content";
+        $useIa = $request->boolean('enhance_ia') || $request->boolean('force_ia');
+        $cacheKey = $useIa
+            ? "user_{$user->id}_weekly_ai_report_llm"
+            : "user_{$user->id}_weekly_report_rules";
 
         try {
-            $reportData = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addDays(7), function () use ($aiService, $user) {
-                $result = $aiService->generateEvolutionReport($user);
-                
-                if (!$result['ok']) {
+            $reportData = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addDays(7), function () use ($reportService, $aiService, $user, $useIa) {
+                if ($useIa) {
+                    if (! $user->isAdministrator() && ! $user->consumeAiCredit('advanced_report')) {
+                        throw new \Exception('Créditos insuficientes para relatório com narrativa IA.');
+                    }
+
+                    $result = $aiService->generateEvolutionReport($user);
+                    if (! ($result['ok'] ?? false)) {
+                        throw new \Exception($result['error']);
+                    }
+
+                    $jsonStr = preg_replace('/```json/i', '', (string) $result['report']);
+                    $jsonStr = preg_replace('/```/', '', $jsonStr);
+                    $jsonStr = trim($jsonStr);
+                    $data = json_decode($jsonStr, true);
+
+                    if (json_last_error() !== JSON_ERROR_NONE || ! is_array($data)) {
+                        throw new \Exception('O assistente devolveu um formato inválido de relatório.');
+                    }
+
+                    return $data;
+                }
+
+                $result = $reportService->generate($user);
+                if (! ($result['ok'] ?? false)) {
                     throw new \Exception($result['error']);
                 }
 
-                $jsonStr = $result['report'];
-                // Limpar blocos de markdown caso a IA os coloque (ex: ```json ... ```)
-                $jsonStr = preg_replace('/```json/i', '', $jsonStr);
-                $jsonStr = preg_replace('/```/', '', $jsonStr);
-                $jsonStr = trim($jsonStr);
-
-                $data = json_decode($jsonStr, true);
-
-                if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-                    // Fallback se a IA falhar no JSON
-                    throw new \Exception('O assistente devolveu um formato inválido de relatório.');
-                }
-
-                return $data;
+                return $result['report'];
             });
         } catch (\Exception $e) {
-            // Remove do cache caso tenha dado erro antes de salvar, por garantia
             \Illuminate\Support\Facades\Cache::forget($cacheKey);
-            return back()->with('error', 'Falha ao gerar o relatório: ' . $e->getMessage());
+
+            return back()->with('error', 'Falha ao gerar o relatório: '.$e->getMessage());
         }
 
         return view('evolution.ai-report', [
             'reportData' => $reportData,
-            'user' => $user
+            'user' => $user,
+            'enhanced_by_ia' => $useIa,
         ]);
     }
 }

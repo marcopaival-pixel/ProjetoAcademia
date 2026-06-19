@@ -90,7 +90,7 @@
 
         <!-- Descrição / Material -->
         <div class="prose prose-invert max-w-none text-zinc-400 prose-headings:text-white prose-strong:text-zinc-200 leading-relaxed pb-20">
-            {!! nl2br($lesson->content) !!}
+            {!! \App\Support\SafeHtml::nl2brEscaped($lesson->content) !!}
         </div>
     </div>
 

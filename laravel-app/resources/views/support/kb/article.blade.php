@@ -28,7 +28,7 @@
         </header>
 
         <div class="prose prose-invert max-w-none text-zinc-300 prose-headings:text-white prose-a:text-blue-500 prose-img:rounded-3xl leading-relaxed">
-            {!! nl2br($article->content) !!}
+            {!! \App\Support\SafeHtml::nl2brEscaped($article->content) !!}
         </div>
 
         @if($article->tags)

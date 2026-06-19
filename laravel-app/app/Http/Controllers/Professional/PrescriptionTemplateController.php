@@ -41,14 +41,14 @@ class PrescriptionTemplateController extends Controller
 
     public function edit(PrescriptionTemplate $template)
     {
-        $this->authorizeAccess($template);
+        $this->authorize('update', $template);
         $specialties = Especialidade::active()->get();
         return view('professional.templates.edit', compact('template', 'specialties'));
     }
 
     public function update(Request $request, PrescriptionTemplate $template)
     {
-        $this->authorizeAccess($template);
+        $this->authorize('update', $template);
 
         $validated = $request->validate([
             'especialidade_id' => 'required|exists:especialidades,id',
@@ -63,16 +63,11 @@ class PrescriptionTemplateController extends Controller
 
     public function destroy(PrescriptionTemplate $template)
     {
-        $this->authorizeAccess($template);
+        $this->authorize('delete', $template);
         $template->delete();
 
         return redirect()->route('professional.templates.index')->with('success', 'Template removido.');
     }
-
-    private function authorizeAccess(PrescriptionTemplate $template)
-    {
-        if ($template->professional_id !== auth()->id()) {
-            abort(403);
-        }
-    }
 }
+
+

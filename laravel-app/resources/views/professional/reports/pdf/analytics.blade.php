@@ -91,7 +91,7 @@
             </table>
             
             <div style="margin-top: 35px;">
-                <div class="report-badge">Analytics - Gestão de Alunos</div>
+                <div class="report-badge">Analytics - Gestão de {{ $patientsLabel }}</div>
                 <h1 class="report-title">{{ $title }}</h1>
             </div>
 
@@ -111,7 +111,7 @@
             <tr>
                 <td style="width: 33%;">
                     <div class="card">
-                        <div class="card-title">Alunos Ativos</div>
+                        <div class="card-title">{{ $patientsLabel }} Ativos</div>
                         <div class="card-value">{{ $data['active_students'] }} <span class="card-unit">/ {{ $data['total_students'] }} totais</span></div>
                     </div>
                 </td>
@@ -130,12 +130,12 @@
             </tr>
         </table>
 
-        <div class="section-title">Engajamento Detalhado por Aluno</div>
+        <div class="section-title">Engajamento Detalhado por {{ $patientLabel }}</div>
         
         <table class="students">
             <thead>
                 <tr>
-                    <th>Identificação do Aluno</th>
+                    <th>Identificação do {{ $patientLabel }}</th>
                     <th class="num">Sessões Treino</th>
                     <th class="num">Dias Dieta</th>
                     <th class="num">Ad. Treino</th>
@@ -171,3 +171,6 @@
     </div>
 </body>
 </html>
+
+
+

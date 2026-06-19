@@ -17,11 +17,24 @@ Schedule::command('backup:run')->daily()->at('02:00');
 // AI Credit Renewal
 Schedule::command('ai:credits-renew')->daily()->at('00:01');
 
+// AI Cost Audit & Alerts
+Schedule::command('ai:cost-audit')->hourly();
+
 // User Cleanup
 Schedule::command('app:clean-unverified-users')->hourly();
 
 // Log Maintenance (Manter banco leve - Prioridade 3 da Auditoria)
 Schedule::command('app:purge-old-logs --days=15 --force')->dailyAt('03:00');
+
+// Comissões: PENDENTE → DISPONIVEL após carência (available_at)
+Schedule::command('commission:release')->hourly();
+
+// Conciliação financeira (pagamentos vs logs)
+Schedule::command('finance:reconcile --days=30 --stale=7')->dailyAt('04:00');
+
+// Inadimplência: escalação de status e retentativas de cobrança
+Schedule::command('financial:check-status')->dailyAt('05:00');
+Schedule::command('subscription:process-retries')->dailyAt('06:00');
 
 // System Health Heartbeat
 Schedule::command('pulse:check')->everyMinute();

@@ -81,23 +81,54 @@
 
             <!-- Por que nós? -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass p-8 rounded-[2.5rem]">
-                    <i class="fas fa-rocket text-blue-500 text-2xl mb-6"></i>
-                    <h4 class="text-white font-black text-sm uppercase tracking-widest mb-3">Escalabilidade</h4>
-                    <p class="text-xs text-zinc-500 leading-relaxed font-medium">Nossa plataforma cresce junto com o seu negócio, garantindo performance em qualquer tamanho.</p>
+                <div class="glass p-8 rounded-[2.5rem] border border-blue-500/10 hover:border-blue-500/30 transition-all">
+                    <i class="fas fa-chart-line text-blue-500 text-2xl mb-6"></i>
+                    <h4 class="text-white font-black text-sm uppercase tracking-widest mb-3">Aumento de Retenção</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed font-medium">A IA do NexShape mantém seus alunos engajados, aumentando o LTV (Lifetime Value) médio em 25%.</p>
                 </div>
-                <div class="glass p-8 rounded-[2.5rem]">
-                    <i class="fas fa-shield-alt text-emerald-500 text-2xl mb-6"></i>
-                    <h4 class="text-white font-black text-sm uppercase tracking-widest mb-3">Segurança</h4>
-                    <p class="text-xs text-zinc-500 leading-relaxed font-medium">Dados protegidos com criptografia de ponta e conformidade total com a LGPD.</p>
+                <div class="glass p-8 rounded-[2.5rem] border border-emerald-500/10 hover:border-emerald-500/30 transition-all">
+                    <i class="fas fa-wallet text-emerald-500 text-2xl mb-6"></i>
+                    <h4 class="text-white font-black text-sm uppercase tracking-widest mb-3">Previsibilidade Financeira</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed font-medium">Sistema de cobrança automatizado que reduz a inadimplência e garante caixa todos os meses.</p>
+                </div>
+            </div>
+
+            <!-- Próximos Passos -->
+            <div class="glass rounded-[3rem] p-10 mt-8 relative overflow-hidden hidden md:block">
+                <h3 class="text-zinc-500 text-xs font-black uppercase tracking-widest mb-8 flex items-center gap-3">
+                    <span class="w-8 h-px bg-zinc-800"></span> Próximos Passos
+                </h3>
+                
+                <div class="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-zinc-800 before:to-transparent">
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 border-blue-500 bg-zinc-950 text-blue-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_15px_rgba(59,130,246,0.3)] z-10 font-bold text-xs">1</div>
+                        <div class="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-5 rounded-2xl glass border border-blue-500/10">
+                            <h4 class="font-bold text-white text-sm mb-1">Aceite & Contrato</h4>
+                            <p class="text-[10px] text-zinc-500 leading-relaxed">Você aceita a proposta online e o contrato digital é gerado automaticamente para você.</p>
+                        </div>
+                    </div>
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 border-zinc-700 bg-zinc-950 text-zinc-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 font-bold text-xs">2</div>
+                        <div class="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-5 rounded-2xl glass border border-white/5">
+                            <h4 class="font-bold text-white text-sm mb-1">Onboarding</h4>
+                            <p class="text-[10px] text-zinc-500 leading-relaxed">Nossa equipe agenda com você para importar alunos e configurar a plataforma.</p>
+                        </div>
+                    </div>
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 border-zinc-700 bg-zinc-950 text-zinc-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 font-bold text-xs">3</div>
+                        <div class="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-5 rounded-2xl glass border border-white/5">
+                            <h4 class="font-bold text-white text-sm mb-1">Lançamento (Go-Live)</h4>
+                            <p class="text-[10px] text-zinc-500 leading-relaxed">Sua clínica operando com inteligência artificial de elite desde o primeiro dia.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Coluna de Ação -->
-        <div class="space-y-8">
-            <div class="glass rounded-[2rem] p-8 border-blue-500/20 sticky top-12">
-                <h3 class="text-xl font-black text-white mb-6">Tudo certo?</h3>
+        <div class="space-y-8 relative w-full pb-32 md:pb-0">
+            <div class="glass rounded-t-[3rem] md:rounded-[2rem] p-8 border-t md:border border-blue-500/20 fixed md:sticky bottom-0 md:top-12 left-0 w-full md:w-auto z-50 bg-[#09090b]/95 md:bg-transparent backdrop-blur-2xl shadow-[0_-20px_50px_rgba(0,0,0,0.8)] md:shadow-none">
+                <h3 class="text-xl font-black text-white mb-6 hidden md:block">Tudo certo?</h3>
                 
                 @if($proposal->status == 'Aprovada')
                 <div class="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center">
@@ -113,7 +144,7 @@
                 <div class="space-y-4">
                     <form action="{{ route('public.proposal.accept', $proposal->token) }}" method="POST">
                         @csrf
-                        <button type="submit" class="w-full py-5 bg-blue-600 rounded-2xl text-xs text-white font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/30">
+                        <button type="submit" class="w-full py-5 bg-blue-600 rounded-2xl text-xs text-white font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] animate-pulse hover:animate-none">
                             Aceitar Proposta
                         </button>
                     </form>

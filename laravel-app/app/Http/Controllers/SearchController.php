@@ -140,12 +140,16 @@ class SearchController extends Controller
             }
         }
 
-        // IA: Interpretação de Texto (Opcional Avançado) via Orquestrador
+        // IA opcional: só com ?ai=1 (evita chamadas desnecessárias em buscas SQL)
         $aiResponse = null;
-        if (!empty($query) && (strlen($query) > 15 || str_contains($query, ' ') || preg_match('/(quero|como|meu|treino|ajuda|onde|qual)/i', $query))) {
+        $enableAi = $request->boolean('ai') || $request->boolean('ai_assist');
+        if ($enableAi && ! empty($query) && strlen($query) > 15) {
             $result = $this->orchestrator->run($user, $query, [
                 'source' => 'global_search',
-                'clinicId' => $user->academy_company_id
+                'clinicId' => $user->academy_company_id,
+                'clinic_id' => $user->clinic_id,
+                'intent' => 'support',
+                'feature_code' => 'support_ai',
             ]);
 
             if ($result['status'] === 'success') {

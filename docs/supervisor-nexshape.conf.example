@@ -3,22 +3,65 @@
 ;
 ; sudo supervisorctl reread && sudo supervisorctl update
 ; sudo supervisorctl status
+;
+; Filas nomeadas (config/observability.php): default, pdf, ai, webhooks
+; Com Redis + Horizon: preferir `php artisan horizon` em vez de múltiplos queue:work.
 
-[program:nexshape-worker]
+[program:nexshape-worker-default]
 process_name=%(program_name)s_%(process_num)02d
-command=php /home/USER/NexShape/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+command=php /home/USER/NexShape/artisan queue:work redis --queue=default --sleep=3 --tries=3 --max-time=3600
 directory=/home/USER/NexShape
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
 user=www-data
-numprocs=2
+numprocs=1
 redirect_stderr=true
-stdout_logfile=/home/USER/NexShape/storage/logs/worker.log
+stdout_logfile=/home/USER/NexShape/storage/logs/worker-default.log
 stopwaitsecs=3600
 
-; Se não houver Redis, substituir "redis" por "database" no command acima.
+[program:nexshape-worker-pdf]
+process_name=%(program_name)s_%(process_num)02d
+command=php /home/USER/NexShape/artisan queue:work redis --queue=pdf --sleep=3 --tries=3 --max-time=3600
+directory=/home/USER/NexShape
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/home/USER/NexShape/storage/logs/worker-pdf.log
+stopwaitsecs=3600
+
+[program:nexshape-worker-webhooks]
+process_name=%(program_name)s_%(process_num)02d
+command=php /home/USER/NexShape/artisan queue:work redis --queue=webhooks,default --sleep=3 --tries=3 --max-time=3600
+directory=/home/USER/NexShape
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/home/USER/NexShape/storage/logs/worker-webhooks.log
+stopwaitsecs=3600
+
+; Alternativa sem Redis — substituir "redis" por "database" nos commands acima.
+; Um único worker database: queue:work database --queue=default,pdf,webhooks,ai
+
+[program:nexshape-horizon]
+process_name=%(program_name)s
+command=php /home/USER/NexShape/artisan horizon
+directory=/home/USER/NexShape
+autostart=false
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/home/USER/NexShape/storage/logs/horizon.log
+stopwaitsecs=3600
 
 [program:nexshape-scheduler]
 process_name=%(program_name)s

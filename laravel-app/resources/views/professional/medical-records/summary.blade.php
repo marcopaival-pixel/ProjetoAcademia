@@ -107,7 +107,7 @@
                         <p class="text-zinc-300 text-sm">{{ $patient->profile->medication_details }}</p>
                     </div>
                 @else
-                    <p class="text-zinc-500 text-sm italic">Nenhum medicamento registrado pelo paciente.</p>
+                    <p class="text-zinc-500 text-sm italic">Nenhum medicamento registrado pelo {{ mb_strtolower($patientLabel) }}.</p>
                 @endif
             </div>
         </div>
@@ -123,7 +123,7 @@
         <div class="space-y-6">
             <div class="space-y-2">
                 <label class="text-xs font-bold text-zinc-400 uppercase">Diagnóstico Principal</label>
-                <textarea name="main_diagnosis" rows="4" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500" placeholder="Insira o diagnóstico principal do paciente...">{{ $pivot->main_diagnosis }}</textarea>
+                <textarea name="main_diagnosis" rows="4" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500" placeholder="Insira o diagnóstico principal do {{ mb_strtolower($patientLabel) }}...">{{ $pivot->main_diagnosis }}</textarea>
             </div>
 
             <div class="space-y-2">
@@ -139,3 +139,6 @@
     </form>
 </x-modal>
 @endsection
+
+
+

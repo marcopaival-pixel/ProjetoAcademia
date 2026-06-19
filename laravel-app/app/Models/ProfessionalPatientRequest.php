@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class ProfessionalPatientRequest extends Model
 {
     use HasFactory;
+    use Traits\BelongsToScopedParent;
+
+    protected static function scopedParentRelationName(): string
+    {
+        return 'patient';
+    }
 
     protected $fillable = [
         'patient_id',

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CreditoCompra extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $table = 'creditos_compras';
 
     protected $fillable = [

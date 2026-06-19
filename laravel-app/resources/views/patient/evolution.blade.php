@@ -78,11 +78,11 @@
                         @php($pair = reset($evolutionPhotos))
                         <div class="grid grid-cols-2 gap-2 pt-4">
                             <div class="rounded-2xl overflow-hidden aspect-square relative border border-white/5">
-                                <img src="{{ asset('storage/' . $pair['first']->photo_path) }}" class="w-full h-full object-cover grayscale opacity-50" alt="Antes">
+                                <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['first']->id]) }}" class="w-full h-full object-cover grayscale opacity-50" alt="Antes">
                                 <div class="absolute bottom-1 left-2 text-[6px] font-black uppercase tracking-widest text-zinc-500">Antes</div>
                             </div>
                             <div class="rounded-2xl overflow-hidden aspect-square relative border border-blue-500/30">
-                                <img src="{{ asset('storage/' . $pair['last']->photo_path) }}" class="w-full h-full object-cover" alt="Depois">
+                                <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['last']->id]) }}" class="w-full h-full object-cover" alt="Depois">
                                 <div class="absolute bottom-1 right-2 text-[6px] font-black uppercase tracking-widest text-blue-400">Depois</div>
                             </div>
                         </div>
@@ -165,11 +165,11 @@
                     
                     <div class="grid grid-cols-2 gap-2 relative">
                         <div class="relative rounded-2xl overflow-hidden aspect-[3/4] bg-zinc-900">
-                            <img src="{{ asset('storage/' . $pair['first']->photo_path) }}" class="w-full h-full object-cover grayscale opacity-60" alt="Antes">
+                            <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['first']->id]) }}" class="w-full h-full object-cover grayscale opacity-60" alt="Antes">
                             <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg text-[8px] font-black uppercase tracking-widest">Antes</div>
                         </div>
                         <div class="relative rounded-2xl overflow-hidden aspect-[3/4] bg-zinc-900 border border-blue-500/30">
-                            <img src="{{ asset('storage/' . $pair['last']->photo_path) }}" class="w-full h-full object-cover" alt="Depois">
+                            <img src="{{ route('secure-files.show', ['type' => 'evolution', 'id' => $pair['last']->id]) }}" class="w-full h-full object-cover" alt="Depois">
                             <div class="absolute bottom-2 right-2 px-2 py-1 bg-blue-500/80 backdrop-blur-md rounded-lg text-[8px] font-black uppercase tracking-widest">Depois</div>
                         </div>
                     </div>

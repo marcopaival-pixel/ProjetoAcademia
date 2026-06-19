@@ -15,7 +15,7 @@
             <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
                 Meu <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Perfil</span>
             </h1>
-            <p class="text-zinc-500 font-medium max-w-xl">Mantenha seus dados atualizados para que seus alunos tenham a melhor experiência e visibilidade profissional.</p>
+            <p class="text-zinc-500 font-medium max-w-xl">Mantenha seus dados atualizados para que seus {{ mb_strtolower($patientsLabel) }} tenham a melhor experiência e visibilidade profissional.</p>
         </div>
         
         <div class="flex flex-wrap items-center gap-4">
@@ -120,8 +120,21 @@
                             <input type="number" name="experience_years" value="{{ old('experience_years', $profile->experience_years) }}" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">
                         </div>
                         <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Profissão</label>
+                            <select name="profession_id" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">
+                                @foreach($professions as $prof)
+                                    <option value="{{ $prof->id }}" {{ old('profession_id', $profile->profession_id) == $prof->id ? 'selected' : '' }}>{{ $prof->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Especialidade Principal</label>
-                            <input type="text" name="specialty" value="{{ old('specialty', $profile->specialty) }}" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">
+                            <select name="specialty" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">
+                                <option value="">Selecione...</option>
+                                @foreach($especialidades as $esp)
+                                    <option value="{{ $esp->nome }}" {{ old('specialty', $profile->specialty) == $esp->nome ? 'selected' : '' }}>{{ $esp->nome }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="md:col-span-2 space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Formação Acadêmica</label>
@@ -276,7 +289,7 @@
                         <div class="p-6 bg-purple-500/5 rounded-3xl border border-purple-500/20">
                             <p class="text-[10px] text-purple-400 font-bold uppercase tracking-tight leading-relaxed">
                                 <svg class="w-4 h-4 inline-block mr-1 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Esta configuração define seus horários padrão para a geração automática de slots de agendamento no Portal do Aluno.
+                                Esta configuração define seus horários padrão para a geração automática de slots de agendamento no Portal do {{ $patientLabel }}.
                             </p>
                         </div>
                     </div>
@@ -292,12 +305,23 @@
                     <div class="space-y-8">
                         <div class="flex items-center justify-between p-6 bg-zinc-950/50 rounded-3xl border border-white/5">
                             <div>
-                                <h3 class="text-sm font-black text-white">Perfil Visível para Alunos</h3>
-                                <p class="text-[10px] text-zinc-500 font-bold">Permitir que alunos encontrem você na busca.</p>
+                                <h3 class="text-sm font-black text-white">Perfil Visível para {{ $patientsLabel }}</h3>
+                                <p class="text-[10px] text-zinc-500 font-bold">Permitir que {{ mb_strtolower($patientsLabel) }} encontrem você na busca.</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="is_public" value="1" {{ old('is_public', $profile->is_public) ? 'checked' : '' }} class="sr-only peer">
                                 <div class="w-14 h-8 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-rose-500 shadow-inner"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between p-6 bg-emerald-500/5 rounded-3xl border border-emerald-500/20">
+                            <div>
+                                <h3 class="text-sm font-black text-emerald-400">Ativar Módulo Financeiro</h3>
+                                <p class="text-[10px] text-zinc-500 font-bold">Habilitar controle de receitas, despesas e fluxo de caixa.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="use_finance_module" value="1" {{ old('use_finance_module', $profile->use_finance_module) ? 'checked' : '' }} class="sr-only peer">
+                                <div class="w-14 h-8 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
                             </label>
                         </div>
 
@@ -330,3 +354,6 @@
     }
 </style>
 @endsection
+
+
+

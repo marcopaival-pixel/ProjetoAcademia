@@ -13,7 +13,7 @@ use App\Http\Controllers\Professional\MedicalRecordController;
 use Illuminate\Support\Facades\Route;
 
 // Painel do Profissional (Portal Pro)
-Route::middleware(['auth'])->prefix('professional')->name('professional.')->group(function () {
+Route::middleware(['auth', 'professional.panel', 'panel.isolation', 'patient_linked'])->prefix('professional')->name('professional.')->group(function () {
     
     Route::get('/profile', [ProfessionalProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfessionalProfileController::class, 'update'])->name('profile.update');
@@ -24,8 +24,18 @@ Route::middleware(['auth'])->prefix('professional')->name('professional.')->grou
     Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
     Route::get('/evolution', [\App\Http\Controllers\Professional\EvolutionController::class, 'index'])->name('evolution.index');
 
+    // Contexto de Paciente Ativo
+    Route::post('/active-patient/set', [PatientController::class, 'setActivePatient'])->name('active-patient.set');
+    Route::post('/active-patient/clear', [PatientController::class, 'clearActivePatient'])->name('active-patient.clear');
+
+    // Seletor Global
+    Route::get('/global-selector/data', [\App\Http\Controllers\Professional\GlobalPatientSelectorController::class, 'index'])->name('global-selector.data');
+    Route::post('/global-selector/favorite/{patient}', [\App\Http\Controllers\Professional\GlobalPatientSelectorController::class, 'toggleFavorite'])->name('global-selector.favorite');
+
     // Gestão de Pacientes
     Route::prefix('patients')->name('patients.')->group(function () {
+        Route::get('/search', [PatientController::class, 'search'])->name('search');
+        Route::post('/check', [PatientController::class, 'checkExisting'])->name('check');
         Route::get('/', [PatientController::class, 'index'])->name('index');
         Route::get('/create', [PatientController::class, 'create'])->name('create');
         Route::post('/', [PatientController::class, 'store'])->name('store');
@@ -34,6 +44,7 @@ Route::middleware(['auth'])->prefix('professional')->name('professional.')->grou
         Route::get('/{patient}', [PatientController::class, 'show'])->name('show');
         Route::post('/{patient}/transfer', [PatientController::class, 'transfer'])->name('transfer');
         Route::post('/{patient}/deactivate', [PatientController::class, 'deactivate'])->name('deactivate');
+        Route::post('/{patient}/approve', [PatientController::class, 'approve'])->name('approve');
         Route::get('/{patient}/generate-link', [PatientController::class, 'generateAccessLink'])->name('generate-link');
         Route::get('/{patient}/activation-link', [PatientController::class, 'resendActivationLink'])->name('resend-activation');
         Route::get('/{patient}/export-report', [\App\Http\Controllers\Professional\PatientReportController::class, 'export'])->name('export-report');
@@ -68,6 +79,14 @@ Route::middleware(['auth'])->prefix('professional')->name('professional.')->grou
 
             Route::get('/documents', [MedicalRecordController::class, 'documents'])->name('documents');
             Route::get('/history', [MedicalRecordController::class, 'history'])->name('history');
+        });
+
+        // Gerenciamento de Treinos do Paciente
+        Route::prefix('{patient}/trainings')->name('trainings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'store'])->name('store');
+            Route::post('/apply-protocol', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'applyProtocol'])->name('apply-protocol');
         });
     });
 
@@ -116,5 +135,12 @@ Route::middleware(['auth'])->prefix('professional')->name('professional.')->grou
         Route::get('/', [\App\Http\Controllers\AgendaController::class, 'index'])->name('index');
         Route::post('/settings', [\App\Http\Controllers\AgendaController::class, 'updateSettings'])->name('settings.update');
         Route::post('/appointment/{appointment}/status', [\App\Http\Controllers\AgendaController::class, 'updateStatus'])->name('appointment.status');
+    });
+    // Módulo Financeiro
+    Route::prefix('finance')->name('finance.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Professional\Finance\DashboardController::class, 'index'])->name('dashboard');
+        Route::resource('entries', \App\Http\Controllers\Professional\Finance\EntryController::class);
+        Route::resource('categories', \App\Http\Controllers\Professional\Finance\CategoryController::class);
+        Route::get('/reports', [\App\Http\Controllers\Professional\Finance\ReportController::class, 'index'])->name('reports.index');
     });
 });

@@ -21,7 +21,14 @@ class TenantMiddleware
         }
 
         $user = Auth::user();
-        \Log::debug('TenantMiddleware check | User: ' . $user->email . ' | Path: ' . $request->path() . ' | Context: ' . (\App\Support\TenantContext::has() ? 'HAS (' . \App\Support\TenantContext::get() . ')' : 'NO'));
+
+        if (config('app.debug')) {
+            \Log::debug('TenantMiddleware', [
+                'user' => $user->email,
+                'path' => $request->path(),
+                'clinic_context' => \App\Support\TenantContext::get(),
+            ]);
+        }
 
         // 1. Regra ALUNO: Isolamento Total
         // Se o usuário for apenas aluno, ele não deve ter acesso a rotas de clínica/pacientes
@@ -55,10 +62,10 @@ class TenantMiddleware
                     session(['active_clinic_id' => $clinicId]);
                     $user->update(['clinic_id' => $clinicId]); // Salva como preferência
                 } elseif ($clinics->count() > 1) {
-                    // Múltiplas clínicas: permite navegar mas avisa ou redireciona se for rota crítica
-                    // Para simplificar agora, pegamos a primeira se não houver seleção
-                    $clinicId = $clinics->first()->id;
-                    session(['active_clinic_id' => $clinicId]);
+                    if (! $request->routeIs('clinic.selector', 'clinic.select', 'logout', 'logout.*')) {
+                        return redirect()->route('clinic.selector')
+                            ->with('warning', 'Selecione a clínica ativa para continuar.');
+                    }
                 } else {
                     // Fallback para legado: tenta achar a clínica que representa a empresa
                     $legacyClinic = \App\Models\Clinic::where('slug', $user->academyCompany?->slug)->first();
@@ -82,6 +89,7 @@ class TenantMiddleware
                     \Log::warning('TenantMiddleware | Acesso negado à clínica ' . $clinicId . ' para o usuário ' . $user->email);
                     session()->forget('active_clinic_id');
                     \App\Support\TenantContext::set(null);
+                    abort(403, 'Acesso negado: clínica não pertence à sua organização.');
                 }
             }
         }

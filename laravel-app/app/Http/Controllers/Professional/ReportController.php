@@ -69,7 +69,7 @@ class ReportController extends Controller
 
             case 'detailed_finance':
                 $agg = \App\Services\ProfessionalReportAggregator::studentFinancials($user->id);
-                $data[] = ['Aluno', 'Plano', 'Status', 'Valor'];
+                $data[] = ['Paciente', 'Plano', 'Status', 'Valor'];
                 foreach ($agg['subscriptions'] as $s) {
                     $data[] = [$s['user']['name'] ?? 'N/D', $s['plan']['name'] ?? 'N/D', $s['status'] ?? 'N/D', $s['plan']['price'] ?? 0];
                 }
@@ -77,7 +77,7 @@ class ReportController extends Controller
             
             case 'management_reports':
                 $agg = \App\Services\ProfessionalReportAggregator::managementSummary($user->id);
-                $data[] = ['Aluno', 'Email', 'Ultima Atividade', 'Risco'];
+                $data[] = ['Paciente', 'Email', 'Ultima Atividade', 'Risco'];
                 foreach ($agg['churn_risk'] as $s) {
                     $data[] = [$s['name'], $s['email'], $s['last_activity'], $s['risk_level']];
                 }
@@ -200,3 +200,5 @@ class ReportController extends Controller
         return view('errors.coming-soon', ['feature' => $type]);
     }
 }
+
+

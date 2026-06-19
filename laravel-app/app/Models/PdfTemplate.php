@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Configurable;
 use App\Enums\PdfDocumentType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PdfTemplate extends Model
 {
+    use Configurable;
     use Traits\BelongsToCompany;
     protected $fillable = [
         'academy_company_id',

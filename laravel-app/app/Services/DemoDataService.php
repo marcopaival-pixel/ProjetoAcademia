@@ -106,7 +106,38 @@ class DemoDataService
 
     private function generateMockData(User $user, $profile)
     {
-        // Aqui você pode adicionar lógica para criar refeições, treinos, etc.
-        // conforme o perfil desejado para a demonstração.
+        if ($profile === 'professional') {
+            // Criar um aluno demonstrativo para o profissional testar
+            $patient = User::where('email', 'aluno_demo@nexshape.com.br')->first();
+            if (!$patient) {
+                $patient = new User();
+                $patient->fill([
+                    'email' => 'aluno_demo@nexshape.com.br',
+                    'name' => 'Aluno Demonstração',
+                    'username' => 'aluno_demo',
+                    'is_demo' => true,
+                    'is_premium' => true,
+                    'status' => 'active',
+                    'email_verified' => true,
+                    'plan_id' => 2,
+                    'academy_company_id' => $user->academy_company_id,
+                ]);
+                $patient->password_hash = \Illuminate\Support\Facades\Hash::make('demo123');
+                $patient->save();
+                
+                $role = \App\Models\Role::where('name', 'aluno')->first();
+                if ($role) {
+                    $patient->roles()->syncWithoutDetaching([$role->id]);
+                }
+            }
+
+            // Vincular o aluno ao profissional
+            if (!$user->patients()->where('users.id', $patient->id)->exists()) {
+                $user->patients()->attach($patient->id, [
+                    'status' => 'Sim',
+                    'data_cadastro' => now(),
+                ]);
+            }
+        }
     }
 }

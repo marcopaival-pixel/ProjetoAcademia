@@ -28,6 +28,22 @@
         </div>
     </div>
 
+    @if(!empty($metrics['reconciliation']) && !($metrics['reconciliation']['healthy'] ?? true))
+    <div class="glass-card p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-balance-scale text-amber-400"></i>
+            <div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-amber-400">Conciliação — atenção</span>
+                <p class="text-xs text-zinc-400 mt-1">
+                    Divergência payments/logs: R$ {{ number_format($metrics['reconciliation']['payments_vs_logs_divergence'] ?? 0, 2, ',', '.') }}
+                    · Pagamentos sem log: {{ $metrics['reconciliation']['paid_payments_without_financial_log'] ?? 0 }}
+                    · Créditos pendentes antigos: {{ $metrics['reconciliation']['stale_pending_credit_purchases'] ?? 0 }}
+                </p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Principais KPIs -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Receita Período -->
@@ -106,6 +122,25 @@
                     <span class="text-[9px] text-zinc-500 font-bold uppercase">Consumidos</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- LTV / CAC / Ticket -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card p-5 rounded-2xl">
+            <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">LTV Estimado</span>
+            <div class="text-3xl font-black text-white mt-2">R$ {{ number_format($metrics['estimated_ltv'] ?? 0, 2, ',', '.') }}</div>
+            <p class="text-[9px] text-zinc-600 mt-2">Receita total / utilizadores pagantes</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+            <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">CAC Estimado</span>
+            <div class="text-3xl font-black text-white mt-2">R$ {{ number_format($metrics['estimated_cac'] ?? 0, 2, ',', '.') }}</div>
+            <p class="text-[9px] text-zinc-600 mt-2">Comissões pagas / novas assinaturas (mês)</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+            <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Ticket Médio</span>
+            <div class="text-3xl font-black text-white mt-2">R$ {{ number_format($metrics['average_ticket'] ?? 0, 2, ',', '.') }}</div>
+            <p class="text-[9px] text-zinc-600 mt-2">Legado MP: R$ {{ number_format($metrics['legacy_mp_revenue'] ?? 0, 2, ',', '.') }}</p>
         </div>
     </div>
 

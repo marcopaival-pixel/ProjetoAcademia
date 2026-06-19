@@ -19,8 +19,8 @@ class EnsureEmailIsVerified
         if (Auth::check()) {
             $user = Auth::user();
 
-            // Skip verification for administradores e staff com admin.access (painel /admin)
-            if ($user->hasAdminPanelAccess()) {
+            // Skip verification for administradores, staff com admin.access e representantes
+            if ($user->hasAdminPanelAccess() || $user->hasRole('representative')) {
                 return $next($request);
             }
 

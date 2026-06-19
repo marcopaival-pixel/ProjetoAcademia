@@ -56,3 +56,5 @@ class CouponController extends Controller
         return view('professional.coupons.show', compact('coupon'));
     }
 }
+
+

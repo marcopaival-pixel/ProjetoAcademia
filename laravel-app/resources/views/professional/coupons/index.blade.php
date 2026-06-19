@@ -15,7 +15,7 @@
             <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
                 Cupons de <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Desconto</span>
             </h1>
-            <p class="text-zinc-500 font-medium max-w-xl">Gerencie cupons exclusivos para seus pacientes. Solicite novos descontos e acompanhe o status de liberação.</p>
+            <p class="text-zinc-500 font-medium max-w-xl">Gerencie cupons exclusivos para seus {{ mb_strtolower($patientsLabel) }}. Solicite novos descontos e acompanhe o status de liberação.</p>
         </div>
         
         <div class="flex flex-wrap items-center gap-4">
@@ -42,7 +42,7 @@
                 <thead>
                     <tr class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
                         <th class="px-10 py-6">Nome / Código</th>
-                        <th class="px-10 py-6">Paciente</th>
+                        <th class="px-10 py-6">{{ $patientLabel }}</th>
                         <th class="px-10 py-6">Desconto</th>
                         <th class="px-10 py-6">Validade</th>
                         <th class="px-10 py-6">Status</th>
@@ -127,3 +127,6 @@
     </div>
 </div>
 @endsection
+
+
+

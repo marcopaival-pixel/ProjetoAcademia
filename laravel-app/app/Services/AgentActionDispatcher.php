@@ -134,6 +134,11 @@ class AgentActionDispatcher
         if (!$planId) throw new Exception("ID do plano de treino não fornecido para ajuste.");
 
         $plan = TrainingPlan::findOrFail($planId);
+
+        if (! app(\App\Policies\TrainingPlanPolicy::class)->view($user, $plan)) {
+            throw new \Illuminate\Auth\Access\AuthorizationException('Acesso não autorizado a este plano de treino.');
+        }
+
         // Lógica de ajuste (ex: mudar carga, adicionar exercício)
         return [
             'ok' => true,

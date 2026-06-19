@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AcademyCompany;
 use App\Models\AdminClinicAccessLog;
+use App\Models\Clinic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,19 +38,30 @@ class AdminClinicImpersonationController extends Controller
             'descricao' => 'required|string|min:10',
         ]);
 
+        $clinic = Clinic::query()
+            ->where('academy_company_id', $company->id)
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->first();
+
+        if (! $clinic) {
+            abort(422, 'Nenhuma clínica ativa encontrada para esta empresa.');
+        }
+
         // Registrar log de entrada
         $log = AdminClinicAccessLog::create([
             'admin_user_id' => Auth::id(),
-            'clinic_id' => $company->id,
+            'clinic_id' => $clinic->id,
             'motivo_acesso' => $data['motivo_acesso'],
             'descricao' => $data['descricao'],
             'data_hora_entrada' => now(),
             'ip' => $request->ip(),
         ]);
 
-        // Configurar sessão
+        // Configurar sessão (clinic_id real para TenantContext / HasClinic)
         session([
-            'impersonated_clinic_id' => $company->id,
+            'impersonated_clinic_id' => $clinic->id,
+            'impersonated_company_id' => $company->id,
             'impersonation_log_id' => $log->id,
             'impersonation_started_at' => now()->timestamp,
         ]);
@@ -83,8 +95,10 @@ class AdminClinicImpersonationController extends Controller
         // Limpar sessão
         session()->forget([
             'impersonated_clinic_id',
+            'impersonated_company_id',
             'impersonation_log_id',
             'impersonation_started_at',
+            'impersonation_last_activity',
         ]);
 
         return redirect()->route('admin.pdf-companies.index')->with('success', 'Sessão administrativa encerrada.');

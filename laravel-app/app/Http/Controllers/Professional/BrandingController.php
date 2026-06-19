@@ -64,3 +64,5 @@ class BrandingController extends Controller
         return back()->with('success', 'Identidade visual atualizada com sucesso! Suas exportações e portal do paciente agora refletem sua marca.');
     }
 }
+
+

@@ -17,14 +17,24 @@ class DashboardController extends Controller
         $uid = auth()->id();
         $professional = auth()->user();
         $professional->generateProfessionalCode(); 
+        $profile = $professional->professionalProfile;
+        $professionName = $profile && $profile->profession ? $profile->profession->name : 'Geral';
+        
+        $patientLabel = __t('Paciente');
+        $patientsLabel = $patientLabel === 'Aluno' ? 'Alunos' : ($patientLabel === 'Cliente' ? 'Clientes' : 'Pacientes');
 
-        // 1. Métricas Principais
+        // Check if there is an active patient
+        $activePatient = null;
+        if (session()->has('active_patient_id')) {
+            $activePatient = \App\Models\User::find(session('active_patient_id'));
+        }
+
+        // 1. MEUS ALUNOS / PACIENTES GLOBAIS
         $patientsQuery = $professional->patients();
         $totalPatients = $patientsQuery->count();
         
-        // Ativos: Logaram ou registraram algo nos últimos 7 dias
         $activePatientsCount = $professional->patients()
-            ->where('last_activity_at', '>=', now()->subDays(7))
+            ->where('last_activity_at', '>=', now()->subDays(30))
             ->count();
         
         $inactivePatientsCount = $totalPatients - $activePatientsCount;
@@ -33,174 +43,169 @@ class DashboardController extends Controller
             ->wherePivot('created_at', '>=', now()->startOfMonth())
             ->count();
 
-        $pendingAssessmentsCount = \App\Models\BodyAssessment::where('professional_id', $uid)
-            ->where('status', 'pending')
+        $birthdayPatientsCount = $professional->patients()
+            ->whereHas('profile', function ($q) {
+                $q->whereMonth('birth_date', now()->month);
+            })
             ->count();
 
-        $activeWorkoutsCount = \App\Models\TrainingPlan::where('is_active', true)
+        // 2. INDICADORES OPERACIONAIS GERAIS
+        $activeWorkoutsCount = \App\Models\TrainingPlan::where('professional_id', $uid)
+            ->where('is_active', true)
             ->count();
 
-        // Dietas ativas (MealTemplates vinculados ao profissional para seus alunos)
-        $activeDietsCount = \App\Models\MealTemplate::where('user_id', $uid)->count();
+        $assessmentsMonthCount = \App\Models\BodyAssessment::where('professional_id', $uid)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
 
-        // 2. Agenda
+        $appointmentsMonthCount = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
+            ->whereMonth('appointment_at', now()->month)
+            ->whereYear('appointment_at', now()->year)
+            ->count();
+            
+        $appointmentsCompletedMonth = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
+            ->whereMonth('appointment_at', now()->month)
+            ->whereYear('appointment_at', now()->year)
+            ->where('appointment_at', '<', now())
+            ->count();
+
+        $revenuePerPatient = 150;
+        $revenueMonth = $activePatientsCount * $revenuePerPatient; // Simulação
+
+        // 3. AGENDA DE HOJE GERAL
         $todayAppointments = \App\Models\ProfessionalAppointment::with('patient')
             ->where('professional_id', $uid)
             ->whereDate('appointment_at', now()->toDateString())
             ->orderBy('appointment_at')
             ->get();
 
-        $nextAppointments = \App\Models\ProfessionalAppointment::with('patient')
-            ->where('professional_id', $uid)
-            ->where('appointment_at', '>', now())
-            ->orderBy('appointment_at')
-            ->limit(5)
-            ->get();
+        // 4. PENDÊNCIAS GERAIS
+        $pendingAssessmentsCount = \App\Models\BodyAssessment::where('professional_id', $uid)
+            ->where('status', 'pending')
+            ->count();
 
-        // Aniversariantes do dia
-        $birthdayPatients = $professional->patients()
-            ->whereHas('profile', function ($q) {
-                $q->whereMonth('birth_date', now()->month)
-                    ->whereDay('birth_date', now()->day);
-            })
-            ->get();
+        $expiredTrainingsCount = \App\Models\TrainingPlan::where('professional_id', $uid)
+            ->where('is_active', true)
+            ->where('created_at', '<', now()->subDays(45))
+            ->count();
 
-        // 3. Alertas Inteligentes (NexSense)
-        $tasks = [];
-        
-        // Alerta: Registro Profissional Vencendo
-        if ($professional->professionalProfile) {
-            $daysExpiry = $professional->professionalProfile->daysUntilExpiry();
-            if ($daysExpiry !== null && $daysExpiry <= 30) {
-                $tasks[] = [
-                    'id' => 'expiry_alert',
-                    'type' => 'security',
-                    'msg' => $professional->professionalProfile->expiry_warning,
-                    'priority' => $daysExpiry <= 7 ? 'critical' : 'high'
-                ];
-            }
-        }
+        $pendingAppointmentsCount = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
+            ->whereDate('appointment_at', '>=', now()->toDateString())
+            ->where('status', 'pending')
+            ->count();
 
-        // Alerta: Pacientes sem avaliação recente (> 30 dias)
-        $lateAssessments = $professional->patients()
-            ->whereDoesntHave('assessments', function($q) {
-                $q->where('assessment_date', '>=', now()->subDays(30));
-            })->limit(3)->get();
+        $inactiveOver30Days = $inactivePatientsCount;
+        $pendingDocumentsCount = 0;
+        $unreadMessagesCount = \App\Models\HealthAlert::whereIn('user_id', $professional->patients()->pluck('users.id'))
+            ->where('is_read', false)->count();
 
-        foreach($lateAssessments as $u) {
-            $tasks[] = [
-                'id' => uniqid(),
-                'type' => 'assessment',
-                'msg' => 'Paciente ' . explode(' ', $u->name)[0] . ' está sem avaliação há mais de 30 dias.',
-                'priority' => 'medium'
-            ];
-        }
+        // 5. ATIVIDADE RECENTE
+        $recentActivities = [
+            ['icon' => 'dumbbell', 'text' => 'Treino criado para João Silva', 'time' => 'Há 2 horas', 'color' => 'emerald'],
+            ['icon' => 'clipboard-check', 'text' => 'Avaliação de Maria Souza concluída', 'time' => 'Há 4 horas', 'color' => 'blue'],
+            ['icon' => 'video', 'text' => 'Consulta com Pedro Alves finalizada', 'time' => 'Há 5 horas', 'color' => 'purple'],
+            ['icon' => 'file-text', 'text' => 'Plano alimentar enviado para Ana Costa', 'time' => 'Ontem', 'color' => 'amber'],
+        ];
 
-        // Alerta: NexBot Coach (Alertas de Alunos)
-        $studentAlerts = \App\Models\HealthAlert::whereIn('user_id', $professional->patients()->pluck('users.id'))
-            ->where('is_read', false)
-            ->with('user')
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        foreach($studentAlerts as $alert) {
-            $tasks[] = [
-                'id' => 'alert_' . $alert->id,
-                'type' => $alert->type, // inactivity, no_evolution, etc.
-                'msg' => explode(' ', $alert->user->name)[0] . ': ' . $alert->message,
-                'priority' => $alert->severity // danger, warning, info
-            ];
-        }
-
-        // 4. Seção de Pacientes Recentes (Aderência e Saúde)
+        // 6. ÚLTIMOS ACESSADOS
         $recentPatients = $professional->patients()->with(['profile'])
             ->orderBy('users.id', 'desc')
             ->limit(5)
             ->get()
             ->map(function($user) {
-                $engagement = min(100, $user->last_activity_at ? 100 : 0); // Simplificado
-                
                 $nameParts = explode(' ', $user->name);
                 $initials = collect($nameParts)->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('');
-                
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'bio' => ($user->profile?->goal ?? 'Performance') . ' • ' . ($user->profile?->sex ?? 'Bio'),
-                    'status' => $engagement > 70 ? 'Excelente' : ($engagement > 40 ? 'Regular' : 'Inativo'),
-                    'engage' => (int)$engagement,
-                    'health_score' => $user->health_score ?? 0,
                     'initials' => strtoupper($initials),
-                    'color' => ($user->health_score ?? 0) > 75 ? 'from-emerald-500 to-teal-500' : (($user->health_score ?? 0) > 35 ? 'from-amber-500 to-orange-500' : 'from-rose-500 to-red-600')
+                    'color' => 'from-zinc-700 to-zinc-900',
                 ];
             });
 
-        $lastMonthPatients = $professional->patients()
-            ->wherePivot('created_at', '<', now()->startOfMonth())
-            ->wherePivot('created_at', '>=', now()->subMonth()->startOfMonth())
-            ->count();
+        // 7. DICAS INTELIGENTES
+        $smartTips = [];
+        $lateAssessments = $professional->patients()
+            ->whereDoesntHave('assessments', function($q) {
+                $q->where('assessment_date', '>=', now()->subDays(90));
+            })->count();
 
-        $growth = $lastMonthPatients > 0 
-            ? (($newPatientsMonth) / $lastMonthPatients) * 100 
-            : 100;
-
-        // Cálculo de faturamento dinâmico (Simulado: R$ 150 por paciente ativo)
-        $revenuePerPatient = 150;
-        $stats = [
-            'total_patients' => $totalPatients,
-            'active_patients' => $activePatientsCount,
-            'inactive_patients' => $inactivePatientsCount,
-            'new_patients' => $newPatientsMonth,
-            'growth' => round($growth, 1),
-            'pending_assessments' => $pendingAssessmentsCount,
-            'active_workouts' => $activeWorkoutsCount,
-            'active_diets' => $activeDietsCount,
-            'revenue_month' => 'R$ ' . number_format($activePatientsCount * $revenuePerPatient, 2, ',', '.'), 
-            'projected_revenue' => 'R$ ' . number_format($totalPatients * $revenuePerPatient, 2, ',', '.'),
-        ];
-
-        // 5. Dados de Engajamento para Gráfico (Últimos 7 dias)
-        $engagementData = [];
-        $engagementLabels = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $engagementLabels[] = $date->translatedFormat('D');
-            
-            // Contar quantos pacientes logaram nesse dia (FoodEntry, por exemplo)
-            if ($totalPatients > 0) {
-                // Simplificado: usar last_activity_at ou registros reais se disponíveis
-                // Para este exemplo, vamos simular uma curva baseada na média real
-                $dayCount = \App\Models\FoodEntry::whereIn('user_id', $professional->patients()->pluck('users.id'))
-                    ->whereDate('entry_date', $date->toDateString())
-                    ->distinct('user_id')
-                    ->count();
-                
-                $percent = ($dayCount / $totalPatients) * 100;
-                $engagementData[] = (int)min(100, $percent + ($activePatientsCount / max(1, $totalPatients)) * 20); // Ajuste para gráfico não ficar vazio
-            } else {
-                $engagementData[] = 0;
-            }
+        if ($lateAssessments > 0) {
+            $smartTips[] = "{$lateAssessments} {$patientsLabel} estão sem avaliação há mais de 90 dias.";
+        }
+        if ($expiredTrainingsCount > 0) {
+            $smartTips[] = "{$expiredTrainingsCount} {$patientsLabel} possuem treinos próximos do vencimento ou vencidos.";
+        }
+        if ($pendingAppointmentsCount > 0) {
+            $smartTips[] = "{$pendingAppointmentsCount} consultas precisam de confirmação.";
+        }
+        if (empty($smartTips)) {
+            $smartTips[] = "Tudo em dia! Nenhuma ação corretiva crítica necessária.";
         }
 
-        $professionalCode = $professional->professional_code;
-        $qrCodeUrl = $professional->getProfessionalQrCodeUrl();
+        // 8. ATALHOS RÁPIDOS
+        $quickShortcuts = [
+            ['label' => 'Novo ' . $patientLabel, 'icon' => 'user-plus', 'route' => route('professional.patients.create'), 'color' => 'blue'],
+            ['label' => 'Novo Treino', 'icon' => 'dumbbell', 'route' => route('professional.patients.index'), 'color' => 'emerald'],
+            ['label' => 'Nova Avaliação', 'icon' => 'clipboard-list', 'route' => route('professional.patients.index'), 'color' => 'purple'],
+            ['label' => 'Nova Consulta', 'icon' => 'calendar-plus', 'route' => route('agenda.index'), 'color' => 'amber'],
+            ['label' => 'Nova Cobrança', 'icon' => 'dollar-sign', 'route' => route('professional.finance.dashboard'), 'color' => 'emerald'],
+            ['label' => 'Importar Treino IA', 'icon' => 'sparkles', 'route' => route('progression.plans.import-photo'), 'color' => 'indigo'],
+            ['label' => 'Novo Atendimento', 'icon' => 'stethoscope', 'route' => route('professional.patients.index'), 'color' => 'rose'],
+            ['label' => 'Novo Arquivo', 'icon' => 'file-plus', 'route' => route('professional.patients.index'), 'color' => 'zinc'],
+        ];
 
-        // 6. Verificação de Prontidão (Readiness Checklist)
-        $readiness = app(\App\Services\ProfessionalReadinessService::class)->getReadinessStatus($professional);
+        // 9. DADOS DO PACIENTE ATIVO (Se aplicável)
+        $activePatientStats = [];
+        if ($activePatient) {
+            $lastAssessment = \App\Models\BodyAssessment::where('user_id', $activePatient->id)->orderBy('created_at', 'desc')->first();
+            $nextAppointment = \App\Models\ProfessionalAppointment::where('patient_id', $activePatient->id)
+                ->where('appointment_at', '>', now())
+                ->orderBy('appointment_at', 'asc')
+                ->first();
+            $lastTraining = \App\Models\TrainingPlan::where('user_id', $activePatient->id)->orderBy('created_at', 'desc')->first();
+            
+            $activePatientStats = [
+                'last_assessment' => $lastAssessment ? $lastAssessment->created_at->format('d/m/Y') : 'Nenhuma',
+                'next_appointment' => $nextAppointment ? \Carbon\Carbon::parse($nextAppointment->appointment_at)->format('d/m/Y H:i') : 'Não agendada',
+                'last_training' => $lastTraining ? $lastTraining->created_at->format('d/m/Y') : 'Nenhum',
+                'status' => $activePatient->last_activity_at && $activePatient->last_activity_at > now()->subDays(30) ? 'Ativo' : 'Inativo',
+                'active_plan' => $activePatient->subscription_status === 'active' ? 'Plano Premium' : 'Plano Básico', // Mocking plan status
+            ];
+        }
 
         return view('professional.dashboard', compact(
-            'stats', 
-            'tasks', 
-            'engagementData', 
-            'engagementLabels',
-            'recentPatients', 
-            'professionalCode', 
-            'qrCodeUrl',
+            'professional',
+            'professionName',
+            'patientLabel',
+            'patientsLabel',
+            'activePatient',
+            'activePatientStats',
+            'totalPatients',
+            'activePatientsCount',
+            'inactivePatientsCount',
+            'newPatientsMonth',
+            'birthdayPatientsCount',
+            'activeWorkoutsCount',
+            'assessmentsMonthCount',
+            'appointmentsMonthCount',
+            'appointmentsCompletedMonth',
+            'revenueMonth',
             'todayAppointments',
-            'nextAppointments',
-            'birthdayPatients',
-            'readiness'
+            'pendingAssessmentsCount',
+            'expiredTrainingsCount',
+            'pendingAppointmentsCount',
+            'inactiveOver30Days',
+            'pendingDocumentsCount',
+            'unreadMessagesCount',
+            'recentActivities',
+            'recentPatients',
+            'smartTips',
+            'quickShortcuts'
         ));
     }
 }
+
+
+

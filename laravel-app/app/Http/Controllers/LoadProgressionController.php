@@ -10,6 +10,7 @@ use App\Services\AchievementService;
 use App\Models\BodyAssessment;
 use App\Models\WeightEntry;
 use Illuminate\Http\Request;
+use App\Support\PatientAccessGuard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -75,6 +76,11 @@ class LoadProgressionController extends Controller
         ]);
 
         foreach ($validated['logs'] as $exLog) {
+            PatientAccessGuard::assertTrainingPlanExerciseAccess(
+                Auth::user(),
+                (int) $exLog['training_plan_exercise_id']
+            );
+
             foreach ($exLog['sets'] as $setIndex => $setData) {
                 if (!isset($setData['weight']) || $setData['weight'] === '' || empty($setData['reps'])) continue;
 

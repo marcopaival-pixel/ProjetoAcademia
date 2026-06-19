@@ -18,6 +18,12 @@ class Especialidade extends Model
         'categoria',
         'icone',
         'status',
+        'client_term',
+        'enabled_modules',
+    ];
+
+    protected $casts = [
+        'enabled_modules' => 'array',
     ];
 
     public function profession()
@@ -31,5 +37,15 @@ class Especialidade extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'Ativo');
+    }
+
+    public function clinics()
+    {
+        return $this->belongsToMany(Clinic::class, 'clinic_especialidade');
+    }
+
+    public function professionals()
+    {
+        return $this->belongsToMany(ProfessionalProfile::class, 'professional_profile_especialidade');
     }
 }

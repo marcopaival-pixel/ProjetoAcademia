@@ -20,7 +20,8 @@ class NutritionAgent extends BaseAgent
     public function execute(User $user, string $message, array $context = []): array
     {
         try {
-            $userContext = $this->getUserNutritionContext($user);
+            $subject = $this->resolveSubjectUser($user, $context);
+            $userContext = $this->getUserNutritionContext($subject);
             $instructions = \Illuminate\Support\Facades\File::get(base_path('agentesprd/nutrition-agent.md'));
 
             // Injetar dados de visão se existirem
@@ -35,6 +36,8 @@ class NutritionAgent extends BaseAgent
                 ],
                 ['role' => 'user', 'content' => $message]
             ];
+
+            $this->injectChatHistory($messages, $context);
 
             return $this->aiProvider->call(
                 user: $user,

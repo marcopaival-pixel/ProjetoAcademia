@@ -11,7 +11,6 @@ use App\Models\MercadoPagoCredit;
 use App\Models\Subscription;
 use App\Models\Payment;
 use App\Models\FinancialLog;
-use App\Models\Commission;
 use App\Services\FinancialLogService;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -105,7 +104,15 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
     /**
      * @return array{ok: true, init_point: string}|array{ok: false, error: string}
      */
-    public function createCheckoutPreference(string $accessToken, int $userId, string $payerEmail, $plan, ?Coupon $coupon = null): array
+    public function createCheckoutPreference(
+        string $accessToken,
+        int $userId,
+        string $payerEmail,
+        $plan,
+        ?Coupon $coupon = null,
+        float $referralDiscount = 0.0,
+        ?string $referralCode = null
+    ): array
     {
         $user = User::find($userId);
         
@@ -134,6 +141,10 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
             $price = $coupon->apply($price);
         }
 
+        if ($referralDiscount > 0) {
+            $price = max(0, round($price - $referralDiscount, 2));
+        }
+
         if ($this->publicBase() === '') {
             return ['ok' => false, 'error' => 'Configure APP_PUBLIC_URL no .env para usar o checkout.'];
         }
@@ -149,11 +160,13 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
             ]],
             'payer' => ['email' => $payerEmail],
             'external_reference' => 'pa:'.$userId.':'.$planCode,
-            'metadata' => [
+            'metadata' => array_filter([
                 'user_id' => (string) $userId,
                 'plan' => $planCode,
                 'coupon_id' => $coupon ? (string) $coupon->id : null,
-            ],
+                'referral_discount' => $referralDiscount > 0 ? (string) $referralDiscount : null,
+                'referral_code' => $referralCode,
+            ], fn ($v) => $v !== null && $v !== ''),
             'back_urls' => [
                 'success' => $this->absoluteUrl('mp/return?collection_status=approved'),
                 'pending' => $this->absoluteUrl('mp/return?collection_status=pending'),
@@ -277,6 +290,12 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
         if ($coupon) {
             $expected = $coupon->apply($expected);
         }
+
+        $meta = $payment['metadata'] ?? null;
+        if (is_array($meta) && ! empty($meta['referral_discount'])) {
+            $expected = max(0, round($expected - (float) $meta['referral_discount'], 2));
+        }
+
         $amt = isset($payment['transaction_amount']) ? (float) $payment['transaction_amount'] : 0.0;
 
         return abs($amt - $expected) < 0.02;
@@ -387,6 +406,23 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
             return ['ok' => false, 'message' => 'Moeda inesperada.'];
         }
 
+        if (in_array($status, ['refunded', 'charged_back'], true)) {
+            $paymentModel = Payment::where('gateway', 'mercadopago')
+                ->where('gateway_id', $id)
+                ->first();
+
+            if ($paymentModel) {
+                $refundAmount = isset($payment['transaction_amount']) ? (float) $payment['transaction_amount'] : null;
+                app(\App\Services\PaymentRefundService::class)->processRefund(
+                    $paymentModel,
+                    $refundAmount,
+                    'mercadopago_webhook'
+                );
+            }
+
+            return ['ok' => true, 'message' => 'Estorno processado.'];
+        }
+
         $parsed = $this->extractUserAndPlan($payment);
         
         // Mapeamento de status do Mercado Pago para o nosso sistema
@@ -471,19 +507,28 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
         $mpId = (int) $payment['id'];
         $amt = (float) $payment['transaction_amount'];
 
-        return DB::transaction(function () use ($mpId, $userId, $plan, $amt, $cur, $couponId, $id) {
-            $exists = DB::table('mercadopago_payment_credits')->where('mp_payment_id', $mpId)->exists();
+        return DB::transaction(function () use ($mpId, $userId, $plan, $amt, $cur, $couponId, $id, $feeAmount, $netAmount, $payment) {
+            $exists = Payment::where('gateway', 'mercadopago')
+                ->where('gateway_id', (string) $id)
+                ->whereIn('status', ['paid', 'approved', 'ATIVO', Subscription::STATUS_FIN_ATIVO])
+                ->exists();
             if ($exists) {
                 return ['ok' => true, 'message' => 'Pagamento já creditado.'];
             }
-            DB::table('mercadopago_payment_credits')->insert([
-                'mp_payment_id' => $mpId,
-                'user_id' => $userId,
-                'plan_code' => (str_starts_with($plan, 'ai_credits:') || str_starts_with($plan, 'credits:')) ? 'credits' : $plan,
-                'transaction_amount' => $amt,
-                'currency_id' => $cur !== '' ? $cur : 'BRL',
-                'coupon_id' => $couponId,
-            ]);
+
+            if (config('projeto.legacy_mp_credits_write', false)) {
+                $legacyExists = DB::table('mercadopago_payment_credits')->where('mp_payment_id', $mpId)->exists();
+                if (! $legacyExists) {
+                    DB::table('mercadopago_payment_credits')->insert([
+                        'mp_payment_id' => $mpId,
+                        'user_id' => $userId,
+                        'plan_code' => (str_starts_with($plan, 'ai_credits:') || str_starts_with($plan, 'credits:')) ? 'credits' : $plan,
+                        'transaction_amount' => $amt,
+                        'currency_id' => $cur !== '' ? $cur : 'BRL',
+                        'coupon_id' => $couponId,
+                    ]);
+                }
+            }
 
             if ($couponId) {
                 $coupon = Coupon::find($couponId);
@@ -492,54 +537,34 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
                 }
             }
 
-            // Registrar na nova tabela de pagamentos para auditoria
-            $paymentModel = Payment::create([
-                'user_id' => $userId,
-                'gateway' => 'mercadopago',
-                'gateway_id' => (string) $id,
-                'amount' => $amt,
+            $paymentModel = Payment::where('gateway', 'mercadopago')
+                ->where('gateway_id', (string) $id)
+                ->firstOrFail();
+
+            $paymentModel->update([
+                'status' => Subscription::STATUS_FIN_ATIVO,
                 'fee_amount' => $feeAmount,
                 'net_amount' => $netAmount,
-                'currency' => $cur !== '' ? $cur : 'BRL',
-                'status' => Subscription::STATUS_FIN_ATIVO,
                 'payload' => $payment,
             ]);
 
             $user = User::find($userId);
             $subscriptionModel = null;
 
-            if (str_starts_with($plan, 'ai_credits:')) {
+            if ($user && str_starts_with($plan, 'ai_credits:')) {
                 $packageId = (int) str_replace('ai_credits:', '', $plan);
-                $package = \App\Models\AiCreditPackage::find($packageId);
-                if ($package && $user) {
-                    app(\App\Services\AiCreditService::class)->addCredits(
-                        $user, 
-                        $package->credits, 
-                        $package->name, 
-                        (float) $package->price, 
-                        'mercadopago', 
-                        (string) $mpId
-                    );
-                }
-            } elseif (str_starts_with($plan, 'credits:')) {
+                app(\App\Services\Payment\PaymentProcessor::class)
+                    ->applyAiCreditsPurchase($user, $packageId, (string) $id, 'mercadopago');
+            } elseif ($user && str_starts_with($plan, 'credits:')) {
                 $compraId = (int) str_replace('credits:', '', $plan);
-                $compra = \App\Models\CreditoCompra::find($compraId);
-                if ($compra && $compra->status === 'PENDENTE' && $user) {
-                    $compra->update(['status' => 'PAGO', 'gateway_id' => (string) $id]);
-                    $user->increment('creditos', $compra->quantidade);
-                    
-                    // Manter compatibilidade com ai_credits se a coluna existir
-                    if (\Schema::hasColumn('users', 'ai_credits')) {
-                        $user->increment('ai_credits', $compra->quantidade);
-                    }
-                }
+                app(\App\Services\Payment\PaymentProcessor::class)
+                    ->applyGeneralCreditsPurchase($user, $compraId, (string) $id);
             } else {
                 $subscriptionModel = $this->premiumExtendUser($userId, $plan);
             }
 
-            // Processar comissão se houver representante
             if ($user) {
-                $this->processRepresentativeCommission($user, $paymentModel, $subscriptionModel);
+                app(\App\Services\CommissionService::class)->recordOnPayment($user, $paymentModel, $subscriptionModel);
             }
 
             FinancialLogService::log([
@@ -559,53 +584,6 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
 
             return ['ok' => true, 'message' => 'Crédito aplicado com sucesso.'];
         });
-    }
-
-    /**
-     * Processa a comissão do representante, se existir.
-     */
-    private function processRepresentativeCommission(User $user, Payment $payment, ?Subscription $subscription = null): void
-    {
-        $representativeId = $user->representative_id;
-        if (!$representativeId) {
-            return;
-        }
-
-        // Determinar a taxa de comissão
-        $rate = 0.00;
-        if ($subscription && $subscription->plan) {
-            $rate = $subscription->plan->commission_rate;
-        }
-
-        // Se a taxa for 0, podemos ter uma taxa global padrão (ex: 10%)
-        if ($rate <= 0) {
-            $rate = (float) config('projeto.default_commission_rate', 10.00);
-        }
-
-        if ($rate <= 0) {
-            return;
-        }
-
-        $commissionAmount = ($payment->amount * $rate) / 100;
-
-        Commission::create([
-            'representative_id' => $representativeId,
-            'user_id' => $user->id,
-            'payment_id' => $payment->id,
-            'subscription_id' => $subscription?->id,
-            'base_amount' => $payment->amount,
-            'commission_rate' => $rate,
-            'commission_amount' => $commissionAmount,
-            'status' => Commission::STATUS_PENDENTE,
-            'available_at' => now()->addDays(7), // Janela de segurança de 7 dias (garantia)
-            'notes' => 'Comissão gerada automaticamente via pagamento ' . $payment->gateway_id,
-        ]);
-
-        Log::info('[Representative] Comissão gerada.', [
-            'representative_id' => $representativeId,
-            'user_id' => $user->id,
-            'amount' => $commissionAmount
-        ]);
     }
 
     /**
@@ -835,7 +813,15 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
 
     public function createSubscription(User $user, $plan, array $options = []): array
     {
-        return $this->createCheckoutPreference($this->token, $user->id, $user->email, $plan, $options['coupon'] ?? null);
+        return $this->createCheckoutPreference(
+            $this->token,
+            $user->id,
+            $user->email,
+            $plan,
+            $options['coupon'] ?? null,
+            (float) ($options['referral_discount'] ?? 0),
+            $options['referral_code'] ?? null
+        );
     }
 
     public function cancelSubscription($gatewaySubscriptionId): bool

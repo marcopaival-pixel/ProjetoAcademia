@@ -33,7 +33,7 @@
                 <span class="text-2xl font-black text-white italic tabular-nums">{{ $data['retention_rate'] }}%</span>
             </div>
             <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 relative z-10">Taxa de Retenção</h4>
-            <p class="text-xs text-zinc-500 font-medium relative z-10">Alunos ativos há mais de 30 dias.</p>
+            <p class="text-xs text-zinc-500 font-medium relative z-10">{{ $patientsLabel }} ativos há mais de 30 dias.</p>
         </div>
 
         <!-- Avg Sessions -->
@@ -43,7 +43,7 @@
                 <span class="text-2xl font-black text-white italic tabular-nums">{{ $data['avg_sessions_per_student'] }}</span>
             </div>
             <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 relative z-10">Média de Treinos</h4>
-            <p class="text-xs text-zinc-500 font-medium relative z-10">Sessões por aluno nos últimos 30 dias.</p>
+            <p class="text-xs text-zinc-500 font-medium relative z-10">Sessões por {{ mb_strtolower($patientLabel) }} nos últimos 30 dias.</p>
         </div>
 
         <!-- Plans % -->
@@ -53,7 +53,7 @@
                 <span class="text-2xl font-black text-white italic tabular-nums">{{ $data['active_plans_percentage'] }}%</span>
             </div>
             <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2 relative z-10">Taxa de Conversão</h4>
-            <p class="text-xs text-zinc-500 font-medium relative z-10">Alunos com planos pagos ativos.</p>
+            <p class="text-xs text-zinc-500 font-medium relative z-10">{{ $patientsLabel }} com planos pagos ativos.</p>
         </div>
 
         <!-- Growth Score -->
@@ -113,3 +113,6 @@
     }
 </style>
 @endsection
+
+
+

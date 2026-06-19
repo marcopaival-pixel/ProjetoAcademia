@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class HealthMetric extends Model
 {
     use HasFactory;
+    use Traits\BelongsToUserCompany;
 
     /**
      * Constantes para tipos de métricas padronizadas

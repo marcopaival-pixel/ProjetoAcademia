@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MenuPermissionAuditLog extends Model
 {
+    use BelongsToCompany;
     protected $table = 'menu_permission_audit_logs';
 
     protected $fillable = [

@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\TrainingController;
 use App\Http\Controllers\Admin\EspecialidadeController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\DeployReleaseController;
 use App\Http\Controllers\Admin\TenantBackupController;
 use App\Http\Controllers\Admin\BulkImportController;
 use App\Http\Controllers\Auth\LoginController;
@@ -41,6 +42,7 @@ use App\Http\Controllers\Admin\ConfigurationCenter\EntityController;
 use App\Http\Controllers\Admin\ConfigurationCenter\FieldController;
 use App\Http\Controllers\Admin\ConfigurationCenter\DynamicCrudController;
 use App\Http\Controllers\Admin\ConfigurationCenter\AuditController;
+use App\Http\Controllers\Admin\ObservabilityController;
 use App\Http\Controllers\OmniChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,7 +57,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/logout', [AdminAreaController::class, 'logout'])->name('admin.logout');
 
     // Área Protegida Admin
-    Route::middleware(['auth', 'admin'])->group(function () {
+    Route::middleware(['auth', 'admin', 'panel.isolation'])->group(function () {
         Route::get('/', [AdminAreaController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/users', [AdminAreaController::class, 'users'])->name('admin.users');
         Route::get('/users/create', [AdminAreaController::class, 'createUser'])->name('admin.users.create');
@@ -159,6 +161,9 @@ Route::prefix('admin')->group(function () {
                 
                 // Monitoramento Técnico do Orquestrador
                 Route::get('/orchestrator', [\App\Http\Controllers\Admin\AdminOrchestratorDashboardController::class, 'index'])->name('orchestrator.dashboard');
+
+                // Governança unificada de IA
+                Route::get('/governance', [\App\Http\Controllers\Admin\AdminAiGovernanceController::class, 'index'])->name('governance');
             });
         });
 
@@ -192,6 +197,12 @@ Route::prefix('admin')->group(function () {
             Route::post('/withdrawals/{withdrawal}/update', [RepresentativeAdminController::class, 'updateWithdrawal'])->name('withdrawals.update');
         });
 
+        // Gestão de Códigos de Indicação
+        Route::prefix('referral-codes')->name('admin.referral-codes.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ReferralCodeController::class, 'index'])->name('index');
+            Route::get('/{referralCode}', [\App\Http\Controllers\Admin\ReferralCodeController::class, 'show'])->name('show');
+        });
+
         // Monitoramento e Auditoria (LGPD/Erros/Segurança)
         Route::get('/lgpd', [AdminAreaController::class, 'lgpdDashboard'])->name('admin.lgpd.index');
         Route::get('/lgpd/consents', [AdminAreaController::class, 'consents'])->name('admin.lgpd.consents');
@@ -201,6 +212,18 @@ Route::prefix('admin')->group(function () {
         Route::post('/security/change-password', [AdminAreaController::class, 'changeAdminPassword'])->name('admin.security.change-password');
         Route::get('/system-errors', [AdminAreaController::class, 'systemErrors'])->name('admin.system-errors');
         Route::post('/system-errors/clear', [AdminAreaController::class, 'clearErrors'])->name('admin.system-errors.clear');
+
+        Route::prefix('observability')->name('admin.observability.')->group(function () {
+            Route::get('/admin-logs', [ObservabilityController::class, 'adminLogs'])->name('admin-logs');
+            Route::get('/admin-logs/export', [ObservabilityController::class, 'exportAdminLogs'])->name('admin-logs.export');
+            Route::get('/auth-logs', [ObservabilityController::class, 'authLogs'])->name('auth-logs');
+            Route::get('/auth-logs/export', [ObservabilityController::class, 'exportAuthLogs'])->name('auth-logs.export');
+            Route::get('/api-logs', [ObservabilityController::class, 'apiLogs'])->name('api-logs');
+            Route::get('/api-logs/export', [ObservabilityController::class, 'exportApiLogs'])->name('api-logs.export');
+            Route::get('/client-errors', [ObservabilityController::class, 'clientErrors'])->name('client-errors');
+            Route::get('/client-errors/export', [ObservabilityController::class, 'exportClientErrors'])->name('client-errors.export');
+            Route::get('/financial-reconciliation', [ObservabilityController::class, 'financialReconciliation'])->name('financial-reconciliation');
+        });
         
         // Configurações Globais e Monitoramento
         Route::get('/settings', [AdminAreaController::class, 'settings'])->name('admin.settings');
@@ -210,6 +233,18 @@ Route::prefix('admin')->group(function () {
         Route::post('/settings/test-whatsapp', [AdminAreaController::class, 'testWhatsApp'])->name('admin.settings.test-whatsapp');
         Route::get('/monitoring', [AdminAreaController::class, 'monitoring'])->name('admin.monitoring');
         Route::get('/ai-monitoring', [AdminAreaController::class, 'aiMonitoring'])->name('admin.ai.monitoring');
+        
+        // Dashboard Executivo Inteligente
+        Route::prefix('executive')->name('admin.executive.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ExecutiveDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/metrics', [\App\Http\Controllers\Admin\ExecutiveDashboardController::class, 'metrics'])->name('metrics');
+        });
+
+        // Inteligência Artificial Administrativa (Retenção)
+        Route::prefix('ai-intelligence')->name('admin.ai-intelligence.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminAiIntelligenceController::class, 'index'])->name('dashboard');
+            Route::post('/recover', [\App\Http\Controllers\Admin\AdminAiIntelligenceController::class, 'recoverPatient'])->name('recover');
+        });
         
         // Controle Operacional, Resiliência e Manutenção
         Route::prefix('operations')->name('admin.operations.')->group(function () {
@@ -230,6 +265,13 @@ Route::prefix('admin')->group(function () {
             Route::delete('/{task}', [\App\Http\Controllers\Admin\KanbanController::class, 'destroy'])->name('destroy');
         });
         
+        // Deploy & versões
+        Route::prefix('deploy')->name('admin.deploy.')->group(function () {
+            Route::get('/', [DeployReleaseController::class, 'index'])->name('index');
+            Route::post('/', [DeployReleaseController::class, 'store'])->name('store');
+            Route::patch('/{deployRelease}/homolog', [DeployReleaseController::class, 'updateHomolog'])->name('homolog');
+        });
+
         // Gestão de Backups
         Route::prefix('backups')->name('admin.backups.')->group(function () {
             Route::get('/', [BackupController::class, 'index'])->name('index');

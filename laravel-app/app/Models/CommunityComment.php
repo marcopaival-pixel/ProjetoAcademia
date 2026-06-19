@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class CommunityComment extends Model
 {
+    use Traits\BelongsToScopedParent;
     protected $fillable = [
         'post_id',
         'user_id',

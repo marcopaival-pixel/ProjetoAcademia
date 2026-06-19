@@ -19,7 +19,7 @@ class EvolutionController extends Controller
         // 1. Média de Saúde da Base
         $avgHealthScore = $patients->avg('health_score') ?? 0;
 
-        // 2. Alunos em Risco (Health Score < 40 ou Alertas Danger)
+        // 2. Pacientes em Risco (Health Score < 40 ou Alertas Danger)
         $riskPatients = $patients->filter(function($u) {
             return ($u->health_score !== null && $u->health_score < 40) || 
                    HealthAlert::where('user_id', $u->id)->where('severity', 'danger')->where('is_read', false)->exists();
@@ -46,3 +46,5 @@ class EvolutionController extends Controller
         ));
     }
 }
+
+

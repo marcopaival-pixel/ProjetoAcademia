@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
+use App\Models\User;
+use App\Policies\FinancialReportPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,6 +37,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $financialPolicy = new FinancialReportPolicy;
+        Gate::define('admin.financial.dashboard', fn (User $user) => $financialPolicy->viewDashboard($user));
+        Gate::define('admin.financial.management', fn (User $user) => $financialPolicy->viewManagement($user));
+        Gate::define('admin.financial.reports', fn (User $user) => $financialPolicy->viewReports($user));
+
+        $professionalPatientPolicy = new \App\Policies\ProfessionalPatientPolicy;
+        Gate::define('professionalPatient.view', fn (User $user, User $patient) => $professionalPatientPolicy->view($user, $patient));
+        Gate::define('professionalPatient.update', fn (User $user, User $patient) => $professionalPatientPolicy->update($user, $patient));
+        Gate::define('professionalPatient.delete', fn (User $user, User $patient) => $professionalPatientPolicy->delete($user, $patient));
+
         $bp = (string) config('projeto.base_path');
         if ($bp !== '' && app()->runningInConsole() === false) {
             URL::forceRootUrl(rtrim((string) config('app.url'), '/').$bp);
@@ -53,10 +66,20 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationFailed::class, [MailNotificationAuditListener::class, 'handleFailed']);
 
         \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {
+            $activePatient = null;
+            if (auth()->check() && session()->has('active_patient_id')) {
+                // Compartilhar apenas os dados básicos para não sobrecarregar
+                $activePatient = \App\Models\User::find(session('active_patient_id'));
+                if (!$activePatient) {
+                    session()->forget('active_patient_id');
+                }
+            }
+
             $view->with([
                 'projetoTheme' => Theme::current(),
                 'themeExplicit' => Theme::isExplicit(),
                 'themeNext' => Theme::nextFromRequest(),
+                'activePatient' => $activePatient,
             ]);
         });
 
@@ -80,6 +103,18 @@ class AppServiceProvider extends ServiceProvider
             $view->with('adminNavVisible', $map);
         });
 
+        \Illuminate\Support\Facades\View::composer('professional.*', function ($view) {
+            if (auth()->check() && auth()->user()->hasRole('professional')) {
+                $profile = auth()->user()->professionalProfile;
+                $professionName = $profile && $profile->profession ? $profile->profession->name : 'Geral';
+                
+                $isFitness = in_array($professionName, ['Educador Físico', 'Personal Trainer']);
+                
+                $view->with('patientLabel', $isFitness ? 'Aluno' : 'Paciente');
+                $view->with('patientsLabel', $isFitness ? 'Alunos' : 'Pacientes');
+            }
+        });
+
         \Illuminate\Support\Facades\RateLimiter::for('openfoodfacts', function (\Illuminate\Http\Request $request) {
             $uid = (int) ($request->user()?->id ?? 0);
             $per = max(5, (int) config('services.openfoodfacts.max_requests_per_minute', 30));
@@ -96,6 +131,41 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\RateLimiter::for('marketing-tracking', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by('mkt-ip-'.$request->ip());
         });
+
+        \Illuminate\Support\Facades\RateLimiter::for('client-errors', function (\Illuminate\Http\Request $request) {
+            $limit = max(1, (int) config('observability.client_errors.rate_limit', 10));
+
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute($limit)->by('client-err-ip-'.$request->ip());
+        });
+
+        RateLimiter::for('api', function (Request $request) {
+            $userId = (int) ($request->user()?->id ?? 0);
+
+            return Limit::perMinute(120)->by($userId > 0 ? 'api-u-'.$userId : 'api-ip-'.$request->ip());
+        });
+
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Queue\Events\JobProcessed::class, function ($event) {
+            $durationMs = 0;
+            if (isset($event->job) && method_exists($event->job, 'payload')) {
+                $payload = $event->job->payload();
+                $pushedAt = $payload['pushedAt'] ?? null;
+                if ($pushedAt) {
+                    $durationMs = (int) max(0, (microtime(true) - (float) $pushedAt) * 1000);
+                }
+            }
+
+            \App\Services\Operations\JobMetricsRecorder::recordCompleted($durationMs);
+        });
+
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Queue\Events\JobFailed::class, function () {
+            \App\Services\Operations\JobMetricsRecorder::recordFailed();
+        });
+
+        if (class_exists(\Sentry\SentrySdk::class) && config('sentry.dsn')) {
+            \Sentry\configureScope(function (\Sentry\State\Scope $scope): void {
+                $scope->setTag('app', 'nexshape');
+            });
+        }
 
         // Feature and Plan Directives
         \Illuminate\Support\Facades\Blade::if('feature', function ($key) {
@@ -136,8 +206,24 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::define('viewPulse', function (\App\Models\User $user) {
             return $user->isAdministrator();
         });
+
+        if (class_exists(\Laravel\Horizon\Horizon::class)) {
+            \Laravel\Horizon\Horizon::auth(function ($request) {
+                $user = $request->user();
+
+                return $user && $user->isAdministrator();
+            });
+        }
         // Achievements Observers
         \App\Models\WaterEntry::observe(\App\Observers\WaterEntryObserver::class);
         \App\Models\ExerciseEntry::observe(\App\Observers\ExerciseEntryObserver::class);
+        \App\Models\ProfessionalFinanceEntry::observe(\App\Observers\ProfessionalFinanceEntryObserver::class);
+        \App\Models\HealthAlert::observe(\App\Observers\HealthAlertObserver::class);
+
+        if ($this->app->environment('production') && ! (bool) config('session.secure')) {
+            \Illuminate\Support\Facades\Log::warning(
+                '[security] SESSION_SECURE_COOKIE=false em produção — risco de hijack de sessão. Defina SESSION_SECURE_COOKIE=true com HTTPS.'
+            );
+        }
     }
 }

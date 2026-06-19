@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuthAuditLog;
 use App\Models\User;
 use App\Services\Operations\AuthAuditService;
+use App\Services\StudentRoleBridgeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthTokenController extends Controller
 {
-    public function store(Request $request, AuthAuditService $authAudit): JsonResponse
+    public function store(Request $request, AuthAuditService $authAudit, StudentRoleBridgeService $studentBridge): JsonResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -86,30 +87,27 @@ class AuthTokenController extends Controller
             ]);
         }
 
-        $tokenName = $validated['device_name'] ?? 'api-v1';
-        $expirationDays = (int) config('projeto.api_token_expiration_days', 30);
-        $expiresAt = $expirationDays > 0 ? now()->addDays($expirationDays) : null;
-        $token = $user->createToken($tokenName, ['*'], $expiresAt);
+        $studentBridge->ensurePortalAccess($user);
 
-        $authAudit->log(
-            AuthAuditLog::EVENT_API_TOKEN_ISSUED,
-            $user->id,
-            $user->email,
-            true,
-            $request,
-            ['device_name' => $tokenName],
-            'sanctum'
-        );
+        return response()->json($this->issueTokenResponse($user, $validated['device_name'] ?? 'api-v1', $request, $authAudit));
+    }
 
-        return response()->json([
-            'token_type' => 'Bearer',
-            'access_token' => $token->plainTextToken,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
+    public function refresh(Request $request, AuthAuditService $authAudit): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'device_name' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $deviceName = $validated['device_name'] ?? 'api-v1';
+        $request->user()->currentAccessToken()?->delete();
+
+        return response()->json($this->issueTokenResponse(
+            $user,
+            $deviceName,
+            $request,
+            $authAudit
+        ));
     }
 
     public function destroy(Request $request, AuthAuditService $authAudit): JsonResponse
@@ -127,6 +125,38 @@ class AuthTokenController extends Controller
             'sanctum'
         );
 
-        return response()->json(['message' => 'Token revogado.']);
+        return response()->json(['data' => ['revoked' => true]]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function issueTokenResponse(User $user, string $tokenName, Request $request, AuthAuditService $authAudit): array
+    {
+        $expirationDays = (int) config('projeto.api_token_expiration_days', 30);
+        $expiresAt = $expirationDays > 0 ? now()->addDays($expirationDays) : null;
+        $token = $user->createToken($tokenName, ['*'], $expiresAt);
+
+        $authAudit->log(
+            AuthAuditLog::EVENT_API_TOKEN_ISSUED,
+            $user->id,
+            $user->email,
+            true,
+            $request,
+            ['device_name' => $tokenName],
+            'sanctum'
+        );
+
+        return [
+            'token_type' => 'Bearer',
+            'access_token' => $token->plainTextToken,
+            'expires_at' => $expiresAt?->toIso8601String(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames(),
+            ],
+        ];
     }
 }

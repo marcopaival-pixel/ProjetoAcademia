@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserMenuPreference extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'user_id',
         'menu_id',

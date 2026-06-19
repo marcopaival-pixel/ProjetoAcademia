@@ -213,21 +213,22 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                     @foreach(['disease' => 'Possui alguma doença?', 'injury' => 'Possui alguma lesão?', 'medication' => 'Usa medicação?', 'allergy' => 'Possui alergia?'] as $key => $label)
+                    @php $inputName = $key === 'medication' ? 'uses_medication' : 'has_'.$key; @endphp
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
                             <label class="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-2">{{ $label }}</label>
                             <div class="flex gap-2 p-1 bg-zinc-950/50 rounded-xl border border-zinc-900 shadow-inner">
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="has_{{ $key }}" value="1" class="hidden peer" {{ old('has_'.$key) == '1' ? 'checked' : '' }} onclick="toggleDetails('{{ $key }}_details_container', true)">
+                                    <input type="radio" name="{{ $inputName }}" value="1" class="hidden peer" {{ old($inputName) == '1' ? 'checked' : '' }} onclick="toggleDetails('{{ $key }}_details_container', true)">
                                     <span class="px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-700 peer-checked:bg-emerald-500 peer-checked:text-zinc-950 transition-all block">Sim</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="has_{{ $key }}" value="0" class="hidden peer" {{ old('has_'.$key, '0') == '0' ? 'checked' : '' }} onclick="toggleDetails('{{ $key }}_details_container', false)">
+                                    <input type="radio" name="{{ $inputName }}" value="0" class="hidden peer" {{ old($inputName, '0') == '0' ? 'checked' : '' }} onclick="toggleDetails('{{ $key }}_details_container', false)">
                                     <span class="px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-700 peer-checked:bg-zinc-800 peer-checked:text-white transition-all block">Não</span>
                                 </label>
                             </div>
                         </div>
-                        <div id="{{ $key }}_details_container" class="{{ old('has_'.$key) == '1' ? '' : 'hidden' }}">
+                        <div id="{{ $key }}_details_container" class="{{ old($inputName) == '1' ? '' : 'hidden' }}">
                             <textarea name="{{ $key }}_details" class="premium-input min-h-[100px] resize-none" placeholder="Especifique detalhes importantes para sua segurança...">{{ old($key.'_details') }}</textarea>
                         </div>
                     </div>
@@ -269,14 +270,17 @@
                 </div>
             </div>
 
-            @if($token !== 'logged-in' || !$patient->password_hash)
+            @if($token !== 'logged-in' || !$patient->password_hash || $patient->status === 'pending')
             <!-- Segurança -->
             <div class="premium-card p-10 space-y-10">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20 shadow-lg">
                         <i data-lucide="lock" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="text-2xl font-black text-white uppercase tracking-tight">Segurança do Acesso</h3>
+                    <div>
+                        <h3 class="text-white font-bold text-lg">Segurança do Acesso</h3>
+                        <p class="text-zinc-500 text-sm">Crie uma senha forte para acessar seu portal.</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -159,16 +159,14 @@ class AIProviderService
      */
     private function calculateCost(string $model, int $input, int $output): float
     {
-        // Preços por 1M tokens (Maio 2024 - GPT-4o e GPT-4o-mini)
-        $prices = [
+        $prices = config('ai.token_prices', [
             'gpt-4o' => ['input' => 5.00, 'output' => 15.00],
             'gpt-4o-mini' => ['input' => 0.15, 'output' => 0.60],
             'gpt-4-turbo' => ['input' => 10.00, 'output' => 30.00],
             'gpt-3.5-turbo' => ['input' => 0.50, 'output' => 1.50],
-        ];
+        ]);
 
-        // Normalização simplificada do nome do modelo para encontrar o preço
-        $priceKey = 'gpt-4o-mini'; // Default barato
+        $priceKey = 'gpt-4o-mini';
         foreach (array_keys($prices) as $key) {
             if (str_contains(strtolower($model), $key)) {
                 $priceKey = $key;

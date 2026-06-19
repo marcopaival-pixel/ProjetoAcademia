@@ -73,6 +73,22 @@
         </div>
     </div>
 
+    @if(!empty($health['queue_breakdown']))
+    <div class="glass-card p-8 border border-white/5">
+        <h3 class="text-sm font-black text-white uppercase tracking-widest mb-4">Filas por nome</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @foreach($health['queue_breakdown'] as $queueName => $count)
+            <div class="bg-zinc-950/60 rounded-2xl p-4 border border-white/5">
+                <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ $queueName }}</span>
+                <div class="text-2xl font-black text-white mt-1 tabular-nums">{{ $count }}</div>
+                <span class="text-[9px] text-zinc-600 uppercase">pendentes</span>
+            </div>
+            @endforeach
+        </div>
+        <p class="text-[10px] text-zinc-600 mt-4 italic">Jobs: {{ $health['jobs']['pending'] ?? 0 }} total · {{ $health['jobs']['failed'] ?? 0 }} falhados · throughput {{ $health['jobs']['throughput'] ?? '—' }}</p>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <!-- Infrastructure and Monitoring -->
         <div class="lg:col-span-8 space-y-10">

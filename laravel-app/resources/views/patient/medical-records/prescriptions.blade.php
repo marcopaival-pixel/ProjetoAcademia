@@ -74,24 +74,6 @@
                     icon="fas fa-file-prescription"
                 />
             </div>
-            
-            <!-- Search Bar -->
-            <div class="relative w-full md:w-96 group">
-                <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-zinc-600 group-focus-within:text-emerald-500 transition-colors">
-                    <i class="fas fa-search"></i>
-                </div>
-                <input 
-                    type="text" 
-                    x-model="search"
-                    placeholder="Buscar por medicamento ou orientação..." 
-                    class="search-input w-full bg-zinc-900/40 border border-zinc-800 rounded-3xl py-5 pl-14 pr-8 text-sm font-bold text-white transition-all outline-none placeholder:text-zinc-700"
-                >
-                <div class="absolute right-5 top-1/2 -translate-y-1/2" x-show="search" x-cloak>
-                    <button @click="search = ''" class="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400 hover:bg-zinc-700 hover:text-white transition-all">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
         </div>
 
         <!-- Prescriptions Grid -->

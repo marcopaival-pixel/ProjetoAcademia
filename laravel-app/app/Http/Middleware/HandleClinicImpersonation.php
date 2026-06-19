@@ -28,8 +28,15 @@ class HandleClinicImpersonation
             // Atualizar atividade
             session(['impersonation_last_activity' => time()]);
 
-            // Forçar o contexto da clínica no usuário autenticado
-            $request->user()->academy_company_id = session('impersonated_clinic_id');
+            // Forçar o contexto da empresa no usuário autenticado (clinic_id ≠ company_id)
+            $companyId = session('impersonated_company_id');
+            if (! $companyId && session('impersonated_clinic_id')) {
+                $clinic = \App\Models\Clinic::find(session('impersonated_clinic_id'));
+                $companyId = $clinic?->academy_company_id;
+            }
+            if ($companyId) {
+                $request->user()->academy_company_id = $companyId;
+            }
             
             // Garantir que o usuário seja tratado como admin da clínica para fins de permissão local se necessário
             // No entanto, as permissões globais do admin devem ser mantidas para que ele possa sair.

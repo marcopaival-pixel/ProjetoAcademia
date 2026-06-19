@@ -15,7 +15,7 @@
             <h1 class="text-5xl font-black tracking-tighter text-white leading-none">
                 Hub de <span class="text-emerald-500 italic">Evolução Inteligente</span>
             </h1>
-            <p class="text-zinc-500 font-medium max-w-2xl">Acompanhe a saúde global da sua base de pacientes através de algoritmos preditivos e análise de risco em tempo real.</p>
+            <p class="text-zinc-500 font-medium max-w-2xl">Acompanhe a saúde global da sua base de {{ mb_strtolower($patientsLabel) }} através de algoritmos preditivos e análise de risco em tempo real.</p>
         </div>
     </div>
 
@@ -40,7 +40,7 @@
         <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group">
             <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-rose-500/10 blur-3xl rounded-full transition-all group-hover:scale-125"></div>
             <div class="relative z-10">
-                <h3 class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-6">Pacientes em Risco</h3>
+                <h3 class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-6">{{ $patientsLabel }} em Risco</h3>
                 <div class="flex items-baseline gap-4">
                     <span class="text-7xl font-black text-white italic tracking-tighter">{{ $riskPatients->count() }}</span>
                     <span class="text-sm font-bold text-rose-400 uppercase tracking-widest">Ações Pendentes</span>
@@ -53,7 +53,7 @@
         <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group">
             <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full transition-all group-hover:scale-125"></div>
             <div class="relative z-10">
-                <h3 class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-6">Total de Alunos</h3>
+                <h3 class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-6">Total de {{ $patientsLabel }}</h3>
                 <div class="flex items-baseline gap-4">
                     <span class="text-7xl font-black text-white italic tracking-tighter">{{ $patients->count() }}</span>
                     <span class="text-sm font-bold text-blue-400 uppercase tracking-widest">Vínculos Ativos</span>
@@ -148,7 +148,7 @@
                         <div class="space-y-2">
                             <div class="flex justify-between items-end">
                                 <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ $goal }}</span>
-                                <span class="text-xs font-black text-white italic">{{ $count }} Alunos</span>
+                                <span class="text-xs font-black text-white italic">{{ $count }} {{ $patientsLabel }}</span>
                             </div>
                             <div class="h-2 bg-zinc-950 rounded-full border border-white/5 overflow-hidden">
                                 <div class="h-full bg-gradient-to-r from-emerald-600 to-teal-400 shadow-xl transition-all duration-1000" style="width: {{ $percent }}%"></div>
@@ -187,3 +187,6 @@
     .animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 </style>
 @endsection
+
+
+

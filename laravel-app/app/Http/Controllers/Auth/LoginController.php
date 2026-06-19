@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuthAuditLog;
+use App\Services\Operations\AuthAuditService;
+use App\Services\PanelAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +19,8 @@ class LoginController extends Controller
         if (auth()->check()) {
             $user = auth()->user();
             if ($user->isAdministrator()) {
+                session(['active_role' => 'admin']);
+
                 return redirect()->route('admin.dashboard');
             }
             if ($user->isRegistrationPending()) {
@@ -25,11 +30,14 @@ class LoginController extends Controller
                 return redirect()->route('registration.rejected');
             }
             $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
-            if ($verificacaoAtiva && !$user->isEmailVerified() && !$user->isAdministrator()) {
+            if ($verificacaoAtiva && !$user->isEmailVerified() && !$user->isAdministrator() && !$user->hasRole('representative')) {
                 return redirect()->route('verification.notice', ['email' => $user->email]);
             }
 
-            return redirect()->route('dashboard');
+            $panels = app(PanelAccessService::class);
+            session(['active_role' => $panels->resolveActiveRole($user)]);
+
+            return redirect($panels->homeRouteForPanel($panels->currentPanel($user)));
         }
 
         return view('auth.login');
@@ -54,6 +62,14 @@ class LoginController extends Controller
         }
 
         if (!$user || !\Hash::check($credentials['password'], $user->password_hash)) {
+            app(AuthAuditService::class)->log(
+                AuthAuditLog::EVENT_LOGIN_FAILED,
+                null,
+                $credentials['email'],
+                false,
+                $request,
+            );
+
             throw ValidationException::withMessages([
                 'email' => 'Usuário ou senha incorretos.',
             ]);
@@ -72,7 +88,7 @@ class LoginController extends Controller
         $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
 
         // 1. Bloqueio por e-mail não confirmado (se a feature estiver ativa)
-        if ($verificacaoAtiva && !$user->isEmailVerified() && !$user->isAdministrator()) {
+        if ($verificacaoAtiva && !$user->isEmailVerified() && !$user->isAdministrator() && !$user->hasRole('representative')) {
             // O utilizador fica logado, mas o middleware EnsureEmailIsVerified vai restringir o acesso
             // e o redirecionamento abaixo garante que ele veja a instrução imediatamente.
             return redirect()->route('verification.notice', ['email' => $user->email])
@@ -121,8 +137,17 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-        $request->session()->forget(['active_clinic_id', 'impersonated_clinic_id']);
+        $request->session()->forget(['active_clinic_id', 'impersonated_clinic_id', 'active_role']);
         $request->session()->flash('success', 'Acesso autorizado. Bem-vindo de volta!');
+
+        app(AuthAuditService::class)->log(
+            AuthAuditLog::EVENT_LOGIN_SUCCESS,
+            $user->id,
+            $user->email,
+            true,
+            $request,
+            ['is_admin' => $user->isAdministrator()],
+        );
 
         \Log::info('Login success for: ' . $user->email . ' | Admin: ' . ($user->isAdministrator() ? 'YES' : 'NO'));
 
@@ -131,45 +156,74 @@ class LoginController extends Controller
             return redirect()->route('profile.selection');
         }
 
+        $panels = app(PanelAccessService::class);
+
         if ($user->isAdministrator()) {
-            \Log::info('Redirecting admin to dashboard: ' . route('admin.dashboard'));
-            // Usamos redirect() direto se não houver intended real para evitar loops em caminhos de login
-            $target = $request->session()->pull('url.intended', route('admin.dashboard'));
-            
-            // Segurança: se o target for a própria página de login, força o dashboard
-            if (str_contains($target, '/login')) {
-                $target = route('admin.dashboard');
-            }
-            
+            session(['active_role' => 'admin']);
+            $fallback = route('admin.dashboard');
+            $target = $panels->sanitizeIntendedUrl(
+                $request->session()->pull('url.intended'),
+                PanelAccessService::PANEL_ADMIN,
+                $fallback,
+            );
+            \Log::info('Redirecting admin to dashboard: ' . $target);
+
+            return redirect($target);
+        }
+
+        if ($user->hasRole('representative')) {
+            session(['active_role' => 'representative']);
+            $fallback = route('representative.dashboard');
+            $target = $panels->sanitizeIntendedUrl(
+                $request->session()->pull('url.intended'),
+                PanelAccessService::PANEL_REPRESENTATIVE,
+                $fallback,
+            );
+
             return redirect($target);
         }
 
         if ($user->hasRole('professional')) {
-            return redirect()->intended(route('professional.dashboard'));
-        }
-        
-        if ($user->hasRole('paciente')) {
-            $professionals = $user->professionals()->wherePivot('status', 'Sim')->get();
-            $defaultTarget = ($professionals->count() > 1) 
-                ? route('patient.dashboard.choice') 
-                : route('patient.portal');
+            session(['active_role' => 'professional']);
+            $fallback = route('professional.dashboard');
+            $target = $panels->sanitizeIntendedUrl(
+                $request->session()->pull('url.intended'),
+                PanelAccessService::PANEL_PROFESSIONAL,
+                $fallback,
+            );
 
-            $target = session()->pull('url.intended', $defaultTarget);
-            
-            if (str_contains((string)$target, '/admin') && !$user->hasAdminPanelAccess()) {
-                $target = $defaultTarget;
-            }
             return redirect($target);
         }
 
-        $defaultTarget = route('dashboard');
-        $target = session()->pull('url.intended', $defaultTarget);
-        
-        // Proteção Extra: Se o usuário não for admin, nunca redirecionar para /admin via intended
-        if (str_contains((string)$target, '/admin') && !$user->hasAdminPanelAccess()) {
-            $target = $defaultTarget;
+        if ($user->hasRole('paciente')) {
+            session(['active_role' => 'paciente']);
+            $professionals = $user->professionals()->wherePivot('status', 'Sim')->get();
+            $fallback = $professionals->count() > 1
+                ? route('patient.dashboard.choice')
+                : route('patient.portal');
+            $target = $panels->sanitizeIntendedUrl(
+                $request->session()->pull('url.intended'),
+                PanelAccessService::PANEL_PATIENT,
+                $fallback,
+            );
+
+            return redirect($target);
         }
 
-        return redirect($target);
+        if ($user->hasRole('aluno')) {
+            session(['active_role' => 'aluno']);
+            $fallback = route('dashboard');
+            $target = $panels->sanitizeIntendedUrl(
+                $request->session()->pull('url.intended'),
+                PanelAccessService::PANEL_STUDENT,
+                $fallback,
+            );
+
+            return redirect($target);
+        }
+
+        session(['active_role' => 'aluno']);
+
+        return redirect(route('dashboard'));
     }
 }

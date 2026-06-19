@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Paciente — NexShape Pro')
+@section('title', 'Editar {{ $patientLabel }} — NexShape Pro')
 
 @section('content')
 <div class="py-12 space-y-12 animate-fade-in max-w-[1200px] mx-auto px-6">
@@ -9,9 +9,9 @@
         <div class="space-y-4">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
                 <i class="fas fa-user-edit text-[8px]"></i>
-                Gestão de Pacientes
+                Gestão de {{ $patientsLabel }}
             </div>
-            <h1 class="text-5xl font-black text-white tracking-tighter leading-none">Editar <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Paciente</span></h1>
+            <h1 class="text-5xl font-black text-white tracking-tighter leading-none">Editar <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">{{ $patientLabel }}</span></h1>
             <p class="text-zinc-500 text-lg font-medium">Atualize os dados e direcionamentos biométricos do perfil.</p>
         </div>
         
@@ -97,7 +97,7 @@
 
             <!-- Footer Action -->
             <div class="pt-10 border-t border-white/5 flex items-center justify-between">
-                <p class="text-zinc-500 text-xs">Todas as mudanças refletem instantaneamente no app do paciente.</p>
+                <p class="text-zinc-500 text-xs">Todas as mudanças refletem instantaneamente no app do {{ mb_strtolower($patientLabel) }}.</p>
                 
                 <button type="submit" class="px-10 py-5 bg-amber-600 text-white font-black rounded-3xl hover:bg-amber-500 transition-all shadow-2xl shadow-amber-600/20 uppercase tracking-[0.2em] text-[10px] flex items-center gap-3">
                     Salvar Alerações
@@ -137,3 +137,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection
+
+
+

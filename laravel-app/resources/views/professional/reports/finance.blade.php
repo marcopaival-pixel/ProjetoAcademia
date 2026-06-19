@@ -17,7 +17,7 @@
             <div>
                 <h1 class="text-4xl font-black text-white tracking-tighter uppercase italic">Financeiro <span class="text-amber-500">Pro</span></h1>
                 <p class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-                    Gestão de Receita • Alunos Vinculados
+                    Gestão de Receita • {{ $patientsLabel }} Vinculados
                 </p>
             </div>
         </div>
@@ -63,14 +63,14 @@
     <div class="bg-zinc-900 border border-zinc-800 rounded-[3.5rem] overflow-hidden shadow-2xl">
         <div class="p-10 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Histórico de <span class="text-amber-500">Assinaturas</span></h3>
-            <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Alunos & Planos</span>
+            <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ $patientsLabel }} & Planos</span>
         </div>
         
         <div class="overflow-x-auto">
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-zinc-950/50">
-                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Aluno</th>
+                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">{{ $patientLabel }}</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Plano</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Status</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-right">Valor</th>
@@ -125,3 +125,6 @@
     }
 </style>
 @endsection
+
+
+

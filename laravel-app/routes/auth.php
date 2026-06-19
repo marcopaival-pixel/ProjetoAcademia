@@ -25,20 +25,26 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:20,1');
     
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store']);
-    
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:10,1');
+
     Route::post('/confirmar-email/reenviar', [VerificationController::class, 'resendGuest'])
         ->middleware('throttle:10,60')
         ->name('verification.resend.guest');
 
     // Recuperação de Senha
     Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
+        ->middleware('throttle:5,1')
+        ->name('password.email');
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
-    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
+        ->middleware('throttle:10,1')
+        ->name('password.update');
 
     // Google Authentication
-    Route::get('/auth/google', [\App\Http\Controllers\Auth\GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google', [\App\Http\Controllers\Auth\GoogleController::class, 'redirectToGoogle'])
+        ->middleware('throttle:20,1')
+        ->name('auth.google');
 
     // Acompanhar Cadastro (Público)
     Route::get('/cadastro/acompanhar', [RegistrationStatusController::class, 'track'])->name('registration.track');
@@ -46,7 +52,9 @@ Route::middleware('guest')->group(function () {
 });
 
 // Google Callback (External)
-Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleController::class, 'handleGoogleCallback'])
+    ->middleware('throttle:20,1')
+    ->name('auth.google.callback');
 
 // Rotas Autenticadas (Auth)
 Route::middleware('auth')->group(function () {
