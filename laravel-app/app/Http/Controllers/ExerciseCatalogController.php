@@ -52,6 +52,10 @@ class ExerciseCatalogController extends Controller
 
         $data['user_id'] = auth()->id();
 
+        if ($request->has('sets_data')) {
+            $data['sets_data'] = $request->input('sets_data');
+        }
+
         ExerciseEntry::create($data);
 
         return back()->with('success', 'Atividade registrada com sucesso!');

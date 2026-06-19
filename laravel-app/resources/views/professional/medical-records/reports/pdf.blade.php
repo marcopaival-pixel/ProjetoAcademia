@@ -30,7 +30,7 @@
     <div class="patient-info">
         <table>
             <tr>
-                <td width="50%"><span class="label">Paciente:</span> {{ $patient->name }}</td>
+                <td width="50%"><span class="label">{{ $patientLabel }}:</span> {{ $patient->name }}</td>
                 <td width="50%"><span class="label">CPF:</span> {{ $patient->cpf }}</td>
             </tr>
             <tr>
@@ -62,3 +62,6 @@
     </div>
 </body>
 </html>
+
+
+

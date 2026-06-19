@@ -83,3 +83,5 @@ class PatientRequestController extends Controller
         return back()->with('success', 'Avaliação física aprovada e integrada ao histórico.');
     }
 }
+
+

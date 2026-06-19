@@ -75,13 +75,17 @@ class ProfessionalSearchController extends Controller
 
     public function schedule(Request $request, User $professional, \App\Services\AgendaService $agendaService)
     {
+        $patient = auth()->user();
+
+        if (strtolower($patient->profile->name) === 'aluno') {
+            abort(403, 'Acesso Negado: Pacientes não têm permissão para agendar consultas diretamente via portal.');
+        }
+
         $request->validate([
             'appointment_at' => 'required|date',
             'service_type' => 'required|string',
             'notes' => 'nullable|string|max:500',
         ]);
-
-        $patient = auth()->user();
 
         try {
             // 1. Criar vínculo se não existir (Multi-vínculo permitido)

@@ -3,36 +3,32 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminSetting;
+use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SubscriptionController extends Controller
 {
-    protected $subscriptionService;
-
-    public function __construct(\App\Services\SubscriptionService $subscriptionService)
-    {
-        $this->subscriptionService = $subscriptionService;
-    }
+    public function __construct(
+        protected \App\Services\SubscriptionService $subscriptionService,
+        protected \App\Services\Payment\PaymentGatewayManager $paymentManager
+    ) {}
 
     public function index()
     {
         $user = auth()->user();
         $subscription = $this->getOrCreateSubscription($user);
 
-        // Se o usuário não tem plano ativo e não é premium, redireciona para escolha de planos
-        if ($subscription->status !== 'active' && !$user->isPremiumActive()) {
-            return redirect()->route('patient.subscription.plans');
-        }
-
-        $allPlans = \App\Models\Plan::where('is_active', true)->where('type', 'student')->get();
+        $allPlans = Plan::where('is_active', true)->where('type', 'student')->get();
 
         return view('student.subscription.index', compact('subscription', 'allPlans'));
     }
 
     public function plans()
     {
-        $allPlans = \App\Models\Plan::where('is_active', true)
+        $allPlans = Plan::where('is_active', true)
             ->where('type', 'student')
             ->orderBy('price', 'asc')
             ->get();
@@ -40,7 +36,7 @@ class SubscriptionController extends Controller
         return view('student.subscription.pricing', compact('allPlans'));
     }
 
-    public function checkout(\App\Models\Plan $plan)
+    public function checkout(Plan $plan)
     {
         return view('student.subscription.checkout', compact('plan'));
     }
@@ -49,38 +45,63 @@ class SubscriptionController extends Controller
     {
         $request->validate([
             'plan_id' => 'required|exists:plans,id',
-            'card_name' => 'required|string|max:255',
-            'card_number' => 'required|string',
-            'card_expiry' => 'required|string',
-            'card_cvv' => 'required|string',
+            'payment_method' => 'nullable|in:credit_card,pix,boleto,card',
         ]);
 
         $user = auth()->user();
-        $plan = \App\Models\Plan::findOrFail($request->plan_id);
-        $subscription = $this->getOrCreateSubscription($user);
+        $plan = Plan::findOrFail($request->plan_id);
+        $pagamentoAtivo = AdminSetting::isTrue('pagamento_ativo', true);
 
-        // Simulação de processamento bem-sucedido
-        // Em produção, aqui integraria com Stripe ou Mercado Pago
-        $cardLastFour = substr(str_replace(' ', '', $request->card_number), -4);
-        
-        $this->subscriptionService->updatePaymentMethod($subscription, [
-            'method' => 'card',
-            'card_brand' => 'Mastercard', // Detectado no front ou vindo da API do gateway
-            'card_last_four' => $cardLastFour,
-            'card_expiry' => $request->card_expiry,
-        ]);
+        if ($plan->type !== 'student') {
+            return back()->with('error', 'Plano inválido.');
+        }
 
-        $this->subscriptionService->upgrade($subscription, $plan);
+        try {
+            return DB::transaction(function () use ($user, $plan, $pagamentoAtivo, $request) {
+                if (! $pagamentoAtivo || $plan->price <= 0) {
+                    $subscription = $this->getOrCreateSubscription($user);
+                    $this->subscriptionService->upgrade($subscription, $plan);
 
-        return redirect()->route('patient.subscription.index')
-            ->with('success', 'Assinatura realizada com sucesso! Bem-vindo ao NexShape Premium.');
+                    return redirect()->route('patient.subscription.index')
+                        ->with('success', 'Plano ativado com sucesso!');
+                }
+
+                $gateway = $this->paymentManager->driver();
+                $checkout = $gateway->createSubscription($user, $plan, []);
+
+                if (! ($checkout['ok'] ?? false)) {
+                    return back()->with('error', $checkout['error'] ?? 'Erro no gateway de pagamento.');
+                }
+
+                Subscription::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'plan_id' => $plan->id,
+                        'status' => Subscription::STATUS_FIN_PENDENTE,
+                        'payment_method' => $request->payment_method ?? 'gateway',
+                        'start_date' => now(),
+                        'gateway_type' => $gateway->getIdentifier(),
+                    ]
+                );
+
+                $initPoint = $checkout['init_point'] ?? null;
+                if ($initPoint) {
+                    return redirect()->away($initPoint);
+                }
+
+                return redirect()->route('patient.subscription.index')
+                    ->with('success', 'Assinatura iniciada. Aguarde a confirmação do pagamento.');
+            });
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Falha ao processar pagamento: '.$e->getMessage());
+        }
     }
 
     public function updatePaymentMethod(Request $request)
     {
         $validated = $request->validate([
             'method' => 'required|in:card,pix,boleto',
-            'card_token' => 'nullable', 
+            'card_token' => 'nullable',
             'card_number' => 'nullable|string',
             'card_expiry' => 'nullable|string',
             'card_cvv' => 'nullable|string',
@@ -89,14 +110,12 @@ class SubscriptionController extends Controller
         $user = auth()->user();
         $subscription = $this->getOrCreateSubscription($user);
 
-        // Simulação de dados do cartão vindo do Gateway
         $cardData = [];
-        if ($validated['method'] === 'card') {
-            $cardLastFour = $request->card_number ? substr(str_replace(' ', '', $request->card_number), -4) : '8888';
+        if ($validated['method'] === 'card' && $request->card_number) {
             $cardData = [
-                'card_brand' => 'Mastercard',
-                'card_last_four' => $cardLastFour,
-                'card_expiry' => $request->card_expiry ?? '05/2029',
+                'card_brand' => 'card',
+                'card_last_four' => substr(str_replace(' ', '', $request->card_number), -4),
+                'card_expiry' => $request->card_expiry,
             ];
         }
 
@@ -108,18 +127,20 @@ class SubscriptionController extends Controller
     public function changePlan(Request $request)
     {
         $request->validate(['plan_id' => 'required|exists:plans,id']);
-        
+
         $user = auth()->user();
         $subscription = $this->getOrCreateSubscription($user);
-        $newPlan = \App\Models\Plan::findOrFail($request->plan_id);
+        $newPlan = Plan::findOrFail($request->plan_id);
 
         if ($newPlan->price > ($subscription->plan->price ?? 0)) {
             $this->subscriptionService->upgrade($subscription, $newPlan);
+
             return back()->with('success', 'Upgrade realizado com sucesso!');
-        } else {
-            $this->subscriptionService->downgrade($subscription, $newPlan);
-            return back()->with('success', 'Downgrade agendado para o próximo ciclo.');
         }
+
+        $this->subscriptionService->downgrade($subscription, $newPlan);
+
+        return back()->with('success', 'Downgrade agendado para o próximo ciclo.');
     }
 
     public function cancel()
@@ -129,15 +150,13 @@ class SubscriptionController extends Controller
 
         if ($subscription) {
             $this->subscriptionService->cancel($subscription);
+
             return back()->with('success', 'Cancelamento agendado com sucesso.');
         }
 
         return back()->with('error', 'Nenhuma assinatura ativa encontrada para cancelamento.');
     }
 
-    /**
-     * Busca a assinatura atual ou cria uma básica se o usuário for Aluno mas não tiver registro financeiro.
-     */
     private function getOrCreateSubscription($user)
     {
         $subscription = Subscription::with(['plan', 'logs'])
@@ -145,9 +164,9 @@ class SubscriptionController extends Controller
             ->latest()
             ->first();
 
-        if (!$subscription) {
-            $plan = $user->plan ?? \App\Models\Plan::where('name', 'Free')->first();
-            
+        if (! $subscription) {
+            $plan = $user->plan ?? Plan::where('name', 'Free')->first();
+
             $status = ($user->isPremiumActive() && $plan && $plan->name !== 'FREE') ? 'active' : 'inactive';
 
             $subscription = Subscription::create([
@@ -157,7 +176,7 @@ class SubscriptionController extends Controller
                 'payment_method' => 'N/A',
                 'start_date' => $user->created_at,
             ]);
-            
+
             if ($plan) {
                 $subscription->setRelation('plan', $plan);
             }

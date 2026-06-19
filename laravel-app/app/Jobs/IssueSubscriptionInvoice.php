@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Support\QueueNames;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,6 +24,7 @@ class IssueSubscriptionInvoice implements ShouldQueue
     public function __construct(Payment $payment)
     {
         $this->payment = $payment;
+        $this->onQueue(QueueNames::webhooks());
     }
 
     /**

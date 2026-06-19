@@ -41,13 +41,14 @@ class CommissionClawbackServiceTest extends TestCase
 
         app(CommissionClawbackService::class)->processForPayment($payment);
 
+        $commission->refresh();
+        $this->assertSame(Commission::STATUS_CLAWBACK, $commission->status);
+        $this->assertEquals(-10.0, (float) $commission->commission_amount);
         $this->assertDatabaseHas('commissions', [
+            'id' => $commission->id,
             'payment_id' => $payment->id,
             'status' => Commission::STATUS_CLAWBACK,
             'commission_amount' => -10,
         ]);
-
-        $commission->refresh();
-        $this->assertSame(Commission::STATUS_CANCELADO, $commission->status);
     }
 }

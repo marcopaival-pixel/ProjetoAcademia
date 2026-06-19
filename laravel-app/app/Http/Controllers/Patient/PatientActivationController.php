@@ -193,8 +193,8 @@ class PatientActivationController extends Controller
             'terms' => 'accepted',
         ];
 
-        // Se o usuário não tiver senha definida (ex: vindo de login social), exige senha
-        if (!$patient->password_hash) {
+        // Se o usuário não tiver senha definida (ex: vindo de login social) ou estiver pendente, exige senha
+        if (!$patient->password_hash || $patient->status === 'pending') {
             $rules['password'] = 'required|string|min:8|confirmed';
         }
 
@@ -211,6 +211,12 @@ class PatientActivationController extends Controller
             'name' => $request->name,
             'perfil_paciente_completo' => true,
         ];
+
+        if ($patient->status === 'pending') {
+            $updateData['status'] = 'active';
+            $updateData['activated_at'] = now();
+        }
+
         
         if (!$patient->cpf) {
             $updateData['cpf'] = $inputCpf;

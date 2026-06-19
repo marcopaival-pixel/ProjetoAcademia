@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CommunityPostMedia extends Model
 {
+    use Traits\BelongsToScopedParent;
+
     protected $table = 'community_post_media';
 
     protected $fillable = [

@@ -9,6 +9,7 @@ use App\Models\ExerciseSet;
 use App\Models\ExerciseCatalog;
 use App\Services\AI\OrchestratorService;
 use App\Services\MonetizationService;
+use App\Services\SecureFileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -67,13 +68,22 @@ class WorkoutPhotoImportController extends Controller
 
         try {
             // 1. Upload seguro
-            $path = $request->file('photo')->store('workout_imports', 'public');
+            $secureFiles = app(SecureFileService::class);
+            $path = $secureFiles->storeSensitiveFile($request->file('photo'), 'workout_imports');
             $log->update(['image_path' => $path]);
+
+            $absolutePath = storage_path('app/private/'.$path);
+            if (! file_exists($absolutePath)) {
+                $absolutePath = storage_path('app/public/'.$path);
+            }
 
             // 2. Processamento via Orquestrador (Visão + Intenção)
             $result = $this->orchestrator->run($user, 'Importação de ficha de treino por foto.', [
-                'image_path' => storage_path('app/public/' . $path),
-                'intent' => 'workout_sheet' // Forçamos a intenção inicial
+                'image_path' => $absolutePath,
+                'intent' => 'workout_sheet',
+                'clinic_id' => $user->clinic_id,
+                'clinicId' => $user->academy_company_id,
+                'feature_code' => 'generate_workout',
             ]);
 
             if ($result['status'] === 'error') {

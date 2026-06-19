@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PdfGenerationLog extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     public const ACTION_PREVIEW = 'preview';
 
     public const ACTION_DOWNLOAD = 'download';

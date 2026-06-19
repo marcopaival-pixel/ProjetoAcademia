@@ -43,8 +43,14 @@ class ProfileSelectionController extends Controller
         $roleName = $request->role;
         $user = auth()->user();
 
-        if ($roleName !== 'all' && !$user->hasRole($roleName)) {
-            return redirect()->back()->with('error', 'Você não possui este perfil.');
+        if ($roleName !== 'all') {
+            if ($roleName === 'admin' && ! $user->hasAdminPanelAccess()) {
+                return redirect()->back()->with('error', 'Você não possui este perfil.');
+            }
+
+            if ($roleName !== 'admin' && ! $user->hasRole($roleName)) {
+                return redirect()->back()->with('error', 'Você não possui este perfil.');
+            }
         }
 
         if ($request->remember && $roleName !== 'all') {
@@ -75,9 +81,12 @@ class ProfileSelectionController extends Controller
             return redirect()->route('patient.portal');
         }
 
-        if ($roleName === 'all') {
-            // Se escolher todos, redireciona para um painel unificado ou o principal
+        if ($roleName === 'aluno') {
             return redirect()->route('dashboard');
+        }
+
+        if ($roleName === 'representative') {
+            return redirect()->route('representative.dashboard');
         }
 
         return redirect()->route('dashboard');

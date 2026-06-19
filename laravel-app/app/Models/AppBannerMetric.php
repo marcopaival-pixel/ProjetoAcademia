@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class AppBannerMetric extends Model
 {
     use HasFactory;
+    use Traits\BelongsToUserCompany;
 
     protected $fillable = [
         'event_type',

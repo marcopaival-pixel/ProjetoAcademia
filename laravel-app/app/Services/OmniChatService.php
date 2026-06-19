@@ -121,7 +121,15 @@ class OmniChatService
             return;
         }
 
-        // 5. Fallback via Orquestrador NexShape
+        // 5. Base de conhecimento (sem LLM)
+        $kbResolver = app(\App\Services\KnowledgeBaseResolverService::class);
+        $kbHit = $kbResolver->resolve($userContent);
+        if ($kbHit !== null) {
+            $this->sendBotMessage($conversation, $kbHit['message']);
+            return;
+        }
+
+        // 6. Fallback via Orquestrador NexShape (LLM)
         try {
             $orchestrator = app(\App\Services\AI\OrchestratorService::class);
             $user = \App\Models\User::where('academy_company_id', $conversation->company_id)->first(); // Fallback user
@@ -129,7 +137,8 @@ class OmniChatService
             $response = $orchestrator->run($user ?? auth()->user(), $userContent, [
                 'intent' => 'support',
                 'source' => 'omnichannel',
-                'clinicId' => $conversation->company_id
+                'clinicId' => $conversation->company_id,
+                'feature_code' => 'support_ai',
             ]);
             
             if ($response['status'] === 'success') {

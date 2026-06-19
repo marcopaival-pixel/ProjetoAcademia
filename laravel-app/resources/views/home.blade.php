@@ -18,10 +18,11 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                Próxima Geração de Inteligência Fitness
+                Aprovado por +1000 Profissionais
             </div>
 
             <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.85]">
+                <span class="sr-only">Sistema de Gestão para Clínicas e Academias com Inteligência Artificial.</span>
                 O Futuro da <br>
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-300">Performance.</span>
             </h1>
@@ -88,6 +89,20 @@
         </div>
     </section>
 
+    <!-- Social Proof / Logos -->
+    <section class="py-10 border-y border-white/5 bg-zinc-900/10">
+        <div class="max-w-5xl mx-auto px-6">
+            <p class="text-center text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6 italic">Clínicas e Academias que já vivem o futuro com IA</p>
+            <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40 hover:opacity-80 transition-all duration-500">
+                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">CLINIC<span class="text-emerald-500">PRO</span></div>
+                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">ELITE<span class="text-blue-500">FIT</span></div>
+                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">NEXUS<span class="text-indigo-500">MED</span></div>
+                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">ALPHA<span class="text-amber-500">GYM</span></div>
+                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">VITALITY<span class="text-rose-500">CARE</span></div>
+            </div>
+        </div>
+    </section>
+
     <!-- Value Prop: Bento Grid Section -->
     <section id="features" class="space-y-16 py-20 relative">
         <div class="absolute top-1/2 left-0 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
@@ -116,7 +131,7 @@
                     </div>
                     <div class="space-y-2">
                         <h3 class="text-4xl font-black text-white uppercase italic tracking-tighter">NexNeural <span class="text-emerald-500">IA</span></h3>
-                        <p class="text-zinc-400 font-medium leading-relaxed italic">Nossa inteligência proprietária analisa o seu RPE (Esforço Percebido) em tempo real para sugerir a carga exata da sua próxima série, otimizando o volume de treinamento e prevenindo o overtraining.</p>
+                        <p class="text-zinc-400 font-medium leading-relaxed italic">Nossa inteligência proprietária descobre a carga exata para você evoluir mais rápido, analisando seu esforço em tempo real. Maximiza seus resultados estéticos enquanto protege suas articulações contra lesões.</p>
                     </div>
                 </div>
 
@@ -129,7 +144,7 @@
                         <div class="h-2 bg-zinc-900 rounded-full overflow-hidden">
                             <div class="h-full bg-emerald-500 w-3/4 animate-pulse"></div>
                         </div>
-                        <p class="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter italic">Sugestão: Aumentar +2kg na próxima série (RPE 8.5 detectado)</p>
+                        <p class="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter italic">Sugestão da IA: Aumentar +2kg na próxima série para máxima hipertrofia</p>
                     </div>
                 </div>
             </div>
@@ -307,23 +322,27 @@
                 Sua Clínica no Próximo Nível Digital.
             </h2>
             <p class="text-zinc-500 text-lg leading-relaxed font-medium">
-                O NexShape Business foi desenhado para clínicas que não aceitam o comum. Centralize o histórico de seus pacientes, gere laudos automatizados e tenha controle total sobre sua equipe técnica em uma interface state-of-the-art.
+                O NexShape Business foi desenhado para clínicas e academias que focam em previsibilidade. Centralize o histórico de seus pacientes, aumente o LTV (retenção) com IA e tenha controle total sobre sua equipe técnica.
             </p>
             <div class="grid grid-cols-2 gap-6">
                 <div class="p-6 bg-zinc-900/50 rounded-3xl border border-white/5">
                     <div class="text-3xl font-black text-white mb-1">+40%</div>
                     <div class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Produtividade</div>
                 </div>
-                <div class="p-6 bg-zinc-900/50 rounded-3xl border border-white/5">
-                    <div class="text-3xl font-black text-white mb-1">100%</div>
-                    <div class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Seguro (LGPD)</div>
+                <div class="p-6 bg-zinc-900/50 rounded-3xl border border-emerald-500/10">
+                    <div class="text-3xl font-black text-emerald-500 mb-1">+25%</div>
+                    <div class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Retenção (LTV)</div>
                 </div>
             </div>
 
-            <div class="pt-4">
-                <a href="#pricing" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 group">
+            <div class="pt-4 flex flex-col sm:flex-row gap-4">
+                <a href="#pricing" class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 group">
                     VER TODOS OS PLANOS
                     <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                </a>
+                <a href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20demonstra%C3%A7%C3%A3o%20do%20NexShape%20Business." target="_blank" class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 font-black rounded-2xl hover:bg-[#25D366]/20 transition-all group">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    FALAR COM CONSULTOR
                 </a>
             </div>
         </div>
@@ -332,6 +351,56 @@
             <div class="absolute -inset-4 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-2xl rounded-full opacity-50"></div>
             <div class="bg-zinc-950 p-2 rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden">
                 <img src="{{ asset('images/b2b-preview.png') }}" alt="NexShape B2B Dashboard" class="w-full h-full object-cover rounded-[2rem] opacity-90 group-hover:opacity-100 transition-opacity">
+            </div>
+        </div>
+    </section>
+
+    </section>
+
+    <!-- Depoimentos Reais B2B -->
+    <section class="py-20 relative z-10">
+        <div class="text-center space-y-6 max-w-3xl mx-auto mb-16">
+            <h2 class="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic">
+                A Escolha da <span class="text-emerald-500">Elite</span>
+            </h2>
+            <p class="text-zinc-500 font-medium text-lg italic">O que dizem os profissionais e donos de clínicas que revolucionaram seus negócios.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6">
+            <div class="bg-zinc-900/40 border border-white/5 p-8 rounded-3xl relative">
+                <div class="text-emerald-500 mb-4"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
+                <p class="text-zinc-400 font-medium italic mb-6">"Desde que implementamos o NexShape, nossa retenção de alunos subiu drasticamente. A inteligência artificial de treino encanta todo novo cliente."</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold border-2 border-zinc-700">RC</div>
+                    <div>
+                        <div class="text-white font-bold">Roberto Carlos</div>
+                        <div class="text-zinc-500 text-xs">Gestor, Alpha Gym</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-zinc-900/40 border border-emerald-500/20 p-8 rounded-3xl relative shadow-[0_0_30px_rgba(16,185,129,0.05)] transform md:-translate-y-4">
+                <div class="text-emerald-500 mb-4"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
+                <p class="text-zinc-300 font-medium italic mb-6">"Os laudos e as avaliações por IA mudaram a percepção de valor do meu acompanhamento. Hoje consigo cobrar mais pela mesma consultoria online."</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold border-2 border-emerald-500/50">MM</div>
+                    <div>
+                        <div class="text-white font-bold">Mariana Mendes</div>
+                        <div class="text-zinc-400 text-xs">Personal Trainer Elite</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900/40 border border-white/5 p-8 rounded-3xl relative">
+                <div class="text-emerald-500 mb-4"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
+                <p class="text-zinc-400 font-medium italic mb-6">"O Prontuário Digital do NexShape Business é o mais fluido que já usei. Finalmente centralizamos toda a nossa equipe multidisciplinar em um app moderno."</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold border-2 border-zinc-700">Dr</div>
+                    <div>
+                        <div class="text-white font-bold">Dr. Fernando</div>
+                        <div class="text-zinc-500 text-xs">Diretor, Clínica Nexus</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

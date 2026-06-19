@@ -20,7 +20,7 @@ class RepresentativeAdminController extends Controller
         $representatives = User::whereHas('roles', function($q) {
                 $q->where('name', 'representative');
             })
-            ->whereIn('status', ['PENDENTE_APROVACAO', 'active', 'ATIVO'])
+            ->whereIn('status', ['PENDENTE_APROVACAO', 'pending', 'PENDENTE', 'active', 'ATIVO', 'APROVADO', 'approved'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -112,35 +112,73 @@ class RepresentativeAdminController extends Controller
         // podemos marcar as comissões DISPONÍVEIS mais antigas até atingir o valor do saque.
         
         if ($newStatus === WithdrawalRequest::STATUS_PAGO && $oldStatus !== WithdrawalRequest::STATUS_PAGO) {
-            $this->markCommissionsAsPaid($withdrawal);
+            app(\App\Services\CommissionWithdrawalService::class)->settleWithdrawal($withdrawal);
+
+            // Auditoria
+            \App\Models\RepresentativeAudit::create([
+                'user_id' => auth()->id(),
+                'action' => 'liberou_pagamento',
+                'entity_type' => WithdrawalRequest::class,
+                'entity_id' => $withdrawal->id,
+                'new_values' => ['amount' => $withdrawal->amount, 'representative_id' => $withdrawal->representative_id],
+            ]);
         }
 
         return back()->with('success', 'Solicitação de saque atualizada com sucesso.');
     }
 
-    private function markCommissionsAsPaid(WithdrawalRequest $withdrawal): void
+    public function linkClinic(Request $request, \App\Models\Clinic $clinic)
     {
-        $amountToMark = $withdrawal->amount;
-        
-        $commissions = Commission::where('representative_id', $withdrawal->representative_id)
-            ->where('status', Commission::STATUS_DISPONIVEL)
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $request->validate([
+            'representative_id' => 'required|exists:users,id',
+            'commission_type' => 'required|in:percentual,fixo',
+            'commission_value' => 'required|numeric|min:0',
+        ]);
 
-        foreach ($commissions as $commission) {
-            if ($amountToMark <= 0) break;
+        $oldValues = $clinic->only(['representative_id', 'commission_type', 'commission_value']);
 
-            if ($commission->commission_amount <= $amountToMark) {
-                $amountToMark -= $commission->commission_amount;
-                $commission->update(['status' => Commission::STATUS_PAGO]);
-            } else {
-                // Se uma comissão for maior que o resto do saque, 
-                // tecnicamente precisaríamos dividi-la, mas para simplificar
-                // marcamos como PAGA e o "troco" fica implícito no saldo.
-                // Idealmente, deveríamos ter uma tabela de transações de saldo.
-                $commission->update(['status' => Commission::STATUS_PAGO]);
-                $amountToMark = 0;
-            }
-        }
+        $clinic->update([
+            'representative_id' => $request->representative_id,
+            'commission_type' => $request->commission_type,
+            'commission_value' => $request->commission_value,
+            'sale_date' => now(),
+        ]);
+
+        \App\Models\RepresentativeAudit::create([
+            'user_id' => auth()->id(),
+            'action' => 'vinculou_clinica',
+            'entity_type' => \App\Models\Clinic::class,
+            'entity_id' => $clinic->id,
+            'old_values' => $oldValues,
+            'new_values' => $clinic->only(['representative_id', 'commission_type', 'commission_value']),
+        ]);
+
+        return back()->with('success', 'Clínica vinculada ao representante com sucesso.');
+    }
+
+    public function updateCommission(Request $request, Commission $commission)
+    {
+        $request->validate([
+            'status' => 'required|in:PENDENTE,DISPONIVEL,PAGO,CANCELADO',
+            'commission_amount' => 'required|numeric',
+        ]);
+
+        $oldValues = $commission->only(['status', 'commission_amount']);
+
+        $commission->update([
+            'status' => $request->status,
+            'commission_amount' => $request->commission_amount,
+        ]);
+
+        \App\Models\RepresentativeAudit::create([
+            'user_id' => auth()->id(),
+            'action' => 'alterou_comissao',
+            'entity_type' => Commission::class,
+            'entity_id' => $commission->id,
+            'old_values' => $oldValues,
+            'new_values' => $commission->only(['status', 'commission_amount']),
+        ]);
+
+        return back()->with('success', 'Comissão atualizada com sucesso.');
     }
 }

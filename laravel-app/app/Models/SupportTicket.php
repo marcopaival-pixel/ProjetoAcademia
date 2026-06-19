@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class SupportTicket extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'user_id',
         'subject',

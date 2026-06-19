@@ -80,7 +80,7 @@
             </div>
 
             <div class="prose prose-invert prose-zinc max-w-none text-zinc-300 text-sm leading-relaxed">
-                {!! Str::markdown($aiResponse['text']) !!}
+                {!! \App\Support\SafeHtml::markdown($aiResponse['text']) !!}
             </div>
 
             @if(!empty($aiResponse['action']))

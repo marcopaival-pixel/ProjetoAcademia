@@ -20,7 +20,8 @@ class TrainingAgent extends BaseAgent
     public function execute(User $user, string $message, array $context = []): array
     {
         try {
-            $userContext = $this->getUserTrainingContext($user);
+            $subject = $this->resolveSubjectUser($user, $context);
+            $userContext = $this->getUserTrainingContext($subject);
             $instructions = \Illuminate\Support\Facades\File::get(base_path('agentesprd/training-agent.md'));
 
             // Injetar dados de visão se existirem
@@ -35,6 +36,8 @@ class TrainingAgent extends BaseAgent
                 ],
                 ['role' => 'user', 'content' => $message]
             ];
+
+            $this->injectChatHistory($messages, $context);
 
             return $this->aiProvider->call(
                 user: $user,

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProfessionalPatient extends Model
 {
+    use Traits\BelongsToCompany;
+
+    /** @var string */
+    protected $companyColumn = 'empresa_id';
+
     protected $table = 'pacientes';
 
     protected $fillable = [
@@ -19,11 +24,17 @@ class ProfessionalPatient extends Model
         'status',
         'empresa_id',
         'tracking_status',
-        'professional_notes_for_patient'
+        'professional_notes_for_patient',
+        'data_fim',
+        'motivo_desvinculacao',
+        'is_favorite',
+        'last_accessed_at'
     ];
 
     protected $casts = [
-        'patient_permissions' => 'array'
+        'patient_permissions' => 'array',
+        'is_favorite' => 'boolean',
+        'last_accessed_at' => 'datetime'
     ];
 
     public function professional()

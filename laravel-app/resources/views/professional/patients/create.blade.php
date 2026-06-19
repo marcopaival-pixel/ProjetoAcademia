@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Novo Paciente — NexShape Pro')
+@section('title', 'Novo {{ $patientLabel }} — NexShape Pro')
 
 @section('content')
 <div class="py-12 space-y-12 animate-fade-in max-w-[1200px] mx-auto px-6">
@@ -9,10 +9,10 @@
         <div class="space-y-4">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
                 <i class="fas fa-user-plus text-[8px]"></i>
-                Gestão de Pacientes
+                Gestão de {{ $patientsLabel }}
             </div>
-            <h1 class="text-5xl font-black text-white tracking-tighter leading-none">Novo <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Paciente</span></h1>
-            <p class="text-zinc-500 text-lg font-medium">Cadastre um novo aluno ou paciente para iniciar o acompanhamento profissional.</p>
+            <h1 class="text-5xl font-black text-white tracking-tighter leading-none">Novo <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">{{ $patientLabel }}</span></h1>
+            <p class="text-zinc-500 text-lg font-medium">Cadastre um novo {{ mb_strtolower($patientLabel) }} ou {{ mb_strtolower($patientLabel) }} para iniciar o acompanhamento profissional.</p>
         </div>
         
         <a href="{{ route('professional.patients.index') }}" class="px-6 py-3 bg-zinc-900 text-zinc-400 font-bold rounded-xl hover:bg-zinc-800 transition-all flex items-center gap-2 border border-white/5">
@@ -23,8 +23,9 @@
 
     <!-- Form Section -->
     <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 shadow-2xl">
-        <form action="{{ route('professional.patients.store') }}" method="POST" class="space-y-10">
+        <form id="patientForm" action="{{ route('professional.patients.store') }}" method="POST" class="space-y-10">
             @csrf
+            <input type="hidden" name="force_reactivate" id="forceReactivateInput" value="0">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <!-- Informações Básicas -->
@@ -119,14 +120,38 @@
 
             <!-- Footer Action -->
             <div class="pt-10 border-t border-white/5 flex items-center justify-between">
-                <p class="text-zinc-500 text-xs">O paciente receberá um convite por e-mail para acessar o portal.</p>
+                <p class="text-zinc-500 text-xs">O {{ mb_strtolower($patientLabel) }} receberá um convite por e-mail para acessar o portal.</p>
                 
                 <button type="submit" class="px-10 py-5 bg-blue-600 text-white font-black rounded-3xl hover:bg-blue-500 transition-all shadow-2xl shadow-blue-600/20 uppercase tracking-[0.2em] text-[10px] flex items-center gap-3">
-                    Cadastrar Paciente
+                    Cadastrar {{ $patientLabel }}
                     <i class="fas fa-rocket text-[10px]"></i>
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal Reativação -->
+<div id="reactivateModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-zinc-950/90 backdrop-blur-xl" onclick="cancelReactivation()"></div>
+    <div class="relative bg-zinc-900 border border-white/10 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl scale-100 transition-all">
+        <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center mb-6 border border-blue-500/20 mx-auto">
+            <i class="fas fa-user-clock text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-black text-white text-center mb-2">Cadastro Encontrado!</h3>
+        <p id="reactivateModalMessage" class="text-zinc-400 text-center text-sm mb-4"></p>
+        <div class="bg-black/50 border border-white/5 rounded-xl p-4 mb-8 text-center">
+            <span class="text-xs text-zinc-500 uppercase tracking-widest font-black block mb-1">Nome do Paciente/Aluno</span>
+            <strong id="reactivateModalName" class="text-white font-bold text-lg"></strong>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button type="button" onclick="cancelReactivation()" class="flex-1 py-4 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all text-sm border border-white/5">
+                Cancelar
+            </button>
+            <button type="button" onclick="confirmReactivation()" class="flex-1 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20 text-sm">
+                Reativar e Vincular
+            </button>
+        </div>
     </div>
 </div>
 
@@ -168,6 +193,60 @@
         }
         e.target.value = maskedValue;
     });
+
+    document.getElementById('patientForm').addEventListener('submit', async function(e) {
+        if (this.dataset.bypassed) return;
+        
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i> Verificando...';
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData(this);
+            const response = await fetch('{{ route("professional.patients.check") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            
+            if (data.exists && data.can_reactivate) {
+                document.getElementById('reactivateModalMessage').innerText = data.message;
+                document.getElementById('reactivateModalName').innerText = data.name;
+                document.getElementById('reactivateModal').classList.remove('hidden');
+                document.getElementById('reactivateModal').classList.add('flex');
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            } else if (data.exists && !data.can_reactivate) {
+                // Se já é ativo ou é um profissional
+                alert(data.message);
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            } else {
+                this.dataset.bypassed = true;
+                this.submit();
+            }
+        } catch(err) {
+            console.error(err);
+            this.dataset.bypassed = true;
+            this.submit();
+        }
+    });
+
+    function confirmReactivation() {
+        document.getElementById('forceReactivateInput').value = "1";
+        document.getElementById('patientForm').dataset.bypassed = true;
+        document.getElementById('patientForm').submit();
+    }
+
+    function cancelReactivation() {
+        document.getElementById('reactivateModal').classList.add('hidden');
+        document.getElementById('reactivateModal').classList.remove('flex');
+    }
 </script>
 @endpush
 
@@ -176,3 +255,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection
+
+
+

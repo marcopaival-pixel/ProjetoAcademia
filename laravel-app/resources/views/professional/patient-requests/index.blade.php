@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
         <div class="space-y-2">
             <h1 class="text-3xl font-black text-white tracking-tight">Solicitações de Vínculo</h1>
-            <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Gerencie novos pacientes que desejam ser acompanhados por você</p>
+            <p class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Gerencie novos {{ mb_strtolower($patientsLabel) }} que desejam ser acompanhados por você</p>
         </div>
     </div>
 
@@ -53,7 +53,7 @@
                     <form action="{{ route('professional.requests.approve', $request) }}" method="POST" class="flex-1 md:flex-none">
                         @csrf
                         <button type="submit" class="w-full px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-500/20 text-xs uppercase tracking-widest">
-                            Aprovar Paciente
+                            Aprovar {{ $patientLabel }}
                         </button>
                     </form>
                 </div>
@@ -64,9 +64,12 @@
                     <svg class="w-10 h-10 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </div>
                 <h4 class="text-xl font-black text-white mb-2">Nenhuma solicitação pendente</h4>
-                <p class="text-zinc-500 font-medium max-w-sm mx-auto text-sm">Quando um paciente usar seu código para solicitar vínculo, ele aparecerá aqui para aprovação.</p>
+                <p class="text-zinc-500 font-medium max-w-sm mx-auto text-sm">Quando um {{ mb_strtolower($patientLabel) }} usar seu código para solicitar vínculo, ele aparecerá aqui para aprovação.</p>
             </div>
         @endforelse
     </div>
 </div>
 @endsection
+
+
+

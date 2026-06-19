@@ -36,6 +36,11 @@ class RepresentativeTrackingMiddleware
             }
         }
 
+        // Força a sessão ativa como representante caso esteja no painel e tenha o papel
+        if ($request->is('representative*') && auth()->check() && auth()->user()->hasRole('representative')) {
+            session(['active_role' => 'representative']);
+        }
+
         return $next($request);
     }
 }

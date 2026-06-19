@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Support\QueueNames;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,6 +14,11 @@ use Illuminate\Support\Facades\Log;
 class QueueHeartbeatJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function __construct()
+    {
+        $this->onQueue(QueueNames::default());
+    }
 
     public function handle(): void
     {

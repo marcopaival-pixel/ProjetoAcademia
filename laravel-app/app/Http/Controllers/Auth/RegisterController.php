@@ -113,6 +113,10 @@ class RegisterController extends Controller
                 if ($role) {
                     $user->assignRole($role->name);
                 }
+
+                if ($profileName === 'aluno') {
+                    app(\App\Services\StudentRoleBridgeService::class)->ensurePortalAccess($user);
+                }
                 
                 // Atualizar CPF caso o usuário encontrado pelo e-mail não tivesse CPF
                 if (empty($user->cpf)) {
@@ -123,6 +127,15 @@ class RegisterController extends Controller
             }
 
             $verificacaoAtiva = \App\Models\SystemSetting::isTrue('verificacao_email_ativa', true);
+
+            $representativeId = $request->get('representative_id') ?: (session('representative_id') ?: request()->cookie('representative_id'));
+            
+            if ($request->filled('referral_code')) {
+                $profile = \App\Models\RepresentativeProfile::where('code', strtoupper($request->get('referral_code')))->first();
+                if ($profile) {
+                    $representativeId = $profile->user_id;
+                }
+            }
 
             $user = new User();
             $user->fill([
@@ -136,11 +149,11 @@ class RegisterController extends Controller
                 'status' => $profileName === 'representative' ? 'PENDENTE_APROVACAO' : ($verificacaoAtiva ? 'pending_email_verification' : 'active'),
                 'onboarding_status' => 'pending',
                 'profile_completion_percentage' => 0,
-                'registration_approval_status' => in_array($profileName, ['professional', 'representative']) ? 'pending' : 'approved',
+                'registration_approval_status' => $profileName === 'representative' ? 'pending' : 'approved',
                 'email_verified' => !$verificacaoAtiva,
                 'email_verified_at' => $verificacaoAtiva ? null : now(),
                 'email_verification_expires_at' => $verificacaoAtiva ? now()->addHours(24) : null,
-                'representative_id' => $request->get('representative_id') ?: (session('representative_id') ?: request()->cookie('representative_id')),
+                'representative_id' => $representativeId,
                 'is_representative' => $profileName === 'representative',
             ]);
 
@@ -164,6 +177,10 @@ class RegisterController extends Controller
             // Vincular papel na tabela pivot (Many-to-Many)
             if ($role) {
                 $user->roles()->sync([$role->id]);
+            }
+
+            if ($profileName === 'aluno') {
+                app(\App\Services\StudentRoleBridgeService::class)->ensurePortalAccess($user);
             }
             
             // Perfil básico
@@ -197,6 +214,43 @@ class RegisterController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent'),
             ]);
+
+            // Lógica Comercial: Converter Proposta e Gerar Comissão Prevista
+            if ($representativeId) {
+                // Procurar uma proposta ativa deste representante para este CNPJ ou Email
+                $proposal = \App\Models\CommercialProposal::where('representative_id', $representativeId)
+                    ->where('status', 'Ativa')
+                    ->where(function ($q) use ($validated) {
+                        if (!empty($validated['cnpj'])) {
+                            $q->where('clinic_cnpj', preg_replace('/[^0-9]/', '', $validated['cnpj']))
+                              ->orWhere('clinic_cnpj', $validated['cnpj']);
+                        }
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($proposal) {
+                    $proposal->update(['status' => 'Convertida em Cliente']);
+                    
+                    // Se for clinic_id que vai ser criado depois, podemos associar aqui se já existisse.
+                    // Como a clínica pode ser criada no onboarding, associamos ao usuário por enquanto.
+                }
+
+                // Criar Comissão Prevista baseada no perfil do representante e no plano (se houver plano na proposta)
+                if (isset($profile) && $profile) {
+                    $baseAmount = $proposal ? (float) $proposal->valor_final : 0.0;
+
+                    app(\App\Services\CommissionService::class)->recordProspectiveOnRegistration(
+                        $representativeId,
+                        $user->id,
+                        $baseAmount,
+                        (float) $profile->commission_rate,
+                        'Cadastro realizado via código de indicação: '.$profile->code
+                    );
+
+                    $profile->incrementUsage();
+                }
+            }
 
             return $user;
         });

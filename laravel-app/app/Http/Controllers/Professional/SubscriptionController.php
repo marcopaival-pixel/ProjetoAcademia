@@ -54,3 +54,5 @@ class SubscriptionController extends Controller
         return view('professional.billing.index', compact('subscription', 'invoices', 'plans'));
     }
 }
+
+

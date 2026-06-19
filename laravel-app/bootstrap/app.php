@@ -24,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'omnichannel/webhook',
         ]);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->api(prepend: [
+            \App\Http\Middleware\AssignRequestId::class,
+            \App\Http\Middleware\LogApiAccess::class,
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\EnsureRegistrationApproved::class,
             \App\Http\Middleware\EnsureEmailIsVerified::class,
@@ -32,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ProfileCompletionMiddleware::class,
             \App\Http\Middleware\UpdateLastActivity::class,
             \App\Http\Middleware\EnsureHasProfessionalLink::class,
+            \App\Http\Middleware\EnsurePanelIsolation::class,
             \App\Http\Middleware\CheckRouteMenuAccess::class,
             \App\Http\Middleware\EnforcePatientReadOnly::class,
             \App\Http\Middleware\CheckMaintenanceMode::class,
@@ -41,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureDemoSafety::class,
         ]);
         $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdministrator::class,
             'premium' => \App\Http\Middleware\CheckPremiumAccess::class,
@@ -51,6 +57,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'patient_linked' => \App\Http\Middleware\EnsurePatientLinked::class,
             'menu.access' => \App\Http\Middleware\CheckRouteMenuAccess::class,
             'block.demo.prod' => \App\Http\Middleware\BlockDemoInProduction::class,
+            'active_patient' => \App\Http\Middleware\RequireActivePatient::class,
+            'professional.panel' => \App\Http\Middleware\EnsureUserIsProfessional::class,
+            'panel.isolation' => \App\Http\Middleware\EnsurePanelIsolation::class,
+            'api.tenant' => \App\Http\Middleware\SetApiTenantContext::class,
+            'api.role' => \App\Http\Middleware\EnsureApiRole::class,
+            'api.active_patient' => \App\Http\Middleware\ResolveApiActivePatient::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -118,16 +130,78 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
+            if (! \App\Support\Api\V1ErrorResponse::isApiV1Request($request)) {
+                return null;
+            }
+
+            return \App\Support\Api\V1ErrorResponse::make(
+                'Dados inválidos.',
+                422,
+                'validation_error',
+                $e->errors()
+            );
+        });
+
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if (! \App\Support\Api\V1ErrorResponse::isApiV1Request($request)) {
+                return null;
+            }
+
+            return \App\Support\Api\V1ErrorResponse::make('Não autenticado.', 401, 'unauthenticated');
+        });
+
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
+            if (! \App\Support\Api\V1ErrorResponse::isApiV1Request($request)) {
+                return null;
+            }
+
+            return \App\Support\Api\V1ErrorResponse::make('Recurso não encontrado.', 404, 'not_found');
+        });
+
         $exceptions->render(function (\Illuminate\Database\QueryException $e) {
             if (app()->runningInConsole()) return null;
 
             return response()->view('errors.db-down', [], 503);
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            if (\App\Support\Api\V1ErrorResponse::isApiV1Request($request)) {
+                $status = $e->getStatusCode();
+                if ($status === 404) {
+                    return \App\Support\Api\V1ErrorResponse::make('Recurso não encontrado.', 404, 'not_found');
+                }
+
+                return \App\Support\Api\V1ErrorResponse::make(
+                    $e->getMessage() ?: 'Erro na requisição.',
+                    $status,
+                    'http_error'
+                );
+            }
+
+            if ($e->getStatusCode() === 403 && ! app()->runningInConsole()) {
+                \App\Services\AccessDeniedAuditService::log(request(), 403, $e->getMessage() ?: 'http_403');
+            }
+
             if ($e->getStatusCode() == 500) {
                 return response()->view('errors.500', [], 500);
             }
+            return null;
+        });
+
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+            if (\App\Support\Api\V1ErrorResponse::isApiV1Request($request)) {
+                return \App\Support\Api\V1ErrorResponse::make(
+                    $e->getMessage() ?: 'Acesso negado.',
+                    403,
+                    'forbidden'
+                );
+            }
+
+            if (! app()->runningInConsole()) {
+                \App\Services\AccessDeniedAuditService::log(request(), 403, $e->getMessage() ?: 'authorization');
+            }
+
             return null;
         });
     })->create();

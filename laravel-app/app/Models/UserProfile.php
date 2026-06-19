@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserProfile extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $primaryKey = 'user_id';
 
     public $incrementing = false;

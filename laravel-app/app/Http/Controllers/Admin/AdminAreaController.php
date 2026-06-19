@@ -42,10 +42,10 @@ class AdminAreaController extends Controller
     {
         $overview = AdminOverviewStats::collect();
         
-        // Métrica Financeira: Total de Créditos do Mercado Pago
-        $totalRevenue = \App\Models\MercadoPagoCredit::sum('transaction_amount');
-        
-        // Utilizando o novo serviço com cache para escalabilidade
+        $financial = app(\App\Services\FinancialMetricsService::class);
+        $totalRevenue = $financial->totalRevenue();
+        $legacyMpRevenue = \App\Models\MercadoPagoCredit::sum('transaction_amount');
+
         $saasMetrics = app(\App\Services\SaaSMetricsService::class);
         $mrr = $saasMetrics->calculateMRR();
         $activeSubsCount = $saasMetrics->getActiveSubscriptionsCount();
@@ -61,14 +61,8 @@ class AdminAreaController extends Controller
             ->groupBy('goal')
             ->get();
 
-        // Comparativo de Faturamento: Mês Atual vs Mês Anterior
-        $thisMonthRevenue = \App\Models\MercadoPagoCredit::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('transaction_amount');
-
-        $lastMonthRevenue = \App\Models\MercadoPagoCredit::whereMonth('created_at', now()->subMonth()->month)
-            ->whereYear('created_at', now()->subMonth()->year)
-            ->sum('transaction_amount');
+        $thisMonthRevenue = $financial->monthlyRevenue();
+        $lastMonthRevenue = $financial->monthlyRevenue(now()->subMonth());
 
         $revenueGrowth = $lastMonthRevenue > 0 
             ? (($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100 
@@ -79,6 +73,7 @@ class AdminAreaController extends Controller
             'total_admins' => User::where('is_admin', true)->count(),
             'total_premium' => User::where('is_premium', true)->count(),
             'total_revenue' => $totalRevenue,
+            'legacy_mp_revenue' => $legacyMpRevenue,
             'active_subs' => $activeSubsCount,
             'mrr' => $mrr,
             'expiring_soon' => $expiringCount,
@@ -92,34 +87,24 @@ class AdminAreaController extends Controller
                 ->orderBy('premium_expires_at', 'asc')
                 ->limit(5)
                 ->get(),
-            'monthly_revenue' => (function () {
-                $monthExpr = DB::connection()->getDriverName() === 'sqlite'
-                    ? "strftime('%Y-%m', created_at)"
-                    : "DATE_FORMAT(created_at, '%Y-%m')";
-
-                return \App\Models\MercadoPagoCredit::select(DB::raw("{$monthExpr} as month"), DB::raw('sum(transaction_amount) as total'))
-                    ->groupBy(DB::raw($monthExpr))
-                    ->orderBy('month', 'desc')
-                    ->limit(6)
-                    ->get()
-                    ->reverse()
-                    ->values();
-            })(),
+            'monthly_revenue' => collect($financial->monthlyRevenueSeries(6)),
             'daily_summary' => [
                 'new_users' => User::whereDate('created_at', now())->count(),
-                'payments' => \App\Models\MercadoPagoCredit::whereDate('created_at', now())->count(),
+                'payments' => \App\Models\Payment::whereIn('status', ['paid', 'approved', 'ATIVO', \App\Models\Subscription::STATUS_FIN_ATIVO])
+                    ->whereDate('created_at', now())->count(),
                 'expiring' => User::where('is_premium', true)->whereDate('premium_expires_at', now())->count(),
                 'messages' => \App\Models\Message::where('is_read', false)->whereDate('created_at', now())->count(),
             ],
-            'ai_insight' => (function() use ($revenueGrowth, $expiringCount) {
+            'ai_insight' => (function () use ($revenueGrowth, $expiringCount) {
                 if ($revenueGrowth < -10) {
-                    return "⚠️ Alerta IA: Queda brusca no faturamento (-" . abs(round($revenueGrowth)) . "%). Verifique o funil de conversão.";
+                    return 'Alerta operacional: queda brusca no faturamento (-'.abs(round($revenueGrowth)).'%). Verifique o funil de conversão.';
                 } elseif ($expiringCount > 10) {
-                    return "💡 Sugestão IA: Temos " . $expiringCount . " usuários a expirar em 15 dias. Considere uma campanha de retenção.";
+                    return 'Sugestão: '.$expiringCount.' usuários a expirar em 15 dias. Considere uma campanha de retenção.';
                 } elseif ($revenueGrowth > 15) {
-                    return "🚀 Performance IA: Faturamento acelerado (+ " . round($revenueGrowth) . "%). Momento ideal para escalar tráfego.";
+                    return 'Performance: faturamento acelerado (+'.round($revenueGrowth).'%). Momento ideal para escalar tráfego.';
                 }
-                return "✨ Operação NexShape está operando com 98% de eficiência hoje. Todos os serviços em ordem.";
+
+                return 'Operação NexShape está operando com 98% de eficiência hoje. Todos os serviços em ordem.';
             })(),
         ];
 
@@ -1144,9 +1129,21 @@ class AdminAreaController extends Controller
 
     public function logout(Request $request)
     {
+        $userId = auth()->id();
+        $email = auth()->user()?->email;
+
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        app(\App\Services\Operations\AuthAuditService::class)->log(
+            \App\Models\AuthAuditLog::EVENT_LOGOUT,
+            $userId,
+            $email,
+            true,
+            $request,
+            ['guard' => 'admin'],
+        );
 
         return redirect()->route('admin.login')->with('success', 'Sessão encerrada.');
     }

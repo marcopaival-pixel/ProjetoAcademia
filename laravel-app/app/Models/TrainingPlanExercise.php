@@ -10,6 +10,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TrainingPlanExercise extends Model
 {
     use HasFactory;
+    use Traits\BelongsToScopedParent;
+
+    protected static function scopedParentRelationName(): string
+    {
+        return 'trainingPlan';
+    }
+
+    protected static function scopedParentTenantColumnName(): string
+    {
+        return 'clinic_id';
+    }
 
     protected $fillable = [
         'training_plan_id',

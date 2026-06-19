@@ -30,7 +30,7 @@
             <div class="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/10 blur-[60px] rounded-full"></div>
             <div class="flex justify-between items-start mb-10">
                 <div>
-                    <span class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] block mb-2">Base de Alunos</span>
+                    <span class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] block mb-2">Base de {{ $patientsLabel }}</span>
                     <h3 class="text-3xl font-black text-white italic uppercase tracking-tighter">Crescimento da Carteira</h3>
                 </div>
                 <div class="flex flex-col items-end">
@@ -45,7 +45,7 @@
                 <div class="bg-zinc-950/50 p-6 rounded-3xl border border-white/5">
                     <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest block mb-1">Este Mês</span>
                     <span class="text-3xl font-black text-white italic tracking-tighter">{{ $data['current']['students'] }}</span>
-                    <p class="text-[8px] text-zinc-700 font-bold uppercase mt-2">Alunos Ativos</p>
+                    <p class="text-[8px] text-zinc-700 font-bold uppercase mt-2">{{ $patientsLabel }} Ativos</p>
                 </div>
                 <div class="bg-zinc-950/50 p-6 rounded-3xl border border-white/5">
                     <span class="text-[9px] text-zinc-600 font-black uppercase tracking-widest block mb-1">Mês Anterior</span>
@@ -98,13 +98,13 @@
                 <p class="text-zinc-400 text-lg leading-relaxed max-w-3xl font-medium">
                     Seu volume de treinos teve uma variação de <span class="text-white font-black">{{ $data['delta']['workouts'] }}%</span> em relação ao mês passado. 
                     @if($data['delta']['workouts'] > 0)
-                        O engajamento está em curva ascendente, sugerindo alta retenção e satisfação dos alunos com as prescrições atuais.
+                        O engajamento está em curva ascendente, sugerindo alta retenção e satisfação dos {{ mb_strtolower($patientsLabel) }} com as prescrições atuais.
                     @else
-                        Houve uma leve queda no volume total. Recomendamos revisar os planos de treino dos alunos menos ativos para evitar possíveis churns.
+                        Houve uma leve queda no volume total. Recomendamos revisar os planos de treino dos {{ mb_strtolower($patientsLabel) }} menos ativos para evitar possíveis churns.
                     @endif
                 </p>
                 <div class="mt-8 flex gap-4">
-                    <a href="{{ route('professional.reports.show', ['type' => 'complete_analytics']) }}" class="px-8 py-3 bg-white text-zinc-950 text-[11px] font-black rounded-2xl uppercase tracking-widest hover:bg-zinc-200 transition-all shadow-xl">Ver Detalhes por Aluno</a>
+                    <a href="{{ route('professional.reports.show', ['type' => 'complete_analytics']) }}" class="px-8 py-3 bg-white text-zinc-950 text-[11px] font-black rounded-2xl uppercase tracking-widest hover:bg-zinc-200 transition-all shadow-xl">Ver Detalhes por {{ $patientLabel }}</a>
                 </div>
             </div>
         </div>
@@ -119,3 +119,6 @@
     }
 </style>
 @endsection
+
+
+

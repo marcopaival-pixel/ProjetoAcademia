@@ -32,6 +32,14 @@ class DemoController extends Controller
             'active_role' => $profile
         ]);
 
+        if (in_array($profile, ['clinic', 'gestor', 'admin'])) {
+            return redirect()->route('home')->with('error', 'O painel administrativo não está disponível no modo demonstração.');
+        }
+
+        if ($profile === 'professional') {
+            return redirect()->route('professional.dashboard')->with('success', 'Modo Demonstração Ativado! Visão Profissional');
+        }
+
         return redirect()->route('dashboard')->with('success', 'Modo Demonstração Ativado! Explore o sistema livremente.');
     }
 
@@ -65,8 +73,8 @@ class DemoController extends Controller
     public function switchProfile(Request $request)
     {
         $profile = $request->input('profile');
-        if (!in_array($profile, ['aluno', 'professional', 'clinic', 'gestor', 'admin'])) {
-            return redirect()->back()->with('error', 'Perfil inválido.');
+        if (!in_array($profile, ['aluno', 'professional'])) {
+            return redirect()->back()->with('error', 'Perfil inválido ou não disponível na demonstração.');
         }
 
         session(['demo_profile' => $profile, 'active_role' => $profile]);
@@ -80,8 +88,8 @@ class DemoController extends Controller
             Auth::login($user);
 
             // Redirecionamento específico por perfil
-            if (in_array($profile, ['clinic', 'gestor'])) {
-                return redirect()->route('admin.dashboard')->with('success', 'Visão Clínica Ativada');
+            if (in_array($profile, ['clinic', 'gestor', 'admin'])) {
+                return redirect()->back()->with('error', 'Painel administrativo desabilitado.');
             }
 
             if ($profile === 'professional') {

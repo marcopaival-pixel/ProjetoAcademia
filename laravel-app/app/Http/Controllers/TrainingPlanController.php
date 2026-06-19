@@ -8,6 +8,7 @@ use App\Models\TrainingPlanExercise;
 use App\Models\Muscle;
 use App\Models\MuscleGroup;
 use Illuminate\Http\Request;
+use App\Support\PatientAccessGuard;
 use Illuminate\Support\Facades\Auth;
 use App\Services\DompdfPdfService;
 
@@ -18,10 +19,15 @@ class TrainingPlanController extends Controller
         $user = Auth::user();
         $isPremium = $user->hasPremiumAccess();
         
-        $query = TrainingPlan::where(function($q) {
-                $q->where('user_id', Auth::id())
-                  ->orWhere('creator_id', Auth::id());
-            })
+        $targetUserId = $user->id;
+        if ($user->isProfessional()) {
+            $activePatientId = PatientAccessGuard::resolveActivePatientId($user);
+            if ($activePatientId) {
+                $targetUserId = $activePatientId;
+            }
+        }
+
+        $query = TrainingPlan::where('user_id', $targetUserId)
             ->withCount('exercises')
             ->latest();
 
@@ -96,12 +102,22 @@ class TrainingPlanController extends Controller
                  ->with('error', 'Seu plano atual não permite a criação de planilhas de treino.');
         }
 
-        $maxWorkouts = $user->getPlanLimit('max_workouts');
+        $targetUserId = $user->id;
+        if ($user->isProfessional()) {
+            $activePatientId = PatientAccessGuard::resolveActivePatientId($user);
+            if ($activePatientId) {
+                $targetUserId = $activePatientId;
+            }
+        }
+
+        $targetUser = \App\Models\User::findOrFail($targetUserId);
+        $maxWorkouts = $targetUser->getPlanLimit('max_workouts');
+
         if ($maxWorkouts > 0) {
-            $planCount = TrainingPlan::where('user_id', $user->id)->count();
+            $planCount = TrainingPlan::where('user_id', $targetUserId)->count();
             if ($planCount >= $maxWorkouts) {
                 return redirect()->route('progression.plans.index')
-                    ->with('error', "Você atingiu o limite de {$maxWorkouts} planos de treino na versão gratuita. Faça upgrade para Pro para criar rotinas ilimitadas!");
+                    ->with('error', "O limite de {$maxWorkouts} planos de treino do plano foi atingido. Faça upgrade para Pro para criar rotinas ilimitadas!");
             }
         }
 
@@ -165,8 +181,17 @@ class TrainingPlanController extends Controller
 
         $goal = $validated['goal'] === 'Outro objetivo' ? $validated['goal_custom'] : $validated['goal'];
 
+        $targetUserId = Auth::id();
+        if ($user->isProfessional()) {
+            $activePatientId = PatientAccessGuard::resolveActivePatientId($user);
+            if (! $activePatientId) {
+                return back()->with('error', 'Selecione um paciente para registrar o plano de treino.');
+            }
+            $targetUserId = $activePatientId;
+        }
+
         $plan = TrainingPlan::create([
-            'user_id' => Auth::id(),
+            'user_id' => $targetUserId,
             'creator_id' => Auth::id(),
             'name' => $validated['name'],
             'plan_label' => $request->plan_label,
@@ -213,7 +238,7 @@ class TrainingPlanController extends Controller
                 $muscleId = is_array($target) ? ($target['id'] ?? null) : null;
 
                 \App\Models\WorkoutTargetArea::create([
-                    'user_id' => Auth::id(),
+                    'user_id' => $targetUserId,
                     'training_plan_id' => $plan->id,
                     'target_area' => $targetName,
                     'muscle_id' => $muscleId,

@@ -27,7 +27,7 @@
             </div>
             
             <div class="aspect-[3/4] bg-zinc-950 rounded-2xl overflow-hidden flex items-center justify-center border border-white/5">
-                <img src="{{ Storage::url($analysis_1->photo_path) }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
+                <img src="{{ route('secure-files.show', ['type' => 'body-analysis', 'id' => $analysis_1->id]) }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
             </div>
         </div>
 
@@ -39,7 +39,7 @@
             </div>
             
             <div class="aspect-[3/4] bg-zinc-950 rounded-2xl overflow-hidden flex items-center justify-center border border-emerald-500/20">
-                <img src="{{ Storage::url($analysis_2->photo_path) }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
+                <img src="{{ route('secure-files.show', ['type' => 'body-analysis', 'id' => $analysis_2->id]) }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
             </div>
         </div>
     </div>

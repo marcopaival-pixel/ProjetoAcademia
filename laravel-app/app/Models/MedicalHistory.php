@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MedicalHistory extends Model
 {
+    use Traits\BelongsToScopedParent;
+
+    protected static function scopedParentRelationName(): string
+    {
+        return 'patient';
+    }
+
     protected $fillable = [
         'patient_id',
         'user_id',

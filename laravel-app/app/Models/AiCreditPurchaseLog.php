@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class AiCreditPurchaseLog extends Model
 {
     use HasFactory;
+    use Traits\BelongsToUserCompany;
 
     protected $table = 'ai_credits_purchase_logs';
 

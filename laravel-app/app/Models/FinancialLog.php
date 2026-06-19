@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FinancialLog extends Model
 {
+    use BelongsToCompany;
     protected $fillable = [
         'user_id',
         'academy_company_id',

@@ -1,8 +1,10 @@
 openapi: 3.0.3
 info:
   title: NexShape API v1
-  version: 1.0.0
-  description: API REST autenticada com Laravel Sanctum (Bearer token).
+  version: 1.6.0
+  description: |
+    API REST autenticada com Laravel Sanctum (Bearer token).
+    Respostas de sucesso usam `{ "data": ... }` e erros `{ "error": { "message", "code" } }`.
 servers:
   - url: '{baseUrl}/api/v1'
     variables:
@@ -12,12 +14,21 @@ paths:
   /health:
     get:
       summary: Health check público
+      tags: [Sistema]
       responses:
         '200':
           description: OK
+  /client-errors:
+    post:
+      summary: Registar erro do cliente mobile
+      tags: [Sistema]
+      responses:
+        '202':
+          description: Aceite
   /auth/token:
     post:
       summary: Emitir token de acesso
+      tags: [Autenticação]
       requestBody:
         required: true
         content:
@@ -32,18 +43,51 @@ paths:
       responses:
         '200':
           description: Token emitido
+        '422':
+          description: Credenciais inválidas
+    delete:
+      summary: Revogar token atual
+      tags: [Autenticação]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Token revogado
+  /referral/verify:
+    post:
+      summary: Validar código de indicação
+      tags: [Autenticação]
+      responses:
+        '200':
+          description: Código válido
   /me:
     get:
       summary: Perfil do utilizador autenticado
+      tags: [Perfil]
       security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: Perfil
         '401':
           description: Não autenticado
+    patch:
+      summary: Atualizar perfil
+      tags: [Perfil]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Perfil atualizado
+  /auth/refresh:
+    post:
+      summary: Renovar token Bearer
+      tags: [Autenticação]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Novo token
   /training-plans:
     get:
-      summary: Listar planos de treino do utilizador
+      summary: Listar planos de treino
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       responses:
         '200':
@@ -51,6 +95,7 @@ paths:
   /training-plans/{id}:
     get:
       summary: Detalhe do plano de treino
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       parameters:
         - name: id
@@ -62,16 +107,10 @@ paths:
           description: Plano com exercícios
         '403':
           description: Bloqueado por limite do plano
-  /payments/status:
+  /exercise-logs:
     get:
-      summary: Estado dos gateways de pagamento (sem segredos)
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200':
-          description: Gateways e métodos disponíveis
-  /nutrition/diary:
-    get:
-      summary: Diário alimentar por data
+      summary: Registos de exercício por data
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       parameters:
         - name: date
@@ -79,39 +118,494 @@ paths:
           schema: { type: string, format: date }
       responses:
         '200':
-          description: Entradas e totais do dia
-  /workout-sessions:
-    get:
-      summary: Listar sessões de treino (RPE)
+          description: Lista de registos
+  /exercise-logs/sync:
+    post:
+      summary: Criar ou atualizar registo de exercício
+      tags: [Treino]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Sincronizado
+  /exercise-logs/{id}:
+    delete:
+      summary: Remover registo de exercício
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       parameters:
-        - name: limit
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Removido
+  /payments/status:
+    get:
+      summary: Gateways de pagamento ativos
+      tags: [Pagamentos]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Gateways disponíveis
+  /nutrition/diary:
+    get:
+      summary: Diário alimentar por data
+      tags: [Nutrição]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: date
           in: query
-          schema: { type: integer, maximum: 90, default: 30 }
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Entradas e totais
+    post:
+      summary: Adicionar alimento
+      tags: [Nutrição]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Entrada criada
+  /nutrition/diary/{id}:
+    put:
+      summary: Atualizar alimento
+      tags: [Nutrição]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Entrada atualizada
+    delete:
+      summary: Remover alimento
+      tags: [Nutrição]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Removido
+  /workout-sessions:
+    get:
+      summary: Listar sessões RPE
+      tags: [Treino]
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: Lista de sessões
     post:
-      summary: Registar ou atualizar sessão por data
+      summary: Registar sessão RPE
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [session_date, rpe_score]
-              properties:
-                session_date: { type: string, format: date }
-                rpe_score: { type: integer, minimum: 1, maximum: 10 }
-                mood: { type: string }
-                notes: { type: string }
       responses:
         '201':
           description: Sessão gravada
+  /assessments:
+    get:
+      summary: Listar avaliações físicas
+      tags: [Avaliações]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista
+    post:
+      summary: Criar avaliação física
+      tags: [Avaliações]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Criada
+  /assessments/{id}:
+    get:
+      summary: Detalhe da avaliação
+      tags: [Avaliações]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Detalhe
+  /evolution-photos:
+    get:
+      summary: Listar fotos de evolução
+      tags: [Evolução]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista
+    post:
+      summary: Upload de foto de evolução
+      tags: [Evolução]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Foto registada
+  /evolution-photos/{id}:
+    delete:
+      summary: Remover foto de evolução
+      tags: [Evolução]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Removida
+  /media/{type}/{id}:
+    get:
+      summary: Stream seguro de mídia
+      tags: [Mídia]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: [evolution, body-analysis, gallery, patient-document] }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Ficheiro binário
+  /uploads/workout-photo:
+    post:
+      summary: Importar ficha de treino por foto (IA)
+      tags: [Mídia]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Análise concluída
+  /uploads/nutrition-photo:
+    post:
+      summary: Analisar foto de refeição (IA)
+      tags: [Mídia]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Alimentos identificados
+  /chat/send:
+    post:
+      summary: Enviar mensagem ao NexBot
+      tags: [IA]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Resposta
+  /chat/history:
+    get:
+      summary: Histórico do chat
+      tags: [IA]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Mensagens
+    delete:
+      summary: Limpar histórico do chat
+      tags: [IA]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Limpo
+  /chat/actions:
+    post:
+      summary: Executar ação estruturada da IA
+      tags: [IA]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Resultado da ação
+  /ai/orchestrator:
+    post:
+      summary: Orquestrador IA
+      tags: [IA]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Resposta síncrona
+        '202':
+          description: Job assíncrono
+  /ai/orchestrator/status/{jobKey}:
+    get:
+      summary: Status de job IA assíncrono
+      tags: [IA]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: jobKey
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Status ou resultado
+  /devices:
+    post:
+      summary: Registar token FCM
+      tags: [Dispositivos]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Registado
+    delete:
+      summary: Revogar token FCM
+      tags: [Dispositivos]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Revogado
+  /subscriptions/plans:
+    get:
+      summary: Planos student disponíveis
+      tags: [Pagamentos]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de planos
+  /subscriptions/checkout:
+    post:
+      summary: Iniciar checkout de assinatura
+      tags: [Pagamentos]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Plano gratuito ativado
+        '202':
+          description: Redirecionamento gateway
+  /student/professionals:
+    get:
+      summary: Profissionais vinculados ao aluno
+      tags: [Agenda]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de profissionais
+  /student/appointments:
+    get:
+      summary: Consultas do aluno
+      tags: [Agenda]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de agendamentos
+    post:
+      summary: Agendar avaliação/consulta
+      tags: [Agenda]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Agendamento criado
+  /student/appointments/slots:
+    get:
+      summary: Horários disponíveis do profissional
+      tags: [Agenda]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Slots do dia
+  /professional/dashboard:
+    get:
+      summary: Indicadores do painel profissional
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Estatísticas resumidas
+  /professional/patients:
+    get:
+      summary: Alunos/pacientes vinculados
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de pacientes
+  /professional/patients/{id}:
+    get:
+      summary: Detalhe resumido do paciente
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Paciente
+  /professional/appointments:
+    get:
+      summary: Agenda do profissional
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Consultas
+  /professional/appointments/{id}/status:
+    patch:
+      summary: Atualizar status da consulta
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Status atualizado
+  /professional/alerts:
+    get:
+      summary: Alertas de saúde dos alunos
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de alertas
+  /professional/alerts/{id}/read:
+    patch:
+      summary: Marcar alerta como lido
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Alerta atualizado
+  /professional/protocols:
+    get:
+      summary: Protocolos da clínica
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de protocolos
+  /professional/patients/{id}/training-plans:
+    get:
+      summary: Planos de treino do aluno
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Planos
+    post:
+      summary: Prescrição rápida ou aplicar protocolo
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '201':
+          description: Plano criado
+  /professional/patients/{id}/training-plans/{id}:
+    get:
+      summary: Detalhe do plano do aluno
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Detalhe
+  /professional/patients/{id}/assessments:
+    get:
+      summary: Avaliações físicas do aluno
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Avaliações
+    post:
+      summary: Registrar avaliação para o aluno
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '201':
+          description: Avaliação criada
+  /professional/patients/{id}/evolution-photos:
+    get:
+      summary: Fotos de evolução do aluno
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Fotos
+    post:
+      summary: Registrar foto de evolução do aluno
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo, type, registered_date]
+              properties:
+                photo: { type: string, format: binary }
+                type: { type: string, enum: [front, side, back, custom] }
+                registered_date: { type: string, format: date }
+                weight_kg: { type: number }
+      responses:
+        '201':
+          description: Foto registrada
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: Sanctum
+  schemas:
+    ApiSuccessEnvelope:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { type: object }
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message: { type: string }
+            code: { type: string }
+            errors: { type: object }

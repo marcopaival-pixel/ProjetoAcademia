@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use App\Models\AuthAuditLog;
+use App\Services\Operations\AuthAuditService;
 use Illuminate\Support\Facades\Log;
 
 class ResetPasswordController extends Controller
@@ -44,12 +46,29 @@ class ResetPasswordController extends Controller
                 $user->save();
                 
                 Log::info("Senha redefinida com sucesso para o usuário ID: " . $user->id);
+
+                app(AuthAuditService::class)->log(
+                    AuthAuditLog::EVENT_PASSWORD_RESET,
+                    $user->id,
+                    $user->email,
+                    true,
+                    request()
+                );
             }
         );
 
         if ($status === Password::PASSWORD_RESET) {
             return redirect()->route('login')->with('status', __($status));
         }
+
+        app(AuthAuditService::class)->log(
+            AuthAuditLog::EVENT_PASSWORD_RESET,
+            null,
+            $request->email,
+            false,
+            $request,
+            ['status' => $status]
+        );
 
         return back()->withErrors(['email' => [__($status)]]);
     }
