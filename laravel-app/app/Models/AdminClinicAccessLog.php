@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasClinic;
 use Illuminate\Database\Eloquent\Model;
 
 class AdminClinicAccessLog extends Model
 {
+    use HasClinic;
     protected $fillable = [
         'admin_user_id',
         'clinic_id',
@@ -29,6 +31,6 @@ class AdminClinicAccessLog extends Model
 
     public function clinic()
     {
-        return $this->belongsTo(AcademyCompany::class, 'clinic_id');
+        return $this->belongsTo(Clinic::class, 'clinic_id');
     }
 }

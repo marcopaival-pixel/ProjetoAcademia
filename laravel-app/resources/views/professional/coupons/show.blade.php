@@ -43,7 +43,7 @@
             <!-- Metadata Grid -->
             <div class="grid grid-cols-2 gap-10">
                 <div class="space-y-1">
-                    <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest">Paciente</p>
+                    <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{{ $patientLabel }}</p>
                     <p class="text-lg font-bold text-white">{{ $coupon->patient->name }}</p>
                 </div>
                 <div class="space-y-1">
@@ -84,3 +84,6 @@
     </div>
 </div>
 @endsection
+
+
+

@@ -31,7 +31,7 @@
                 prose-a:text-blue-400 prose-a:no-underline hover:prose-a:text-blue-300
                 prose-strong:text-white prose-strong:font-black
                 prose-p:mb-6">
-                {!! $article->conteudo !!}
+                {!! \App\Support\SafeHtml::clean($article->conteudo) !!}
             </div>
 
             <div class="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8" x-data="{ voted: false }">

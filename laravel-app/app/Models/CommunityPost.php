@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class CommunityPost extends Model
 {
-    use SoftDeletes, Traits\FiltersByProfessional;
+    use SoftDeletes;
+    use Traits\BelongsToCompany;
+    use Traits\FillsTenantColumns;
+    use Traits\FiltersByProfessional;
 
     protected $fillable = [
         'user_id',

@@ -51,11 +51,12 @@
                         </div>
                         <div>
                             <div class="font-black text-white">SUPORTE TÉCNICO</div>
-                            <div class="text-xs text-zinc-500 font-medium">Dúvidas sobre o sistema e treinos.</div>
+                            <div class="text-xs text-zinc-500 font-medium">Dúvidas sobre a plataforma, agenda, avaliações, treinos e atendimentos.</div>
                         </div>
                     </button>
                 </form>
 
+                @if(!auth()->user()->hasRole('paciente'))
                 <form action="{{ route('messages.start') }}" method="POST">
                     @csrf
                     <input type="hidden" name="tipo" value="FINANCEIRO">
@@ -71,6 +72,7 @@
                         </div>
                     </button>
                 </form>
+                @endif
             </div>
 
             <button @click="showNewModal = false" class="mt-8 w-full py-4 text-zinc-500 font-bold hover:text-white transition-colors">
@@ -186,6 +188,7 @@
                                 FALAR COM SUPORTE
                             </button>
                         </form>
+                        @if(!auth()->user()->hasRole('paciente'))
                         <form action="{{ route('messages.start') }}" method="POST">
                             @csrf
                             <input type="hidden" name="tipo" value="FINANCEIRO">
@@ -193,6 +196,7 @@
                                 FALAR COM FINANCEIRO
                             </button>
                         </form>
+                        @endif
                     </div>
                 </div>
             @endforelse

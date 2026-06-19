@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopesByTrainingPlanClinic;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ExerciseSet extends Model
 {
-    use HasFactory;
+    use HasFactory, ScopesByTrainingPlanClinic;
 
     protected $fillable = [
         'training_plan_exercise_id',

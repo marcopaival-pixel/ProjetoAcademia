@@ -85,6 +85,31 @@ class CommunityService
     }
 
     /**
+     * Verifica se o utilizador pode interagir com o post (mesmas regras do feed).
+     */
+    public function canUserAccessPost(User $user, CommunityPost $post): bool
+    {
+        if ($post->status !== 'approved') {
+            return (int) $post->user_id === (int) $user->id;
+        }
+
+        if ($post->visibility === 'public') {
+            return true;
+        }
+
+        if ($post->visibility === 'private') {
+            return (int) $post->user_id === (int) $user->id;
+        }
+
+        if ($post->visibility === 'clinic') {
+            return (int) $post->user_id === (int) $user->id
+                || ((int) $post->academy_company_id === (int) $user->academy_company_id && $user->academy_company_id);
+        }
+
+        return false;
+    }
+
+    /**
      * Get feed posts based on user context.
      */
     public function getFeed(User $user, int $perPage = 10)

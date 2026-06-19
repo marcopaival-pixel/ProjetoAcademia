@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AiUsage extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $table = 'ai_usage';
 
     protected $fillable = [

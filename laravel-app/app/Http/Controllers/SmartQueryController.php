@@ -58,9 +58,10 @@ class SmartQueryController extends Controller
         // 2. Se não encontrar ou forçado, chamar o Orquestrador
         $aiResponse = $this->orchestrator->run(Auth::user(), $pergunta, [
             'modulo' => $modulo,
-            'categoria' => $categoria
-        ]); 
- 
+            'categoria' => $categoria,
+            'source' => 'smart_query',
+            'feature_code' => 'ai_chat',
+        ]);
         if ($aiResponse['status'] !== 'success') {
             return response()->json([
                 'ok' => false,

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserPlan extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'user_id',
         'plan_id',

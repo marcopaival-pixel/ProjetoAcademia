@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class AiCreditWallet extends Model
 {
+    use Traits\BelongsToUserCompany;
+
     protected $fillable = [
         'user_id',
         'balance',

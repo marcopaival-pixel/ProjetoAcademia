@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\AiCreditWallet;
 use App\Models\AiCreditTransaction;
+use App\Models\AiCreditUsageLog;
 use App\Models\AiFeatureCost;
 use App\Models\AiCreditPackage;
 use App\Services\FinancialLogService;
@@ -105,6 +106,17 @@ class AiCreditService
                 'description' => "Consumo de IA: {$featureCost->feature_name}",
             ]);
 
+            AiCreditUsageLog::create([
+                'user_id' => $user->id,
+                'action_type' => $featureCode,
+                'credits_consumed' => $cost,
+                'metadata' => $metadata,
+                'response_cache_key' => $referenceId,
+            ]);
+
+            // Sincronizar coluna legada users.ai_credits com wallet
+            $user->forceFill(['ai_credits' => max(0, $wallet->balance)])->save();
+
             // Notificar se saldo estiver baixo
             $this->checkBalanceAndNotify($user);
 
@@ -147,13 +159,25 @@ class AiCreditService
     /**
      * Adiciona créditos extras (via compra ou bônus).
      */
-    public function addCredits(User $user, int $amount, string $type = 'purchase', string $description = 'Compra de créditos'): void
+    public function addCredits(User $user, int $amount, string $type = 'purchase', string $description = 'Compra de créditos', ?string $referenceId = null): void
     {
         $wallet = $this->getWallet($user);
 
-        DB::transaction(function () use ($user, $wallet, $amount, $type, $description) {
+        DB::transaction(function () use ($user, $wallet, $amount, $type, $description, $referenceId) {
+            if ($referenceId !== null) {
+                $exists = AiCreditTransaction::query()
+                    ->where('user_id', $user->id)
+                    ->where('type', $type)
+                    ->where('reference_id', $referenceId)
+                    ->exists();
+
+                if ($exists) {
+                    return;
+                }
+            }
+
             $balanceBefore = $wallet->balance;
-            
+
             $wallet->increment('extra_credits', $amount);
             $wallet->increment('balance', $amount);
             $wallet->save();
@@ -165,6 +189,7 @@ class AiCreditService
                 'balance_before' => $balanceBefore,
                 'balance_after' => $wallet->balance,
                 'description' => $description,
+                'reference_id' => $referenceId,
             ]);
         });
     }
@@ -208,5 +233,33 @@ class AiCreditService
     public function cacheResponse(string $cacheKey, string $response, int $ttlSeconds = 86400): void
     {
         Cache::put("ai_response_{$cacheKey}", $response, $ttlSeconds);
+    }
+
+    /**
+     * Gera chave de cache normalizada para uma pergunta + contexto.
+     */
+    public static function buildCacheKey(string $message, array $context = [], ?int $userId = null): string
+    {
+        $normalized = mb_strtolower(trim(preg_replace('/\s+/', ' ', $message)));
+        $intent = $context['intent'] ?? $context['resolved_intent'] ?? 'any';
+        $modulo = $context['modulo'] ?? 'geral';
+        $uid = $userId ?? ($context['user_id'] ?? 0);
+        $patientId = $context['patient_id'] ?? 0;
+        $clinicId = $context['clinic_id'] ?? $context['clinicId'] ?? 0;
+
+        return hash('sha256', "{$uid}|{$patientId}|{$clinicId}|{$modulo}|{$intent}|{$normalized}");
+    }
+
+    /**
+     * Respostas com histórico conversacional ou dados de terceiros não devem ser cacheadas.
+     */
+    public static function shouldSkipResponseCache(array $context): bool
+    {
+        return ! empty($context['chat_history'])
+            || ! empty($context['patient_id'])
+            || ! empty($context['image_path'])
+            || ! empty($context['image_base64'])
+            || ! empty($context['image_url'])
+            || ! empty($context['vision_data']);
     }
 }

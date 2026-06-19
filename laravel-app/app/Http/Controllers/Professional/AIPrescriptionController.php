@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Professional;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use OpenAI;
 
 use App\Models\Especialidade;
 use App\Models\PrescriptionTemplate;
@@ -14,6 +13,7 @@ use App\Models\MedicalPrescription;
 use App\Models\MedicalHistory;
 use App\Models\User;
 use App\Services\AI\OrchestratorService;
+use App\Support\PatientAccessGuard;
 
 class AIPrescriptionController extends Controller
 {
@@ -28,18 +28,18 @@ class AIPrescriptionController extends Controller
         $user = auth()->user();
         $user->load('academyCompany');
 
-        // Profissionais veem seus pacientes (que podem ter role 'aluno' ou 'paciente')
+        // Profissionais veem seus pacientes (que podem ter role 'paciente' ou 'paciente')
         if ($user->hasRole(['professional', 'instructor', 'supervisor'])) {
             $patients = $user->patients()
                 ->whereHas('roles', function($q) {
-                    $q->whereIn('name', ['aluno', 'paciente']);
+                    $q->whereIn('name', ['paciente', 'paciente']);
                 })
                 ->orderBy('name')
                 ->get();
         } else {
-            // Administradores veem todos os alunos e pacientes
+            // Administradores veem todos os pacientes e pacientes
             $patients = User::whereHas('roles', function($q) {
-                    $q->whereIn('name', ['aluno', 'paciente']);
+                    $q->whereIn('name', ['paciente', 'paciente']);
                 })
                 ->orderBy('name')
                 ->get();
@@ -82,15 +82,17 @@ class AIPrescriptionController extends Controller
             ], 403);
         }
 
-        $actionType = $request->type === 'training' ? 'generate_workout' : ($request->type === 'nutrition' ? 'generate_diet' : 'generate_report');
-        if (!$user->consumeAiCredit($actionType, ['patient_id' => $request->patient_id])) {
-            return response()->json([
-                'success' => false, 
-                'error' => 'Créditos insuficientes. Adquira mais créditos para continuar gerando prescrições inteligentes.'
-            ], 403);
-        }
+        $featureCode = match ($request->type) {
+            'training' => 'generate_workout',
+            'nutrition' => 'generate_diet',
+            default => 'generate_report',
+        };
 
-        $patient = User::with(['profile', 'assessments', 'loadLogs'])->findOrFail($request->patient_id);
+        $patient = PatientAccessGuard::assertProfessionalPatientLink(
+            $user,
+            (int) $request->patient_id
+        );
+        $patient->load(['profile', 'assessments', 'loadLogs']);
         $specialty = Especialidade::find($request->specialty_id);
         $profile = $patient->profile;
         $latestAss = $patient->assessments()->orderBy('assessment_date', 'desc')->first();
@@ -120,25 +122,34 @@ class AIPrescriptionController extends Controller
 
         $intent = $request->type === 'training' ? 'training' : ($request->type === 'nutrition' ? 'nutrition' : 'clinical');
 
-        $result = $this->orchestrator->run($user, $request->prompt ?? "Gere uma estratégia personalizada.", [
+        $result = $this->orchestrator->run($user, $request->prompt ?? 'Gere uma estratégia personalizada.', [
             'intent' => $intent,
             'patient_id' => $patient->id,
             'specialty' => $specialty->nome,
             'clinicId' => $user->academy_company_id,
-            'response_format' => 'json'
+            'clinic_id' => $user->clinic_id,
+            'feature_code' => $featureCode,
+            'response_format' => 'json',
         ]);
 
         if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
                 'data' => is_string($result['message']) ? json_decode($result['message'], true) : $result['message'],
-                'context' => $context
+                'context' => $context,
             ]);
         }
 
+        if ($result['status'] === 'limit_reached') {
+            return response()->json([
+                'success' => false,
+                'error' => $result['message'] ?? 'Créditos insuficientes.',
+            ], 403);
+        }
+
         return response()->json([
-            'success' => false, 
-            'error' => $result['error'] ?? 'Falha no motor de IA NexShape.'
+            'success' => false,
+            'error' => $result['error'] ?? 'Falha no motor de IA NexShape.',
         ], 500);
     }
 
@@ -161,6 +172,8 @@ class AIPrescriptionController extends Controller
         ]);
 
         $user = auth()->user();
+
+        PatientAccessGuard::assertProfessionalPatientLink($user, (int) $validated['patient_id']);
 
         $prescription = MedicalPrescription::create(array_merge($validated, [
             'professional_id' => $user->id,
@@ -213,3 +226,5 @@ class AIPrescriptionController extends Controller
         ];
     }
 }
+
+

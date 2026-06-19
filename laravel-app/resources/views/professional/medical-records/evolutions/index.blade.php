@@ -79,7 +79,7 @@
                     <i class="fas fa-notes-medical text-2xl"></i>
                 </div>
                 <h4 class="text-white font-bold mb-2">Nenhum atendimento registrado</h4>
-                <p class="text-zinc-500 text-sm">Inicie o acompanhamento clínico deste paciente registrando sua primeira evolução.</p>
+                <p class="text-zinc-500 text-sm">Inicie o acompanhamento clínico deste {{ mb_strtolower($patientLabel) }} registrando sua primeira evolução.</p>
             </div>
         @endforelse
 
@@ -114,7 +114,7 @@
         <div class="space-y-6">
             <div class="space-y-2">
                 <label class="text-xs font-bold text-zinc-400 uppercase">Queixa Principal</label>
-                <textarea name="chief_complaint" rows="2" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500" placeholder="O que trouxe o paciente hoje?"></textarea>
+                <textarea name="chief_complaint" rows="2" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500" placeholder="O que trouxe o {{ mb_strtolower($patientLabel) }} hoje?"></textarea>
             </div>
 
             <div class="space-y-2">
@@ -134,7 +134,7 @@
 
             <div class="space-y-2">
                 <label class="text-xs font-bold text-zinc-400 uppercase">Observações Internas</label>
-                <textarea name="observations" rows="2" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500" placeholder="Notas que não aparecem para o paciente (opcional)"></textarea>
+                <textarea name="observations" rows="2" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500" placeholder="Notas que não aparecem para o {{ mb_strtolower($patientLabel) }} (opcional)"></textarea>
             </div>
         </div>
 
@@ -149,3 +149,6 @@
     </form>
 </x-modal>
 @endsection
+
+
+

@@ -17,3 +17,33 @@ laravel-app/scratch/
 
 # Cache PHPStan (gerado localmente)
 laravel-app/storage/phpstan/
+
+# Legado / duplicados — removidos do repositório (manter só local se necessário)
+/php-app/
+/web/
+/governanca-ia/
+/Agentes/
+/laravel-app/Fabrica/
+/laravel-app/agentesprd/
+/templates/
+/Imagens/
+package-lock.json
+
+# Scripts e notas de dev local (não versionar)
+bug-hunter.txt
+gerar_pdf_funcionalidades.py
+setup_omni_standalone.php
+test_db.php
+test_chatbot_api.sh
+laravel-app/test_query*.php
+laravel-app/public/build.zip
+laravel-app/public/debug-bootstrap.php
+laravel-app/public/php_ok.php
+
+# Prompts e rascunhos de IA em docs (não versionar)
+docs/ETAPA*.txt
+docs/REALIZAR*.txt
+docs/Ajuste*.txt
+docs/Melhore*.txt
+docs/env.txt
+docs/simulacao-custo-ia-planos.csv

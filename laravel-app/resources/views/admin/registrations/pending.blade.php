@@ -38,18 +38,32 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 shrink-0">
-                    <form action="{{ route('admin.registrations.approve', $u) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20">
-                            <i class="fas fa-check mr-2"></i> Aceitar
-                        </button>
-                    </form>
+                    <button type="button"
+                        id="open-approve-{{ $u->id }}"
+                        class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20">
+                        <i class="fas fa-check mr-2"></i> Aceitar
+                    </button>
                     <button type="button"
                         id="open-reject-{{ $u->id }}"
                         class="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-red-600/80 border border-white/10 text-zinc-300 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all">
                         <i class="fas fa-times mr-2"></i> Não aceitar
                     </button>
                 </div>
+                </div>
+
+                <!-- Approve Modal -->
+                <div id="approve-modal-{{ $u->id }}" class="hidden fixed inset-0 z-[400] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm">
+                    <div class="bg-zinc-900 border border-emerald-500/20 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                        <h3 class="text-lg font-black text-white mb-2">Aprovar {{ $u->name }}</h3>
+                        <p class="text-zinc-500 text-xs mb-4">Tem a certeza que deseja aprovar este cadastro?</p>
+                        <form action="{{ route('admin.registrations.approve', $u) }}" method="POST" class="space-y-4">
+                            @csrf
+                            <div class="flex gap-3 justify-end mt-4">
+                                <button type="button" class="close-approve px-4 py-2 rounded-xl text-zinc-400 hover:text-white text-xs font-bold uppercase" data-close="{{ $u->id }}">Cancelar</button>
+                                <button type="submit" class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">Confirmar aprovação</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 <div id="reject-modal-{{ $u->id }}" class="hidden fixed inset-0 z-[400] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm">
@@ -84,11 +98,25 @@
 </div>
 
 <script>
+    document.querySelectorAll('[id^="open-approve-"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('id').replace('open-approve-', '');
+            var m = document.getElementById('approve-modal-' + id);
+            if (m) m.classList.remove('hidden');
+        });
+    });
     document.querySelectorAll('[id^="open-reject-"]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var id = btn.getAttribute('id').replace('open-reject-', '');
             var m = document.getElementById('reject-modal-' + id);
             if (m) m.classList.remove('hidden');
+        });
+    });
+    document.querySelectorAll('.close-approve').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-close');
+            var m = document.getElementById('approve-modal-' + id);
+            if (m) m.classList.add('hidden');
         });
     });
     document.querySelectorAll('.close-reject').forEach(function (btn) {
@@ -98,7 +126,7 @@
             if (m) m.classList.add('hidden');
         });
     });
-    document.querySelectorAll('[id^="reject-modal-"]').forEach(function (modal) {
+    document.querySelectorAll('[id^="approve-modal-"], [id^="reject-modal-"]').forEach(function (modal) {
         modal.addEventListener('click', function (e) {
             if (e.target === modal) modal.classList.add('hidden');
         });

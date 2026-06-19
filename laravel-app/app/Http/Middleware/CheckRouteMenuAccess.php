@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\MenuAccessService;
+use App\Services\PanelAccessService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,6 +31,11 @@ class CheckRouteMenuAccess
         }
 
         if (! $this->menuAccess->canAccessRoute($user, $routeName, $request)) {
+            $panelRedirect = app(PanelAccessService::class)->wrongPanelRedirect($request, $user);
+            if ($panelRedirect !== null) {
+                return $panelRedirect;
+            }
+
             abort(403, MenuAccessService::DENIED_MESSAGE);
         }
 

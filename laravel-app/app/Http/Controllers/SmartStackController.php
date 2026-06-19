@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\SmartStack;
 use App\Models\Supplement;
 use App\Services\AI\OrchestratorService;
+use App\Services\SupplementSuggestionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SmartStackController extends Controller
 {
     public function __construct(
-        private OrchestratorService $orchestrator
+        private OrchestratorService $orchestrator,
+        private SupplementSuggestionService $supplementSuggestion
     ) {}
 
     public function index()
@@ -88,25 +90,43 @@ class SmartStackController extends Controller
         return back()->with('success', 'Suplemento adicionado ao stack!');
     }
 
-    /**
     public function suggest(Request $request)
     {
         $user = auth()->user();
-        $result = $this->orchestrator->run($user, "Sugira um Smart Stack para: " . ($request->goal ?? 'geral'), [
+        $goal = $request->input('goal', 'geral');
+
+        if (! $request->boolean('force_ia')) {
+            $ruleResult = $this->supplementSuggestion->suggest((string) $goal);
+
+            return response()->json([
+                'success' => true,
+                'suggestion' => $ruleResult['suggestion'],
+                'message' => $ruleResult['message'],
+                'source' => 'rule_engine',
+            ]);
+        }
+
+        $result = $this->orchestrator->run($user, 'Sugira um Smart Stack para: '.$goal, [
             'intent' => 'nutrition',
             'type' => 'supplement_suggestion',
-            'clinicId' => $user->academy_company_id
+            'clinicId' => $user->academy_company_id,
+            'feature_code' => 'supplement_suggestion',
+            'force_ia' => true,
         ]);
 
         if ($result['status'] === 'success') {
-            return response()->json(['success' => true, 'suggestion' => $result['message']]);
+            return response()->json([
+                'success' => true,
+                'suggestion' => $result['message'],
+                'source' => 'ia',
+            ]);
         }
 
         return response()->json(['success' => false, 'error' => $result['error'] ?? 'Erro na sugestão.']);
     }
 
     /**
-     * Adota um stack sugerido pela IA.
+     * Adota um stack sugerido (regras ou IA).
      */
     public function adoptSuggestion(Request $request)
     {

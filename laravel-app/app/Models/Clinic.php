@@ -16,10 +16,21 @@ class Clinic extends Model
         'primary_color',
         'custom_domain',
         'is_active',
+        'representative_id',
+        'sale_date',
+        'plan_name',
+        'sale_status',
+        'commission_type',
+        'commission_value',
+        'representative_code_used',
+        'applied_discount_rate',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'sale_date' => 'date',
+        'commission_value' => 'decimal:2',
+        'applied_discount_rate' => 'decimal:2',
     ];
 
     /**
@@ -71,5 +82,13 @@ class Clinic extends Model
             return asset('storage/' . $this->logo_path);
         }
         return asset('images/default-clinic-logo.png');
+    }
+
+    /**
+     * Especialidades oferecidas pela clínica.
+     */
+    public function especialidades(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Especialidade::class, 'clinic_especialidade');
     }
 }

@@ -7,7 +7,8 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\AiCreditUsageLog;
 use App\Models\AiCreditPurchaseLog;
-use App\Models\MercadoPagoCredit;
+use App\Models\FinancialLog;
+use App\Services\FinancialMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -41,7 +42,8 @@ class AiCreditDashboardController extends Controller
             'total_sold' => AiCreditPurchaseLog::whereBetween('created_at', [$startDate, $endDate])->sum('credits_amount'),
             'total_consumed' => AiCreditUsageLog::whereBetween('created_at', [$startDate, $endDate])->sum('credits_consumed'),
             'available' => User::sum('ai_credits'),
-            'revenue' => MercadoPagoCredit::where('plan_code', 'ai_credits')
+            'revenue' => app(FinancialMetricsService::class)->aiCreditsRevenue($startDate, $endDate),
+            'legacy_mp_revenue' => \App\Models\MercadoPagoCredit::where('plan_code', 'ai_credits')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->sum('transaction_amount'),
             'active_users_ia' => User::where('ai_credits', '>', 0)->count(),
@@ -138,8 +140,8 @@ class AiCreditDashboardController extends Controller
             ? "strftime('{$format}', created_at)" 
             : "DATE_FORMAT(created_at, '{$format}')";
 
-        return MercadoPagoCredit::select(DB::raw("{$dateFunc} as date"), DB::raw('sum(transaction_amount) as total'))
-            ->where('plan_code', 'ai_credits')
+        return FinancialLog::select(DB::raw("{$dateFunc} as date"), DB::raw('sum(amount) as total'))
+            ->where('action', 'AI_CREDITS_PURCHASED')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date')

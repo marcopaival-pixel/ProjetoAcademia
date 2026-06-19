@@ -130,57 +130,90 @@
 
         <!-- ETAPA 3: Pagamento (Só visível se pagamentoAtivo) -->
         <template x-if="pagamentoAtivo">
-            <div x-show="currentStep === 3" x-transition.opacity.duration.400ms class="space-y-10">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button @click="formData.payment_method = 'credit_card'" 
-                            :class="formData.payment_method === 'credit_card' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-950/50'"
-                            class="p-6 rounded-3xl border flex flex-col items-center gap-4 group transition-all">
-                        <i data-lucide="credit-card" :class="formData.payment_method === 'credit_card' ? 'text-emerald-500' : 'text-zinc-600'" class="w-10 h-10 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[10px] font-black uppercase tracking-widest" :class="formData.payment_method === 'credit_card' ? 'text-white' : 'text-zinc-500'">Cartão</span>
-                    </button>
-                    <button @click="formData.payment_method = 'pix'" 
-                            :class="formData.payment_method === 'pix' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-950/50'"
-                            class="p-6 rounded-3xl border flex flex-col items-center gap-4 group transition-all">
-                        <i data-lucide="qr-code" :class="formData.payment_method === 'pix' ? 'text-emerald-500' : 'text-zinc-600'" class="w-10 h-10 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[10px] font-black uppercase tracking-widest" :class="formData.payment_method === 'pix' ? 'text-white' : 'text-zinc-500'">PIX</span>
-                    </button>
-                    <button @click="formData.payment_method = 'boleto'" 
-                            :class="formData.payment_method === 'boleto' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-950/50'"
-                            class="p-6 rounded-3xl border flex flex-col items-center gap-4 group transition-all opacity-50 cursor-not-allowed">
-                        <i data-lucide="barcode" class="w-10 h-10 text-zinc-600"></i>
-                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Boleto (Em breve)</span>
-                    </button>
-                </div>
+            <div x-show="currentStep === 3" x-transition.opacity.duration.400ms class="flex flex-col md:flex-row gap-10">
+                <!-- Coluna de Pagamento -->
+                <div class="w-full md:w-2/3 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button @click="formData.payment_method = 'credit_card'" 
+                                :class="formData.payment_method === 'credit_card' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-950/50'"
+                                class="p-6 rounded-3xl border flex flex-col items-center gap-4 group transition-all">
+                            <i data-lucide="credit-card" :class="formData.payment_method === 'credit_card' ? 'text-emerald-500' : 'text-zinc-600'" class="w-10 h-10 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="formData.payment_method === 'credit_card' ? 'text-white' : 'text-zinc-500'">Cartão</span>
+                        </button>
+                        <button @click="formData.payment_method = 'pix'" 
+                                :class="formData.payment_method === 'pix' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-950/50'"
+                                class="p-6 rounded-3xl border flex flex-col items-center gap-4 group transition-all">
+                            <i data-lucide="qr-code" :class="formData.payment_method === 'pix' ? 'text-emerald-500' : 'text-zinc-600'" class="w-10 h-10 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="formData.payment_method === 'pix' ? 'text-white' : 'text-zinc-500'">PIX</span>
+                        </button>
+                    </div>
 
-                <!-- Card Fields -->
-                <div x-show="formData.payment_method === 'credit_card'" x-transition class="space-y-6 pt-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-4 md:col-span-2">
-                            <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Número do Cartão</label>
-                            <input type="text" x-model="formData.card_number" placeholder="0000 0000 0000 0000"
-                                   class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
+                    <!-- Card Fields -->
+                    <div x-show="formData.payment_method === 'credit_card'" x-transition class="space-y-6 pt-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4 md:col-span-2">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Número do Cartão</label>
+                                <input type="text" x-model="formData.card_number" placeholder="0000 0000 0000 0000"
+                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
+                            </div>
+                            <div class="space-y-4 md:col-span-2">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nome Impresso</label>
+                                <input type="text" x-model="formData.card_name" placeholder="Como no cartão"
+                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none uppercase">
+                            </div>
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Validade (MM/AA)</label>
+                                <input type="text" x-model="formData.card_expiry" placeholder="MM/AA"
+                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
+                            </div>
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">CVV</label>
+                                <input type="text" x-model="formData.card_cvv" placeholder="123"
+                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
+                            </div>
                         </div>
-                        <div class="space-y-4 md:col-span-2">
-                            <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nome Impresso</label>
-                            <input type="text" x-model="formData.card_name" placeholder="Como no cartão"
-                                   class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none uppercase">
-                        </div>
-                        <div class="space-y-4">
-                            <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Validade (MM/AA)</label>
-                            <input type="text" x-model="formData.card_expiry" placeholder="MM/AA"
-                                   class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
-                        </div>
-                        <div class="space-y-4">
-                            <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">CVV</label>
-                            <input type="text" x-model="formData.card_cvv" placeholder="123"
-                                   class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
-                        </div>
+                    </div>
+
+                    <div class="flex gap-4 pt-6">
+                        <button @click="prevStep()" class="flex-1 py-6 bg-zinc-950 border border-zinc-800 text-zinc-500 font-black rounded-3xl hover:text-white transition-all text-sm tracking-widest uppercase italic">Voltar</button>
+                        <button @click="nextStep()" class="flex-[2] py-6 bg-white text-zinc-950 font-black rounded-3xl hover:bg-emerald-500 transition-all active:scale-95 shadow-2xl text-sm tracking-widest uppercase italic">Revisar Assinatura</button>
                     </div>
                 </div>
 
-                <div class="flex gap-4">
-                    <button @click="prevStep()" class="flex-1 py-6 bg-zinc-950 border border-zinc-800 text-zinc-500 font-black rounded-3xl hover:text-white transition-all text-sm tracking-widest uppercase italic">Voltar</button>
-                    <button @click="nextStep()" class="flex-[2] py-6 bg-white text-zinc-950 font-black rounded-3xl hover:bg-emerald-500 transition-all active:scale-95 shadow-2xl text-sm tracking-widest uppercase italic">Revisar Assinatura</button>
+                <!-- Coluna de Side Summary -->
+                <div class="w-full md:w-1/3 space-y-6">
+                    <!-- Resumo do Plano -->
+                    <div class="bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800 space-y-4">
+                        <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic border-b border-zinc-800 pb-3">Resumo da Assinatura</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-white font-medium italic">{{ $plan->name }}</span>
+                                <span class="text-emerald-500 font-black">R$ {{ number_format($plan->price, 2, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        <ul class="pt-2 space-y-2">
+                            @foreach($plan->planFeatures->take(4) as $feature)
+                            <li class="flex items-center gap-2 text-zinc-500 text-[11px] font-medium italic">
+                                <i data-lucide="check" class="w-3 h-3 text-emerald-500"></i>
+                                {{ str_replace('_', ' ', ucfirst($feature->feature_key)) }}
+                            </li>
+                            @endforeach
+                        </ul>
+                    </div>
+
+                    <!-- Garantia -->
+                    <div class="bg-emerald-500/10 p-6 rounded-3xl border border-emerald-500/20 text-center space-y-3">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-emerald-500 mx-auto"></i>
+                        <h4 class="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Garantia de 7 Dias</h4>
+                        <p class="text-emerald-500/70 text-[11px] font-medium italic">Risco zero. Cancele e receba seu dinheiro de volta em até 7 dias, sem perguntas.</p>
+                    </div>
+
+                    <!-- Depoimento Reforço -->
+                    <div class="bg-zinc-950 p-6 rounded-3xl border border-zinc-800 relative">
+                        <div class="text-emerald-500/20 absolute top-4 left-4"><i data-lucide="quote" class="w-6 h-6"></i></div>
+                        <p class="text-zinc-400 text-xs italic mt-6 leading-relaxed font-medium">"O investimento se pagou na primeira semana com o aumento da retenção dos meus alunos. Sistema fantástico!"</p>
+                        <p class="text-zinc-600 text-[9px] font-black uppercase mt-3 tracking-widest">- Marcos Paulo, Personal</p>
+                    </div>
                 </div>
             </div>
         </template>

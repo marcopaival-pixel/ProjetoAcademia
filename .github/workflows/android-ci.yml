@@ -1,0 +1,43 @@
+# Compila o app Android (debug + lint) quando android-app/ muda.
+
+name: Android CI
+
+on:
+  push:
+    branches: [main, MAPL_0004]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-ci.yml"
+  pull_request:
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-ci.yml"
+
+defaults:
+  run:
+    working-directory: android-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Lint debug
+        run: ./gradlew :app:lintDebug --no-daemon

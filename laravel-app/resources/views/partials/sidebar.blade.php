@@ -226,11 +226,11 @@
                     class="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-zinc-900/30 border border-white/5 hover:bg-zinc-900 hover:border-emerald-500/20 transition-all group">
                 
                 <div class="relative shrink-0">
-                    <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-zinc-800 group-hover:border-{{ $isClinica ? 'blue-500' : 'emerald-500' }}/50 transition-all shadow-lg">
-                        <img src="{{ auth()->user()?->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()?->name ?? 'User').'&color='.($isClinica ? '3b82f6' : '10b981').'&background=09090b&bold=true' }}" 
+                    <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-zinc-800 group-hover:border-{{ ($isClinica || (auth()->user() && auth()->user()->hasRole('paciente'))) ? 'blue-500' : 'emerald-500' }}/50 transition-all shadow-lg">
+                        <img src="{{ auth()->user()?->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()?->name ?? 'User').'&color='.(($isClinica || (auth()->user() && auth()->user()->hasRole('paciente'))) ? '3b82f6' : '10b981').'&background=09090b&bold=true' }}" 
                              alt="Avatar" class="w-full h-full object-cover">
                     </div>
-                    <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 {{ $isClinica ? 'bg-blue-500' : 'bg-emerald-500' }} border-4 border-zinc-950 rounded-full shadow-lg"></span>
+                    <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 {{ ($isClinica || (auth()->user() && auth()->user()->hasRole('paciente'))) ? 'bg-blue-500' : 'bg-emerald-500' }} border-4 border-zinc-950 rounded-full shadow-lg"></span>
                 </div>
 
                 <div class="flex-1 min-w-0 text-left">
@@ -258,7 +258,16 @@
                     <p class="text-[8px] text-zinc-600 font-bold uppercase tracking-[0.2em] mt-1">{{ auth()->user()?->email }}</p>
                 </div>
 
-                <a href="{{ route('profile') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-900 hover:text-white transition-all group">
+                @php
+                    $profileRoute = route('profile');
+                    if (session('active_role') === 'professional' || session('active_role') === 'instructor' || session('active_role') === 'manager') {
+                        $profileRoute = route('professional.profile.edit');
+                    } elseif (session('active_role') === 'representative') {
+                        $profileRoute = route('representative.profile.index');
+                    }
+                @endphp
+
+                <a href="{{ $profileRoute }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-900 hover:text-white transition-all group">
                     <i data-lucide="user" class="w-4 h-4 group-hover:text-{{ $isClinica ? 'blue-500' : 'emerald-500' }}"></i>
                     Meu Perfil
                 </a>
@@ -274,6 +283,46 @@
                             <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ session('active_role') == $role->name ? ($isClinica ? 'bg-blue-600 text-white shadow-lg' : 'bg-emerald-500 text-zinc-950 shadow-lg') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
                                 {{ $role->label }}
                                 @if(session('active_role') == $role->name)
+                                    <i data-lucide="check" class="w-3 h-3"></i>
+                                @endif
+                            </button>
+                        </form>
+                    @endforeach
+                @endif
+
+                @php
+                    $profile = auth()->user()->professionalProfile;
+                    $secondarySpecialties = $profile ? $profile->especialidades : collect();
+                @endphp
+
+                @if(session('active_role') === 'professional' && $profile && $secondarySpecialties->count() > 0)
+                    <div class="px-4 py-2 mt-2 mb-1 border-t border-zinc-900/50 pt-3">
+                        <span class="text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em]">Contexto Profissional</span>
+                    </div>
+                    
+                    {{-- Especialidade Principal --}}
+                    @php $mainSpec = $profile->especialidade; @endphp
+                    @if($mainSpec)
+                        <form action="{{ route('profile.switch-specialty') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="especialidade_id" value="{{ $mainSpec->id }}">
+                            <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ (!session('active_specialty_id') || session('active_specialty_id') == $mainSpec->id) ? ($isClinica ? 'bg-blue-600 text-white shadow-lg' : 'bg-emerald-500 text-zinc-950 shadow-lg') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
+                                {{ $mainSpec->name }}
+                                @if(!session('active_specialty_id') || session('active_specialty_id') == $mainSpec->id)
+                                    <i data-lucide="check" class="w-3 h-3"></i>
+                                @endif
+                            </button>
+                        </form>
+                    @endif
+
+                    {{-- Especialidades Secundárias --}}
+                    @foreach($secondarySpecialties as $spec)
+                        <form action="{{ route('profile.switch-specialty') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="especialidade_id" value="{{ $spec->id }}">
+                            <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ session('active_specialty_id') == $spec->id ? ($isClinica ? 'bg-blue-600 text-white shadow-lg' : 'bg-emerald-500 text-zinc-950 shadow-lg') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
+                                {{ $spec->name }}
+                                @if(session('active_specialty_id') == $spec->id)
                                     <i data-lucide="check" class="w-3 h-3"></i>
                                 @endif
                             </button>

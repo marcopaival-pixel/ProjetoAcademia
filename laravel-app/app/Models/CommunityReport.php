@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CommunityReport extends Model
 {
+    use Traits\BelongsToScopedParent;
     protected $fillable = [
         'post_id',
         'user_id',

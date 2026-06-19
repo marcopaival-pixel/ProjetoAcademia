@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\PanelAccessService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,7 +28,12 @@ class CheckPermission
             return redirect()->route('login')->with('error', 'Sua conta está bloqueada.');
         }
 
-        if (!$user->hasPermission($permission)) {
+        if (! $user->hasPermission($permission)) {
+            $panelRedirect = app(PanelAccessService::class)->wrongPanelRedirect($request, $user);
+            if ($panelRedirect !== null) {
+                return $panelRedirect;
+            }
+
             abort(403, 'Acesso não autorizado para esta funcionalidade.');
         }
 

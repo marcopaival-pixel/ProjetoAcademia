@@ -27,10 +27,10 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div class="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
             <div class="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/5 blur-[60px] rounded-full"></div>
-            <span class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] block mb-4">Total de Alunos (Unidade)</span>
+            <span class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] block mb-4">Total de {{ $patientsLabel }} (Unidade)</span>
             <div class="flex items-baseline gap-2">
                 <span class="text-6xl font-black text-white italic tracking-tighter tabular-nums">{{ $data['total_company_patients'] }}</span>
-                <span class="text-sm font-black text-emerald-500 uppercase tracking-widest italic">Pacientes Ativos</span>
+                <span class="text-sm font-black text-emerald-500 uppercase tracking-widest italic">{{ $patientsLabel }} Ativos</span>
             </div>
         </div>
 
@@ -56,7 +56,7 @@
                 <thead>
                     <tr class="bg-zinc-950/50">
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Profissional</th>
-                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Base de Alunos</th>
+                        <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Base de {{ $patientsLabel }}</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-center">Score de Atividade (7d)</th>
                         <th class="py-6 px-10 text-[10px] font-black text-zinc-700 uppercase tracking-widest text-right">Status</th>
                     </tr>
@@ -115,3 +115,6 @@
     }
 </style>
 @endsection
+
+
+

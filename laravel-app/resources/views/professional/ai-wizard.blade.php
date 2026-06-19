@@ -59,13 +59,13 @@
                 <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                 
                 <div class="space-y-8 relative z-10">
-                    <!-- Paciente -->
+                    <!-- {{ $patientLabel }} -->
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 px-2">Paciente Selecionado</label>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 px-2">{{ $patientLabel }} Selecionado</label>
                         <select id="patient-id" class="w-full bg-zinc-950/50 border border-white/5 rounded-[1.5rem] px-5 py-4 text-white text-sm font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all appearance-none cursor-pointer" onchange="loadPatientHistory()">
-                            <option value="">Selecione um paciente...</option>
+                            <option value="">Selecione um {{ mb_strtolower($patientLabel) }}...</option>
                             @foreach($patients as $patient)
-                                <option value="{{ $patient->id }}">{{ $patient->name }}</option>
+                                <option value="{{ $patient->id }}" {{ (isset($activePatient) && $activePatient->id == $patient->id) ? 'selected' : '' }}>{{ $patient->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -171,7 +171,7 @@
                     <svg class="w-10 h-10 text-zinc-700 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.341A8 8 0 1120.283 5.693L20.5 8.5M12 12V3"></path></svg>
                 </div>
                 <h3 class="text-zinc-400 font-black text-2xl uppercase tracking-tighter">Assistente Aguardando</h3>
-                <p class="text-zinc-600 font-bold max-w-sm mt-4 uppercase text-[10px] tracking-widest leading-relaxed">Selecione o paciente e a especialidade. O motor NexShape AI irá consolidar protocolos e sugerir a melhor conduta.</p>
+                <p class="text-zinc-600 font-bold max-w-sm mt-4 uppercase text-[10px] tracking-widest leading-relaxed">Selecione o {{ mb_strtolower($patientLabel) }} e a especialidade. O motor NexShape AI irá consolidar protocolos e sugerir a melhor conduta.</p>
             </div>
 
             <div id="result-state" class="hidden space-y-10 animate-scale-up">
@@ -320,7 +320,7 @@
         const patientId = document.getElementById('patient-id').value;
         const specialtyId = document.getElementById('specialty-id').value;
 
-        if (!patientId) return alert('Por favor, selecione um paciente.');
+        if (!patientId) return alert('Por favor, selecione um {{ mb_strtolower($patientLabel) }}.');
         if (!specialtyId) return alert('Por favor, selecione a especialidade.');
         if (!prompt) return alert('Por favor, descreva o objetivo.');
 
@@ -478,6 +478,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         filterTemplatesBySpecialty();
         filterProtocolsByType();
+        
+        // Auto-load history if patient is pre-selected (via Active Patient)
+        if (document.getElementById('patient-id').value) {
+            loadPatientHistory();
+        }
     });
 
     function applyClinicProtocol() {
@@ -522,3 +527,6 @@
     }
 </style>
 @endsection
+
+
+

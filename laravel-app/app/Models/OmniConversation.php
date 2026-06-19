@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToOmniCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OmniConversation extends Model
 {
+    use BelongsToOmniCompany;
     protected $fillable = [
         'company_id', 'channel_id', 'customer_external_id', 
         'customer_name', 'agent_id', 'queue_id', 'status', 'last_message_at'

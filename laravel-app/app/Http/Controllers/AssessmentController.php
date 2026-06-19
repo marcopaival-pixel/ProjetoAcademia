@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BodyAssessment;
 use App\Services\Nutrition;
+use App\Support\PatientAccessGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -16,7 +17,15 @@ class AssessmentController extends Controller
         $isPremium = $user->hasPremiumAccess();
         $tab = $request->get('tab', 'dashboard');
         
-        $query = BodyAssessment::where('user_id', $user->id)
+        $targetUserId = $user->id;
+        if ($user->isProfessional()) {
+            $activePatientId = PatientAccessGuard::resolveActivePatientId($user);
+            if ($activePatientId) {
+                $targetUserId = $activePatientId;
+            }
+        }
+
+        $query = BodyAssessment::where('user_id', $targetUserId)
             ->orderBy('assessment_date', 'desc');
 
         if (!$isPremium) {
@@ -26,7 +35,7 @@ class AssessmentController extends Controller
         }
 
         // Dados para o gráfico de evolução (unindo pesos avulsos e avaliações)
-        $weightEntries = \App\Models\WeightEntry::where('user_id', $user->id)
+        $weightEntries = \App\Models\WeightEntry::where('user_id', $targetUserId)
             ->orderBy('weighed_at', 'asc')
             ->get();
 
@@ -35,24 +44,36 @@ class AssessmentController extends Controller
             'weight' => $e->weight_kg
         ]);
 
-        return view('assessments.index', compact('assessments', 'tab', 'chartData', 'isPremium'));
+        $targetUser = \App\Models\User::find($targetUserId);
+
+        return view('assessments.index', compact('assessments', 'tab', 'chartData', 'isPremium', 'targetUser'));
     }
 
     public function create(): View
     {
         $user = Auth::user();
-        $maxAssessments = $user->getPlanLimit('max_assessments');
+        
+        $targetUserId = $user->id;
+        if ($user->isProfessional()) {
+            $activePatientId = PatientAccessGuard::resolveActivePatientId($user);
+            if ($activePatientId) {
+                $targetUserId = $activePatientId;
+            }
+        }
+        
+        $targetUser = \App\Models\User::findOrFail($targetUserId);
+        $maxAssessments = $targetUser->getPlanLimit('max_assessments');
         
         if ($maxAssessments > 0) {
-            $count = BodyAssessment::where('user_id', $user->id)->count();
+            $count = BodyAssessment::where('user_id', $targetUserId)->count();
             if ($count >= $maxAssessments) {
                 return redirect()->route('assessments.index')
-                    ->with('error', "Você atingiu o limite de {$maxAssessments} avaliações no seu plano. Faça upgrade para continuar evoluindo!");
+                    ->with('error', "O limite de {$maxAssessments} avaliações do plano foi atingido. Faça upgrade para continuar evoluindo!");
             }
         }
 
-        $professionals = $user->professionals;
-        return view('assessments.create', compact('professionals'));
+        $professionals = $user->professionals; // Para os pacientes escolherem enviar
+        return view('assessments.create', compact('professionals', 'targetUser'));
     }
 
     public function store(Request $request)
@@ -96,15 +117,20 @@ class AssessmentController extends Controller
         $patientId = Auth::id();
         $isProfessional = Auth::user()->hasRole(['professional', 'instructor', 'supervisor']);
         
-        if ($isProfessional && $request->filled('patient_id')) {
-            // Verifica se o profissional tem vínculo com o paciente
-            if (Auth::user()->patients()->wherePivot('user_id', $request->patient_id)->exists()) {
-                $patientId = $request->patient_id;
-                $data['created_by'] = 'professional';
-                $data['professional_id'] = Auth::id();
-                $data['status'] = 'approved';
+        if ($isProfessional) {
+            if (session()->has('active_patient_id')) {
+                $activePatientId = session('active_patient_id');
+                // Verifica se o profissional tem vínculo com o paciente
+                if (Auth::user()->patients()->wherePivot('user_id', $activePatientId)->exists()) {
+                    $patientId = $activePatientId;
+                    $data['created_by'] = 'professional';
+                    $data['professional_id'] = Auth::id();
+                    $data['status'] = 'approved';
+                } else {
+                    return back()->with('error', 'Acesso negado a este paciente.');
+                }
             } else {
-                return back()->with('error', 'Acesso negado a este paciente.');
+                return back()->with('error', 'Selecione um paciente para registrar a avaliação.');
             }
         } else {
             if (!empty($data['professional_id'])) {
@@ -195,8 +221,8 @@ class AssessmentController extends Controller
             }
         }
 
-        if ($isProfessional && $request->filled('patient_id')) {
-            return redirect()->route('professional.patients.show', $patientId)->with('success', 'Avaliação física e análise inteligente registradas!');
+        if ($isProfessional) {
+            return redirect()->route('assessments.index')->with('success', 'Avaliação física e análise inteligente registradas!');
         }
 
         return redirect()->route('assessments.index')->with('success', 'Avaliação registrada! Seu Score de Saúde foi atualizado para ' . $healthScore . '%.');
@@ -207,9 +233,14 @@ class AssessmentController extends Controller
         $user = Auth::user();
         $isPremium = $user->hasPremiumAccess();
 
+        $targetUserId = $user->id;
+        if ($user->isProfessional() && session()->has('active_patient_id')) {
+            $targetUserId = session('active_patient_id');
+        }
+
         // Se não for premium, só pode ver a última
         if (!$isPremium) {
-            $latestId = BodyAssessment::where('user_id', $user->id)
+            $latestId = BodyAssessment::where('user_id', $targetUserId)
                 ->latest('assessment_date')
                 ->latest('id')
                 ->value('id');
@@ -220,7 +251,7 @@ class AssessmentController extends Controller
             }
         }
 
-        if ($assessment->user_id !== $user->id && !Auth::user()->hasRole(['professional', 'admin'])) abort(403);
+        $this->authorize('view', $assessment);
 
         $motor = app(\App\Services\IntelligenceMotorService::class);
         $owner = \App\Models\User::find($assessment->user_id);
@@ -236,10 +267,16 @@ class AssessmentController extends Controller
     public function destroy(BodyAssessment $assessment)
     {
         $user = Auth::user();
-        if ($assessment->user_id !== $user->id) abort(403);
+        
+        $targetUserId = $user->id;
+        if ($user->isProfessional() && session()->has('active_patient_id')) {
+            $targetUserId = session('active_patient_id');
+        }
+
+        $this->authorize('delete', $assessment);
 
         if (!$user->hasPremiumAccess()) {
-             $latestId = BodyAssessment::where('user_id', $user->id)
+             $latestId = BodyAssessment::where('user_id', $targetUserId)
                 ->latest('assessment_date')
                 ->latest('id')
                 ->value('id');

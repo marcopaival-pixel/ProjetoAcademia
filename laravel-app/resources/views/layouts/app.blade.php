@@ -27,6 +27,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="api-base" content="{{ url('/api/v1') }}">
     <meta name="theme-color" content="#080a0f">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap">
@@ -50,7 +51,9 @@
     $user = auth()->user();
     $experienceClass = 'experience-aluno'; // Default
     
+    $isPatientWidget = false;
     if ($user) {
+        $isPatientWidget = ($user->hasRole('paciente') && (!$activeRole || $activeRole === 'paciente'));
         if ($activeRole === 'professional' || ($user->hasRole(['professional', 'instructor', 'manager', 'receptionist', 'supervisor']) && !$activeRole)) {
             $experienceClass = 'experience-clinica';
         } elseif ($activeRole === 'paciente' || ($user->hasRole('paciente') && !$activeRole)) {
@@ -120,6 +123,10 @@
 
             <div class="main-area">
                 @include('partials.topbar')
+
+                @if(request()->is('professional*'))
+                    @include('partials.active-patient-bar')
+                @endif
 
                 @php($activeAnnouncements = \App\Models\Announcement::active())
                 @foreach($activeAnnouncements as $announcement)
@@ -482,7 +489,10 @@
     @if(auth()->check())
         @include('partials.onboarding_modal')
         @include('partials.ai-credits-modal')
-        @include('partials.omnichat-widget')
+        
+        @if($activeRole !== 'representative' && !$isPatientWidget)
+            @include('partials.omnichat-widget')
+        @endif
         @include('partials.community-post-modal')
     @endif
     @include('partials.confirm-delete-modal')
@@ -493,7 +503,7 @@
     <x-demo-badge />
 
     <!-- Global AI Brand Orbit (Senior Design Touch) -->
-    @if($loggedIn && !request()->routeIs('home'))
+    @if($loggedIn && !request()->routeIs('home') && $activeRole !== 'representative' && !$isPatientWidget)
     <div class="fixed bottom-8 right-8 z-[100] pointer-events-none select-none opacity-40 hover:opacity-100 transition-opacity duration-700 hidden lg:block">
         <div class="relative flex items-center justify-center w-32 h-32">
             <!-- Center Symbol -->

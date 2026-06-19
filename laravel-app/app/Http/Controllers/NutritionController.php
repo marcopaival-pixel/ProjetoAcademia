@@ -193,11 +193,30 @@ class NutritionController extends Controller
         return back()->with('success', 'Estratégia nutricional atualizada com sucesso!');
     }
 
-    public function weeklyAudit(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
-    {
+    public function weeklyAudit(
+        Request $request,
+        \App\Services\NutritionInsightService $insightService,
+        \App\Services\AI\OrchestratorService $orchestrator
+    ) {
         $user = $request->user();
+
+        if (! $request->boolean('force_ia')) {
+            $ruleResult = $insightService->weeklyAudit($user);
+            if (! ($ruleResult['ok'] ?? false)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $ruleResult['error'] ?? 'Falha na auditoria.',
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'audit' => $ruleResult['message'],
+                'source' => 'rule_engine',
+            ]);
+        }
+
         $profile = UserProfile::where('user_id', $user->id)->first();
-        
         $history = FoodEntry::where('user_id', $user->id)
             ->where('entry_date', '>=', now()->subDays(7)->format('Y-m-d'))
             ->selectRaw('entry_date, SUM(calories) as cal, SUM(protein_g) as p, SUM(carbs_g) as c, SUM(fat_g) as f, GROUP_CONCAT(food_name) as foods')
@@ -208,43 +227,49 @@ class NutritionController extends Controller
         if ($history->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'error' => 'Você precisa registrar pelo menos alguns dias de alimentação para uma auditoria.'
+                'error' => 'Você precisa registrar pelo menos alguns dias de alimentação para uma auditoria.',
             ], 400);
         }
 
-        $summary = $history->map(fn($d) => [
+        $summary = $history->map(fn ($d) => [
             'data' => $d->entry_date,
             'kcal' => $d->cal,
             'macros' => "P:{$d->p}g, C:{$d->c}g, F:{$d->f}g",
-            'alimentos' => $d->foods
+            'alimentos' => $d->foods,
         ])->toArray();
 
-        $prompt = "Analise meus últimos 7 dias de alimentação: " . json_encode($summary) . ". Meu objetivo é: " . ($profile->goal ?? 'manutenção') . ".";
+        $prompt = 'Analise meus últimos 7 dias de alimentação: '.json_encode($summary).'. Meu objetivo é: '.($profile->goal ?? 'manutenção').'.';
 
         $result = $orchestrator->run($user, $prompt, [
             'intent' => 'nutrition',
             'type' => 'weekly_audit',
-            'clinicId' => $user->academy_company_id
+            'clinicId' => $user->academy_company_id,
+            'feature_code' => 'diet_audit',
+            'force_ia' => true,
         ]);
 
         if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
-                'audit' => $result['message']
+                'audit' => $result['message'],
+                'source' => 'ia',
             ]);
         }
 
         return response()->json(['success' => false, 'error' => $result['error'] ?? 'Falha na auditoria.'], 500);
     }
 
-    public function suggestMeal(Request $request, \App\Services\AI\OrchestratorService $orchestrator)
-    {
+    public function suggestMeal(
+        Request $request,
+        \App\Services\MealSuggestionService $mealSuggestion,
+        \App\Services\AI\OrchestratorService $orchestrator
+    ) {
         $user = $request->user();
         $profile = UserProfile::where('user_id', $user->id)->first();
-        
+
         $targetKcal = $profile->daily_calorie_target ?? 2000;
         $macroTargets = Nutrition::macroTargetsForDisplay($user->hasPremiumAccess(), $profile->toArray());
-        
+
         $todaySums = FoodEntry::where('user_id', $user->id)
             ->where('entry_date', now()->format('Y-m-d'))
             ->selectRaw('SUM(calories) as cal, SUM(protein_g) as p, SUM(carbs_g) as c, SUM(fat_g) as f')
@@ -257,26 +282,47 @@ class NutritionController extends Controller
             'remaining_f' => max(($macroTargets['f'] ?? 0) - ($todaySums->f ?? 0), 0),
         ];
 
-        $prompt = "Sugira UMA refeição baseada nos meus macros restantes: " . json_encode($remaining);
+        if (! $request->boolean('force_ia')) {
+            $ruleResult = $mealSuggestion->suggest($user, $remaining);
+            if (! ($ruleResult['ok'] ?? false)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $ruleResult['error'] ?? 'Não foi possível gerar a sugestão.',
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'suggestion' => $ruleResult['message'],
+                'remaining' => $remaining,
+                'metrics' => $ruleResult['metrics'] ?? null,
+                'source' => 'rule_engine',
+            ]);
+        }
+
+        $prompt = 'Sugira UMA refeição baseada nos meus macros restantes: '.json_encode($remaining);
 
         $result = $orchestrator->run($user, $prompt, [
             'intent' => 'nutrition',
             'type' => 'meal_suggestion',
             'clinicId' => $user->academy_company_id,
-            'remaining' => $remaining
+            'remaining' => $remaining,
+            'feature_code' => 'meal_suggestion',
+            'force_ia' => true,
         ]);
 
         if ($result['status'] === 'success') {
             return response()->json([
                 'success' => true,
                 'suggestion' => $result['message'],
-                'remaining' => $remaining 
+                'remaining' => $remaining,
+                'source' => 'ia',
             ]);
         }
 
         return response()->json([
             'success' => false,
-            'error' => $result['error'] ?? 'Não foi possível gerar a sugestão.'
+            'error' => $result['error'] ?? 'Não foi possível gerar a sugestão.',
         ], 500);
     }
 
@@ -408,7 +454,9 @@ class NutritionController extends Controller
         $result = $orchestrator->run($user, $prompt, [
             'intent' => 'nutrition',
             'type' => 'nlp_registry',
-            'clinicId' => $user->academy_company_id
+            'clinicId' => $user->academy_company_id,
+            'clinic_id' => $user->clinic_id,
+            'feature_code' => 'meal_suggestion',
         ]);
 
         if ($result['status'] === 'success') {
@@ -427,13 +475,16 @@ class NutritionController extends Controller
         $user = $request->user();
         $request->validate(['photo' => 'required|image|max:5120']);
 
-        $prompt = "Analise esta foto de um prato de comida. Identifique os alimentos e estime os macros.";
+        $prompt = 'Analise esta foto de um prato de comida. Identifique os alimentos e estime os macros.';
+        $storedPath = $request->file('photo')->store('nutrition_temp', 'public');
 
         $result = $orchestrator->run($user, $prompt, [
-            'intent' => 'nutrition',
+            'intent' => 'meal_photo',
             'type' => 'photo_analysis',
             'clinicId' => $user->academy_company_id,
-            'photo_url' => asset('storage/' . $request->file('photo')->store('nutrition_temp', 'public'))
+            'clinic_id' => $user->clinic_id,
+            'feature_code' => 'analyze_body_photo',
+            'image_path' => storage_path('app/public/'.$storedPath),
         ]);
 
         if ($result['status'] === 'success') {

@@ -27,6 +27,7 @@
                     <x-premium-input label="Gordura (BF %)" name="bf_percent" type="number" step="0.1" placeholder="0" icon="percent" />
                     <x-premium-input label="Músculo (%)" name="muscle_percent" type="number" step="0.1" placeholder="0" icon="activity" />
                     
+                    @if(!auth()->user()->isProfessional())
                     <div class="md:col-span-2">
                         <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Enviar para Profissional</label>
                         <select name="professional_id" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none">
@@ -36,6 +37,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
                     <x-premium-input label="Pressão Arterial" name="blood_pressure" placeholder="120/80" icon="heart" />
                     <x-premium-input label="Freq. Cardíaca (bpm)" name="heart_rate" type="number" placeholder="70" icon="zap" />
                 </div>
@@ -106,29 +108,29 @@
 
             <x-premium-card title="Objetivos e Rotina" icon="target" iconColor="emerald">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <x-premium-input label="Peso Desejado (kg)" name="target_weight_kg" type="number" step="0.1" value="{{ auth()->user()->profile->target_weight_kg ?? '' }}" icon="target" />
+                    <x-premium-input label="Peso Desejado (kg)" name="target_weight_kg" type="number" step="0.1" value="{{ $targetUser->profile->target_weight_kg ?? '' }}" icon="target" />
                     
                     <div>
                         <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Nível Físico</label>
                         <select name="physical_level" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none">
-                            <option value="beginner" {{ (auth()->user()->profile->physical_level ?? '') == 'beginner' ? 'selected' : '' }}>Iniciante</option>
-                            <option value="intermediate" {{ (auth()->user()->profile->physical_level ?? '') == 'intermediate' ? 'selected' : '' }}>Intermediário</option>
-                            <option value="advanced" {{ (auth()->user()->profile->physical_level ?? '') == 'advanced' ? 'selected' : '' }}>Avançado</option>
+                            <option value="beginner" {{ ($targetUser->profile->physical_level ?? '') == 'beginner' ? 'selected' : '' }}>Iniciante</option>
+                            <option value="intermediate" {{ ($targetUser->profile->physical_level ?? '') == 'intermediate' ? 'selected' : '' }}>Intermediário</option>
+                            <option value="advanced" {{ ($targetUser->profile->physical_level ?? '') == 'advanced' ? 'selected' : '' }}>Avançado</option>
                         </select>
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Local de Treino</label>
                         <select name="training_location" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none">
-                            <option value="gym" {{ (auth()->user()->profile->training_location ?? '') == 'gym' ? 'selected' : '' }}>Academia</option>
-                            <option value="home" {{ (auth()->user()->profile->training_location ?? '') == 'home' ? 'selected' : '' }}>Casa</option>
-                            <option value="outdoor" {{ (auth()->user()->profile->training_location ?? '') == 'outdoor' ? 'selected' : '' }}>Ar Livre</option>
+                            <option value="gym" {{ ($targetUser->profile->training_location ?? '') == 'gym' ? 'selected' : '' }}>Academia</option>
+                            <option value="home" {{ ($targetUser->profile->training_location ?? '') == 'home' ? 'selected' : '' }}>Casa</option>
+                            <option value="outdoor" {{ ($targetUser->profile->training_location ?? '') == 'outdoor' ? 'selected' : '' }}>Ar Livre</option>
                         </select>
                     </div>
 
-                    <x-premium-input label="Horas de Sono" name="sleep_hours" type="number" value="{{ auth()->user()->profile->sleep_hours ?? '' }}" icon="moon" />
-                    <x-premium-input label="Qualidade Alimentação (1-10)" name="nutrition_quality" type="number" min="1" max="10" value="{{ auth()->user()->profile->nutrition_quality ?? '' }}" icon="utensils" />
-                    <x-premium-input label="Tempo Disponível (min/dia)" name="available_daily_time_mins" type="number" value="{{ auth()->user()->profile->available_daily_time_mins ?? '' }}" icon="clock" />
+                    <x-premium-input label="Horas de Sono" name="sleep_hours" type="number" value="{{ $targetUser->profile->sleep_hours ?? '' }}" icon="moon" />
+                    <x-premium-input label="Qualidade Alimentação (1-10)" name="nutrition_quality" type="number" min="1" max="10" value="{{ $targetUser->profile->nutrition_quality ?? '' }}" icon="utensils" />
+                    <x-premium-input label="Tempo Disponível (min/dia)" name="available_daily_time_mins" type="number" value="{{ $targetUser->profile->available_daily_time_mins ?? '' }}" icon="clock" />
                 </div>
             </x-premium-card>
 
@@ -136,7 +138,7 @@
                 <div class="space-y-6">
                     <div>
                         <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Restrições Médicas / Lesões</label>
-                        <textarea name="fitness_notes" rows="3" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all" placeholder="Ex: Hérnia de disco, Labirintite, etc.">{{ auth()->user()->profile->fitness_notes ?? '' }}</textarea>
+                        <textarea name="fitness_notes" rows="3" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all" placeholder="Ex: Hérnia de disco, Labirintite, etc.">{{ $targetUser->profile->fitness_notes ?? '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">Observações da Avaliação</label>

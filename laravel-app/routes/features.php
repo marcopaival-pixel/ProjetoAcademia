@@ -40,6 +40,7 @@ Route::prefix('api/exercise')->name('api.exercise.')->group(function () {
     Route::post('/sync', [ExerciseController::class, 'apiSync'])->name('sync');
 });
 Route::get('/exercise-catalog', [ExerciseCatalogController::class, 'index'])->name('exercise.catalog');
+Route::post('/exercise-catalog', [ExerciseCatalogController::class, 'store'])->name('exercise.store');
 Route::get('/exercise-catalog/{exercise}', [ExerciseCatalogController::class, 'show'])->name('exercise.show');
 
 // URLs antigas /exercises-catalog → /exercise
@@ -122,7 +123,7 @@ Route::prefix('progression')->name('progression.')->group(function () {
 // Mensagens diretas
 Route::post('/user/block/{user}', [MessageController::class, 'blockUser'])->name('user.block');
 
-Route::prefix('messages')->name('messages.')->middleware('premium')->group(function () {
+Route::prefix('messages')->name('messages.')->group(function () {
     Route::get('/create', [MessageController::class, 'create'])->name('create');
     Route::post('/start', [MessageController::class, 'startConversation'])->name('start');
     Route::post('/bulk-delete', [MessageController::class, 'bulkDelete'])->name('bulk-delete');
@@ -215,4 +216,5 @@ Route::prefix('supplements')->name('supplements.')->group(function () {
 // Orquestrador de IA NexShape
 Route::prefix('api/ai')->name('api.ai.')->group(function () {
     Route::post('/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('orchestrator');
+    Route::get('/orchestrator/status/{jobKey}', [\App\Http\Controllers\AI\OrchestratorController::class, 'status'])->name('orchestrator.status');
 });

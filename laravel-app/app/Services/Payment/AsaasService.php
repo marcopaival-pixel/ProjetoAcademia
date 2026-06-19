@@ -68,11 +68,17 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
     public function createSubscription(User $user, $plan, array $options = []): array
     {
         $customerId = $this->getOrCreateCustomer($user);
-        
+
+        $baseAmount = $plan instanceof \App\Models\Plan
+            ? (float) $plan->price
+            : (float) ($options['amount'] ?? 0);
+        $referralDiscount = (float) ($options['referral_discount'] ?? 0);
+        $finalAmount = max(0, round($baseAmount - $referralDiscount, 2));
+
         $payload = [
             'customer' => $customerId,
             'billingType' => 'CREDIT_CARD',
-            'value' => $options['amount'] ?? 0,
+            'value' => $finalAmount > 0 ? $finalAmount : $baseAmount,
             'nextDueDate' => now()->addMonth()->format('Y-m-d'),
             'cycle' => ($plan === 'yearly') ? 'YEARLY' : 'MONTHLY',
             'description' => "Assinatura ProjetoAcademia - {$plan}",
@@ -152,6 +158,29 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
                 } else {
                     $this->logWebhook($request, 200, 'Ignored (No User ID)', null, microtime(true) - $start);
                 }
+            } elseif (str_starts_with($event, 'SUBSCRIPTION_')) {
+                $this->syncSubscriptionEvent($payload);
+                $this->logWebhook($request, 200, "Event {$event} subscription sync", null, microtime(true) - $start);
+            } elseif (in_array($event, ['PAYMENT_REFUNDED', 'PAYMENT_DELETED', 'PAYMENT_CHARGEBACK'], true)) {
+                $payment = $payload['payment'] ?? [];
+                $gatewayId = $payment['id'] ?? null;
+
+                if ($gatewayId) {
+                    $paymentModel = \App\Models\Payment::where('gateway', 'asaas')
+                        ->where('gateway_id', (string) $gatewayId)
+                        ->first();
+
+                    if ($paymentModel) {
+                        $refundAmount = isset($payment['value']) ? (float) $payment['value'] : null;
+                        app(\App\Services\PaymentRefundService::class)->processRefund(
+                            $paymentModel,
+                            $refundAmount,
+                            'asaas_webhook'
+                        );
+                    }
+                }
+
+                $this->logWebhook($request, 200, "Event {$event} processed", null, microtime(true) - $start);
             } else {
                 $this->logWebhook($request, 200, "Event {$event} ignored", null, microtime(true) - $start);
             }
@@ -189,6 +218,61 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
             ->post($this->baseUrl . "/payments/{$paymentId}/refund", $payload);
 
         return $response->successful();
+    }
+
+    protected function syncSubscriptionEvent(array $payload): void
+    {
+        $event = $payload['event'] ?? '';
+        $subscription = $payload['subscription'] ?? [];
+        $gatewayId = $subscription['id'] ?? null;
+
+        if (! $gatewayId) {
+            return;
+        }
+
+        $externalRef = (string) ($subscription['externalReference'] ?? '');
+        $userId = null;
+        $planCode = 'monthly';
+
+        if (str_starts_with($externalRef, 'pa:')) {
+            $parts = explode(':', $externalRef);
+            $userId = isset($parts[1]) ? (int) $parts[1] : null;
+            $planCode = $parts[2] ?? 'monthly';
+        }
+
+        if (! $userId) {
+            return;
+        }
+
+        $status = match ($event) {
+            'SUBSCRIPTION_CREATED', 'SUBSCRIPTION_ACTIVATED', 'SUBSCRIPTION_RENEWED' => \App\Models\Subscription::STATUS_FIN_ATIVO,
+            'SUBSCRIPTION_INACTIVATED', 'SUBSCRIPTION_DELETED' => \App\Models\Subscription::STATUS_FIN_CANCELADO,
+            default => \App\Models\Subscription::STATUS_FIN_ATIVO,
+        };
+
+        $plan = \App\Models\Plan::where('name', $planCode)->first() ?? \App\Models\Plan::first();
+        $isYearly = ($subscription['cycle'] ?? '') === 'YEARLY' || $planCode === 'yearly';
+
+        $model = \App\Models\Subscription::updateOrCreate(
+            ['gateway_type' => 'asaas', 'gateway_id' => (string) $gatewayId],
+            [
+                'user_id' => $userId,
+                'plan_id' => $plan?->id ?? 1,
+                'status' => $status,
+                'start_date' => now(),
+                'end_date' => $isYearly ? now()->addYear() : now()->addMonth(),
+            ]
+        );
+
+        $user = User::find($userId);
+        if ($user && in_array($status, [\App\Models\Subscription::STATUS_FIN_ATIVO, \App\Models\Subscription::STATUS_ACTIVE], true)) {
+            $user->update([
+                'is_premium' => true,
+                'premium_expires_at' => $model->end_date,
+            ]);
+        } elseif ($user && $status === \App\Models\Subscription::STATUS_FIN_CANCELADO) {
+            $user->update(['is_premium' => false]);
+        }
     }
 
     protected function getOrCreateCustomer(User $user): ?string

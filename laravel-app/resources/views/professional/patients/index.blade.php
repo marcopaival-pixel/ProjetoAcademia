@@ -11,10 +11,10 @@
             <div class="flex items-center gap-3">
                 <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-500/20">Base de Inteligência</span>
                 <span class="text-zinc-600">•</span>
-                <span class="text-zinc-400 text-xs font-bold">{{ count($patients) }} Pacientes Conectados</span>
+                <span class="text-zinc-400 text-xs font-bold">{{ count($patients) }} {{ $patientsLabel }} Conectados</span>
             </div>
             <h1 class="text-5xl font-black tracking-tight text-white leading-tight">
-                Gestão de <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Pacientes</span>
+                Gestão de <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">{{ $patientsLabel }}</span>
             </h1>
             <p class="text-zinc-500 font-medium max-w-xl">Acompanhamento granular da evolução biométrica e adesão às prescrições do ecossistema NexShape.</p>
         </div>
@@ -27,7 +27,7 @@
                 </a>
                 <a href="{{ route('professional.patients.create') }}" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                    Novo Paciente
+                    Novo {{ $patientLabel }}
                 </a>
             </div>
         </div>
@@ -67,7 +67,7 @@
         </form>
     </div>
 
-    <!-- Tabela de Pacientes Premium -->
+    <!-- Tabela de {{ $patientsLabel }} Premium -->
     <div class="relative bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -75,7 +75,7 @@
                     <tr class="border-b border-white/5 bg-white/[0.02]">
                         <th class="px-8 py-6">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'name', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-blue-400 transition-colors">
-                                Nome do Paciente
+                                Nome do {{ $patientLabel }}
                                 @if(request('sort', 'name') == 'name')
                                     <svg class="w-3 h-3 {{ request('direction') == 'desc' ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                                 @endif
@@ -159,10 +159,15 @@
                         </td>
                         <td class="px-8 py-5 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                @if($patient['user_status'] === 'pending')
-                                    <button onclick="resendActivation({{ $patient['id'] }})" class="p-2 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all shadow-lg hover:shadow-amber-500/20" title="Ativar">
+                                @if($patient['user_status'] === 'pending' || $patient['status'] === 'Aprovação Pendente')
+                                    <button onclick="approvePatient({{ $patient['id'] }}, this)" class="w-10 h-10 rounded-xl bg-zinc-950 border border-white/5 flex items-center justify-center transition-all shadow-xl text-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-600 hover:text-white" title="Aprovar e Liberar Acesso">
+                                        <i class="fas fa-user-check text-xs"></i>
+                                    </button>
+                                    @if($patient['user_status'] === 'pending')
+                                    <button onclick="resendActivation({{ $patient['id'] }})" class="p-2 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all shadow-lg hover:shadow-amber-500/20" title="Reenviar E-mail de Ativação">
                                         <svg class="w-4 h-4 text-amber-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                                     </button>
+                                    @endif
                                 @else
                                     <button onclick="generateLink({{ $patient['id'] }})" class="p-2 bg-zinc-800 text-zinc-400 rounded-lg border border-white/5 hover:bg-emerald-600 hover:text-white transition-all" title="Link Acesso">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
@@ -177,12 +182,9 @@
                                 <a href="{{ route('professional.patients.export-report', $patient['id']) }}" class="p-2 bg-zinc-800 text-zinc-500 rounded-lg border border-white/5 hover:bg-emerald-600 hover:text-white transition-all" title="Gerar Laudo PDF">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                                 </a>
-                                <form action="{{ route('professional.patients.deactivate', $patient['id']) }}" method="POST" class="inline" data-confirm-delete data-confirm-title="Confirmar" data-confirm-message="Inativar este paciente?" data-confirm-primary-label="Sim, Inativar">
-                                    @csrf
-                                    <button type="submit" class="p-2 bg-zinc-800 text-rose-500/50 rounded-lg border border-white/5 hover:bg-rose-600 hover:text-white transition-all" title="Inativar">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
-                                </form>
+                                <button type="button" onclick="showDeactivateModal({{ $patient['id'] }}, '{{ addslashes($patient['name']) }}')" class="p-2 bg-zinc-800 text-rose-500/50 rounded-lg border border-white/5 hover:bg-rose-600 hover:text-white transition-all" title="Desvincular">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -193,7 +195,7 @@
                                 <div class="w-20 h-20 rounded-3xl bg-zinc-950/50 flex items-center justify-center border border-white/5 shadow-inner">
                                     <svg class="w-10 h-10 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                 </div>
-                                <p class="text-zinc-500 font-bold text-sm">Nenhum paciente encontrado para os critérios selecionados.</p>
+                                <p class="text-zinc-500 font-bold text-sm">Nenhum {{ mb_strtolower($patientLabel) }} encontrado para os critérios selecionados.</p>
                                 <a href="{{ route('professional.patients.index') }}" class="text-blue-500 text-xs font-black uppercase tracking-widest hover:text-blue-400 transition-all">Limpar Filtros</a>
                             </div>
                         </td>
@@ -207,7 +209,7 @@
         @if($patients->hasPages())
         <div class="px-8 py-6 bg-white/[0.02] border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
             <p class="text-zinc-500 text-xs font-bold">
-                Mostrando <span class="text-white">{{ $patients->firstItem() }}–{{ $patients->lastItem() }}</span> de <span class="text-white">{{ $patients->total() }}</span> pacientes
+                Mostrando <span class="text-white">{{ $patients->firstItem() }}–{{ $patients->lastItem() }}</span> de <span class="text-white">{{ $patients->total() }}</span> {{ mb_strtolower($patientsLabel) }}
             </p>
             
             <div class="flex items-center gap-2">
@@ -266,7 +268,7 @@
                     Vínculo <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Pronto!</span>
                 </h3>
                 <p class="text-zinc-500 font-medium text-sm leading-relaxed max-w-sm mx-auto">
-                    Conexão restabelecida. Este link concede acesso seguro ao ecossistema NexShape para o paciente.
+                    Conexão restabelecida. Este link concede acesso seguro ao ecossistema NexShape para o {{ mb_strtolower($patientLabel) }}.
                 </p>
             </div>
 
@@ -302,6 +304,34 @@
                 <span class="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Válido por 7 dias</span>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal Desvincular -->
+<div id="deactivateModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-zinc-950/90 backdrop-blur-xl" onclick="closeDeactivateModal()"></div>
+    <div class="relative bg-zinc-900 border border-white/10 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl scale-100 transition-all">
+        <h3 class="text-2xl font-black text-white text-center mb-2">Desvincular Aluno</h3>
+        <p class="text-zinc-400 text-center text-sm mb-6">
+            O aluno <strong id="deactivateModalName" class="text-white"></strong> será marcado como inativo e perderá o vínculo com seu painel. O histórico completo de dados será preservado.
+        </p>
+        
+        <form id="deactivateForm" method="POST" action="">
+            @csrf
+            <div class="mb-6">
+                <label class="block text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-2 px-1">Motivo da desvinculação (Opcional)</label>
+                <textarea name="motivo_desvinculacao" rows="3" class="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder-zinc-700 focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-all resize-none" placeholder="Informe o motivo..."></textarea>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button type="button" onclick="closeDeactivateModal()" class="flex-1 py-4 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all text-sm border border-white/5">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-4 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-500 transition-all shadow-lg shadow-rose-600/20 text-sm">
+                    Confirmar Desvinculação
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -369,6 +399,49 @@ function resendActivation(patientId) {
     handleAction(patientId, 'activation-link', 'Vínculo', event.currentTarget);
 }
 
+async function approvePatient(patientId, btnElement) {
+    setBtnLoading(btnElement, true);
+    try {
+        const response = await fetch(`/professional/patients/${patientId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showModal(data.temp_password, "Acesso Liberado");
+            
+            // Exibir a senha temporária no modal ou alerta
+            document.getElementById('modalDisplayTitle').innerHTML = `Acesso <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">Liberado!</span>`;
+            document.querySelector('#modalContent p').innerHTML = `{{ $patientLabel }} ativado com sucesso. Copie a <strong>senha temporária</strong> abaixo e envie para o {{ mb_strtolower($patientLabel) }}.<br><span class="text-xs text-amber-500 block mt-2">O {{ mb_strtolower($patientLabel) }} será forçado a criar uma nova senha ao entrar.</span>`;
+            
+            window.dispatchEvent(new CustomEvent('notify', {
+                detail: {
+                    message: data.message,
+                    title: '{{ $patientLabel }} Aprovado'
+                }
+            }));
+            
+            // Recarregar a página após fechar o modal ou após 5 segundos
+            setTimeout(() => window.location.reload(), 5000);
+        } else {
+            throw new Error(data.message || 'Erro ao aprovar {{ mb_strtolower($patientLabel) }}');
+        }
+    } catch (err) {
+        window.dispatchEvent(new CustomEvent('notify', {
+            detail: {
+                message: err.message,
+                title: 'Erro de Aprovação'
+            }
+        }));
+    } finally {
+        setBtnLoading(btnElement, false);
+    }
+}
+
 function generateLink(patientId) {
     handleAction(patientId, 'generate-link', 'Acesso', event.currentTarget);
 }
@@ -386,7 +459,9 @@ function showModal(link, title = "Link de Acesso") {
     }
 
     input.value = link;
-    openLink.href = link;
+    if (openLink) {
+        openLink.href = link;
+    }
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -429,7 +504,23 @@ function copyToken() {
         }, 2000);
     });
 }
+
+function showDeactivateModal(patientId, patientName) {
+    const form = document.getElementById('deactivateForm');
+    form.action = `${API_BASE}/${patientId}/deactivate`;
+    document.getElementById('deactivateModalName').innerText = patientName;
+    document.getElementById('deactivateModal').classList.remove('hidden');
+    document.getElementById('deactivateModal').classList.add('flex');
+}
+
+function closeDeactivateModal() {
+    document.getElementById('deactivateModal').classList.add('hidden');
+    document.getElementById('deactivateModal').classList.remove('flex');
+}
 </script>
 
 @endsection
+
+
+
 

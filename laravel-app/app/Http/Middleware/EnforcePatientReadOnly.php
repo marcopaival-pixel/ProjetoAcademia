@@ -42,6 +42,7 @@ class EnforcePatientReadOnly
                 'patient.dashboard.choice',
                 'clinic.selector',
                 'clinic.select',
+                'messages.*',
             ];
 
             if ($request->routeIs($allowedRoutes)) {

@@ -5,33 +5,32 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Photo;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
+use App\Services\SecureFileService;
+use App\Support\PatientAccessGuard;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class PhotoGalleryController extends Controller
 {
+    public function __construct(
+        private SecureFileService $secureFiles
+    ) {}
+
     /**
      * Retorna a galeria de fotos.
      */
     public function index(Request $request)
     {
         $user = Auth::user();
-        $studentId = $request->input('student_id', $user->id);
+        $studentId = (int) $request->input('student_id', $user->id);
 
-        // Segurança: O aluno só acessa as próprias fotos
-        // O profissional só acessa de seus alunos (aqui simplificado, ideal via vínculo)
-        if ($user->profile_id == 2 && $studentId != $user->id) { // Assumindo profile_id 2 = Aluno
-            return response()->json(['error' => 'Você só pode acessar suas próprias fotos.'], 403);
-        }
+        PatientAccessGuard::assertStudentDataAccess($user, $studentId);
 
-        // Determinar o plano usando a estrutura existente
         $isPremium = $user->hasPremiumAccess();
 
         $query = Photo::where('student_id', $studentId);
 
         if (!$isPremium) {
-            // Histórico limitado aos últimos 30 dias no plano Free
             $query->where('created_at', '>=', Carbon::now()->subDays(30));
         }
 
@@ -52,18 +51,18 @@ class PhotoGalleryController extends Controller
         $user = Auth::user();
         
         $request->validate([
-            'photo' => 'required|image|max:5120', // máximo 5MB
+            'photo' => 'required|image|max:5120',
             'category' => 'nullable|string',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
+            'student_id' => 'nullable|integer|exists:users,id',
         ]);
 
-        $studentId = $user->profile_id == 2 ? $user->id : $request->input('student_id', $user->id);
+        $studentId = $user->profile_id == 2 ? $user->id : (int) $request->input('student_id', $user->id);
+        PatientAccessGuard::assertStudentDataAccess($user, $studentId);
 
-        // Verificação do plano
         $isPremium = $user->hasPremiumAccess();
 
         if (!$isPremium) {
-            // Conta as fotos atuais do aluno
             $photoCount = Photo::where('student_id', $studentId)->count();
             if ($photoCount >= 10) {
                 return response()->json([
@@ -72,7 +71,6 @@ class PhotoGalleryController extends Controller
                 ], 403);
             }
 
-            // Não permite o uso de categorias avançadas no plano Free
             if ($request->has('category') && $request->input('category') !== 'Geral') {
                 return response()->json([
                     'error' => 'A organização por categorias estruturadas é exclusiva do plano Premium.',
@@ -81,7 +79,7 @@ class PhotoGalleryController extends Controller
             }
         }
 
-        $path = $request->file('photo')->store('gallery_photos', 'public');
+        $path = $this->secureFiles->storeSensitiveFile($request->file('photo'), 'gallery_photos');
 
         $photo = Photo::create([
             'student_id' => $studentId,
@@ -105,12 +103,9 @@ class PhotoGalleryController extends Controller
         $user = Auth::user();
         $photo = Photo::findOrFail($id);
 
-        // Segurança
-        if ($user->profile_id == 2 && $photo->student_id != $user->id) {
-            return response()->json(['error' => 'Ação não permitida.'], 403);
-        }
+        PatientAccessGuard::assertStudentDataAccess($user, (int) $photo->student_id);
 
-        Storage::disk('public')->delete($photo->file_path);
+        $this->secureFiles->deleteFile($photo->file_path);
         logger()->info("Photo deleted by User {$user->id}", ['photo_id' => $photo->id]);
         $photo->delete();
 
@@ -140,9 +135,11 @@ class PhotoGalleryController extends Controller
         $photo1 = Photo::findOrFail($request->photo_id_1);
         $photo2 = Photo::findOrFail($request->photo_id_2);
 
-        // Segurança (simplificada)
-        if ($user->profile_id == 2 && ($photo1->student_id != $user->id || $photo2->student_id != $user->id)) {
-            return response()->json(['error' => 'Você não tem permissão para comparar essas fotos.'], 403);
+        PatientAccessGuard::assertStudentDataAccess($user, (int) $photo1->student_id);
+        PatientAccessGuard::assertStudentDataAccess($user, (int) $photo2->student_id);
+
+        if ((int) $photo1->student_id !== (int) $photo2->student_id) {
+            return response()->json(['error' => 'As fotos devem pertencer ao mesmo aluno.'], 403);
         }
 
         return response()->json([

@@ -39,6 +39,12 @@
 
         
         @if(!auth()->user()->hasRole('paciente'))
+        
+        {{-- SELETOR GLOBAL DE ALUNO (Apenas Profissional) --}}
+        @if(auth()->user()->isProfessional())
+            <x-global-patient-selector />
+        @endif
+
         <div class="relative" x-data="{ 
             query: '{{ request('q') }}', 
             suggestions: [], 
@@ -58,9 +64,9 @@
                     });
             }
         }" @click.away="showSuggestions = false">
-            <form action="{{ route('global.search') }}" method="GET" id="searchForm" class="search-bar hidden md:flex items-center bg-zinc-950 border border-zinc-900 rounded-2xl px-5 py-2.5 w-80 focus-within:border-{{ $isClinica ? 'blue-500/50' : 'emerald-500/50' }} focus-within:shadow-[0_0_15px_{{ $isClinica ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)' }}] transition-all shadow-inner group">
+            <form action="{{ route('global.search') }}" method="GET" id="searchForm" class="search-bar hidden md:flex items-center bg-zinc-950 border border-zinc-900 rounded-2xl px-5 py-2.5 w-64 xl:w-80 focus-within:border-{{ $isClinica ? 'blue-500/50' : 'emerald-500/50' }} focus-within:shadow-[0_0_15px_{{ $isClinica ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)' }}] transition-all shadow-inner group">
                 <i data-lucide="search" class="w-4 h-4 text-zinc-700 group-focus-within:text-{{ $isClinica ? 'blue-400' : 'emerald-500' }} transition-colors"></i>
-                <input type="text" name="q" x-model="query" @input.debounce.300ms="fetchSuggestions()" autocomplete="off" placeholder="Buscar no sistema..." class="bg-transparent border-none outline-none text-xs font-black uppercase tracking-widest text-white placeholder:text-zinc-800 w-full ml-3">
+                <input type="text" name="q" x-model="query" @input.debounce.300ms="fetchSuggestions()" autocomplete="off" placeholder="Buscar no sistema..." class="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest text-white placeholder:text-zinc-800 w-full ml-3">
             </form>
 
             {{-- Dropdown de Sugestões --}}
@@ -96,9 +102,10 @@
             $compraAtiva = \App\Models\SystemSetting::isTrue('compra_creditos_ativa', true);
             $isPaciente = auth()->user()->hasRole('paciente');
             $isAdmin = auth()->user()->isAdministrator();
+            $isRepresentative = session('active_role') === 'representative' || (auth()->user()->hasRole('representative') && session('active_role') === null);
         @endphp
         
-        @if(!$isPaciente || $isAdmin)
+        @if((!$isPaciente || $isAdmin) && !$isRepresentative)
         <div class="flex items-center gap-2">
             <a href="{{ route('credits.buy') }}" 
                class="flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 shadow-lg group {{ $credits < 15 ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse' : 'bg-purple-500/10 border border-purple-500/20 text-purple-500 hover:bg-purple-500 hover:text-white' }}"
@@ -151,12 +158,14 @@
             @endif
         </a>
 
+        @if(!$isRepresentative && (!$isPaciente || $isAdmin))
         <!-- Help Center Button -->
         <a href="{{ route('kb.index') }}" 
            class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-600 hover:text-blue-500 hover:border-blue-500/20 transition-all shadow-inner group" 
            title="Central de Ajuda">
             <i data-lucide="help-circle" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
         </a>
+        @endif
         @endauth
 
         <!-- Theme Switcher -->
@@ -173,10 +182,10 @@
         <div class="flex items-center gap-4 lg:hidden">
             <div class="relative" x-data="{ openMobileUser: false }">
                 <button @click="openMobileUser = !openMobileUser" class="relative group">
-                    <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-zinc-900 group-hover:border-{{ $isClinica ? 'blue-500/50' : 'emerald-500/50' }} transition-all shadow-lg">
-                        <img src="{{ auth()->user()?->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()?->name ?? 'User').'&color='.($isClinica ? '3b82f6' : '10b981').'&background=09090b&bold=true' }}" alt="Avatar" class="w-full h-full object-cover">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-zinc-900 group-hover:border-{{ ($isClinica || (auth()->user() && auth()->user()->hasRole('paciente'))) ? 'blue-500/50' : 'emerald-500/50' }} transition-all shadow-lg">
+                        <img src="{{ auth()->user()?->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()?->name ?? 'User').'&color='.(($isClinica || (auth()->user() && auth()->user()->hasRole('paciente'))) ? '3b82f6' : '10b981').'&background=09090b&bold=true' }}" alt="Avatar" class="w-full h-full object-cover">
                     </div>
-                    <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 {{ $isClinica ? 'bg-blue-500' : 'bg-emerald-500' }} border-4 border-zinc-950 rounded-full shadow-lg"></span>
+                    <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 {{ ($isClinica || (auth()->user() && auth()->user()->hasRole('paciente'))) ? 'bg-blue-500' : 'bg-emerald-500' }} border-4 border-zinc-950 rounded-full shadow-lg"></span>
                 </button>
                 
                 <form action="{{ route('logout') }}" method="post" class="lg:hidden ml-2">
@@ -214,6 +223,42 @@
                                 <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ session('active_role') == $role->name ? ($isClinica ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-zinc-950') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
                                     @if(session('active_role') == $role->name) <i data-lucide="check" class="w-3 h-3"></i> @else <span></span> @endif
                                     {{ $role->label }}
+                                </button>
+                            </form>
+                        @endforeach
+                    @endif
+
+                    @php
+                        $profile = auth()->user()->professionalProfile;
+                        $secondarySpecialties = $profile ? $profile->especialidades : collect();
+                    @endphp
+
+                    @if(session('active_role') === 'professional' && $profile && $secondarySpecialties->count() > 0)
+                        <div class="px-4 py-2 mt-2 mb-1">
+                            <span class="text-[8px] font-black text-zinc-700 uppercase tracking-[0.3em]">Contexto Profissional</span>
+                        </div>
+                        
+                        {{-- Especialidade Principal --}}
+                        @php $mainSpec = $profile->especialidade; @endphp
+                        @if($mainSpec)
+                            <form action="{{ route('profile.switch-specialty') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="especialidade_id" value="{{ $mainSpec->id }}">
+                                <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ (!session('active_specialty_id') || session('active_specialty_id') == $mainSpec->id) ? ($isClinica ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-zinc-950') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
+                                    @if(!session('active_specialty_id') || session('active_specialty_id') == $mainSpec->id) <i data-lucide="check" class="w-3 h-3"></i> @else <span></span> @endif
+                                    {{ $mainSpec->name }}
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- Especialidades Secundárias --}}
+                        @foreach($secondarySpecialties as $spec)
+                            <form action="{{ route('profile.switch-specialty') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="especialidade_id" value="{{ $spec->id }}">
+                                <button type="submit" class="w-full flex items-center justify-between px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all {{ session('active_specialty_id') == $spec->id ? ($isClinica ? 'bg-blue-600 text-white' : 'bg-emerald-500 text-zinc-950') : 'text-zinc-600 hover:bg-zinc-900 hover:text-white' }}">
+                                    @if(session('active_specialty_id') == $spec->id) <i data-lucide="check" class="w-3 h-3"></i> @else <span></span> @endif
+                                    {{ $spec->name }}
                                 </button>
                             </form>
                         @endforeach

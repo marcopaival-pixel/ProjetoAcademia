@@ -70,7 +70,6 @@ class RolesAndPermissionsSeeder extends Seeder
                 'label' => 'Instrutor',
                 'description' => 'Treinos, alunos e emissão / assinatura de PDFs',
                 'permissions' => Permission::whereIn('name', [
-                    'admin.access',
                     'portal.access',
                     'training.manage',
                     'users.view',
@@ -84,7 +83,6 @@ class RolesAndPermissionsSeeder extends Seeder
                 'label' => 'Profissional',
                 'description' => 'Gerenciamento de pacientes, treinos e avaliações',
                 'permissions' => Permission::whereIn('name', [
-                    'admin.access',
                     'portal.access',
                     'training.manage',
                     'users.view',
@@ -152,7 +150,6 @@ class RolesAndPermissionsSeeder extends Seeder
                 'label' => 'Representante',
                 'description' => 'Parceiro comercial com foco em indicação e comissões',
                 'permissions' => Permission::whereIn('name', [
-                    'admin.access',
                     'portal.access',
                 ])->pluck('id'),
             ],

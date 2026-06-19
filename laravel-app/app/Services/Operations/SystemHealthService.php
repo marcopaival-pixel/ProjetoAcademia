@@ -26,6 +26,7 @@ class SystemHealthService
             'cpu' => $this->checkCpu(),
             'memory' => $this->checkMemory(),
             'jobs' => $this->getJobStats(),
+            'queue_breakdown' => $this->getQueueBreakdown(),
             'timestamp' => now()->toIso8601String(),
         ];
 
@@ -121,19 +122,67 @@ class SystemHealthService
         try {
             $totalFailed = DB::table('failed_jobs')->count();
             $totalPending = DB::table('jobs')->count();
-            
-            // Average execution time from a log or tracking table if exists. 
-            // Since we don't have a specific tracking table, we'll return placeholders
-            // or check if there are recent entries in a hypothetical performance log.
-            
+            $failedRecent = DB::table('failed_jobs')
+                ->where('failed_at', '>', now()->subHour())
+                ->count();
+
+            $completedLastHour = (int) Cache::get('operations.jobs_completed_last_hour', 0);
+            $totalDurationMs = (int) Cache::get('operations.jobs_duration_ms_last_hour', 0);
+
+            $throughput = $completedLastHour;
+            $avgTime = 'N/A';
+            if ($completedLastHour > 0) {
+                $avgMs = (int) round($totalDurationMs / $completedLastHour);
+                $avgTime = $avgMs >= 1000
+                    ? round($avgMs / 1000, 1).'s'
+                    : $avgMs.'ms';
+            }
+
             return [
                 'pending' => $totalPending,
                 'failed' => $totalFailed,
-                'avg_time' => '1.2s', // Placeholder or calculated from metrics
-                'throughput' => '45 j/min',
+                'failed_last_hour' => $failedRecent,
+                'completed_last_hour' => $completedLastHour,
+                'avg_time' => $avgTime,
+                'throughput' => $throughput.' j/h',
             ];
         } catch (\Exception $e) {
-            return ['pending' => 0, 'failed' => 0, 'avg_time' => 'N/A'];
+            return ['pending' => 0, 'failed' => 0, 'avg_time' => 'N/A', 'throughput' => '0 j/h'];
+        }
+    }
+
+    /**
+     * Pending jobs grouped by queue name.
+     *
+     * @return array<string, int>
+     */
+    public function getQueueBreakdown(): array
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('jobs')) {
+                return [];
+            }
+
+            $rows = DB::table('jobs')
+                ->select('queue', DB::raw('COUNT(*) as total'))
+                ->groupBy('queue')
+                ->pluck('total', 'queue')
+                ->all();
+
+            $breakdown = [];
+            foreach (\App\Support\QueueNames::all() as $queue) {
+                $breakdown[$queue] = (int) ($rows[$queue] ?? 0);
+            }
+
+            foreach ($rows as $queue => $total) {
+                if (! array_key_exists($queue, $breakdown)) {
+                    $breakdown[$queue] = (int) $total;
+                }
+            }
+
+            return $breakdown;
+        } catch (\Exception $e) {
+            return [];
         }
     }
 
@@ -160,9 +209,10 @@ class SystemHealthService
             $free = disk_free_space(base_path());
             $total = disk_total_space(base_path());
             $usedPercent = round((($total - $free) / $total) * 100, 2);
+            $warningThreshold = (int) config('observability.alerts.disk_warning_percent', 85);
 
             return [
-                'status' => $usedPercent > 90 ? 'warning' : 'ok',
+                'status' => $usedPercent > $warningThreshold ? 'warning' : 'ok',
                 'free' => $this->formatBytes($free),
                 'total' => $this->formatBytes($total),
                 'used_percent' => $usedPercent,
@@ -197,25 +247,46 @@ class SystemHealthService
     protected function checkCpuWindows(): array
     {
         try {
-            $output = shell_exec('wmic cpu get loadpercentage /format:csv');
-            if (!$output) return ['status' => 'unknown'];
-            
-            $lines = explode("\n", trim($output));
-            foreach ($lines as $line) {
-                if (empty(trim($line)) || str_contains($line, 'LoadPercentage')) continue;
-                $data = str_getcsv($line);
-                if (isset($data[1])) {
-                    $load = (float)$data[1];
-                    return [
-                        'status' => $load > 85 ? 'warning' : 'ok',
-                        'load_1m' => $load, // On Windows we treat this as current %
-                        'message' => "Windows CPU Load: $load%"
-                    ];
-                }
+            $load = $this->readWindowsCpuLoadPercent();
+            if ($load !== null) {
+                return [
+                    'status' => $load > 85 ? 'warning' : 'ok',
+                    'load_1m' => $load,
+                    'message' => "Windows CPU Load: {$load}%",
+                ];
             }
-        } catch (\Exception $e) {}
-        
+        } catch (\Exception $e) {
+        }
+
         return ['status' => 'unknown'];
+    }
+
+    protected function readWindowsCpuLoadPercent(): ?float
+    {
+        $output = $this->runWindowsShell(
+            'wmic cpu get loadpercentage /format:csv',
+            '(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average'
+        );
+        if ($output === null || trim($output) === '') {
+            return null;
+        }
+
+        if (is_numeric(trim($output))) {
+            return (float) trim($output);
+        }
+
+        $lines = explode("\n", trim($output));
+        foreach ($lines as $line) {
+            if (empty(trim($line)) || str_contains($line, 'LoadPercentage')) {
+                continue;
+            }
+            $data = str_getcsv($line);
+            if (isset($data[1]) && is_numeric($data[1])) {
+                return (float) $data[1];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -256,44 +327,103 @@ class SystemHealthService
     protected function checkMemoryWindows(): array
     {
         try {
-            // Get total physical memory
-            $totalOutput = shell_exec('wmic ComputerSystem get TotalPhysicalMemory /format:csv');
-            $freeOutput = shell_exec('wmic OS get FreePhysicalMemory /format:csv');
-            
-            $total = 0;
-            $free = 0;
-
-            if ($totalOutput) {
-                $lines = explode("\n", trim($totalOutput));
-                foreach ($lines as $line) {
-                    if (str_contains($line, 'TotalPhysicalMemory') || empty(trim($line))) continue;
-                    $data = str_getcsv($line);
-                    if (isset($data[1])) $total = (float)$data[1];
-                }
-            }
-
-            if ($freeOutput) {
-                $lines = explode("\n", trim($freeOutput));
-                foreach ($lines as $line) {
-                    if (str_contains($line, 'FreePhysicalMemory') || empty(trim($line))) continue;
-                    $data = str_getcsv($line);
-                    if (isset($data[1])) $free = (float)$data[1] * 1024; // wmic OS returns KB
-                }
-            }
-
-            if ($total > 0) {
+            $memory = $this->readWindowsMemoryStats();
+            if ($memory !== null) {
+                [$total, $free] = $memory;
                 $used = $total - $free;
                 $usedPercent = round(($used / $total) * 100, 2);
+
                 return [
                     'status' => $usedPercent > 90 ? 'warning' : 'ok',
                     'used_percent' => $usedPercent,
                     'total' => $this->formatBytes($total),
-                    'free' => $this->formatBytes($free)
+                    'free' => $this->formatBytes($free),
                 ];
             }
-        } catch (\Exception $e) {}
-        
+        } catch (\Exception $e) {
+        }
+
         return ['status' => 'unknown'];
+    }
+
+    /**
+     * @return array{0: float, 1: float}|null [total bytes, free bytes]
+     */
+    protected function readWindowsMemoryStats(): ?array
+    {
+        $output = $this->runWindowsShell(
+            null,
+            '& { $os = Get-CimInstance Win32_OperatingSystem; Write-Output (([string]($os.TotalVisibleMemorySize * 1024)) + [char]32 + ([string]($os.FreePhysicalMemory * 1024))) }'
+        );
+        if ($output !== null && preg_match('/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/', trim($output), $matches)) {
+            $total = (float) $matches[1];
+            $free = (float) $matches[2];
+            if ($total > 0) {
+                return [$total, $free];
+            }
+        }
+
+        if ($output !== null && str_contains($output, ',')) {
+            [$total, $free] = array_map('floatval', explode(',', trim($output), 2));
+            if ($total > 0) {
+                return [$total, $free];
+            }
+        }
+
+        $totalOutput = $this->runWindowsShell('wmic ComputerSystem get TotalPhysicalMemory /format:csv', null);
+        $freeOutput = $this->runWindowsShell('wmic OS get FreePhysicalMemory /format:csv', null);
+
+        $total = 0.0;
+        $free = 0.0;
+
+        if ($totalOutput) {
+            $lines = explode("\n", trim($totalOutput));
+            foreach ($lines as $line) {
+                if (str_contains($line, 'TotalPhysicalMemory') || empty(trim($line))) {
+                    continue;
+                }
+                $data = str_getcsv($line);
+                if (isset($data[1])) {
+                    $total = (float) $data[1];
+                }
+            }
+        }
+
+        if ($freeOutput) {
+            $lines = explode("\n", trim($freeOutput));
+            foreach ($lines as $line) {
+                if (str_contains($line, 'FreePhysicalMemory') || empty(trim($line))) {
+                    continue;
+                }
+                $data = str_getcsv($line);
+                if (isset($data[1])) {
+                    $free = (float) $data[1] * 1024;
+                }
+            }
+        }
+
+        return $total > 0 ? [$total, $free] : null;
+    }
+
+    protected function runWindowsShell(?string $wmicCommand, ?string $powershellCommand): ?string
+    {
+        if ($wmicCommand !== null) {
+            $wmicPath = trim((string) shell_exec('where wmic 2>nul'));
+            if ($wmicPath !== '') {
+                $output = shell_exec($wmicCommand);
+                if (is_string($output) && trim($output) !== '') {
+                    return $output;
+                }
+            }
+        }
+
+        if ($powershellCommand !== null) {
+            $output = shell_exec('powershell -NoProfile -Command '.escapeshellarg($powershellCommand));
+
+            return is_string($output) ? $output : null;
+        }
+
+        return null;
     }
 
     /**

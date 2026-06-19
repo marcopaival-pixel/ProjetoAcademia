@@ -4,20 +4,20 @@
         search: '',
         isCollapsed: false,
         openMenus: [
-            @if(request()->routeIs('admin.dashboard*', 'admin.financial.dashboard', 'admin.commercial.dashboard')) 'dashboard', @endif
+            @if(request()->routeIs('admin.dashboard*', 'admin.executive.*', 'admin.financial.dashboard', 'admin.commercial.dashboard')) 'dashboard', @endif
             @if(request()->routeIs('admin.kanban.*', 'admin.support.*', 'admin.kb.*')) 'operacoes', @endif
-            @if(request()->routeIs('admin.users*', 'admin.registrations.pending', 'admin.registrations.index')) 'usuarios', @endif
+            @if(request()->routeIs('admin.users*', 'admin.registrations.pending', 'admin.registrations.index', 'admin.representatives.*')) 'usuarios', @endif
             @if(request()->routeIs('admin.pdf-companies.*', 'admin.clinic-onboarding.*', 'admin.impersonate-clinic.*', 'onboarding-premium.*')) 'clinicas', @endif
             @if(request()->routeIs('admin.plans.*', 'admin.financial.management', 'admin.coupons.*')) 'planos', @endif
             @if(request()->routeIs('admin.financial.ai-credits.*', 'admin.billing.credits')) 'ia_credits', @endif
-            @if(request()->routeIs('admin.settings.payments', 'admin.settings.payments.webhooks', 'admin.representatives.*', 'admin.financial.reports')) 'financeiro', @endif
+            @if(request()->routeIs('admin.settings.payments', 'admin.settings.payments.webhooks', 'admin.financial.reports')) 'financeiro', @endif
             @if(request()->routeIs('admin.leads.*', 'admin.proposals.*', 'admin.goals.*', 'admin.commercial.*')) 'vendas', @endif
             @if(request()->routeIs('admin.monitoring', 'admin.cs.*')) 'relatorios', @endif
-            @if(request()->routeIs('admin.ai.monitoring', 'admin.operations.*')) 'ia_automacao', @endif
+            @if(request()->routeIs('admin.ai.monitoring', 'admin.operations.*', 'admin.ai-intelligence.*')) 'ia_automacao', @endif
             @if(request()->routeIs('admin.omnichannel*', 'omni.*')) 'chatbot', @endif
             @if(request()->routeIs('admin.settings', 'admin.especialidades.*', 'admin.muscles.*', 'admin.exercises.*', 'admin.training.*')) 'configuracoes', @endif
             @if(request()->routeIs('admin.roles.*', 'admin.lgpd.*', 'admin.security.*')) 'seguranca', @endif
-            @if(request()->routeIs('admin.system-errors', 'admin.settings.email.logs', 'admin.settings.payments.webhooks', 'admin.backups.*')) 'logs', @endif
+            @if(request()->routeIs('admin.system-errors', 'admin.settings.email.logs', 'admin.settings.payments.webhooks', 'admin.backups.*', 'admin.deploy.*', 'admin.observability.*')) 'logs', @endif
             @if(request()->routeIs('admin.api-integrations.*', 'admin.settings.email.providers', 'admin.settings.email.templates.*')) 'integracoes', @endif
             @if(request()->routeIs('admin.configuration-center.*')) 'sistema_avancado', @endif
         ].filter(Boolean),
@@ -86,7 +86,7 @@
            :class="isCollapsed ? 'justify-center p-0 w-10 h-10' : ''"
            title="Aprovações Pendentes">
             <i data-lucide="user-plus" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-black uppercase tracking-widest" x-show="!isCollapsed">Aprovações</span>
+            <span class="text-[10px] font-black uppercase tracking-widest" x-show="!isCollapsed">Aprovações (Rep)</span>
             
             @if($pendingRegs > 0)
                 <span class="absolute -top-1 -right-1 min-w-[1.2rem] h-[1.2rem] flex items-center justify-center rounded-lg bg-amber-500 text-zinc-950 text-[9px] font-black shadow-lg border-2 border-zinc-950"
@@ -153,7 +153,7 @@
         @php($__nav = fn (string $k): bool => ($adminNavVisible[$k] ?? true))
 
         <!-- GRUPO: DASHBOARD -->
-        <div class="nav-item mb-1" x-show="isGroupVisible(['Dashboard', 'Geral', 'Financeiro', 'Comercial'])">
+        <div class="nav-item mb-1" x-show="isGroupVisible(['Dashboard', 'Executivo', 'Geral', 'Financeiro', 'Comercial'])">
             <button @click="toggleMenu('dashboard')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('dashboard') }">
                 <div class="flex items-center gap-3">
                     <i data-lucide="layout-grid" class="w-4 h-4"></i>
@@ -162,6 +162,7 @@
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
             <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('dashboard') && !isCollapsed" x-collapse>
+                <li x-show="isVisible('Executivo')"><a href="{{ route('admin.executive.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.executive.*') ? 'active' : 'text-zinc-600 hover:text-white' }}"><i data-lucide="sparkles" class="w-3 h-3 mr-2 inline"></i>Executivo IA</a></li>
                 <li x-show="isVisible('Geral')"><a href="{{ route('admin.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Geral</a></li>
                 <li x-show="isVisible('Financeiro')"><a href="{{ route('admin.financial.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Financeiro</a></li>
                 <li x-show="isVisible('Comercial')"><a href="{{ route('admin.commercial.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.commercial.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Comercial</a></li>
@@ -202,7 +203,8 @@
                 <li x-show="isVisible('Pacientes')"><a href="{{ route('admin.users') }}?role=paciente" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Pacientes</a></li>
                 <li x-show="isVisible('Profissionais')"><a href="{{ route('admin.users') }}?role=professional" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Profissionais</a></li>
                 <li x-show="isVisible('Funcionários')"><a href="{{ route('admin.users') }}?role=receptionist" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Funcionários</a></li>
-                <li x-show="isVisible('Aprovações')"><a href="{{ route('admin.registrations.pending') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.registrations.pending') ? 'active' : 'text-zinc-600 hover:text-white' }}">Aprovações</a></li>
+                <li x-show="isVisible('Representantes')"><a href="{{ route('admin.representatives.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.representatives.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Representantes</a></li>
+                <li x-show="isVisible('Aprovações')"><a href="{{ route('admin.registrations.pending') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.registrations.pending') ? 'active' : 'text-zinc-600 hover:text-white' }}">Aprovações (Rep)</a></li>
                 <li x-show="isVisible('Ficha Cadastral')"><a href="{{ route('admin.registrations.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.registrations.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Ficha Cadastral</a></li>
             </ul>
         </div>
@@ -250,13 +252,14 @@
             </button>
             <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('ia_credits') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Dashboard')"><a href="{{ route('admin.financial.ai-credits.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.ai-credits.dashboard') ? 'active' : 'text-zinc-600 hover:text-white' }}">Dashboard</a></li>
+                <li x-show="isVisible('Governança')"><a href="{{ route('admin.financial.ai-credits.governance') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.ai-credits.governance') ? 'active' : 'text-zinc-600 hover:text-white' }}">Governança IA</a></li>
                 <li x-show="isVisible('Relatórios')"><a href="{{ route('admin.financial.ai-credits.report') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.ai-credits.report') ? 'active' : 'text-zinc-600 hover:text-white' }}">Relatórios</a></li>
                 <li x-show="isVisible('Preços e Pacotes')"><a href="{{ route('admin.billing.credits') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.billing.credits') ? 'active' : 'text-zinc-600 hover:text-white' }}">Pacotes & Preços</a></li>
             </ul>
         </div>
 
         <!-- GRUPO: FINANCEIRO -->
-        <div class="nav-item mb-1" x-show="isGroupVisible(['Financeiro', 'Pagamentos', 'Representantes', 'Resgates', 'Relatórios'])">
+        <div class="nav-item mb-1" x-show="isGroupVisible(['Financeiro', 'Pagamentos', 'Resgates', 'Relatórios'])">
             <button @click="toggleMenu('financeiro')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('financeiro') }">
                 <div class="flex items-center gap-3">
                     <i data-lucide="wallet" class="w-4 h-4"></i>
@@ -266,7 +269,6 @@
             </button>
             <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('financeiro') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Pagamentos')"><a href="{{ route('admin.settings.payments') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.payments') ? 'active' : 'text-zinc-600 hover:text-white' }}">Config. Pagamentos</a></li>
-                <li x-show="isVisible('Representantes')"><a href="{{ route('admin.representatives.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.representatives.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Representantes</a></li>
                 <li x-show="isVisible('Resgates')"><a href="{{ route('admin.representatives.withdrawals') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.representatives.withdrawals') ? 'active' : 'text-zinc-600 hover:text-white' }}">Resgates</a></li>
                 <li x-show="isVisible('Relatórios')"><a href="{{ route('admin.financial.reports') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.financial.reports') ? 'active' : 'text-zinc-600 hover:text-white' }}">Relatórios Financeiros</a></li>
                 <li x-show="isVisible('Webhooks')"><a href="{{ route('admin.settings.payments.webhooks') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.payments.webhooks') ? 'active' : 'text-zinc-600 hover:text-white' }}">Inspecionador de Webhooks</a></li>
@@ -307,7 +309,7 @@
         </div>
 
         <!-- GRUPO: IA E AUTOMAÇÃO -->
-        <div class="nav-item mb-1" x-show="isGroupVisible(['IA', 'Automação', 'Workers', 'Filas'])">
+        <div class="nav-item mb-1" x-show="isGroupVisible(['IA', 'Automação', 'Workers', 'Filas', 'Retenção Preditiva'])">
             <button @click="toggleMenu('ia_automacao')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('ia_automacao') }">
                 <div class="flex items-center gap-3">
                     <i data-lucide="cpu" class="w-4 h-4"></i>
@@ -316,8 +318,12 @@
                 <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
             </button>
             <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('ia_automacao') && !isCollapsed" x-collapse>
+                <li x-show="isVisible('IA de Retenção')"><a href="{{ route('admin.ai-intelligence.dashboard') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.ai-intelligence.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">IA de Retenção</a></li>
                 <li x-show="isVisible('Monitoramento IA')"><a href="{{ route('admin.ai.monitoring') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.ai.monitoring') ? 'active' : 'text-zinc-600 hover:text-white' }}">Monitoramento IA</a></li>
                 <li x-show="isVisible('Workers & Filas')"><a href="{{ route('admin.operations.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.operations.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Workers & Operações</a></li>
+                @if(class_exists(\Laravel\Horizon\Horizon::class) && config('observability.horizon.enabled'))
+                <li x-show="isVisible('Horizon')"><a href="/{{ config('observability.horizon.path', 'horizon') }}" target="_blank" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Horizon ↗</a></li>
+                @endif
             </ul>
         </div>
 
@@ -371,7 +377,7 @@
         </div>
 
         <!-- GRUPO: LOGS E AUDITORIA -->
-        <div class="nav-item mb-1" x-show="isGroupVisible(['Logs', 'Auditoria', 'Erros', 'Backup'])">
+        <div class="nav-item mb-1" x-show="isGroupVisible(['Logs', 'Auditoria', 'Erros', 'Backup', 'Deploy'])">
             <button @click="toggleMenu('logs')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('logs') }">
                 <div class="flex items-center gap-3">
                     <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -381,9 +387,14 @@
             </button>
             <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('logs') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Logs de Erro')"><a href="{{ route('admin.system-errors') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.system-errors') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de Erro</a></li>
+                <li x-show="isVisible('Logs Admin')"><a href="{{ route('admin.observability.admin-logs') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.observability.admin-logs') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs Admin</a></li>
+                <li x-show="isVisible('Auditoria Auth')"><a href="{{ route('admin.observability.auth-logs') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.observability.auth-logs') ? 'active' : 'text-zinc-600 hover:text-white' }}">Auditoria Auth</a></li>
+                <li x-show="isVisible('Logs API')"><a href="{{ route('admin.observability.api-logs') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.observability.api-logs') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs API</a></li>
+                <li x-show="isVisible('Erros JS')"><a href="{{ route('admin.observability.client-errors') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.observability.client-errors') ? 'active' : 'text-zinc-600 hover:text-white' }}">Erros JavaScript</a></li>
                 <li x-show="isVisible('Logs de E-mail')"><a href="{{ route('admin.settings.email.logs') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.logs') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de E-mail</a></li>
                 <li x-show="isVisible('Logs de Pagamento')"><a href="{{ route('admin.settings.payments.webhooks') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.payments.webhooks') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de Pagamento</a></li>
                 <li x-show="isVisible('Backup')"><a href="{{ route('admin.backups.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.backups.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Backups do Sistema</a></li>
+                <li x-show="isVisible('Deploy')"><a href="{{ route('admin.deploy.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.deploy.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Deploy & Versões</a></li>
             </ul>
         </div>
 

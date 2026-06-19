@@ -383,8 +383,8 @@ class PortalController extends Controller
 
     public function downloadReport(\App\Models\MedicalReport $report, \App\Services\DompdfPdfService $pdfService)
     {
+        $this->authorize('view', $report);
         $patient = Auth::user();
-        if ($report->patient_id != $patient->id) abort(403);
         
         $html = view('professional.medical-records.reports.pdf', compact('patient', 'report'))->render();
         return $pdfService->generate($html, "laudo-{$report->id}.pdf");
@@ -392,8 +392,8 @@ class PortalController extends Controller
 
     public function downloadCertificate(\App\Models\MedicalCertificate $certificate, \App\Services\DompdfPdfService $pdfService)
     {
+        $this->authorize('view', $certificate);
         $patient = Auth::user();
-        if ($certificate->patient_id != $patient->id) abort(403);
         
         $html = view('professional.medical-records.certificates.pdf', compact('patient', 'certificate'))->render();
         return $pdfService->generate($html, "atestado-{$certificate->id}.pdf");
@@ -441,8 +441,8 @@ class PortalController extends Controller
 
     public function downloadPrescription(\App\Models\MedicalPrescription $prescription, \App\Services\DompdfPdfService $pdfService)
     {
+        $this->authorize('view', $prescription);
         $patient = Auth::user();
-        if ($prescription->patient_id != $patient->id) abort(403);
         
         $html = view('professional.medical-records.prescriptions.pdf', compact('patient', 'prescription'))->render();
         return $pdfService->generate($html, "receita-{$prescription->id}.pdf");
