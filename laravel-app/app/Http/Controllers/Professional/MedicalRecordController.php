@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Professional;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\PatientAccessGuard;
+use Illuminate\Auth\Access\AuthorizationException;
 use App\Models\MedicalEvolution;
 use App\Models\MedicalReport;
 use App\Models\MedicalPrescription;
@@ -318,10 +320,12 @@ class MedicalRecordController extends Controller
     /**
      * Verifica se o profissional tem vínculo com o paciente
      */
-    private function checkLink(User $patient)
+    private function checkLink(User $patient): void
     {
-        if (!auth()->user()->patients()->wherePivot('user_id', $patient->id)->exists()) {
-            abort(403, 'Acesso não autorizado a este paciente.');
+        try {
+            PatientAccessGuard::assertProfessionalPatientLink(auth()->user(), $patient);
+        } catch (AuthorizationException $e) {
+            abort(403, $e->getMessage());
         }
     }
 }

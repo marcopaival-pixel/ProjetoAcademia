@@ -46,7 +46,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->name('auth.token');
 
     Route::post('/referral/verify', [\App\Http\Controllers\Api\ReferralCodeController::class, 'verify'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:15,1')
         ->name('referral.verify');
 
     Route::middleware([
