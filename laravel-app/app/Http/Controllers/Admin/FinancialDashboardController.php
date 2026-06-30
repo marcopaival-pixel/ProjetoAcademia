@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\AcademyCompany;
 use App\Models\Subscription;
 use App\Models\FinancialLog;
-use App\Models\MercadoPagoCredit;
 use App\Models\Payment;
 use App\Services\FinancialMetricsService;
 use App\Support\SubscriptionStatus;
@@ -43,7 +42,7 @@ class FinancialDashboardController extends Controller
             'reconciliation' => $reconciliation,
 
             'paid_invoices' => $financial->paidPaymentsCount(),
-            'legacy_mp_revenue' => $this->legacyRevenueExcludingPayments(),
+            'legacy_mp_revenue' => $financial->legacyMercadoPagoRevenueExcludingPayments(),
             'pending_invoices' => Subscription::whereCanonicalStatus(SubscriptionStatus::PENDING)->count(),
 
             'active_users' => User::where('status', 'active')->count(),
@@ -63,7 +62,7 @@ class FinancialDashboardController extends Controller
 
         $metrics['revenue_by_type'] = [
             'payments_table' => $financial->totalRevenue(),
-            'legacy_mercadopago_credits' => $this->legacyRevenueExcludingPayments(),
+            'legacy_mercadopago_credits' => $financial->legacyMercadoPagoRevenueExcludingPayments(),
         ];
 
         return view('admin.financial.dashboard', compact('metrics', 'period'));
@@ -211,24 +210,5 @@ class FinancialDashboardController extends Controller
             ->when($request->filled('company_id'), fn($q) => $q->where('academy_company_id', $request->company_id))
             ->latest()
             ->get();
-    }
-
-    /**
-     * Receita legada MP excluindo valores já importados na tabela payments.
-     */
-    private function legacyRevenueExcludingPayments(): float
-    {
-        if (! \Illuminate\Support\Facades\Schema::hasTable('mercadopago_payment_credits')) {
-            return 0.0;
-        }
-
-        return (float) MercadoPagoCredit::query()
-            ->whereNotExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('payments')
-                    ->where('gateway', 'mercadopago')
-                    ->whereRaw('payments.gateway_id = CAST(mercadopago_payment_credits.mp_payment_id AS CHAR)');
-            })
-            ->sum('transaction_amount');
     }
 }
