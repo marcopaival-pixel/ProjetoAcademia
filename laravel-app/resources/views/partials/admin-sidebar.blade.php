@@ -12,6 +12,7 @@
             @if(request()->routeIs('admin.financial.ai-credits.*', 'admin.billing.credits')) 'ia_credits', @endif
             @if(request()->routeIs('admin.settings.payments', 'admin.settings.payments.webhooks', 'admin.financial.reports')) 'financeiro', @endif
             @if(request()->routeIs('admin.leads.*', 'admin.proposals.*', 'admin.goals.*', 'admin.commercial.*')) 'vendas', @endif
+            @if(request()->routeIs('admin.shop.*')) 'shopping', @endif
             @if(request()->routeIs('admin.monitoring', 'admin.cs.*')) 'relatorios', @endif
             @if(request()->routeIs('admin.ai.monitoring', 'admin.operations.*', 'admin.ai-intelligence.*')) 'ia_automacao', @endif
             @if(request()->routeIs('admin.omnichannel*', 'omni.*')) 'chatbot', @endif
@@ -291,6 +292,38 @@
                 <li x-show="isVisible('Metas')"><a href="{{ route('admin.goals.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.goals.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Metas de Performance</a></li>
             </ul>
         </div>
+
+        @if(auth()->user()?->hasAdminPanelAccess())
+        <!-- GRUPO: SHOPPING FITNESS -->
+        <div class="nav-item mb-1" x-show="isGroupVisible(['Shopping', 'Produtos', 'Pedidos', 'Cupons', 'Parceiros', 'Fornecedores', 'Pontos', 'Estoque', 'Relatório'])">
+            <button @click="toggleMenu('shopping')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('shopping') }">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest" x-show="!isCollapsed">Shopping</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-3 h-3 chevron" x-show="!isCollapsed"></i>
+            </button>
+            <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('shopping') && !isCollapsed" x-collapse>
+                @if($__nav('admin_nav_shop'))
+                <li x-show="isVisible('Produtos')"><a href="{{ route('admin.shop.products.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.products.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Produtos</a></li>
+                <li x-show="isVisible('Categorias')"><a href="{{ route('admin.shop.categories.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.categories.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Categorias</a></li>
+                @endif
+                @if($__nav('admin_nav_shop_orders'))
+                <li x-show="isVisible('Pedidos')"><a href="{{ route('admin.shop.orders.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.orders.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Pedidos</a></li>
+                @endif
+                <li x-show="isVisible('Cupons')"><a href="{{ route('admin.shop.coupons.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.coupons.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Cupons</a></li>
+                <li x-show="isVisible('Parceiros')"><a href="{{ route('admin.shop.vendors.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.vendors.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Parceiros</a></li>
+                <li x-show="isVisible('Fornecedores')"><a href="{{ route('admin.shop.suppliers.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.suppliers.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Fornecedores</a></li>
+                <li x-show="isVisible('Pontos')"><a href="{{ route('admin.shop.points.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.points.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Pontos & Cashback</a></li>
+                @if($__nav('admin_nav_shop_stock'))
+                <li x-show="isVisible('Estoque')"><a href="{{ route('admin.shop.stock.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.stock.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Estoque</a></li>
+                @endif
+                @if($__nav('admin_nav_shop_reports'))
+                <li x-show="isVisible('Relatório')"><a href="{{ route('admin.shop.reports.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.shop.reports.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Relatório de Vendas</a></li>
+                @endif
+            </ul>
+        </div>
+        @endif
 
         <!-- GRUPO: RELATÓRIOS -->
         <div class="nav-item mb-1" x-show="isGroupVisible(['Relatórios', 'Monitoramento', 'Performance', 'Retenção'])">

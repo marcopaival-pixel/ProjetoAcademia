@@ -16,6 +16,10 @@ class BioimpedancePdfController extends Controller
     ): Response {
         $user = Auth::user();
 
+        if ((int) $assessment->user_id === (int) $user->id && ! $user->hasPremiumAccess()) {
+            abort(403, 'Laudo técnico de bioimpedância é exclusivo para membros Premium.');
+        }
+
         if (! $this->canAccessAssessment($user, $assessment)) {
             abort(403);
         }
@@ -50,7 +54,9 @@ class BioimpedancePdfController extends Controller
         try {
             $binary = $dompdfPdf->render($html, 'A4', 'portrait', true, 'DejaVu Sans');
         } catch (\Exception $e) {
-            return response('Erro ao gerar PDF: '.$e->getMessage(), 500);
+            report($e);
+
+            return response('Erro ao gerar PDF. Tente novamente mais tarde.', 500);
         }
 
         $filename = 'laudo_tecnico_'.$patient->name.'_'.$assessment->assessment_date->format('Y-m-d').'.pdf';

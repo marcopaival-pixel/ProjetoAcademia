@@ -43,6 +43,11 @@ class LgpdOperationalTest extends TestCase
             'user_id' => $user->id,
         ]);
 
+        $this->assertDatabaseHas('user_consents', [
+            'user_id' => $user->id,
+            'consent_type' => 'account_deletion_request',
+        ]);
+
         $log = DB::table('admin_logs')->where('user_id', $user->id)->latest('id')->first();
         $this->assertNotNull($log);
         $this->assertStringContainsString('exclus', (string) $log->action);

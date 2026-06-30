@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Commission;
 use App\Models\Payment;
+use App\Models\ReferralCode;
+use App\Models\Clinic;
 use App\Models\RepresentativeAudit;
 use App\Models\Subscription;
 use App\Models\User;
@@ -14,13 +16,18 @@ class CommissionService
     /**
      * Comissão definitiva após confirmação de pagamento (idempotente por payment_id).
      */
-    public function recordOnPayment(User $user, Payment $payment, ?Subscription $subscription = null): ?Commission
+    public function recordOnPayment(User $user, Payment $payment, ?Subscription $subscription = null, ?float $baseAmountOverride = null): ?Commission
     {
         if ($subscription === null) {
             return null;
         }
 
+        $this->finalizeReferralAfterPayment($user);
+
         $representativeId = $user->representative_id;
+        if (! $representativeId && $user->clinic_id) {
+            $representativeId = Clinic::where('id', $user->clinic_id)->value('representative_id');
+        }
         if (! $representativeId) {
             return null;
         }
@@ -37,14 +44,15 @@ class CommissionService
             return null;
         }
 
-        $commissionAmount = round(((float) $payment->amount * $rate) / 100, 2);
+        $baseAmount = $baseAmountOverride ?? (float) $payment->amount;
+        $commissionAmount = round(($baseAmount * $rate) / 100, 2);
 
         $commission = Commission::create([
             'representative_id' => $representativeId,
             'user_id' => $user->id,
             'payment_id' => $payment->id,
             'subscription_id' => $subscription?->id,
-            'base_amount' => $payment->amount,
+            'base_amount' => $baseAmount,
             'commission_rate' => $rate,
             'commission_amount' => $commissionAmount,
             'status' => Commission::STATUS_PENDENTE,
@@ -52,7 +60,7 @@ class CommissionService
             'notes' => 'Comissão gerada automaticamente via pagamento '.$payment->gateway_id,
         ]);
 
-        $this->auditCommissionGenerated($representativeId, $commission, $payment->amount, $rate, $commissionAmount);
+        $this->auditCommissionGenerated($representativeId, $commission, $baseAmount, $rate, $commissionAmount);
 
         app(CommissionMetricsService::class)->clearCache();
 
@@ -252,5 +260,30 @@ class CommissionService
             'commission_id' => $commission->id,
             'amount' => $commissionAmount,
         ]);
+    }
+
+    /**
+     * Marca código de indicação como utilizado após confirmação de pagamento.
+     */
+    public function finalizeReferralAfterPayment(User $user): void
+    {
+        if (! $user->clinic_id) {
+            return;
+        }
+
+        $clinic = Clinic::find($user->clinic_id);
+        if (! $clinic || ! $clinic->representative_id || ! $clinic->representative_code_used) {
+            return;
+        }
+
+        if (! $user->representative_id) {
+            $user->representative_id = $clinic->representative_id;
+            $user->save();
+        }
+
+        $referralCode = ReferralCode::where('code', $clinic->representative_code_used)->first();
+        if ($referralCode && $referralCode->isValid()) {
+            $referralCode->markAsUsed($user->clinic_id);
+        }
     }
 }

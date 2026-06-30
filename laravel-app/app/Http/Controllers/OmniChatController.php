@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademyCompany;
 use App\Models\OmniBot;
 use App\Models\OmniBotStep;
 use App\Models\OmniBotOption;
+use App\Models\OmniCompany;
 use App\Models\OmniConversation;
 use App\Models\OmniMessage;
 use App\Services\OmniChatService;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -63,10 +66,8 @@ class OmniChatController extends Controller
             'content_type' => 'nullable|string',
         ]);
 
-        $conversation = OmniConversation::findOrFail($conversationId);
-        
-        // Verifica se o atendente tem permissão (seria via middleware ou Policy)
-        
+        $conversation = $this->findAuthorizedConversation($conversationId);
+
         $message = OmniMessage::create([
             'conversation_id' => $conversation->id,
             'sender_type' => 'agent',
@@ -88,7 +89,9 @@ class OmniChatController extends Controller
      */
     public function getHistory($conversationId)
     {
-        $messages = OmniMessage::where('conversation_id', $conversationId)
+        $conversation = $this->findAuthorizedConversation($conversationId);
+
+        $messages = OmniMessage::where('conversation_id', $conversation->id)
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -105,10 +108,83 @@ class OmniChatController extends Controller
             ->orderBy('last_message_at', 'desc');
 
         if ($request->has('company_id')) {
-            $query->where('company_id', $request->company_id);
+            $companyId = (int) $request->input('company_id');
+            $this->assertOmniCompanyAllowed($companyId);
+            $query->where('company_id', $companyId);
+        } else {
+            $allowedIds = $this->resolveAllowedOmniCompanyIds();
+            if ($allowedIds === []) {
+                $query->whereRaw('1 = 0');
+            } elseif ($allowedIds !== null) {
+                $query->whereIn('company_id', $allowedIds);
+            }
         }
 
         return response()->json($query->paginate(20));
+    }
+
+    private function findAuthorizedConversation(int|string $conversationId): OmniConversation
+    {
+        $conversation = OmniConversation::withoutGlobalScopes()->findOrFail($conversationId);
+        $this->assertOmniCompanyAllowed((int) $conversation->company_id);
+
+        return $conversation;
+    }
+
+    private function assertOmniCompanyAllowed(int $companyId): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            abort(403);
+        }
+
+        if ($user->is_admin && ! session()->has('impersonated_clinic_id') && ! session()->has('active_omni_company_id')) {
+            abort(403, 'Selecione uma organização para aceder conversas OmniChannel.');
+        }
+
+        $allowedIds = $this->resolveAllowedOmniCompanyIds();
+        if ($allowedIds === [] || ($allowedIds !== null && ! in_array($companyId, $allowedIds, true))) {
+            abort(403, 'Conversa fora da organização autorizada.');
+        }
+    }
+
+    /**
+     * @return list<int>|null null = sem filtro explícito (admin com contexto omni ativo)
+     */
+    private function resolveAllowedOmniCompanyIds(): ?array
+    {
+        if (session()->has('active_omni_company_id')) {
+            return [(int) session('active_omni_company_id')];
+        }
+
+        $companyId = TenantContext::getCompanyId();
+        if ($companyId) {
+            return $this->omniIdsForAcademyCompany((int) $companyId);
+        }
+
+        $user = Auth::user();
+        if ($user && $user->academy_company_id) {
+            return $this->omniIdsForAcademyCompany((int) $user->academy_company_id);
+        }
+
+        return [];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function omniIdsForAcademyCompany(int $academyCompanyId): array
+    {
+        $slug = AcademyCompany::query()->whereKey($academyCompanyId)->value('slug');
+        if (! $slug) {
+            return [];
+        }
+
+        return OmniCompany::query()
+            ->where('slug', $slug)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /**

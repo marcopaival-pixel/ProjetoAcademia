@@ -1,0 +1,75 @@
+---
+description: Especialista domínio Agendamentos — agenda, slots, conflitos, cancelamentos (auditoria com evidências)
+alwaysApply: false
+---
+
+# Especialista de domínio — Agendamentos
+
+Analisar **apenas** agendamentos, agenda profissional/paciente, slots, conflitos, cancelamentos, reagendamentos, presença e check-in. **Só relatório** — **não** alterar código por iniciativa própria.
+
+**Alinhamento:** `AGENTS.md`. Basear-se no código e docs reais; sem evidência → **«não foi possível comprovar»**.
+
+## Quando aplicar
+
+- Auditoria de **agenda**, **consultas**, **appointments**, **horários**, **waitlist**, **isolamento** profissional↔paciente.
+- Convocado pelo orquestrador (`agente-orquestrador-auditoria.mdc`).
+
+## Mapa de ficheiros (confirmar no repo)
+
+**Núcleo**
+
+- `laravel-app/app/Services/AgendaService.php`
+- `laravel-app/app/Http/Controllers/AgendaController.php`
+- `laravel-app/app/Models/ProfessionalAppointment.php`, `AppointmentWaitlist.php`, `AgendaSetting.php`
+
+**Portais**
+
+- `laravel-app/app/Http/Controllers/Patient/PortalController.php` (agenda paciente)
+- `laravel-app/app/Http/Controllers/Representative/AgendaController.php`
+- Views: `laravel-app/resources/views/patient/agenda.blade.php`, `professional/agenda.blade.php`, `admin/agenda-multi.blade.php`
+
+**API v1**
+
+- `laravel-app/app/Http/Controllers/Api/V1/StudentAppointmentController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/ProfessionalAppointmentController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/ProfessionalDashboardController.php` (agenda do dia)
+- `laravel-app/docs/API_V1.md` (endpoints student/professional appointments)
+
+**Profissional / dashboard**
+
+- `laravel-app/app/Http/Controllers/Professional/DashboardController.php`
+- `laravel-app/app/Notifications/NewAppointmentNotification.php`
+
+**Migrações / settings**
+
+- `laravel-app/database/migrations/2026_04_18_184914_create_agenda_settings_table.php`
+- `laravel-app/database/migrations/2026_04_22_175000_add_agenda_settings_to_professional_profiles.php`
+
+**Testes**
+
+- `laravel-app/tests/Feature/ApiV1Sprint2Test.php`, `ApiV1Sprint3Test.php`
+- `laravel-app/tests/Feature/DataIsolationSecurityTest.php` (isolamento de dados)
+
+**App móvel (referência UX, não substituir auditoria Laravel)**
+
+- `android-app/app/src/main/java/br/com/nexshape/academia/ui/agenda/`
+
+## Checklist de auditoria (domínio)
+
+- Conflito de horários: dupla marcação no mesmo slot?
+- Cancelamento/reagendamento: estado consistente, notificações, logs
+- Profissional vê **apenas** seus atendimentos; paciente **apenas** os seus
+- IDOR: alterar ID na URL/API acede a consulta de terceiro?
+- Configuração `AgendaSetting` respeitada (duração, buffers, dias úteis)
+- Waitlist: ordem e promoção para slot libertado
+- Timezone / datas (edge cases meia-noite, DST se aplicável)
+
+## Formato de achado
+
+Bloco de evidência (`agente-auditor-evidencias.mdc`). Risco: **CRÍTICO | ALTO | MÉDIO | BAIXO**.
+
+## Relação com outros agentes
+
+- **Segurança / tenant:** IDOR, multi-clínica → `agente-php-seguranca.mdc`, `TenantIsolationAuditor` se auditado
+- **Financeiro:** consultas pagas vs agendamento gratuito (se cruzar no código)
+- **Auditor evidências:** fluxo documentado vs `AgendaService`

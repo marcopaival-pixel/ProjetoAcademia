@@ -65,6 +65,15 @@ jobs:
       - name: Run migrations
         run: php artisan migrate --force
 
+      - name: Database integrity audit
+        run: |
+          php artisan app:db:orphans --fail-on-orphans
+          php artisan app:db:index-explain --fail-on-scan
+          php artisan app:db:table-model-gap --prefix=shop_
+          php artisan app:shop:refresh-recommendations --sync || true
+          php artisan app:backup:verify --fail-on-empty
+          php artisan app:db:health-report || true
+
       - name: PHPUnit
         run: composer test
 

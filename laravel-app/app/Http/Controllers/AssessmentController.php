@@ -35,9 +35,12 @@ class AssessmentController extends Controller
         }
 
         // Dados para o gráfico de evolução (unindo pesos avulsos e avaliações)
-        $weightEntries = \App\Models\WeightEntry::where('user_id', $targetUserId)
-            ->orderBy('weighed_at', 'asc')
-            ->get();
+        $weightQuery = \App\Models\WeightEntry::where('user_id', $targetUserId)
+            ->orderBy('weighed_at', 'asc');
+        if (! $isPremium && (int) $targetUserId === (int) $user->id) {
+            $weightQuery->where('weighed_at', '>=', now()->subDays(30));
+        }
+        $weightEntries = $weightQuery->get();
 
         $chartData = $weightEntries->map(fn($e) => [
             'date' => $e->weighed_at,
@@ -114,8 +117,21 @@ class AssessmentController extends Controller
             'phase_angle' => 'nullable|numeric',
         ]);
 
+        $user = Auth::user();
+        $isProfessional = $user->hasRole(['professional', 'instructor', 'supervisor']);
+
+        if (! $user->hasPremiumAccess() && ! $isProfessional) {
+            foreach ([
+                'icw_l', 'ecw_l', 'dry_lean_mass_kg', 'body_fat_mass_kg',
+                'segmental_lean_arm_l', 'segmental_lean_arm_r', 'segmental_lean_leg_l',
+                'segmental_lean_leg_r', 'segmental_lean_trunk', 'visceral_fat_level',
+                'basal_metabolic_rate', 'phase_angle',
+            ] as $bioField) {
+                unset($data[$bioField]);
+            }
+        }
+
         $patientId = Auth::id();
-        $isProfessional = Auth::user()->hasRole(['professional', 'instructor', 'supervisor']);
         
         if ($isProfessional) {
             if (session()->has('active_patient_id')) {

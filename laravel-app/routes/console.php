@@ -25,6 +25,10 @@ Schedule::command('app:clean-unverified-users')->hourly();
 
 // Log Maintenance (Manter banco leve - Prioridade 3 da Auditoria)
 Schedule::command('app:purge-old-logs --days=15 --force')->dailyAt('03:00');
+Schedule::command('app:purge-pulse --force')->dailyAt('03:15');
+
+// Verificação de backups nativos vazios (auditoria BD)
+Schedule::command('app:backup:verify --fail-on-empty')->weeklyOn(1, '04:30');
 
 // Comissões: PENDENTE → DISPONIVEL após carência (available_at)
 Schedule::command('commission:release')->hourly();
@@ -35,6 +39,15 @@ Schedule::command('finance:reconcile --days=30 --stale=7')->dailyAt('04:00');
 // Inadimplência: escalação de status e retentativas de cobrança
 Schedule::command('financial:check-status')->dailyAt('05:00');
 Schedule::command('subscription:process-retries')->dailyAt('06:00');
+
+// LGPD: processamento automático de pedidos de exclusão após prazo legal (15 dias)
+Schedule::command('app:lgpd:process-deletions --older-than-days=15')->dailyAt('07:00');
+
+// Shopping: alertas de estoque baixo para administradores
+Schedule::command('app:shop:check-stock-alerts')->dailyAt('08:00');
+
+// Shopping: recálculo de recomendações (cache expirado)
+Schedule::command('app:shop:refresh-recommendations')->dailyAt('09:00');
 
 // System Health Heartbeat
 Schedule::command('pulse:check')->everyMinute();

@@ -18,6 +18,10 @@ class EnsureUserIsAdministrator
             abort(403, 'Acesso reservado a administradores.');
         }
 
+        if (! $user->is_admin && empty($user->academy_company_id)) {
+            abort(403, 'Acesso administrativo requer vínculo com organização.');
+        }
+
         $panels = app(\App\Services\PanelAccessService::class);
         if ($panels->currentPanel($user) !== \App\Services\PanelAccessService::PANEL_ADMIN) {
             return redirect($panels->homeRouteForPanel($panels->currentPanel($user)))

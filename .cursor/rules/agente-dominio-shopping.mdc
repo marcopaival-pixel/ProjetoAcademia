@@ -1,0 +1,78 @@
+---
+description: Especialista domínio Shopping — carrinho, pedidos, cupons, estoque (auditoria com evidências)
+alwaysApply: false
+---
+
+# Especialista de domínio — Shopping
+
+Analisar **apenas** o módulo de loja/marketplace: produtos, categorias, carrinho, checkout, pedidos, cupons, wishlist, stock e admin shop. **Só relatório** — **não** alterar código por iniciativa própria.
+
+**Nota:** módulo em evolução (migrações `2026_06_29_*`). Confirmar se rotas estão registadas em `laravel-app/routes/web.php` / `shopping.php` antes de auditar fluxo end-to-end.
+
+**Alinhamento:** `AGENTS.md`. Sem evidência → **«não foi possível comprovar»**.
+
+## Quando aplicar
+
+- Auditoria **shopping**, **e-commerce**, **marketplace**, **carrinho**, **pedidos shop**, **estoque produtos**.
+- Convocado pelo orquestrador (`agente-orquestrador-auditoria.mdc`).
+
+## Mapa de ficheiros (confirmar no repo)
+
+**Models**
+
+- `laravel-app/app/Models/ShopProduct.php`, `ShopCategory.php`, `ShopVendor.php`
+- `laravel-app/app/Models/ShopCart.php`, `ShopCartItem.php`
+- `laravel-app/app/Models/ShopOrder.php`, `ShopOrderItem.php`
+- `laravel-app/app/Models/ShopCoupon.php`, `ShopCouponUsage.php`
+- `laravel-app/app/Models/ShopWishlist.php`, `ShopProductImage.php`
+
+**Services**
+
+- `laravel-app/app/Services/Shop/ShopCartService.php`
+- `laravel-app/app/Services/Shop/ShopOrderService.php`
+- `laravel-app/app/Services/Shop/ShopStockService.php`
+
+**Controllers (loja)**
+
+- `laravel-app/app/Http/Controllers/Shopping/ShopController.php`
+- `ShopProductController.php`, `ShopCartController.php`, `ShopCheckoutController.php`
+- `ShopOrderController.php`, `ShopWishlistController.php`
+
+**Controllers (admin)**
+
+- `laravel-app/app/Http/Controllers/Admin/ShopAdminProductController.php`
+- `ShopAdminCategoryController.php`, `ShopAdminOrderController.php`
+
+**Rotas e views**
+
+- `laravel-app/routes/shopping.php`
+- `laravel-app/resources/views/shopping/` (index, cart, checkout, orders, wishlist, …)
+- `laravel-app/resources/views/admin/shop/`
+
+**Migrações**
+
+- `laravel-app/database/migrations/2026_06_29_100000_create_shop_vendors_table.php` até `100007_*`
+
+**Seeder**
+
+- `laravel-app/database/seeders/ShopBaseSeeder.php`
+
+## Checklist de auditoria (domínio)
+
+- Stock: reserva na checkout, race condition, stock negativo
+- Preços: desconto, cupom (validade, uso único, `ShopCouponUsage`)
+- Carrinho: guest vs autenticado, isolamento por utilizador
+- Pedido: totais, itens snapshot vs produto alterado depois
+- Autorização: utilizador vê só seus pedidos; admin scope tenant
+- Pagamento shop vs módulo financeiro global (integração existente ou stub?)
+- FKs e soft delete coerentes com migrações
+
+## Formato de achado
+
+Bloco de evidência (`agente-auditor-evidencias.mdc`). Risco: **CRÍTICO | ALTO | MÉDIO | BAIXO**.
+
+## Relação com outros agentes
+
+- **Financeiro:** pagamento de pedidos, conciliação → `agente-dominio-financeiro.mdc`
+- **Segurança:** IDOR em pedidos/carrinho → `agente-php-seguranca.mdc`
+- **Auditor evidências:** tabelas shop no `dicionario_dados.md` (pode estar desatualizado — assinalar)

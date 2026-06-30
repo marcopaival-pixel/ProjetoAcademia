@@ -74,9 +74,12 @@ class DashboardController extends Controller
         $revenueMonth = $activePatientsCount * $revenuePerPatient; // Simulação
 
         // 3. AGENDA DE HOJE GERAL
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+
         $todayAppointments = \App\Models\ProfessionalAppointment::with('patient')
             ->where('professional_id', $uid)
-            ->whereDate('appointment_at', now()->toDateString())
+            ->whereBetween('appointment_at', [$todayStart, $todayEnd])
             ->orderBy('appointment_at')
             ->get();
 
@@ -91,7 +94,7 @@ class DashboardController extends Controller
             ->count();
 
         $pendingAppointmentsCount = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
-            ->whereDate('appointment_at', '>=', now()->toDateString())
+            ->where('appointment_at', '>=', $todayStart)
             ->where('status', 'pending')
             ->count();
 

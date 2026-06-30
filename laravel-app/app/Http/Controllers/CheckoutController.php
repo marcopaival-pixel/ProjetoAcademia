@@ -111,7 +111,7 @@ class CheckoutController extends Controller
                         $discountAmount = $resolvedReferral['discount_amount'];
                         $representativeId = $resolvedReferral['representative_id'];
                         $referralCode = $resolvedReferral['referral_code'];
-                        if ($referralCode === null && $resolvedReferral['profile']) {
+                        if ($representativeId) {
                             $user->representative_id = $representativeId;
                             $user->save();
                         }
@@ -152,9 +152,6 @@ class CheckoutController extends Controller
                             'applied_discount_rate' => $discountAmount,
                             'representative_id' => $representativeId,
                         ]);
-                        if ($referralCode) {
-                            $referralCode->markAsUsed($clinicId);
-                        }
                     }
 
                     $commissionRate = $this->resolveRepresentativeCommissionRate(
@@ -214,7 +211,7 @@ class CheckoutController extends Controller
                 ]
             );
 
-            $user->payments()->create([
+            $payment = $user->payments()->create([
                 'subscription_id' => $subscription->id,
                 'amount' => 0,
                 'status' => 'paid',
@@ -233,6 +230,8 @@ class CheckoutController extends Controller
                     $discountAmount = $resolved['discount_amount'];
                     $clinicId = $user->clinic_id ?? null;
 
+                    $user->update(['representative_id' => $representativeId]);
+
                     if ($clinicId && $referralCode) {
                         \App\Models\Clinic::where('id', $clinicId)->update([
                             'representative_code_used' => $referralCode->code,
@@ -242,20 +241,11 @@ class CheckoutController extends Controller
                         $referralCode->markAsUsed($clinicId);
                     }
 
-                    $commissionRate = $this->resolveRepresentativeCommissionRate(
-                        $representativeId,
-                        $resolved['profile'] ?? null
-                    );
-
-                    app(\App\Services\CommissionService::class)->recordAwaitingPayment(
-                        $representativeId,
-                        $user->id,
-                        $subscription->id,
-                        $clinicId,
-                        (float) $plan->price,
-                        $commissionRate,
-                        ($plan->price - $discountAmount) * ($commissionRate / 100),
-                        'Ativação gratuita com código: '.$referralCodeStr.' / Plano: '.$plan->name
+                    app(\App\Services\CommissionService::class)->recordOnPayment(
+                        $user->fresh(),
+                        $payment,
+                        $subscription,
+                        max(0, (float) $plan->price - $discountAmount)
                     );
 
                     \App\Models\RepresentativeAudit::create([

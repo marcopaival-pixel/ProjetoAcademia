@@ -29,6 +29,7 @@ class PortalController extends Controller
         }
 
         $accessToken = PatientAccessToken::where('token_hash', hash('sha256', $token))
+            ->where('type', 'access')
             ->where('status', 'active')
             ->first();
 

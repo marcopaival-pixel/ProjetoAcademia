@@ -37,6 +37,17 @@ Esta secção define **comportamentos obrigatórios da IA** em projetos PHP (pur
 | **Auditoria de código** | `agente-php-auditoria-codigo.mdc` | Revisão de riscos, más práticas, performance, lógica — **só relatório**. |
 | **Segurança** | `agente-php-seguranca.mdc` | Foco em **vulnerabilidades** (auth, autorização, SQLi, XSS, CSRF, sessão, dados sensíveis, etc.) — **só relatório**. |
 | **Universal / Laravel** | `agente-php-universal-laravel.mdc` | Manutenção PHP: **identificar primeiro** se o contexto é **PHP puro** ou **Laravel** (evidência no repo), depois corrigir com diff mínimo. |
+| **Orquestrador de auditoria (IA Mãe)** | `agente-orquestrador-auditoria.mdc` | Auditoria **multi-módulo**: escolhe especialistas, consolida relatório, resolve conflitos — **não** inventa achados. |
+| **Auditor (evidências)** | `agente-auditor-evidencias.mdc` | Doc↔código, código morto, migrations órfãs — **só verificação** com ficheiro/linha/confiança. |
+| **Domínio — Financeiro** | `agente-dominio-financeiro.mdc` | Pagamentos, assinaturas, comissões, conciliação (auditoria). |
+| **Domínio — Agendamentos** | `agente-dominio-agendamentos.mdc` | Agenda, slots, cancelamentos, isolamento (auditoria). |
+| **Domínio — Shopping** | `agente-dominio-shopping.mdc` | Carrinho, pedidos, cupons, stock shop (auditoria). |
+| **Domínio — Alunos** | `agente-dominio-alunos.mdc` | Cadastro, vínculos, onboarding, portal aluno (auditoria). |
+| **Domínio — Treinos** | `agente-dominio-treinos.mdc` | Planos, exercícios, sessões, progressão, import IA (auditoria). |
+| **Domínio — Avaliação física** | `agente-dominio-avaliacao-fisica.mdc` | Bioimpedância, medidas, IMC, evolução corporal (auditoria). |
+| **Especialista — Banco de Dados** | `agente-especialista-banco-dados.mdc` | Schema, FKs, órfãos, índices, migrations↔models, EXPLAIN (auditoria). |
+
+**Nota:** o `OrchestratorService` em `laravel-app/app/Services/AI/` é orquestração de **chat do produto** (runtime), **não** substitui o orquestrador de **auditoria** em `.cursor/rules/`.
 
 ### Regras transversais aos agentes que alteram código
 
@@ -69,9 +80,25 @@ Por achado: 1) Vulnerabilidade. 2) Local. 3) Risco (**Baixo** … **Crítico**).
 
 1. Declarar **PHP puro** ou **Laravel** (justificativa com evidência: `composer.json`, `artisan`, `Illuminate\`, estrutura, ou inferência explícita). 2. Problema. 3. Local. 4. Correção mínima. 5. Antes/depois. 6. Motivo. 7. Risco (**Baixo** … **Crítico**). Priorizar: estabilidade → segurança → continuidade.
 
+### Protocolo — orquestrador de auditoria (IA Mãe)
+
+1. Entender âmbito e checklist. 2. Escolher especialistas (mapa em `agente-orquestrador-auditoria.mdc`). 3. Cada especialista reporta com **evidência** (ficheiro, linhas, confiança). 4. Consolidar relatório único; marcar **não foi possível comprovar** onde faltar leitura/teste. 5. Priorizar: segurança → integridade de dados → continuidade. **Não** alterar código na fase de auditoria.
+
+### Protocolo — auditor com evidências
+
+Por achado: **Arquivo** → **Classe/Método** → **Linha(s)** → **Regra encontrada** → **Situação** (✅/❌/⚠️) → **Confiança %** → **Evidência** (citação) → **Impacto** → **Sugestão** (texto; sem patch salvo pedido). Inferências ≤ 70% de confiança e rotuladas explicitamente.
+
+### Protocolo — especialistas de domínio (auditoria)
+
+Analisar **só** o domínio (Financeiro, Agendamentos, Shopping, Alunos, Treinos, Avaliação física, …); usar mapas de ficheiros da regra `.mdc` **confirmando no repo**; formato de achado igual ao auditor com evidências; remeter segurança transversal a `agente-php-seguranca.mdc`.
+
+### Protocolo — especialista banco de dados (auditoria)
+
+Analisar **schema, integridade e performance física** (não regras de negócio financeira); usar `app:db:orphans`, `app:db:index-explain`, `app:db:health-report` quando houver BD acessível; formato de achado igual ao auditor com evidências; colunas mortas como **inferência** (≤ 70%); remeter N+1 no código a `agente-php-auditoria-codigo.mdc`; **não** alterar migrations/dados sem autorização explícita.
+
 ### Conflitos entre protocolos
 
-Se dois agentes sugerirem formatos diferentes para o mesmo pedido, **unificar** numa única resposta clara: para **incidente sem pedido de código**, preferir monitoramento/logs; para **patch**, preferir correção pontual ou universal com restrições críticas acima; para **risco de segurança**, destacar achados mesmo dentro de uma correção.
+Se dois agentes sugerirem formatos diferentes para o mesmo pedido, **unificar** numa única resposta clara: para **incidente sem pedido de código**, preferir monitoramento/logs; para **patch**, preferir correção pontual ou universal com restrições críticas acima; para **auditoria multi-módulo**, preferir orquestrador + formato de evidências; para **risco de segurança**, destacar achados mesmo dentro de uma correção.
 
 ---
 
