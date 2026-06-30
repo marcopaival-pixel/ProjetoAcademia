@@ -36,10 +36,20 @@ class MenuPermissionAuditLog extends Model
     }
 
     /**
-     * @return BelongsTo<Profile, MenuPermissionAuditLog>
+     * @return BelongsTo<Role, MenuPermissionAuditLog>
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    /**
+     * @deprecated Use role() — coluna correta é role_id.
+     *
+     * @return BelongsTo<Role, MenuPermissionAuditLog>
      */
     public function profile(): BelongsTo
     {
-        return $this->belongsTo(Profile::class, 'profile_id');
+        return $this->role();
     }
 }

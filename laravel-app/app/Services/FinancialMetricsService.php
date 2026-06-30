@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\Commission;
+use App\Models\MercadoPagoCredit;
 use App\Models\Payment;
 use App\Models\Subscription;
 use App\Support\SubscriptionStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class FinancialMetricsService
 {
@@ -196,5 +198,45 @@ class FinancialMetricsService
             'label' => Carbon::createFromFormat('Y-m', $r->month)->translatedFormat('M/y'),
             'total' => round((float) $r->total, 2),
         ])->values()->all();
+    }
+
+    /**
+     * Receita legada Mercado Pago sem duplicar registos já espelhados em `payments`.
+     */
+    public function legacyMercadoPagoRevenueExcludingPayments(
+        ?Carbon $startDate = null,
+        ?Carbon $endDate = null,
+        ?string $planCode = null
+    ): float {
+        if (! Schema::hasTable('mercadopago_payment_credits')) {
+            return 0.0;
+        }
+
+        $driver = DB::connection()->getDriverName();
+        $gatewayMatchSql = $driver === 'sqlite'
+            ? 'payments.gateway_id = CAST(mercadopago_payment_credits.mp_payment_id AS TEXT)'
+            : 'payments.gateway_id = CAST(mercadopago_payment_credits.mp_payment_id AS CHAR)';
+
+        $query = MercadoPagoCredit::query()
+            ->whereNotExists(function ($sub) use ($gatewayMatchSql) {
+                $sub->select(DB::raw(1))
+                    ->from('payments')
+                    ->where('gateway', 'mercadopago')
+                    ->whereRaw($gatewayMatchSql);
+            });
+
+        if ($planCode !== null) {
+            $query->where('plan_code', $planCode);
+        }
+
+        if ($startDate !== null) {
+            $query->where('created_at', '>=', $startDate);
+        }
+
+        if ($endDate !== null) {
+            $query->where('created_at', '<=', $endDate);
+        }
+
+        return (float) $query->sum('transaction_amount');
     }
 }

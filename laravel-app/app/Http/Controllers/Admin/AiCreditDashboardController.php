@@ -38,14 +38,14 @@ class AiCreditDashboardController extends Controller
             $userQuery->where('status', $status);
         }
 
+        $financial = app(FinancialMetricsService::class);
+
         $metrics = [
             'total_sold' => AiCreditPurchaseLog::whereBetween('created_at', [$startDate, $endDate])->sum('credits_amount'),
             'total_consumed' => AiCreditUsageLog::whereBetween('created_at', [$startDate, $endDate])->sum('credits_consumed'),
             'available' => User::sum('ai_credits'),
-            'revenue' => app(FinancialMetricsService::class)->aiCreditsRevenue($startDate, $endDate),
-            'legacy_mp_revenue' => \App\Models\MercadoPagoCredit::where('plan_code', 'ai_credits')
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('transaction_amount'),
+            'revenue' => $financial->aiCreditsRevenue($startDate, $endDate),
+            'legacy_mp_revenue' => $financial->legacyMercadoPagoRevenueExcludingPayments($startDate, $endDate, 'ai_credits'),
             'active_users_ia' => User::where('ai_credits', '>', 0)->count(),
         ];
 

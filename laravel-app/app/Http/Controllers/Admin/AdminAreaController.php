@@ -44,7 +44,7 @@ class AdminAreaController extends Controller
         
         $financial = app(\App\Services\FinancialMetricsService::class);
         $totalRevenue = $financial->totalRevenue();
-        $legacyMpRevenue = \App\Models\MercadoPagoCredit::sum('transaction_amount');
+        $legacyMpRevenue = $financial->legacyMercadoPagoRevenueExcludingPayments();
 
         $saasMetrics = app(\App\Services\SaaSMetricsService::class);
         $mrr = $saasMetrics->calculateMRR();

@@ -28,7 +28,7 @@ class ReferralCodeController extends Controller
             return response()->json([
                 'valid' => false,
                 'message' => 'Código de indicação inválido ou incompatível com o plano selecionado.',
-            ], 404);
+            ], 422);
         }
 
         $response = [
