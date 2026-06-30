@@ -157,6 +157,8 @@ rg "Schema::create\('" laravel-app/database/migrations -o
 
 Documento principal: `dicionario_dados.md` — atualizar quando possível fundindo este suplemento.
 
+**Suplementos adicionais:** `dicionario_dados_suplemento_shop_2026-06.md` (módulo Shopping).
+
 ---
 
 ## Suplemento 2026-05-27 (tenant empresa em IA + análises)

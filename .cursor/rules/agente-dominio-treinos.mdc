@@ -1,0 +1,96 @@
+---
+description: Especialista domínio Treinos — planos, séries, fichas, progressão, importação IA (auditoria com evidências)
+alwaysApply: false
+---
+
+# Especialista de domínio — Treinos
+
+Analisar **apenas** planos de treino, exercícios, sessões, progressão de carga, importação por foto/IA e limites de plano Free/Premium. **Só relatório** — **não** alterar código por iniciativa própria.
+
+**Alinhamento:** `AGENTS.md`. Sem evidência → **«não foi possível comprovar»**.
+
+**Nota:** `app/Services/AI/Agents/TrainingAgent.php` é agente de **chat runtime** — não substituir este especialista de **auditoria de código**.
+
+## Quando aplicar
+
+- Auditoria de **treino**, **ficha**, **plano**, **exercício**, **série**, **RPE**, **progressão**, **workout**, **importação foto**.
+- Convocado pelo orquestrador (`agente-orquestrador-auditoria.mdc`).
+
+## Mapa de ficheiros (confirmar no repo)
+
+**Planos e estrutura**
+
+- `laravel-app/app/Models/TrainingPlan.php`, `TrainingPlanExercise.php`
+- `laravel-app/app/Models/TrainingModule.php`, `TrainingLesson.php`, `TrainingLessonCompletion.php`
+- `laravel-app/app/Models/Traits/ScopesByTrainingPlanClinic.php`
+- `laravel-app/app/Policies/TrainingPlanPolicy.php`
+- `laravel-app/app/Http/Controllers/TrainingPlanController.php`
+- `laravel-app/app/Http/Controllers/Professional/PatientTrainingController.php`
+- Views: `laravel-app/resources/views/professional/patient-trainings/`
+
+**Exercícios e execução**
+
+- `laravel-app/app/Models/ExerciseCatalog.php`, `ExerciseEntry.php`, `ExerciseSet.php`
+- `laravel-app/app/Http/Controllers/ExerciseController.php`, `ExerciseCatalogController.php`
+- `laravel-app/app/Observers/ExerciseEntryObserver.php`
+- `laravel-app/app/Http/Controllers/LoadProgressionController.php`
+
+**Sessões de treino**
+
+- `laravel-app/app/Models/WorkoutSession.php`, `WorkoutTargetArea.php`
+- `laravel-app/app/Http/Controllers/WorkoutSessionController.php`
+
+**Importação IA / visão**
+
+- `laravel-app/app/Http/Controllers/WorkoutPhotoImportController.php`
+- `laravel-app/app/Models/WorkoutImportLog.php`
+- `laravel-app/tests/Feature/WorkoutImportTenantTest.php`
+
+**API v1**
+
+- `laravel-app/app/Http/Controllers/Api/V1/TrainingPlanController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/ProfessionalPatientTrainingController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/WorkoutSessionController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/ExerciseLogController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/Concerns/FormatsTrainingPlans.php`
+- `laravel-app/tests/Feature/ApiV1TrainingPlansTest.php`
+
+**Admin / academia interna**
+
+- `laravel-app/app/Http/Controllers/Admin/TrainingController.php`
+- `laravel-app/app/Http/Controllers/Support/TrainingController.php`
+
+**Migrações relevantes**
+
+- `2026_04_17_*_training_plans`, `2026_04_23_113941_enhance_training_plans_table_v2.php`
+- `2026_04_23_150100_add_max_exercises_to_plans_table.php`
+- `2026_05_06_220501_add_ai_flag_to_training_plans.php`
+- `2026_04_22_213325_add_professional_id_to_training_and_diets_tables.php`
+
+**Rotas**
+
+- `laravel-app/routes/professional.php` — prefix `{patient}/trainings`
+- Trechos treino em `laravel-app/routes/web.php`, `features.php`
+
+## Checklist de auditoria (domínio)
+
+- Profissional gere treinos **só** de pacientes vinculados (`ProfessionalPatientPolicy`, pivot)
+- **Admin bypass** em `PatientTrainingController` sem impersonação (achado F-02 — verificar se corrigido)
+- Limite de planos Free (ex.: 3 planos) respeitado em create/API
+- Limite `max_exercises` por plano
+- Isolamento tenant/clínica em `TrainingPlan` e import logs
+- Progressão de carga: cálculos consistentes (`LoadProgressionController`)
+- Importação foto: dados sensíveis, tenant em `workout_import_logs`, créditos IA
+- Soft delete / histórico de fichas antigas vs plano ativo
+- API v1: aluno só regista exercícios nos próprios planos
+
+## Formato de achado
+
+Bloco de evidência (`agente-auditor-evidencias.mdc`). Risco: **CRÍTICO | ALTO | MÉDIO | BAIXO**.
+
+## Relação com outros agentes
+
+- **Alunos:** vínculo paciente → `agente-dominio-alunos.mdc`
+- **Avaliação física:** objetivos/peso alvo no perfil → `agente-dominio-avaliacao-fisica.mdc`
+- **Segurança:** IDOR em planos por ID → `agente-php-seguranca.mdc`
+- **Auditor evidências:** doc painel aluno vs rotas treino

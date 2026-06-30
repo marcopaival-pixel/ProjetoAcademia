@@ -30,7 +30,7 @@ class ProfileController extends Controller
         }
         
         if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
+            $user->password_hash = bcrypt($validated['password']);
         }
 
         $user->save();

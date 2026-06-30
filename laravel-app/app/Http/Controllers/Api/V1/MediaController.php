@@ -35,7 +35,7 @@ class MediaController extends Controller
     {
         $photo = EvolutionPhoto::findOrFail($id);
 
-        return $this->secureFiles->streamForOwner($user, $photo->photo_path, (int) $photo->user_id);
+        return $this->secureFiles->streamEvolutionPhoto($user, $photo);
     }
 
     private function serveBodyAnalysis($user, int $id): StreamedResponse

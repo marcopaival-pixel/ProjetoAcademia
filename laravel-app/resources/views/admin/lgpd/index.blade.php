@@ -5,7 +5,7 @@
 @section('content')
 <div class="space-y-10 animate-fade-in">
     <!-- Header/Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <!-- Card: Total Consents -->
         <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-6 rounded-[2rem] hover:bg-zinc-900/60 transition-all">
             <div class="flex items-center justify-between mb-4">
@@ -16,6 +16,18 @@
             </div>
             <div class="text-2xl font-black text-white tracking-tight">{{ $stats['total_consents'] }}</div>
             <div class="text-[9px] text-blue-400 font-bold mt-2 uppercase tracking-wide">Aceites confirmados</div>
+        </div>
+
+        <!-- Card: Pending Deletion Requests -->
+        <div class="bg-zinc-900/40 backdrop-blur-3xl border border-{{ ($stats['pending_deletions'] ?? 0) > 0 ? 'amber' : 'emerald' }}-500/20 p-6 rounded-[2rem] hover:bg-zinc-900/60 transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Exclusões Pendentes</span>
+                <div class="w-8 h-8 rounded-lg bg-{{ ($stats['pending_deletions'] ?? 0) > 0 ? 'amber' : 'emerald' }}-500/10 flex items-center justify-center text-{{ ($stats['pending_deletions'] ?? 0) > 0 ? 'amber' : 'emerald' }}-500 text-xs">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-black text-white tracking-tight">{{ $stats['pending_deletions'] ?? 0 }}</div>
+            <div class="text-[9px] text-{{ ($stats['pending_deletions'] ?? 0) > 0 ? 'amber' : 'emerald' }}-400 font-bold mt-2 uppercase tracking-wide">Aguardam anonimização</div>
         </div>
 
         <!-- Card: Open Incidents -->
@@ -32,6 +44,7 @@
 
         <!-- Card: Quick Actions -->
         <div class="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-6 rounded-[2rem] flex flex-col justify-center gap-3">
+            <a href="{{ route('admin.lgpd.deletion-requests') }}" class="w-full px-4 py-2 bg-amber-600/10 text-amber-500 border border-amber-500/20 rounded-xl text-xs font-bold uppercase tracking-widest text-center hover:bg-amber-600/20 transition-all">Pedidos de Exclusão ({{ $stats['pending_deletions'] ?? 0 }})</a>
             <a href="{{ route('admin.lgpd.consents') }}" class="w-full px-4 py-2 bg-blue-600/10 text-blue-500 border border-blue-500/20 rounded-xl text-xs font-bold uppercase tracking-widest text-center hover:bg-blue-600/20 transition-all">Ver Registros de Consentimento</a>
             <a href="{{ route('admin.lgpd.incidents') }}" class="w-full px-4 py-2 bg-zinc-800 text-zinc-300 border border-white/5 rounded-xl text-xs font-bold uppercase tracking-widest text-center hover:bg-zinc-700 transition-all">Reportar Incidente (DPO)</a>
         </div>

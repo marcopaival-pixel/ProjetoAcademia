@@ -147,6 +147,10 @@ return [
         'address' => env('OPERATIONAL_ALERT_EMAIL', env('ADMIN_EMAIL')),
     ],
 
+    'lgpd' => [
+        'dpo_address' => env('LGPD_DPO_EMAIL', env('OPERATIONAL_ALERT_EMAIL', env('ADMIN_EMAIL'))),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Proteção contra envio duplicado (mesmo utilizador / tipo / assunto)

@@ -67,7 +67,6 @@ Route::prefix('admin')->group(function () {
         Route::post('/users/{user}/update', [AdminAreaController::class, 'updateUser'])->name('admin.users.update');
         Route::get('/users/{user}/update', fn($user) => redirect()->route('admin.users.edit', $user));
         Route::delete('/users/{user}', [AdminAreaController::class, 'destroyUser'])->name('admin.users.destroy');
-        Route::get('/lgpd/export-user/{user}', [AdminAreaController::class, 'exportUserFullData'])->name('admin.lgpd.export-user');
         Route::post('/users/{user}/reset-password', [AdminAreaController::class, 'resetUserPassword'])->name('admin.security.reset-password');
         Route::post('/users/{user}/reset-and-email', [AdminAreaController::class, 'generateAndSendNewPassword'])->name('admin.security.reset-and-email');
         Route::post('/users/{user}/send-reset-link', [AdminAreaController::class, 'sendResetEmail'])->name('admin.security.send-reset-link');
@@ -203,11 +202,37 @@ Route::prefix('admin')->group(function () {
             Route::get('/{referralCode}', [\App\Http\Controllers\Admin\ReferralCodeController::class, 'show'])->name('show');
         });
 
-        // Monitoramento e Auditoria (LGPD/Erros/Segurança)
-        Route::get('/lgpd', [AdminAreaController::class, 'lgpdDashboard'])->name('admin.lgpd.index');
-        Route::get('/lgpd/consents', [AdminAreaController::class, 'consents'])->name('admin.lgpd.consents');
-        Route::get('/lgpd/incidents', [AdminAreaController::class, 'incidents'])->name('admin.lgpd.incidents');
-        Route::post('/lgpd/incidents', [AdminAreaController::class, 'storeIncident'])->name('admin.lgpd.incidents.store');
+        // Monitoramento e Auditoria (LGPD/Erros/Segurança) — plataforma
+        Route::middleware(['admin.platform'])->group(function () {
+            Route::get('/lgpd/export-user/{user}', [AdminAreaController::class, 'exportUserFullData'])->name('admin.lgpd.export-user');
+            Route::get('/lgpd', [AdminAreaController::class, 'lgpdDashboard'])->name('admin.lgpd.index');
+            Route::get('/lgpd/consents', [AdminAreaController::class, 'consents'])->name('admin.lgpd.consents');
+            Route::get('/lgpd/incidents', [AdminAreaController::class, 'incidents'])->name('admin.lgpd.incidents');
+            Route::post('/lgpd/incidents', [AdminAreaController::class, 'storeIncident'])->name('admin.lgpd.incidents.store');
+            Route::get('/lgpd/deletion-requests', [AdminAreaController::class, 'deletionRequests'])->name('admin.lgpd.deletion-requests');
+            Route::post('/lgpd/deletion-requests/{user}/process', [AdminAreaController::class, 'processDeletionRequest'])->name('admin.lgpd.deletion-requests.process');
+            Route::post('/lgpd/deletion-requests/batch', [AdminAreaController::class, 'processDeletionRequestsBatch'])->name('admin.lgpd.deletion-requests.batch');
+
+            Route::prefix('backups')->name('admin.backups.')->group(function () {
+                Route::get('/', [BackupController::class, 'index'])->name('index');
+                Route::post('/create', [BackupController::class, 'create'])->name('create');
+                Route::get('/download/{disk}/{fileName}', [BackupController::class, 'download'])->name('download');
+                Route::delete('/{disk}/{fileName}', [BackupController::class, 'delete'])->name('delete');
+                Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
+
+                Route::prefix('tenant/{companyId}')->name('tenant.')->group(function () {
+                    Route::get('/', [TenantBackupController::class, 'index'])->name('index');
+                    Route::post('/create', [TenantBackupController::class, 'create'])->name('create');
+                    Route::get('/download/{fileName}', [TenantBackupController::class, 'download'])->name('download');
+                    Route::delete('/{fileName}', [TenantBackupController::class, 'delete'])->name('delete');
+                    Route::post('/restore', [TenantBackupController::class, 'restore'])->name('restore');
+                });
+            });
+
+            Route::get('/export/users', [AdminAreaController::class, 'exportUsersCsv'])->name('admin.export.users');
+            Route::get('/export/payments', [AdminAreaController::class, 'exportPaymentsCsv'])->name('admin.export.payments');
+        });
+
         Route::get('/security', [AdminAreaController::class, 'security'])->name('admin.security.index');
         Route::post('/security/change-password', [AdminAreaController::class, 'changeAdminPassword'])->name('admin.security.change-password');
         Route::get('/system-errors', [AdminAreaController::class, 'systemErrors'])->name('admin.system-errors');
@@ -271,28 +296,6 @@ Route::prefix('admin')->group(function () {
             Route::post('/', [DeployReleaseController::class, 'store'])->name('store');
             Route::patch('/{deployRelease}/homolog', [DeployReleaseController::class, 'updateHomolog'])->name('homolog');
         });
-
-        // Gestão de Backups
-        Route::prefix('backups')->name('admin.backups.')->group(function () {
-            Route::get('/', [BackupController::class, 'index'])->name('index');
-            Route::post('/create', [BackupController::class, 'create'])->name('create');
-            Route::get('/download/{disk}/{fileName}', [BackupController::class, 'download'])->name('download');
-            Route::delete('/{disk}/{fileName}', [BackupController::class, 'delete'])->name('delete');
-            Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
-            
-            // Backup por Empresa (Tenant)
-            Route::prefix('tenant/{companyId}')->name('tenant.')->group(function () {
-                Route::get('/', [TenantBackupController::class, 'index'])->name('index');
-                Route::post('/create', [TenantBackupController::class, 'create'])->name('create');
-                Route::get('/download/{fileName}', [TenantBackupController::class, 'download'])->name('download');
-                Route::delete('/{fileName}', [TenantBackupController::class, 'delete'])->name('delete');
-                Route::post('/restore', [TenantBackupController::class, 'restore'])->name('restore');
-            });
-        });
-        
-        // Exportação
-        Route::get('/export/users', [AdminAreaController::class, 'exportUsersCsv'])->name('admin.export.users');
-        Route::get('/export/payments', [AdminAreaController::class, 'exportPaymentsCsv'])->name('admin.export.payments');
 
         // OmniChannel Agent Panel
         Route::prefix('omnichannel')->group(function () {
@@ -542,6 +545,75 @@ Route::prefix('admin')->group(function () {
             Route::post('/post/{post}/status', [CommunityModerationController::class, 'updatePostStatus'])->name('post.status');
             Route::post('/report/{report}/resolve', [CommunityModerationController::class, 'resolveReport'])->name('report.resolve');
             Route::post('/sticker', [CommunityModerationController::class, 'storeSticker'])->name('sticker.store');
+        });
+
+        // Módulo de Shopping Administrativo
+        Route::prefix('shop')->name('admin.shop.')->group(function () {
+            // Produtos
+            Route::prefix('products')->name('products.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'store'])->name('store');
+                Route::get('/{product}/edit', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'edit'])->name('edit');
+                Route::post('/{product}/update', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'update'])->name('update');
+                Route::post('/{product}/images', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'storeImages'])->name('images.store');
+                Route::delete('/{product}/images/{image}', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'destroyImage'])->name('images.destroy');
+                Route::post('/{product}/images/{image}/primary', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'setPrimaryImage'])->name('images.primary');
+                Route::delete('/{product}', [\App\Http\Controllers\Admin\ShopAdminProductController::class, 'destroy'])->name('destroy');
+            });
+
+            // Categorias
+            Route::prefix('categories')->name('categories.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminCategoryController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admin\ShopAdminCategoryController::class, 'store'])->name('store');
+                Route::post('/{category}/update', [\App\Http\Controllers\Admin\ShopAdminCategoryController::class, 'update'])->name('update');
+                Route::delete('/{category}', [\App\Http\Controllers\Admin\ShopAdminCategoryController::class, 'destroy'])->name('destroy');
+            });
+
+            Route::prefix('coupons')->name('coupons.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminCouponController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admin\ShopAdminCouponController::class, 'store'])->name('store');
+                Route::post('/{coupon}/update', [\App\Http\Controllers\Admin\ShopAdminCouponController::class, 'update'])->name('update');
+                Route::delete('/{coupon}', [\App\Http\Controllers\Admin\ShopAdminCouponController::class, 'destroy'])->name('destroy');
+            });
+
+            // Pedidos recebidos
+            Route::prefix('orders')->name('orders.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminOrderController::class, 'index'])->name('index');
+                Route::get('/{order}', [\App\Http\Controllers\Admin\ShopAdminOrderController::class, 'show'])->name('show');
+                Route::post('/{order}/status', [\App\Http\Controllers\Admin\ShopAdminOrderController::class, 'updateStatus'])->name('status.update');
+                Route::post('/{order}/refund', [\App\Http\Controllers\Admin\ShopAdminOrderController::class, 'refund'])->name('refund');
+            });
+
+            Route::prefix('points')->name('points.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminPointsController::class, 'index'])->name('index');
+                Route::post('/credit', [\App\Http\Controllers\Admin\ShopAdminPointsController::class, 'credit'])->name('credit');
+            });
+
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminReportController::class, 'index'])->name('index');
+                Route::get('/export', [\App\Http\Controllers\Admin\ShopAdminReportController::class, 'exportCsv'])->name('export');
+                Route::post('/commissions/pay', [\App\Http\Controllers\Admin\ShopAdminReportController::class, 'payVendorCommissions'])->name('commissions.pay');
+            });
+
+            Route::prefix('vendors')->name('vendors.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminVendorController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admin\ShopAdminVendorController::class, 'store'])->name('store');
+                Route::post('/{vendor}/update', [\App\Http\Controllers\Admin\ShopAdminVendorController::class, 'update'])->name('update');
+                Route::delete('/{vendor}', [\App\Http\Controllers\Admin\ShopAdminVendorController::class, 'destroy'])->name('destroy');
+            });
+
+            Route::prefix('suppliers')->name('suppliers.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminSupplierController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admin\ShopAdminSupplierController::class, 'store'])->name('store');
+                Route::post('/{supplier}/update', [\App\Http\Controllers\Admin\ShopAdminSupplierController::class, 'update'])->name('update');
+                Route::delete('/{supplier}', [\App\Http\Controllers\Admin\ShopAdminSupplierController::class, 'destroy'])->name('destroy');
+            });
+
+            Route::prefix('stock')->name('stock.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\ShopAdminStockController::class, 'index'])->name('index');
+                Route::post('/notify', [\App\Http\Controllers\Admin\ShopAdminStockController::class, 'notify'])->name('notify');
+            });
         });
 
         // Configuration Center (Módulo Avançado)

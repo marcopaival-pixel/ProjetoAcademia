@@ -306,6 +306,9 @@ Route::middleware(['auth', 'active_patient', 'panel.isolation'])->group(function
 
     require __DIR__.'/features.php';
 
+    // Módulo Shopping Fitness
+    require __DIR__.'/shopping.php';
+
 
     
     // Relatórios e Exportação (PDF Mensal)

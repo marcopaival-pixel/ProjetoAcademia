@@ -66,7 +66,7 @@ class ReferralCommissionCheckoutTest extends TestCase
             'user_id' => $buyer->id,
             'commission_rate' => 10,
             'commission_amount' => 10,
-            'status' => Commission::STATUS_AGUARDANDO_PAGAMENTO,
+            'status' => Commission::STATUS_PENDENTE,
         ]);
 
         $clinic->refresh();

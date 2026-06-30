@@ -207,6 +207,14 @@ class MenuAccessService
 
         $menu = $this->findMenuForRouteName($routeName, $request);
         if ($menu === null) {
+            if ($routeName !== null && str_starts_with($routeName, 'admin.') && ! $user->isAdministrator()) {
+                if (str_starts_with($routeName, 'admin.shop.') && $user->hasAdminPanelAccess()) {
+                    return true;
+                }
+
+                return false;
+            }
+
             return true;
         }
 

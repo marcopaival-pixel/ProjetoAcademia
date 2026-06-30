@@ -63,10 +63,13 @@ class ProfessionalPatientTrainingController extends Controller
         ]);
 
         if (! empty($validated['protocol_id'])) {
+            $this->assertPatientTrainingPlanLimits($linked);
             $plan = $this->applyProtocol($professional, $linked, (int) $validated['protocol_id']);
 
             return $this->success($this->planSummary($plan->loadCount('exercises')), status: 201);
         }
+
+        $this->assertPatientTrainingPlanLimits($linked);
 
         $plan = TrainingPlan::create([
             'user_id' => $linked->id,
@@ -104,5 +107,18 @@ class ProfessionalPatientTrainingController extends Controller
             'is_active' => true,
             'is_template' => false,
         ]);
+    }
+
+    private function assertPatientTrainingPlanLimits(User $patient): void
+    {
+        $maxWorkouts = $patient->getPlanLimit('max_workouts');
+        if ($maxWorkouts > 0) {
+            $planCount = TrainingPlan::where('user_id', $patient->id)->count();
+            if ($planCount >= $maxWorkouts) {
+                throw new \Illuminate\Auth\Access\AuthorizationException(
+                    "O aluno atingiu o limite de {$maxWorkouts} planos de treino do plano."
+                );
+            }
+        }
     }
 }

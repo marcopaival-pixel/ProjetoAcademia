@@ -26,9 +26,11 @@ class EvolutionController extends Controller
                 return \Carbon\Carbon::parse($date->registered_date)->format('Y-m');
             });
 
-        // Agrupamento por tipo para o Antes & Depois Premium
-        $photosByType = EvolutionPhoto::where('user_id', $user->id)
-            ->orderBy('registered_date', 'asc')
+        $photosByType = EvolutionPhoto::where('user_id', $user->id);
+        if (! $isPremium) {
+            $photosByType->where('registered_date', '>=', now()->subDays(30));
+        }
+        $photosByType = $photosByType->orderBy('registered_date', 'asc')
             ->get()
             ->groupBy('type');
 
@@ -41,10 +43,13 @@ class EvolutionController extends Controller
                 ];
             }
         }
-            
-        $assessments = \App\Models\BodyAssessment::where('user_id', $user->id)
-            ->orderBy('assessment_date', 'asc')
-            ->get();
+
+        $assessmentsQuery = \App\Models\BodyAssessment::where('user_id', $user->id)
+            ->orderBy('assessment_date', 'asc');
+        if (! $isPremium) {
+            $assessmentsQuery->limit(1);
+        }
+        $assessments = $assessmentsQuery->get();
 
         $processedAssessments = collect();
         $chartData = [

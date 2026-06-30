@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\AgendaService;
 use App\Models\ProfessionalAppointment;
 use App\Models\ProfessionalAvailability;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -41,10 +42,14 @@ class AgendaController extends Controller
                 ->get();
 
             $date = $request->get('date', now()->toDateString());
-            
+            $day = Carbon::parse($date);
+
             $appointments = ProfessionalAppointment::with(['patient', 'professional'])
                             ->whereIn('professional_id', $professionals->pluck('id'))
-                            ->whereDate('appointment_at', $date)
+                            ->whereBetween('appointment_at', [
+                                $day->copy()->startOfDay(),
+                                $day->copy()->endOfDay(),
+                            ])
                             ->get();
 
             return view('admin.agenda-multi', compact('professionals', 'appointments', 'date'));

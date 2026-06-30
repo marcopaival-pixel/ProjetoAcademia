@@ -38,7 +38,7 @@ Route::middleware(['auth', 'professional.panel', 'panel.isolation', 'patient_lin
         Route::post('/check', [PatientController::class, 'checkExisting'])->name('check');
         Route::get('/', [PatientController::class, 'index'])->name('index');
         Route::get('/create', [PatientController::class, 'create'])->name('create');
-        Route::post('/', [PatientController::class, 'store'])->name('store');
+        Route::post('/', [PatientController::class, 'store'])->middleware('pro_patient_limit')->name('store');
         Route::get('/{patient}/edit', [PatientController::class, 'edit'])->name('edit');
         Route::put('/{patient}', [PatientController::class, 'update'])->name('update');
         Route::get('/{patient}', [PatientController::class, 'show'])->name('show');

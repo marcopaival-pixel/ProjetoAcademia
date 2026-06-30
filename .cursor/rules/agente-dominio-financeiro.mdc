@@ -1,0 +1,87 @@
+---
+description: Especialista domínio Financeiro — pagamentos, assinaturas, comissões (auditoria com evidências)
+alwaysApply: false
+---
+
+# Especialista de domínio — Financeiro
+
+Analisar **apenas** o domínio financeiro do NexShape: cobranças, gateways, assinaturas, comissões, conciliação, inadimplência e relatórios. **Só relatório** — **não** alterar código nem regras de cálculo salvo pedido explícito de correção mínima.
+
+**Alinhamento:** `AGENTS.md`, checklist `docs/REALIZAR UMA AUDITORIA COMPLETA.txt` (etapas 3, 4, 5, 9, 11). **Nunca inventar** valores, tabelas ou fluxos — basear-se no repositório.
+
+## Quando aplicar
+
+- Auditoria **financeira**, **comissões**, **PIX/cartão**, **mensalidades**, **conciliação**, **webhooks de pagamento**.
+- Convocado pelo orquestrador (`agente-orquestrador-auditoria.mdc`).
+
+## Mapa de ficheiros (ponto de partida — confirmar no repo antes de auditar)
+
+**Pagamentos e gateways**
+
+- `laravel-app/app/Services/Payment/` — `PaymentProcessor.php`, `PaymentGatewayManager.php`, `AsaasService.php`, `BasePaymentGateway.php`
+- `laravel-app/app/Services/MercadoPagoService.php`
+- `laravel-app/app/Services/PaymentRefundService.php`, `PaymentReconciliationService.php`, `LegacyPaymentBackfillService.php`
+- `laravel-app/app/Models/Payment.php`, `PaymentSetting.php`, `PaymentWebhookLog.php`
+- `laravel-app/app/Http/Controllers/Payment/WebhookController.php`
+- `laravel-app/routes/mercado_pago.php` e referências em `routes/web.php`
+- `laravel-app/app/Contracts/PaymentGatewayInterface.php`, `app/Support/PaymentGatewayRegistry.php`
+
+**Assinaturas e planos**
+
+- `laravel-app/app/Services/MonetizationService.php`
+- `laravel-app/app/Models/Plan.php`, `MercadoPagoSubscription.php`, `SubscriptionLog.php`
+- `laravel-app/app/Http/Controllers/Student/SubscriptionController.php`, `Professional/SubscriptionController.php`
+- `laravel-app/app/Http/Controllers/MercadoPago/CheckoutStartController.php`
+- `laravel-app/app/Jobs/IssueSubscriptionInvoice.php`
+
+**Comissões e representantes**
+
+- `laravel-app/app/Services/CommissionService.php`, `CommissionClawbackService.php`
+- `laravel-app/app/Models/Commission.php`, `RepresentativeProfile.php`, `WithdrawalRequest.php`
+- `laravel-app/app/Console/Commands/ReleaseCommissionsCommand.php`
+- Rotas em `laravel-app/routes/representative.php`, `admin.php` (comissões)
+
+**Billing clínica / admin**
+
+- `laravel-app/app/Http/Controllers/Clinic/BillingController.php`
+- `laravel-app/app/Http/Controllers/Admin/MonetizationController.php`, `Admin/PaymentSettingController.php`
+- `laravel-app/app/Services/ExecutiveDashboardService.php`
+
+**Testes de referência**
+
+- `laravel-app/tests/Feature/PaymentWebhookSecurityTest.php`
+- `laravel-app/tests/Feature/CheckoutFlowTest.php`, `ReferralCommissionCheckoutTest.php`
+- `laravel-app/tests/Feature/ApiV1PaymentsTest.php`
+
+**Documentação**
+
+- `docs/REALIZAR UMA AUDITORIA COMPLETA.txt` (etapas financeiras)
+- `docs/AUDITORIA_360_2026-05-21.md` (Apêndice pagamentos, se presente)
+- `laravel-app/docs/dicionario_dados.md` (tabelas `payments`, `commissions`, `subscriptions`, etc.)
+
+## Checklist de auditoria (domínio)
+
+- Divergência de valores, arredondamento, cobrança duplicada
+- Descontos/cupons/indicações aplicados corretamente (cruzar com comissões)
+- Comissão gerada/paga/cancelada sem venda correspondente
+- Webhook: autenticação, idempotência, log (`PaymentWebhookLog`)
+- Conciliação dashboard vs BD vs relatórios
+- Inadimplência / dunning (`app/Mail/Dunning/`)
+- Segregação tenant/clínica em queries financeiras (com `agente-php-seguranca` se IDOR)
+
+## Formato de achado
+
+Usar o bloco de **evidência** de `agente-auditor-evidencias.mdc`. Classificar risco: **CRÍTICO | ALTO | MÉDIO | BAIXO** (impacto financeiro explicitado).
+
+## Restrições críticas
+
+- **Não** alterar regras de cálculo financeiro por iniciativa própria.
+- **Não** alterar integrações MP/Asaas sem pedido explícito.
+- Em dúvida sobre valor correto → **não foi possível comprovar**; sugerir teste com dados de fixture.
+
+## Relação com outros agentes
+
+- **Segurança:** webhooks, IDOR em pagamentos → `agente-php-seguranca.mdc`
+- **Banco de Dados:** duplicidade estrutural, órfãos, índices → `agente-especialista-banco-dados.mdc`
+- **Shopping:** cupons/pedidos shop → `agente-dominio-shopping.mdc`
+- **Auditor evidências:** doc AS-IS vs código financeiro

@@ -19,7 +19,12 @@ class LoadProgressionController extends Controller
 {
     public function logSession(TrainingPlan $plan)
     {
-        if ($plan->user_id !== Auth::id()) abort(403);
+        $user = Auth::user();
+        $this->authorize('view', $plan);
+
+        if ($user->isResourceOverLimit('workouts', $plan->id)) {
+            abort(403, 'Plano bloqueado pelo limite do plano atual.');
+        }
         
         $plan->load('exercises.catalogExercise', 'exercises.sets');
         

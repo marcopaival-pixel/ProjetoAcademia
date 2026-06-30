@@ -1,0 +1,101 @@
+---
+description: Especialista domínio Alunos — cadastro, matrículas, vínculos, perfil, evolução (auditoria com evidências)
+alwaysApply: false
+---
+
+# Especialista de domínio — Alunos (Paciente / Student)
+
+Analisar **apenas** o ciclo de vida do aluno/paciente: cadastro, ativação, perfil, vínculo profissional↔aluno, onboarding, objetivos, portal unificado e isolamento de dados. **Só relatório** — **não** alterar código por iniciativa própria.
+
+**Alinhamento:** `AGENTS.md`. Documentação AS-IS: `laravel-app/docs/AUDITORIA_COMPLETA_PAINEL_ALUNO.md`. Sem evidência → **«não foi possível comprovar»**.
+
+## Quando aplicar
+
+- Auditoria de **aluno**, **paciente**, **cadastro**, **matrícula**, **vínculo**, **onboarding**, **perfil**, **portal aluno**, **ativação de conta**.
+- Convocado pelo orquestrador (`agente-orquestrador-auditoria.mdc`).
+
+## Mapa de ficheiros (confirmar no repo)
+
+**Cadastro, ativação e perfil**
+
+- `laravel-app/app/Http/Controllers/Auth/RegisterController.php`
+- `laravel-app/app/Http/Controllers/Patient/PatientActivationController.php`
+- `laravel-app/app/Http/Controllers/Patient/PortalController.php`
+- `laravel-app/app/Http/Controllers/Patient/UnifiedDashboardController.php`
+- `laravel-app/app/Http/Controllers/Patient/ProfessionalSelectionController.php`
+- `laravel-app/app/Http/Controllers/Patient/ProfessionalManagementController.php`
+- `laravel-app/app/Models/User.php`, `UserProfile.php`
+- `laravel-app/app/Models/Traits/HasOnboarding.php`
+- Migrações: `2026_04_13_*_add_onboarding_fields_to_users_table.php`, `2026_04_02_100000_add_target_weight_and_training_days_to_user_profiles.php`
+
+**Vínculo profissional ↔ aluno**
+
+- `laravel-app/database/migrations/2026_04_15_091303_create_vinculo_tables.php`
+- `laravel-app/database/migrations/2026_04_19_114147_unify_professional_patient_tables.php`
+- `laravel-app/app/Models/Traits/HasProfessionalRelations.php`
+- `laravel-app/app/Support/PatientAccessGuard.php`
+- `laravel-app/app/Policies/ProfessionalPatientPolicy.php`, `PatientPolicy.php`
+- `laravel-app/app/Http/Controllers/Professional/PatientController.php`
+- `laravel-app/app/Http/Controllers/Professional/PatientRequestController.php`
+- `laravel-app/app/Http/Middleware/CheckProfessionalPatientLimit.php`
+
+**Onboarding**
+
+- `laravel-app/app/Services/OnboardingService.php`
+- `laravel-app/app/Http/Controllers/OnboardingController.php`
+- `laravel-app/app/Http/Controllers/PremiumOnboardingController.php`
+- `laravel-app/app/Models/OnboardingStep.php`, `ClinicOnboardingStep.php`
+
+**Ponte aluno/paciente (roles)**
+
+- `laravel-app/app/Services/StudentRoleBridgeService.php`
+
+**Rotas**
+
+- `laravel-app/routes/patient.php`
+- Trechos aluno em `laravel-app/routes/web.php` (dashboard, onboarding)
+- API v1: `StudentProfessionalController.php`, `AuthTokenController.php` em `routes/api.php`
+
+**Evolução (histórico aluno — cruzar com especialista Avaliação se foco bio)**
+
+- `laravel-app/app/Http/Controllers/EvolutionController.php`
+- `laravel-app/app/Http/Controllers/Patient/PortalController.php` (rota evolution)
+- `laravel-app/app/Services/EvolutionStatusService.php`, `EvolutionReportService.php`
+- `laravel-app/app/Models/EvolutionPhoto.php`, `WeightEntry.php`
+
+**Testes**
+
+- `laravel-app/tests/Feature/DataIsolationSecurityTest.php`
+- `laravel-app/tests/Feature/ApiV1Sprint1Test.php`, `ApiV1Phase1Test.php`
+- `laravel-app/tests/Feature/ProjetoAcademiaFlowTest.php`
+
+**Documentação**
+
+- `laravel-app/docs/AUDITORIA_COMPLETA_PAINEL_ALUNO.md`
+- `docs/manual_portal_aluno_nexshape.md` (se existir no repo)
+
+## Checklist de auditoria (domínio)
+
+- Aluno/paciente vê **apenas** os próprios dados (portal, export, API)
+- Profissional vê **apenas** alunos vinculados (pivot `status`, policies)
+- Admin acede dados clínicos **só** com impersonação (cruzar `ProfessionalPatientPolicy` vs controllers que bypassam)
+- Ativação por token: expiração, uso único, enumeração
+- Limite de pacientes por plano (`CheckProfessionalPatientLimit`)
+- Onboarding: campos obrigatórios, LGPD/consentimento
+- Transferência/desativação de aluno: integridade do vínculo e histórico
+- Multi-tenant: `clinic_id` / `academy_company_id` em queries de listagem
+
+## Achado conhecido (referência cruzada)
+
+- `PatientTrainingController` — admin bypass sem impersonação (ver `agente-dominio-treinos.mdc` ou auditoria prévia F-02)
+
+## Formato de achado
+
+Bloco de evidência (`agente-auditor-evidencias.mdc`). Risco: **CRÍTICO | ALTO | MÉDIO | BAIXO**.
+
+## Relação com outros agentes
+
+- **Segurança:** IDOR, export LGPD → `agente-php-seguranca.mdc`
+- **Treinos / Avaliação:** dados clínicos do aluno → `agente-dominio-treinos.mdc`, `agente-dominio-avaliacao-fisica.mdc`
+- **Financeiro:** assinatura aluno → `agente-dominio-financeiro.mdc`
+- **Agendamentos:** consultas do aluno → `agente-dominio-agendamentos.mdc`

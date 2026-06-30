@@ -194,6 +194,7 @@ class MenuService
                     ['name' => 'report_sys', 'label' => 'Relatórios Globais', 'route' => 'admin.financial.reports', 'icon' => 'pie-chart'],
                     ['name' => 'marketing_banners', 'label' => 'Marketing: Banners', 'route' => 'admin.marketing.banners.index', 'icon' => 'megaphone'],
                     ['name' => 'training_mgmt', 'label' => 'Academia: Gestão', 'route' => 'admin.training.index', 'icon' => 'graduation-cap'],
+                    ['name' => 'shop_admin', 'label' => 'Shopping Fitness', 'route' => 'admin.shop.products.index', 'icon' => 'shopping-bag'],
                     ['name' => 'omnichat', 'label' => 'OmniChat (Real-time)', 'route' => 'admin.omnichannel', 'icon' => 'message-square'],
                 ], $isPremium),
             ];
@@ -354,11 +355,7 @@ class MenuService
 
         // 4. Painel do Aluno / Atleta (Aluno ou admin explorando)
         if (($user->hasRole('aluno') && (!$activeRole || $activeRole === 'aluno')) || ($isAdmin && $activeRole === 'aluno')) {
-            $groups[] = [
-                'id' => 'athlete',
-                'label' => 'Painel do Aluno',
-                'icon' => 'dumbbell',
-                'items' => $this->prepareItems($user, [
+            $athleteItems = [
                     ['name' => 'dashboard', 'label' => 'Visão Geral', 'route' => 'dashboard', 'icon' => 'layout-grid'],
                     ['name' => 'import_workout', 'label' => 'Importar Treino (IA)', 'route' => 'progression.plans.import-photo', 'icon' => 'camera', 'premium' => true],
                     ['name' => 'training', 'label' => 'Meus Treinos', 'route' => 'progression.plans.index', 'icon' => 'footprints'],
@@ -379,7 +376,21 @@ class MenuService
                     ['name' => 'academia', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'play-circle'],
                     ['name' => 'health-metrics', 'label' => 'Saúde (Wearables)', 'route' => 'health-metrics.index', 'icon' => 'heart', 'premium' => true],
                     ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check'],
-                ], $isPremium),
+            ];
+
+            if ($user->academy_company_id) {
+                array_splice($athleteItems, -1, 0, [
+                    ['name' => 'shopping_store', 'label' => 'Shopping Fitness', 'route' => 'shopping.index', 'icon' => 'shopping-bag'],
+                    ['name' => 'shopping_orders', 'label' => 'Meus Pedidos', 'route' => 'shopping.orders.index', 'icon' => 'package'],
+                    ['name' => 'shopping_points', 'label' => 'Pontos & Cashback', 'route' => 'shopping.points.index', 'icon' => 'coins'],
+                ]);
+            }
+
+            $groups[] = [
+                'id' => 'athlete',
+                'label' => 'Painel do Aluno',
+                'icon' => 'dumbbell',
+                'items' => $this->prepareItems($user, $athleteItems, $isPremium),
             ];
         }
 

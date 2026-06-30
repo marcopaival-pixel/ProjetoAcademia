@@ -7,6 +7,9 @@ use App\Models\ApiAccessLog;
 use App\Models\AuthAuditLog;
 use App\Models\ClientErrorLog;
 use App\Models\SystemError;
+use App\Models\ShopOrder;
+use App\Models\ShopOrderItem;
+use App\Models\ShopProduct;
 use App\Services\Operations\SystemHealthService;
 use App\Services\PaymentReconciliationService;
 use App\Support\AppVersion;
@@ -35,6 +38,9 @@ class AuditReportCommand extends Command
             'top_admin_actions' => $this->topAdminActions($since),
             'auth_summary' => $this->authSummary($since),
             'financial_reconciliation' => $reconciliation->analyze(7, $since),
+            'database_orphans' => DatabaseOrphansCommand::audit(),
+            'table_model_gap_shop' => DatabaseTableModelGapCommand::audit('shop_'),
+            'shop' => $this->shopSnapshot($since),
         ];
 
         $json = json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -111,5 +117,51 @@ class AuditReportCommand extends Command
                 'total' => (int) $row->total,
             ])
             ->all();
+    }
+
+    private function shopSnapshot(\Carbon\Carbon $since): array
+    {
+        if (! Schema::hasTable('shop_orders')) {
+            return ['available' => false];
+        }
+
+        $paidStatuses = [
+            ShopOrder::STATUS_PAID,
+            ShopOrder::STATUS_PROCESSING,
+            ShopOrder::STATUS_SHIPPED,
+            ShopOrder::STATUS_DELIVERED,
+            ShopOrder::STATUS_COMPLETED,
+        ];
+
+        $lowStock = 0;
+        if (Schema::hasTable('shop_products')) {
+            $lowStock = ShopProduct::query()
+                ->where('manage_stock', true)
+                ->where('is_active', true)
+                ->whereNotNull('stock_alert_threshold')
+                ->whereColumn('stock_quantity', '<=', 'stock_alert_threshold')
+                ->count();
+        }
+
+        return [
+            'available' => true,
+            'orders_period' => ShopOrder::where('created_at', '>=', $since)->count(),
+            'orders_paid_period' => ShopOrder::query()
+                ->whereIn('status', $paidStatuses)
+                ->where('paid_at', '>=', $since)
+                ->count(),
+            'revenue_paid_period' => (float) ShopOrder::query()
+                ->whereIn('status', $paidStatuses)
+                ->where('paid_at', '>=', $since)
+                ->sum('total'),
+            'pending_orders' => ShopOrder::where('status', ShopOrder::STATUS_PENDING)->count(),
+            'low_stock_products' => $lowStock,
+            'pending_commissions' => Schema::hasTable('shop_order_items')
+                ? (float) ShopOrderItem::query()
+                    ->whereIn('commission_status', ['pending', 'released'])
+                    ->whereNotNull('commission_amount')
+                    ->sum('commission_amount')
+                : 0.0,
+        ];
     }
 }

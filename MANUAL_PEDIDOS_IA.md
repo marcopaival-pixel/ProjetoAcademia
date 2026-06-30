@@ -122,6 +122,118 @@ Antes de alterares vários ficheiros, explica a causa provável e propõe a muda
 
 
 
+## Modelo — auditoria multi-especialista (IA Mãe)
+
+
+
+Use para auditorias amplas (ex.: `@docs/REALIZAR UMA AUDITORIA COMPLETA.txt`). Ativa o orquestrador e os especialistas de domínio.
+
+
+
+```text
+
+Segue o AGENTS.md. Modo: auditoria multi-especialista (@agente-orquestrador-auditoria).
+
+
+
+Objetivo: [ex.: executar etapas 1–11 do checklist anexo]
+
+
+
+Checklist / doc: [@docs/REALIZAR UMA AUDITORIA COMPLETA.txt ou outro]
+
+
+
+Especialistas a convocar:
+
+- @agente-php-seguranca (permissões, IDOR, etapas 1–2)
+
+- @agente-dominio-financeiro (etapas 3–5, 9, 11)
+
+- @agente-auditor-evidencias (doc↔código, migrations, código morto)
+
+- @agente-especialista-banco-dados (etapa 7 — órfãos, FKs, índices, migrations↔models)
+
+- [opcional] @agente-dominio-agendamentos | @agente-dominio-shopping | @agente-dominio-alunos | @agente-dominio-treinos | @agente-dominio-avaliacao-fisica
+
+
+
+Regras:
+
+- Toda conclusão: ficheiro + linhas + citação + confiança %.
+
+- Se não comprovar: «não foi possível comprovar».
+
+- Consolidar relatório único com risco CRÍTICO/ALTO/MÉDIO/BAIXO.
+
+- Não alterar código.
+
+
+
+Antes de analisar: lista plano (especialistas, pastas a ler) e confirma alinhamento ao AGENTS.md.
+
+```
+
+
+
+---
+
+
+
+## Modelo — auditoria de banco de dados (DBA Inteligente)
+
+
+
+Use para etapa 7 do checklist ou diagnóstico isolado de schema/integridade.
+
+
+
+```text
+
+Segue o AGENTS.md. Modo: especialista banco de dados (@agente-especialista-banco-dados).
+
+
+
+Objetivo: [ex.: saúde do schema, órfãos, índices, migrations↔models]
+
+
+
+Comandos (se BD acessível):
+
+- php artisan app:db:health-report
+
+- php artisan app:db:orphans
+
+- php artisan app:db:dead-columns
+
+- php artisan app:db:index-explain
+
+
+
+Docs: @laravel-app/docs/dicionario_dados.md | @docs/AUDITORIA_BANCO_DADOS_20260513.md
+
+
+
+Regras:
+
+- Evidência por achado (ficheiro/linha/comando + confiança %).
+
+- Colunas mortas = inferência (≤ 70%).
+
+- Não alterar migrations nem dados.
+
+
+
+Entregar: relatório «Saúde do Banco» + achados priorizados (CRÍTICO → BAIXO).
+
+```
+
+
+
+---
+
+
+
 ## Modelo — Agente PHP (Cursor, correção pontual)
 
 
