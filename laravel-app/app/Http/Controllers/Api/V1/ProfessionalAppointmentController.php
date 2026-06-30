@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Concerns\FormatsApiResponses;
 use App\Http\Controllers\Controller;
 use App\Models\ProfessionalAppointment;
 use App\Services\AgendaService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -29,7 +30,11 @@ class ProfessionalAppointmentController extends Controller
             ->orderBy('appointment_at');
 
         if (! empty($validated['date'])) {
-            $query->whereDate('appointment_at', $validated['date']);
+            $day = Carbon::parse($validated['date']);
+            $query->whereBetween('appointment_at', [
+                $day->copy()->startOfDay(),
+                $day->copy()->endOfDay(),
+            ]);
         }
 
         if (! empty($validated['status'])) {

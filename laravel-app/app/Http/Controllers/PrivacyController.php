@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FoodEntry;
 use App\Models\UserConsent;
+use App\Services\Lgpd\LgpdDpoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -74,12 +75,23 @@ class PrivacyController extends Controller
 
         $reason = $validated['reason'] ?? 'Não informada';
 
+        UserConsent::create([
+            'user_id' => Auth::id(),
+            'consent_type' => 'account_deletion_request',
+            'version' => '1.0',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+        ]);
+
         DB::table('admin_logs')->insert([
             'user_id' => Auth::id(),
-            'action' => 'Solicitaçāo de exclusāo de conta (LGPD)',
+            'action' => 'Solicitação de exclusão de conta (LGPD)',
             'ip_address' => $request->ip(),
             'payload' => json_encode(['reason' => $reason]),
+            'created_at' => now(),
         ]);
+
+        app(LgpdDpoNotificationService::class)->notifyDeletionRequest(Auth::user(), $reason);
 
         return redirect()->back()->with('success', 'Sua solicitação foi registrada e será atendida em até 15 dias, conforme os prazos legais da LGPD.');
     }

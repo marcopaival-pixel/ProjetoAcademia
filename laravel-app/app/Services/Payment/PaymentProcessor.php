@@ -12,6 +12,7 @@ use App\Models\AiCreditTransaction;
 use App\Services\AiCreditService;
 use App\Services\CommissionService;
 use App\Services\FinancialLogService;
+use App\Services\Shop\ShopPaymentFulfillmentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -64,6 +65,10 @@ class PaymentProcessor
             } elseif (str_starts_with($reference, 'credits:')) {
                 $compraId = (int) str_replace('credits:', '', $reference);
                 $this->processGeneralCredits($user, $compraId, $gatewayId);
+            } elseif (str_starts_with($reference, 'shop:')) {
+                $orderId = (int) str_replace('shop:', '', $reference);
+                app(ShopPaymentFulfillmentService::class)
+                    ->markOrderPaidFromGateway($orderId, $gatewayId, $gateway, $amount);
             } else {
                 $subscription = $this->processSubscription($user, $reference, $gateway, $gatewayId);
             }
@@ -74,14 +79,16 @@ class PaymentProcessor
             }
 
             // 4. Financial Log
-            FinancialLogService::log([
-                'user_id' => $userId,
-                'action' => 'PAYMENT_RECEIVED',
-                'amount' => $amount,
-                'transaction_id' => $gatewayId,
-                'origin' => $gateway,
-                'payload' => ['reference' => $reference]
-            ]);
+            if (! str_starts_with($reference, 'shop:')) {
+                FinancialLogService::log([
+                    'user_id' => $userId,
+                    'action' => 'PAYMENT_RECEIVED',
+                    'amount' => $amount,
+                    'transaction_id' => $gatewayId,
+                    'origin' => $gateway,
+                    'payload' => ['reference' => $reference]
+                ]);
+            }
 
             return ['ok' => true, 'message' => 'Pagamento processado com sucesso'];
         });

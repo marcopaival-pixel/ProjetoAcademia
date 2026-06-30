@@ -49,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdministrator::class,
+            'admin.platform' => \App\Http\Middleware\EnsureUserIsPlatformAdmin::class,
             'premium' => \App\Http\Middleware\CheckPremiumAccess::class,
             'onboarding' => \App\Http\Middleware\ProfileCompletionMiddleware::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,

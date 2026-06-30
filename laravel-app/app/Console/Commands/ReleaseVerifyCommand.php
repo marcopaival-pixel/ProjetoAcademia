@@ -23,6 +23,7 @@ class ReleaseVerifyCommand extends Command
             'Isolamento multi-tenant' => fn () => Artisan::call('app:audit:tenant'),
             'Checklist pré-deploy' => fn () => Artisan::call('app:deploy:checklist', ['--target' => $target]),
             'Smoke test' => fn () => Artisan::call('app:smoke:test', ['--target' => $target]),
+            'Órfãos BD' => fn () => Artisan::call('app:db:orphans', ['--fail-on-orphans' => true]),
         ];
 
         foreach ($steps as $label => $runner) {

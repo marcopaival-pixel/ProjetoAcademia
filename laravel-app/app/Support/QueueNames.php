@@ -24,6 +24,11 @@ final class QueueNames
         return (string) config('observability.queues.webhooks', 'webhooks');
     }
 
+    public static function shop(): string
+    {
+        return (string) config('observability.queues.shop', 'shop');
+    }
+
     /**
      * @return list<string>
      */
@@ -34,6 +39,7 @@ final class QueueNames
             self::pdf(),
             self::ai(),
             self::webhooks(),
+            self::shop(),
         ]));
     }
 }

@@ -26,14 +26,17 @@ class ProfessionalDashboardController extends Controller
             ->where('last_activity_at', '>=', now()->subDays(30))
             ->count();
 
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+
         $todayAppointments = ProfessionalAppointment::query()
             ->where('professional_id', $uid)
-            ->whereDate('appointment_at', now()->toDateString())
+            ->whereBetween('appointment_at', [$todayStart, $todayEnd])
             ->count();
 
         $pendingAppointments = ProfessionalAppointment::query()
             ->where('professional_id', $uid)
-            ->whereDate('appointment_at', '>=', now()->toDateString())
+            ->where('appointment_at', '>=', $todayStart)
             ->where('status', ProfessionalAppointment::STATUS_SCHEDULED)
             ->count();
 

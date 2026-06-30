@@ -107,6 +107,12 @@ class LoginController extends Controller
             return redirect()->route('login')->with('error', 'Sua conta está bloqueada. Entre em contato com o suporte.');
         }
 
+        if ($user->isAnonymized()) {
+            Auth::logout();
+
+            return redirect()->route('login')->with('error', 'Esta conta foi encerrada e os dados pessoais foram anonimizados.');
+        }
+
         // 3. Verificação de rejeição de cadastro
         if ($user->isRegistrationRejected()) {
             // Mantemos logado mas o middleware EnsureRegistrationApproved cuidará do resto

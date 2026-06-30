@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class AgendaService
 {
+    public function __construct(private AgendaNotificationService $notificationService) {}
+
     /**
      * Valida permissões e executa o agendamento de acordo com o Perfil e Plano.
      */
@@ -51,8 +53,7 @@ class AgendaService
 
             $this->logAction($user, "Agendamento criado ID: {$appointment->id}");
 
-            // TODO: Notificar aluno e profissional
-            // $this->notifyAppointment($appointment);
+            $this->notificationService->notifyAppointmentScheduled($appointment);
 
             DB::commit();
             return $appointment;
@@ -85,7 +86,7 @@ class AgendaService
         $appointment->update(['status' => ProfessionalAppointment::STATUS_CANCELLED]);
         $this->logAction($user, "Agendamento cancelado ID: {$appointment->id}");
 
-        // TODO: Disparar evento para notificar lista de espera.
+        $this->notificationService->notifyWaitlistOnCancellation($appointment);
 
         return $appointment;
     }
@@ -121,7 +122,10 @@ class AgendaService
             ->get();
             
         $bookedSlots = ProfessionalAppointment::where('professional_id', $professionalId)
-            ->whereDate('appointment_at', $date->toDateString())
+            ->whereBetween('appointment_at', [
+                $date->copy()->startOfDay(),
+                $date->copy()->endOfDay(),
+            ])
             ->whereIn('status', [
                 ProfessionalAppointment::STATUS_SCHEDULED, 
                 ProfessionalAppointment::STATUS_CONFIRMED, 
@@ -238,7 +242,10 @@ class AgendaService
 
         if ($plan === 'free') {
             $countToday = ProfessionalAppointment::where('patient_id', $user->id)
-                ->whereDate('appointment_at', $appointmentAt->toDateString())
+                ->whereBetween('appointment_at', [
+                    $appointmentAt->copy()->startOfDay(),
+                    $appointmentAt->copy()->endOfDay(),
+                ])
                 ->whereIn('status', [ProfessionalAppointment::STATUS_SCHEDULED, ProfessionalAppointment::STATUS_FINISHED])
                 ->count();
 

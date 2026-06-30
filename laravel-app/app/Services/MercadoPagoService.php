@@ -278,6 +278,10 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
             $compraId = (int) str_replace('credits:', '', $plan);
             $compra = \App\Models\CreditoCompra::find($compraId);
             $expected = $compra ? (float) $compra->valor : 0.0;
+        } elseif (str_starts_with($plan, 'shop:')) {
+            $orderId = (int) str_replace('shop:', '', $plan);
+            $order = \App\Models\ShopOrder::find($orderId);
+            $expected = $order ? (float) $order->total : 0.0;
         } else {
             $dbPlan = \App\Models\Plan::where('name', $plan)->first();
             if ($dbPlan) {
@@ -341,10 +345,17 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
                     $userId = $compra->user_id;
                     $plan = "credits:{$compraId}";
                 }
+            } elseif (preg_match('/^shop:(\d+)$/', $ref, $m)) {
+                $orderId = (int) $m[1];
+                $order = \App\Models\ShopOrder::find($orderId);
+                if ($order) {
+                    $userId = $order->user_id;
+                    $plan = "shop:{$orderId}";
+                }
             }
         }
         
-        if ($userId === null || $userId < 1 || ($plan !== 'monthly' && $plan !== 'yearly' && !str_starts_with($plan, 'ai_credits:') && !str_starts_with($plan, 'credits:'))) {
+        if ($userId === null || $userId < 1 || ($plan !== 'monthly' && $plan !== 'yearly' && !str_starts_with($plan, 'ai_credits:') && !str_starts_with($plan, 'credits:') && !str_starts_with($plan, 'shop:'))) {
             return null;
         }
 
@@ -508,11 +519,7 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
         $amt = (float) $payment['transaction_amount'];
 
         return DB::transaction(function () use ($mpId, $userId, $plan, $amt, $cur, $couponId, $id, $feeAmount, $netAmount, $payment) {
-            $exists = Payment::where('gateway', 'mercadopago')
-                ->where('gateway_id', (string) $id)
-                ->whereIn('status', ['paid', 'approved', 'ATIVO', Subscription::STATUS_FIN_ATIVO])
-                ->exists();
-            if ($exists) {
+            if ($this->mercadoPagoCreditAlreadyApplied($id)) {
                 return ['ok' => true, 'message' => 'Pagamento já creditado.'];
             }
 
@@ -559,25 +566,32 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
                 $compraId = (int) str_replace('credits:', '', $plan);
                 app(\App\Services\Payment\PaymentProcessor::class)
                     ->applyGeneralCreditsPurchase($user, $compraId, (string) $id);
+            } elseif ($user && str_starts_with($plan, 'shop:')) {
+                $orderId = (int) str_replace('shop:', '', $plan);
+                app(\App\Services\Shop\ShopPaymentFulfillmentService::class)
+                    ->markOrderPaidFromGateway($orderId, (string) $id, 'mercadopago', $amt);
             } else {
                 $subscriptionModel = $this->premiumExtendUser($userId, $plan);
             }
 
             if ($user) {
-                app(\App\Services\CommissionService::class)->recordOnPayment($user, $paymentModel, $subscriptionModel);
+                if (! str_starts_with($plan, 'shop:')) {
+                    app(\App\Services\CommissionService::class)->recordOnPayment($user, $paymentModel, $subscriptionModel);
+                }
             }
 
-            FinancialLogService::log([
-                'user_id' => $userId,
-                'action' => str_starts_with($plan, 'ai_credits:') ? 'AI_CREDITS_PURCHASED' : 'PAYMENT_RECEIVED',
-                'amount' => $amt,
-                'transaction_id' => $id,
-                'origin' => 'mercadopago',
-                'payload' => ['payment_id' => $id, 'plan' => $plan]
-            ]);
+            if (! str_starts_with($plan, 'shop:')) {
+                FinancialLogService::log([
+                    'user_id' => $userId,
+                    'action' => str_starts_with($plan, 'ai_credits:') ? 'AI_CREDITS_PURCHASED' : 'PAYMENT_RECEIVED',
+                    'amount' => $amt,
+                    'transaction_id' => $id,
+                    'origin' => 'mercadopago',
+                    'payload' => ['payment_id' => $id, 'plan' => $plan]
+                ]);
 
-            // Disparar emissão de Nota Fiscal assincronamente (se houver gateway configurado)
-            \App\Jobs\IssueSubscriptionInvoice::dispatch($paymentModel);
+                \App\Jobs\IssueSubscriptionInvoice::dispatch($paymentModel);
+            }
 
             // Limpar cache do MRR/Dashboard para refletir o novo pagamento
             app(\App\Services\SaaSMetricsService::class)->clearCache();
@@ -883,7 +897,15 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
 
     public function validateSignature(Request $request): bool
     {
-        if (empty($this->webhookSecret)) return true;
+        if (empty($this->webhookSecret)) {
+            if (app()->environment('production')) {
+                \Illuminate\Support\Facades\Log::warning('[mercadopago_webhook] webhook_secret não configurado em produção — rejeitado.');
+
+                return false;
+            }
+
+            return true;
+        }
 
         $xSignature = (string) $request->header('x-signature', '');
         $xRequestId = (string) $request->header('x-request-id', '');
@@ -911,5 +933,15 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
         $payload = $amount ? ['amount' => $amount] : null;
         $res = $this->apiRequest('POST', "https://api.mercadopago.com/v1/payments/{$paymentId}/refunds", $this->token, $payload);
         return $res['ok'];
+    }
+
+    /**
+     * Idempotência: verifica se o crédito financeiro já foi aplicado para este pagamento MP.
+     */
+    private function mercadoPagoCreditAlreadyApplied(string $gatewayId): bool
+    {
+        return FinancialLog::where('transaction_id', $gatewayId)
+            ->whereIn('action', ['PAYMENT_RECEIVED', 'AI_CREDITS_PURCHASED'])
+            ->exists();
     }
 }

@@ -18,12 +18,9 @@ class PatientTrainingController extends Controller
      */
     public function index(User $patient)
     {
+        $this->authorizePatientTraining($patient);
+
         $user = Auth::user();
-        
-        // Verifica se o profissional tem vínculo com este paciente (Simplificado, ajuste conforme sua regra exata de vínculo)
-        if (!$user->isAdministrator() && !$user->patients()->where('users.id', $patient->id)->exists()) {
-            abort(403, 'Você não tem permissão para gerenciar treinos deste paciente.');
-        }
 
         $plans = TrainingPlan::where('user_id', $patient->id)
             ->withCount('exercises')
@@ -42,11 +39,7 @@ class PatientTrainingController extends Controller
      */
     public function create(User $patient)
     {
-        $user = Auth::user();
-
-        if (!$user->isAdministrator() && !$user->patients()->where('users.id', $patient->id)->exists()) {
-            abort(403, 'Acesso negado.');
-        }
+        $this->authorizePatientTraining($patient);
 
         $catalog = ExerciseCatalog::where('is_active', true)->with('muscles')->get()->groupBy('muscle_group');
 
@@ -59,10 +52,7 @@ class PatientTrainingController extends Controller
     public function store(Request $request, User $patient)
     {
         $user = Auth::user();
-
-        if (!$user->isAdministrator() && !$user->patients()->where('users.id', $patient->id)->exists()) {
-            abort(403, 'Acesso negado.');
-        }
+        $this->authorizePatientTraining($patient);
 
         // Se vier via JSON (Alpine), decodifica para validar como array
         if ($request->filled('exercises_json')) {
@@ -90,6 +80,8 @@ class PatientTrainingController extends Controller
             'exercises.*.id' => 'required|exists:exercises_catalog,id',
             'exercises.*.sets' => 'required|array|min:1',
         ]);
+
+        $this->assertPatientTrainingPlanLimits($patient, count($validated['exercises']));
 
         $plan = TrainingPlan::create([
             'user_id' => $patient->id, // Paciente fará o treino
@@ -140,13 +132,11 @@ class PatientTrainingController extends Controller
     public function applyProtocol(Request $request, User $patient)
     {
         $user = Auth::user();
-
-        if (!$user->isAdministrator() && !$user->patients()->where('users.id', $patient->id)->exists()) {
-            abort(403, 'Acesso negado.');
-        }
+        $this->authorizePatientTraining($patient);
+        $this->assertPatientTrainingPlanLimits($patient);
 
         $request->validate([
-            'protocol_id' => 'required|exists:clinic_protocols,id'
+            'protocol_id' => 'required|exists:clinic_protocols,id',
         ]);
 
         $protocol = ClinicProtocol::findOrFail($request->protocol_id);
@@ -169,13 +159,30 @@ class PatientTrainingController extends Controller
             'is_template' => false,
         ]);
 
-        // Idealmente, protocolos teriam seus próprios exercícios na modelagem de banco. 
-        // Como o ClinicProtocol atual salva os dados de forma descritiva no campo 'protocol', 
-        // a IA precisará ler isso ou o profissional pode editar depois.
-
         return redirect()->route('professional.patients.trainings.index', $patient->id)
             ->with('success', 'Protocolo aplicado ao paciente com sucesso. Revise os exercícios se necessário.');
     }
+
+    private function authorizePatientTraining(User $patient): void
+    {
+        $this->authorize('professionalPatient.view', $patient);
+    }
+
+    private function assertPatientTrainingPlanLimits(User $patient, int $exerciseCount = 0): void
+    {
+        $maxWorkouts = $patient->getPlanLimit('max_workouts');
+        if ($maxWorkouts > 0) {
+            $planCount = TrainingPlan::where('user_id', $patient->id)->count();
+            if ($planCount >= $maxWorkouts) {
+                abort(403, "O paciente atingiu o limite de {$maxWorkouts} planos de treino do plano.");
+            }
+        }
+
+        if ($exerciseCount > 0) {
+            $maxExercises = $patient->getPlanLimit('max_exercises_per_workout');
+            if ($maxExercises > 0 && $exerciseCount > $maxExercises) {
+                abort(403, "Limite de {$maxExercises} exercícios por plano excedido.");
+            }
+        }
+    }
 }
-
-

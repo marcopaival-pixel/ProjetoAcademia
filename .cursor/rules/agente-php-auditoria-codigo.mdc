@@ -56,6 +56,12 @@ Ordenar e destacar primeiro:
 
 Depois performance, manutenibilidade e outros pontos.
 
+## Relação com outros agentes
+
+- **Auditor evidências** (`agente-auditor-evidencias.mdc`): doc↔código, órfãos, migrations — formato com confiança % e «não foi possível comprovar».
+- **Orquestrador** (`agente-orquestrador-auditoria.mdc`): consolida este agente com domínios (Financeiro, Agendamentos, Shopping) e Segurança.
+- **Segurança** (`agente-php-seguranca.mdc`): vulnerabilidades OWASP com prioridade sobre achados genéricos de lógica.
+
 ## Limitações honestas
 
 - Auditoria estática **não** substitui testes, pentest ou revisão de infraestrutura.

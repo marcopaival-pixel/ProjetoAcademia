@@ -22,6 +22,14 @@ php artisan db:seed --class=DeployHomologBootstrapSeeder
 | Comando | Função |
 |---------|--------|
 | `app:audit:tenant` | Models sem isolamento multi-tenant |
+| `app:db:health-report` | Migrations pendentes + órfãos + pointers EXPLAIN |
+| `app:db:orphans` | Registos órfãos em FKs críticas |
+| `app:db:index-explain` | Planos EXPLAIN de consultas críticas |
+| `app:db:dead-columns` | Heurística de colunas possivelmente mortas (inferência) |
+| `app:db:mysql-health` | Buffer pool, slow log, contagem Pulse (read-only) |
+| `app:purge-pulse` | Limpeza de `pulse_entries` / values / aggregates |
+| `app:backup:verify` | Deteta backups `.sql` vazios |
+| `app:backup:native` | Gera backup MySQL via mysqldump (XAMPP) |
 | `app:deploy:checklist` | Versão, migrations, health, secrets |
 | `app:smoke:test` | Rotas críticas, RBAC, demo em produção |
 | `app:release:verify` | Orquestra os três acima + PHPUnit opcional |
@@ -36,6 +44,10 @@ Testes marcados `@group release`: `php artisan test --group=release`
 - [ ] `composer test` verde
 - [ ] `composer phpstan` sem erros novos
 - [ ] `php artisan app:audit:tenant` exit 0
+- [ ] `php artisan app:db:orphans --fail-on-orphans` exit 0
+- [ ] `php artisan app:db:index-explain --fail-on-scan` exit 0
+- [ ] `php artisan app:db:mysql-health` sem avisos críticos (produção)
+- [ ] `php artisan app:backup:verify` sem ficheiros `.sql` vazios
 - [ ] Isolamento tenant validado (referral, financeiro, representante)
 - [ ] CHANGELOG atualizado
 

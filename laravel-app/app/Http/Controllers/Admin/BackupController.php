@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
 use Carbon\Carbon;
 use App\Models\AcademyCompany;
 
@@ -59,43 +58,17 @@ class BackupController extends Controller
     protected function createNativeBackup()
     {
         try {
-            $dbConfig = config('database.connections.mysql');
-            $fileName = 'native_db_backup_' . now()->format('Y-m-d_H-i-s') . '.sql';
-            $storagePath = storage_path('app/backups/' . $fileName);
-            
-            if (!file_exists(dirname($storagePath))) {
-                mkdir(dirname($storagePath), 0755, true);
+            $exitCode = Artisan::call('app:backup:native');
+
+            if ($exitCode !== 0) {
+                $output = trim(Artisan::output());
+                throw new \Exception($output !== '' ? $output : 'Backup nativo falhou.');
             }
 
-            // Detect mysqldump path (common in XAMPP Windows)
-            $mysqldump = 'mysqldump';
-            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                if (file_exists('C:\xampp\mysql\bin\mysqldump.exe')) {
-                    $mysqldump = 'C:\xampp\mysql\bin\mysqldump.exe';
-                }
-            }
+            $output = trim(Artisan::output());
+            $message = $output !== '' ? $output : 'Backup nativo do banco de dados gerado com sucesso.';
 
-            // Command for mysqldump (using --result-file instead of > for cross-platform stability)
-            $passwordPart = $dbConfig['password'] ? "--password=" . escapeshellarg($dbConfig['password']) : "";
-            
-            $command = sprintf(
-                '%s --user=%s %s --host=%s --result-file=%s %s',
-                escapeshellarg($mysqldump),
-                escapeshellarg($dbConfig['username']),
-                $passwordPart,
-                escapeshellarg($dbConfig['host']),
-                escapeshellarg($storagePath),
-                escapeshellarg($dbConfig['database'])
-            );
-
-            $result = Process::run($command);
-
-            if (!$result->successful()) {
-                $errorMsg = $result->errorOutput() ?: "Código " . $result->exitCode();
-                throw new \Exception("Erro ao executar mysqldump: $errorMsg");
-            }
-
-            return redirect()->back()->with('success', "Backup nativo do banco de dados gerado com sucesso: {$fileName}");
+            return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
             Log::error('Native backup failed: ' . $e->getMessage());

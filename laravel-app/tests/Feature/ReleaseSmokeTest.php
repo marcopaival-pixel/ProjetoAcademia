@@ -3,10 +3,17 @@
 namespace Tests\Feature;
 
 use App\Models\AdminSetting;
+use App\Models\AcademyCompany;
 use App\Models\Clinic;
 use App\Models\Plan;
+use App\Models\ShopOrder;
+use App\Models\ShopProduct;
+use App\Models\ShopCategory;
+use App\Models\ShopVendor;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\Concerns\SeedsRbacForTests;
 use Tests\TestCase;
 
@@ -106,5 +113,69 @@ class ReleaseSmokeTest extends TestCase
 
         $this->actingAs($userA);
         $this->assertFalse(\App\Models\TrainingPlan::where('id', $planB->id)->exists());
+    }
+
+    public function test_shopping_checkout_smoke_creates_paid_order(): void
+    {
+        SystemSetting::set('pagamento_ativo', 'false');
+
+        $company = AcademyCompany::create([
+            'name' => 'Release Shop',
+            'slug' => 'release-shop-smoke',
+        ]);
+
+        $vendor = ShopVendor::create([
+            'academy_company_id' => $company->id,
+            'name' => 'Vendor Release',
+            'slug' => 'vendor-release',
+            'commission_rate' => 0,
+            'status' => ShopVendor::STATUS_ACTIVE,
+            'approved_at' => now(),
+        ]);
+
+        $category = ShopCategory::create([
+            'academy_company_id' => $company->id,
+            'name' => 'Release Cat',
+            'slug' => 'release-cat',
+            'product_type' => 'physical',
+            'is_active' => true,
+        ]);
+
+        $product = ShopProduct::create([
+            'academy_company_id' => $company->id,
+            'vendor_id' => $vendor->id,
+            'category_id' => $category->id,
+            'type' => ShopProduct::TYPE_PHYSICAL,
+            'name' => 'Produto Release',
+            'slug' => 'produto-release-'.Str::random(6),
+            'price' => 49.90,
+            'manage_stock' => true,
+            'stock_quantity' => 5,
+            'is_active' => true,
+            'status' => ShopProduct::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+
+        $user = $this->userWithRole('aluno', [
+            'academy_company_id' => $company->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)->post(route('shopping.cart.add'), [
+            'product_id' => $product->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('shopping.checkout.process'), [
+                'payment_method' => 'pix',
+                'shipping_method' => 'pickup',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('shop_orders', [
+            'user_id' => $user->id,
+            'status' => ShopOrder::STATUS_PAID,
+        ]);
     }
 }

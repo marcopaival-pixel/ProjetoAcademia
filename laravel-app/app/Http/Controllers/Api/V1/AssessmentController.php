@@ -42,6 +42,22 @@ class AssessmentController extends Controller
     {
         $this->authorize('view', $assessment);
 
+        $user = $request->user();
+        if (! $user->hasPremiumAccess()) {
+            $latestId = BodyAssessment::where('user_id', $user->id)
+                ->latest('assessment_date')
+                ->latest('id')
+                ->value('id');
+
+            if ($assessment->id !== $latestId) {
+                return $this->error(
+                    'Histórico completo de avaliações é exclusivo Premium.',
+                    403,
+                    'premium_required'
+                );
+            }
+        }
+
         return $this->success((new BodyAssessmentResource($assessment))->resolve());
     }
 
@@ -90,6 +106,43 @@ class AssessmentController extends Controller
 
         $assessment = BodyAssessment::create($data);
 
-        return $this->success((new BodyAssessmentResource($assessment))->resolve(), status: 201);
+        $profile = $user->profile;
+        if ($assessment->bf_percent === null && $profile && $profile->height_cm > 0) {
+            $calcBf = \App\Services\Nutrition::calculateBodyFatPercent(
+                $profile->sex,
+                (float) $profile->height_cm,
+                (float) $assessment->neck,
+                (float) $assessment->waist,
+                (float) $assessment->hips
+            );
+
+            if ($calcBf !== null) {
+                $assessment->update(['bf_percent' => $calcBf]);
+            }
+        }
+
+        $motor = app(\App\Services\IntelligenceMotorService::class);
+        $healthScore = $motor->calculateHealthScore($user);
+        $user->update(['health_score' => $healthScore]);
+
+        if (! empty($data['weight_kg'])) {
+            \App\Models\WeightEntry::updateOrCreate(
+                ['user_id' => $user->id, 'weighed_at' => $data['assessment_date']],
+                ['weight_kg' => $data['weight_kg']]
+            );
+
+            if ($profile && $profile->is_water_target_auto) {
+                $newWaterTarget = \App\Services\Nutrition::calculateWaterTarget(
+                    (float) $data['weight_kg'],
+                    $profile->birth_date?->toDateString(),
+                    $profile->sex,
+                    $profile->activity_level,
+                    $profile->climate ?? 'moderate'
+                );
+                $profile->update(['water_target_ml' => $newWaterTarget]);
+            }
+        }
+
+        return $this->success((new BodyAssessmentResource($assessment->fresh()))->resolve(), status: 201);
     }
 }

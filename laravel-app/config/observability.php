@@ -41,6 +41,7 @@ return [
         'menu_permission_audit_logs' => (int) env('LOG_RETENTION_MENU_AUDIT_DAYS', 180),
         'pdf_signature_audit_logs' => (int) env('LOG_RETENTION_PDF_SIG_AUDIT_DAYS', 365),
         'admin_clinic_access_logs' => (int) env('LOG_RETENTION_CLINIC_ACCESS_DAYS', 180),
+        'pulse' => (int) env('LOG_RETENTION_PULSE_DAYS', 7),
     ],
 
     'queues' => [
@@ -48,6 +49,7 @@ return [
         'pdf' => env('QUEUE_NAME_PDF', 'pdf'),
         'ai' => env('QUEUE_NAME_AI', 'ai'),
         'webhooks' => env('QUEUE_NAME_WEBHOOKS', 'webhooks'),
+        'shop' => env('QUEUE_NAME_SHOP', 'shop'),
     ],
 
     'thresholds' => [

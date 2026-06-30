@@ -45,4 +45,17 @@ class PaymentWebhookSecurityTest extends TestCase
 
         $this->assertTrue($service->validateSignature($request));
     }
+
+    public function test_mercadopago_rejects_webhook_without_secret_in_production(): void
+    {
+        $this->useProductionEnvironment();
+
+        $service = new \App\Services\MercadoPagoService([
+            'access_token' => 'token',
+            'webhook_secret' => '',
+        ]);
+        $request = Request::create('/payment/webhook/mercadopago', 'POST');
+
+        $this->assertFalse($service->validateSignature($request));
+    }
 }

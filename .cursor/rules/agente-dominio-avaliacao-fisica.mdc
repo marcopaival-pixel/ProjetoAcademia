@@ -1,0 +1,91 @@
+---
+description: Especialista domínio Avaliação física — bioimpedância, IMC, medidas, evolução corporal (auditoria com evidências)
+alwaysApply: false
+---
+
+# Especialista de domínio — Avaliação física
+
+Analisar **apenas** avaliações corporais, bioimpedância, medidas antropométricas, peso, IMC, evolução e PDFs clínicos relacionados. **Só relatório** — **não** alterar código por iniciativa própria.
+
+**Alinhamento:** `AGENTS.md`. Dados de saúde = **LGPD** — priorizar confidencialidade. Sem evidência → **«não foi possível comprovar»**.
+
+**Nota:** `ClinicalAgent` / `VisionAgent` em `app/Services/AI/Agents/` processam **chat/imagem runtime** — não substituem esta auditoria estática.
+
+## Quando aplicar
+
+- Auditoria de **avaliação física**, **bioimpedância**, **IMC**, **medidas**, **perímetria**, **composição corporal**, **evolução corporal**, **PDF bio**.
+- Convocado pelo orquestrador (`agente-orquestrador-auditoria.mdc`).
+
+## Mapa de ficheiros (confirmar no repo)
+
+**Avaliações e medidas**
+
+- `laravel-app/app/Models/BodyAssessment.php`
+- `laravel-app/app/Policies/BodyAssessmentPolicy.php`
+- `laravel-app/app/Http/Controllers/AssessmentController.php`
+- `laravel-app/app/Http/Resources/Api/V1/BodyAssessmentResource.php`
+- Views: `laravel-app/resources/views/assessments/` (index, create, show)
+- Migrações: `2026_04_07_143400_create_body_assessments_table.php`
+- `2026_05_11_172500_add_bioimpedance_fields_to_body_assessments.php`
+- `2026_05_06_220857_add_ai_suggestions_to_body_assessments.php`
+
+**Peso e gráficos**
+
+- `laravel-app/app/Models/WeightEntry.php`
+- `AssessmentController.php` — merge peso avulso + avaliações (L37–45)
+
+**Bioimpedância / PDF**
+
+- `laravel-app/app/Http/Controllers/BioimpedancePdfController.php`
+- `laravel-app/resources/views/pdf/bioimpedance.blade.php`
+- Campos bio em `BodyAssessment`: `icw_l`, `ecw_l`, `bf_percent`, `muscle_percent`, etc. (confirmar `$fillable`)
+
+**API v1 profissional → paciente**
+
+- `laravel-app/app/Http/Controllers/Api/V1/AssessmentController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/ProfessionalPatientAssessmentController.php`
+
+**Evolução fotográfica (corporal)**
+
+- `laravel-app/app/Models/EvolutionPhoto.php`
+- `laravel-app/app/Http/Controllers/Api/V1/EvolutionPhotoController.php`
+- `laravel-app/app/Http/Controllers/Api/V1/ProfessionalPatientEvolutionController.php`
+- `laravel-app/app/Services/EvolutionReportService.php`
+- Migração: `2026_04_18_192422_create_evolution_photos_table.php`
+
+**Acesso e isolamento**
+
+- `laravel-app/app/Support/PatientAccessGuard.php` (uso em `AssessmentController.php` L21–26)
+- `laravel-app/app/Models/Traits/FiltersByProfessional.php` (trait em `BodyAssessment`)
+
+**Nutrição cruzada (IMC/macros — só se relevante ao pedido)**
+
+- `laravel-app/app/Services/Nutrition.php` (referenciado em `AssessmentController.php`)
+
+**Testes / docs**
+
+- `laravel-app/docs/AUDITORIA_COMPLETA_PAINEL_ALUNO.md` — módulo «Exames e Medidas (Bio)»
+- `docs/legal/DPIA-IA-tratamento-dados-saude-template.md` (contexto IA + dados saúde)
+
+## Checklist de auditoria (domínio)
+
+- Aluno Free vs Premium: limite de histórico (`AssessmentController` L31–35 — limit 1 se não premium)
+- Profissional acede avaliações **só** via paciente ativo/vinculado (`PatientAccessGuard`)
+- Cálculo IMC / composição: fórmulas corretas, divisão por zero, unidades (kg/cm)
+- Bioimpedância: campos obrigatórios, validação de ranges plausíveis
+- PDF bio: token/autorização, exposição pública indevida
+- Evolução fotográfica: download seguro (`SecureFileController` / `MediaController`)
+- `created_by` / `professional_id` preenchidos para auditoria clínica
+- Sugestões IA (`ai_suggestions`): não expor PII em logs
+- Consistência medidas duplicadas (neck, waist, etc.) entre avaliações consecutivas — regras de negócio
+
+## Formato de achado
+
+Bloco de evidência (`agente-auditor-evidencias.mdc`). Risco: **CRÍTICO | ALTO | MÉDIO | BAIXO** (dados de saúde tendem a elevar impacto).
+
+## Relação com outros agentes
+
+- **Alunos:** titular dos dados → `agente-dominio-alunos.mdc`
+- **Treinos:** objetivo/peso alvo em `UserProfile` → `agente-dominio-treinos.mdc`
+- **Segurança:** IDOR em assessment/evolution por ID → `agente-php-seguranca.mdc`
+- **Financeiro:** gating premium histórico bio → `agente-dominio-financeiro.mdc` (se aplicável)

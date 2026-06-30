@@ -526,7 +526,8 @@ class AdminAreaController extends Controller
     }
 
     /**
-     * Remove da base de dados um utilizador com perfil Aluno (não administradores).
+     * Anonimiza um utilizador com perfil Aluno/Paciente/Profissional (LGPD).
+     * Preserva o registo quando existem vínculos financeiros ou clínicos (FK RESTRICT).
      */
     public function destroyUser(Request $request, User $user): RedirectResponse
     {
@@ -543,10 +544,14 @@ class AdminAreaController extends Controller
             return redirect()->route('admin.users')->with('error', 'Não é permitido excluir administradores.');
         }
 
+        if ($user->isAnonymized()) {
+            return redirect()->route('admin.users')->with('error', 'Este utilizador já foi anonimizado.');
+        }
+
         $allowedProfiles = ['aluno', 'paciente', 'professional'];
         $userProfileName = $user->userProfile?->name;
 
-        if (!in_array($userProfileName, $allowedProfiles)) {
+        if (! in_array($userProfileName, $allowedProfiles)) {
             return redirect()->route('admin.users')->with('error', 'Só é possível excluir utilizadores com perfil Aluno, Paciente ou Profissional.');
         }
 
@@ -555,27 +560,29 @@ class AdminAreaController extends Controller
         $roleLabel = $user->userProfile?->label ?? 'Utilizador';
 
         try {
-            DB::transaction(function () use ($user) {
-                $user->delete();
-            });
+            app(\App\Services\Lgpd\LgpdUserAnonymizationService::class)->anonymize(
+                $user,
+                $actor,
+                'Exclusão solicitada via painel administrativo'
+            );
         } catch (\Throwable $e) {
-            Log::error('Falha ao excluir utilizador (admin)', [
+            Log::error('Falha ao anonimizar utilizador (admin)', [
                 'target_id' => $deletedId,
                 'message' => $e->getMessage(),
             ]);
 
-            return redirect()->route('admin.users')->with('error', 'Não foi possível excluir o utilizador. Podem existir registos que impedem a remoção.');
+            return redirect()->route('admin.users')->with('error', 'Não foi possível anonimizar o utilizador.');
         }
 
         AdminLog::create([
             'user_id' => $actor->id,
-            'action' => "Excluiu o {$userProfileName} #{$deletedId} ({$deletedName})",
+            'action' => "Anonimizou o {$userProfileName} #{$deletedId} ({$deletedName})",
             'ip_address' => $request->ip(),
-            'payload' => ['deleted_user_id' => $deletedId, 'profile' => $userProfileName],
+            'payload' => ['anonymized_user_id' => $deletedId, 'profile' => $userProfileName],
             'created_at' => now(),
         ]);
 
-        return redirect()->route('admin.users')->with('success', "{$roleLabel} {$deletedName} (ID {$deletedId}) foi removido da base de dados.");
+        return redirect()->route('admin.users')->with('success', "{$roleLabel} {$deletedName} (ID {$deletedId}) foi anonimizado. Dados financeiros e clínicos preservados para auditoria.");
     }
 
     /**
@@ -1152,8 +1159,11 @@ class AdminAreaController extends Controller
 
     public function lgpdDashboard(): View
     {
+        $workflow = app(\App\Services\Lgpd\LgpdDeletionWorkflowService::class);
+
         $stats = [
             'total_consents' => UserConsent::count(),
+            'pending_deletions' => $workflow->pendingCount(),
             'recent_consents' => UserConsent::with('user')->orderBy('created_at', 'desc')->limit(10)->get(),
             'incidents_open' => DB::table('security_incidents')->where('status', '!=', 'closed')->count(),
             'recent_incidents' => DB::table('security_incidents')->orderBy('created_at', 'desc')->limit(5)->get(),
@@ -1205,8 +1215,84 @@ class AdminAreaController extends Controller
         return back()->with('success', 'Incidente de segurança registrado.');
     }
 
+    public function deletionRequests(): View
+    {
+        $workflow = app(\App\Services\Lgpd\LgpdDeletionWorkflowService::class);
+        $pendingUsers = $workflow->pendingUsers(200);
+
+        return view('admin.lgpd.deletion-requests', compact('pendingUsers'));
+    }
+
+    public function processDeletionRequest(Request $request, User $user): RedirectResponse
+    {
+        $actor = auth()->user();
+        $workflow = app(\App\Services\Lgpd\LgpdDeletionWorkflowService::class);
+
+        $outcome = $workflow->processUser(
+            $user,
+            $actor,
+            'Anonimização manual via painel LGPD'
+        );
+
+        if ($outcome === 'processed') {
+            AdminLog::create([
+                'user_id' => $actor->id,
+                'action' => "Processou pedido LGPD (anonimização) do utilizador #{$user->id}",
+                'ip_address' => $request->ip(),
+                'payload' => ['anonymized_user_id' => $user->id],
+                'created_at' => now(),
+            ]);
+
+            return back()->with('success', "Utilizador #{$user->id} anonimizado com sucesso.");
+        }
+
+        if ($outcome === 'skipped') {
+            return back()->with('warning', 'Utilizador já estava anonimizado.');
+        }
+
+        return back()->with('error', $outcome);
+    }
+
+    public function processDeletionRequestsBatch(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_ids' => ['required', 'array', 'min:1', 'max:50'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
+        ]);
+
+        $actor = auth()->user();
+        $workflow = app(\App\Services\Lgpd\LgpdDeletionWorkflowService::class);
+
+        $result = $workflow->processUsers(
+            $validated['user_ids'],
+            $actor,
+            'Anonimização em lote via painel LGPD'
+        );
+
+        AdminLog::create([
+            'user_id' => $actor->id,
+            'action' => 'Processou lote de pedidos LGPD (anonimização)',
+            'ip_address' => $request->ip(),
+            'payload' => $result,
+            'created_at' => now(),
+        ]);
+
+        $message = "Lote concluído: {$result['processed']} processado(s), {$result['skipped']} ignorado(s), {$result['failed']} falha(s).";
+
+        return back()->with($result['failed'] > 0 ? 'warning' : 'success', $message);
+    }
+
     public function exportUserFullData(User $user)
     {
+        $actor = auth()->user();
+        if ($actor && ! $actor->isAdministrator()) {
+            $actorCompanyId = (int) ($actor->academy_company_id ?? 0);
+            $targetCompanyId = (int) ($user->academy_company_id ?? 0);
+            if ($actorCompanyId === 0 || $targetCompanyId === 0 || $actorCompanyId !== $targetCompanyId) {
+                abort(403, 'Exportação permitida apenas para utilizadores da sua organização.');
+            }
+        }
+
         $userData = [
             'user' => $user->only(['id', 'name', 'username', 'email', 'is_premium', 'created_at']),
             'profile' => $user->profile ? $user->profile->makeVisible(['height_cm', 'birth_date', 'gender']) : null,

@@ -61,7 +61,17 @@ class SmokeTestCommand extends Command
             $failed++;
         }
 
-        $criticalRoutes = ['checkout.process', 'patient.reports.index', 'representative.dashboard', 'professional.finance.dashboard'];
+        $criticalRoutes = [
+            'checkout.process',
+            'patient.reports.index',
+            'representative.dashboard',
+            'professional.finance.dashboard',
+            'shopping.index',
+            'shopping.cart.index',
+            'admin.shop.products.index',
+            'admin.shop.orders.index',
+            'admin.shop.suppliers.index',
+        ];
         foreach ($criticalRoutes as $routeName) {
             if (Route::has($routeName)) {
                 $this->line("  [ok] Rota {$routeName}");

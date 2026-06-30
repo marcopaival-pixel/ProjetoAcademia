@@ -33,8 +33,28 @@ Runbook complementar a `docs/DEPLOY_NEXSHAPE.md` (secção 9). Alinhado à audit
 - Rota Pulse (pacote Laravel) — restringir por IP ou auth admin.
 - Gate `viewPulse` → só administradores (`AppServiceProvider`).
 - Scheduler: `pulse:check` e `pulse:work` a cada minuto.
+- **Retenção:** `app:purge-pulse` diário às 03:15 (default 7 dias — `LOG_RETENTION_PULSE_DAYS` / `PULSE_STORAGE_KEEP`).
+- Diagnóstico: `php artisan app:db:mysql-health` (buffer pool, slow log, contagem `pulse_entries`).
 
 **Produção:** não expor `/pulse` publicamente; usar VPN ou allowlist Apache.
+
+---
+
+## 3.1 MySQL / MariaDB (XAMPP e produção)
+
+Comando read-only: `php artisan app:db:mysql-health`
+
+| Variável | Dev (XAMPP) | Produção |
+|----------|-------------|----------|
+| `innodb_buffer_pool_size` | ≥ **128 MB** (my.ini) | ≥ 512 MB conforme RAM |
+| `slow_query_log` | opcional | **ON** (`long_query_time=2`) |
+| `pulse_entries` | monitorizar | scheduler `app:purge-pulse` |
+
+**XAMPP (`my.ini`):** secção `[mysqld]` — aumentar `innodb_buffer_pool_size`; reiniciar MySQL no painel XAMPP.
+
+**Backups nativos:** `php artisan app:backup:native` (CLI) ou painel admin (fallback). `php artisan app:backup:verify` — deteta `.sql` vazios em `storage/app/backups` (scheduler semanal). Ficheiros vazios são rejeitados na geração.
+
+Referência histórica: `docs/AUDITORIA_BANCO_DADOS_20260513.md`.
 
 ---
 

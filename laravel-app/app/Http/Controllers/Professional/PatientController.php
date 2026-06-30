@@ -751,8 +751,7 @@ class PatientController extends Controller
             return response()->json([
                 'success' => true,
                 'type' => 'generated',
-                'temp_password' => $generatedPassword,
-                'message' => 'Acesso liberado com sucesso. Senha provisória gerada.',
+                'message' => 'Acesso liberado com sucesso. Senha provisória enviada por e-mail.',
             ]);
         }
 

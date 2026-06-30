@@ -169,6 +169,11 @@ class User extends Authenticatable
         return $this->hasOne(UserProfile::class, 'user_id', 'id');
     }
 
+    public function consents(): HasMany
+    {
+        return $this->hasMany(UserConsent::class, 'user_id', 'id');
+    }
+
     public function professionalProfile(): HasOne
     {
         return $this->hasOne(ProfessionalProfile::class, 'user_id', 'id');
@@ -354,6 +359,11 @@ class User extends Authenticatable
     public function isBlocked(): bool
     {
         return $this->status === 'blocked';
+    }
+
+    public function isAnonymized(): bool
+    {
+        return $this->status === \App\Services\Lgpd\LgpdUserAnonymizationService::STATUS_ANONYMIZED;
     }
 
     public function isActive(): bool
