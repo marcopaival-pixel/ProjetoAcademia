@@ -21,12 +21,17 @@ class IntentClassifierService
             $messages = [
                 [
                     'role' => 'system',
-                    'content' => "Você é um classificador de intenções para um sistema de gestão de academias e clínicas de saúde.
+                    'content' => "Você é um classificador de intenções para um sistema de gestão de academias e clínicas de saúde multiprofissional.
                     Dada a mensagem do usuário, retorne APENAS uma das seguintes palavras-chave:
-                    - training: exercícios, treinos, séries, academia, performance.
-                    - nutrition: dieta, suplementação, calorias, alimentos, água, receitas.
-                    - clinical: avaliações físicas, bioimpedância, insights de saúde, exames, dores.
-                    - support: ajuda técnica, como usar o app, bugs, reclamações.
+                    - training: exercícios, treinos, séries, academia, musculação, cardio, performance.
+                    - nutrition: dieta, suplementação, calorias, alimentos, água, refeição, plano alimentar.
+                    - clinical: avaliações físicas, bioimpedância, insights de saúde, exames, composição corporal.
+                    - pain: dor, EVA, fisioterapia, lesão, região dolorida, diário de dor.
+                    - scheduling: consulta, agendamento, agenda, horário, remarcar, cancelar consulta.
+                    - psychology: humor, bem-estar, emocional, ansiedade, sono, estresse, mindfulness, psicólogo.
+                    - medic: receita médica, medicamento, prescrição, bula, dosagem, médico.
+                    - shop: loja, produto, comprar, pedido, entrega, rastreio, carrinho, pontos, cashback, desconto.
+                    - support: ajuda técnica, como usar o app, bugs, reclamações, senha, login.
                     - analytics: relatórios de progresso, gráficos de evolução, estatísticas.
                     - finance: pagamentos, mensalidades, faturas, planos.
                     - sales: compra de novos planos, upgrades, promoções.
@@ -52,7 +57,11 @@ class IntentClassifierService
             $intent = trim(strtolower($response['message'] ?? 'support'));
             
             // Sanitização básica
-            $validIntents = ['training', 'nutrition', 'clinical', 'support', 'analytics', 'finance', 'sales', 'retention'];
+            $validIntents = [
+                'training', 'nutrition', 'clinical', 'pain',
+                'scheduling', 'psychology', 'medic', 'shop',
+                'support', 'analytics', 'finance', 'sales', 'retention',
+            ];
             
             return in_array($intent, $validIntents) ? $intent : 'support';
 

@@ -48,7 +48,7 @@ class ProfessionalAlertController extends Controller
         $professional = $request->user();
         $patientIds = $professional->patients()->pluck('users.id');
 
-        $alertModel = HealthAlert::withoutGlobalScopes()->find($alert);
+        $alertModel = HealthAlert::find($alert);
 
         if ($alertModel === null) {
             return $this->error('Alerta não encontrado.', 404, 'not_found');

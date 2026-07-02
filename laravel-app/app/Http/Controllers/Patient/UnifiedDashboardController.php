@@ -9,6 +9,8 @@ use App\Models\ProfessionalAppointment;
 use App\Models\TrainingPlan;
 use App\Models\User;
 use App\Models\WeightEntry;
+use App\Services\PatientModuleManager;
+use App\Services\TimelineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -175,6 +177,10 @@ class UnifiedDashboardController extends Controller
                 'logo' => null
             ];
 
+        // 9. Módulos ativos do paciente e Linha do tempo unificada multiprofissional
+        $activeModules = app(PatientModuleManager::class)->getActiveModules($patient);
+        $timeline = app(TimelineService::class)->getPatientTimeline($patient);
+
         return view('patient.unified_dashboard', compact(
             'patient',
             'summary',
@@ -189,7 +195,9 @@ class UnifiedDashboardController extends Controller
             'documents',
             'recommendedRoutine',
             'lastWorkout',
-            'recoveryCountThisWeek'
+            'recoveryCountThisWeek',
+            'activeModules',
+            'timeline'
         ));
     }
 }

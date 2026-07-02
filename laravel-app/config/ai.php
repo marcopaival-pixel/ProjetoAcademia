@@ -26,7 +26,7 @@ return [
     | Memória conversacional (sliding window)
     |--------------------------------------------------------------------------
     */
-    'chat_history_messages' => (int) env('AI_CHAT_HISTORY_MESSAGES', 4),
+    'chat_history_messages' => (int) env('AI_CHAT_HISTORY_MESSAGES', 10),
 
     /*
     |--------------------------------------------------------------------------

@@ -239,6 +239,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/system-errors/clear', [AdminAreaController::class, 'clearErrors'])->name('admin.system-errors.clear');
 
         Route::prefix('observability')->name('admin.observability.')->group(function () {
+            Route::get('/', [ObservabilityController::class, 'dashboard'])->name('index');
             Route::get('/admin-logs', [ObservabilityController::class, 'adminLogs'])->name('admin-logs');
             Route::get('/admin-logs/export', [ObservabilityController::class, 'exportAdminLogs'])->name('admin-logs.export');
             Route::get('/auth-logs', [ObservabilityController::class, 'authLogs'])->name('auth-logs');
@@ -248,6 +249,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/client-errors', [ObservabilityController::class, 'clientErrors'])->name('client-errors');
             Route::get('/client-errors/export', [ObservabilityController::class, 'exportClientErrors'])->name('client-errors.export');
             Route::get('/financial-reconciliation', [ObservabilityController::class, 'financialReconciliation'])->name('financial-reconciliation');
+            Route::get('/user-history/{user?}', [ObservabilityController::class, 'userHistory'])->name('user-history');
+            Route::get('/api-integrations-metrics', [ObservabilityController::class, 'apiIntegrationsMetrics'])->name('api-integrations-metrics');
         });
         
         // Configurações Globais e Monitoramento

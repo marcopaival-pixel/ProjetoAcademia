@@ -161,6 +161,7 @@ class PanelAccessService
             '/patient/professionals/',
             '/patient/subscription',
             '/privacy/',
+            '/pain-mapping',
         ];
 
         foreach ($prefixes as $prefix) {
@@ -357,6 +358,7 @@ class PanelAccessService
             '/trophies',
             '/supplements',
             '/meal-templates',
+            '/pain-mapping',
             '/index.php',
         ];
 

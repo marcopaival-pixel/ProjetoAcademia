@@ -81,6 +81,13 @@ Route::middleware([
         Route::post('/{professional}/request-link', [ProfessionalSearchController::class, 'requestLink'])->name('request-link');
     });
 
+    // Diário de Humor e Bem-estar (alimenta o PsychologyAgent)
+    Route::prefix('mood')->name('mood.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Patient\MoodLogController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Patient\MoodLogController::class, 'store'])->name('store');
+        Route::delete('/{id}', [\App\Http\Controllers\Patient\MoodLogController::class, 'destroy'])->name('destroy');
+    });
+
 });
 
 // Relatórios monetizados — aluno e paciente (sem exigir perfil clínico completo)

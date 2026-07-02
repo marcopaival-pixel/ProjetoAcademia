@@ -69,9 +69,15 @@
                         @endforeach
                     </ul>
 
-                    <button class="relative z-10 w-full py-5 rounded-3xl font-black transition-all uppercase text-[10px] tracking-widest active:scale-95 {{ $plan['current'] ? 'bg-zinc-800 text-zinc-600 cursor-default border border-white/5' : 'bg-white text-zinc-900 hover:bg-blue-400 hover:text-white shadow-2xl' }}">
-                        {{ $plan['current'] ? 'Mantenha Atual' : 'Migrar Plano' }}
-                    </button>
+                    @if($plan['current'])
+                        <button class="relative z-10 w-full py-5 rounded-3xl font-black uppercase text-[10px] tracking-widest bg-zinc-800 text-zinc-600 cursor-default border border-white/5">
+                            Mantenha Atual
+                        </button>
+                    @else
+                        <a href="{{ route('professional.billing.upgrade', ['plan_id' => $plan['id']]) }}" class="relative z-10 block text-center w-full py-5 rounded-3xl font-black transition-all uppercase text-[10px] tracking-widest bg-white text-zinc-900 hover:bg-blue-400 hover:text-white shadow-2xl">
+                            Migrar Plano
+                        </a>
+                    @endif
                 </div>
             </div>
             @endforeach

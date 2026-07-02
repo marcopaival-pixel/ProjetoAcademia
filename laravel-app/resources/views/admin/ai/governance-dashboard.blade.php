@@ -23,7 +23,7 @@
         </form>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
         <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
             <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Custo USD (período)</p>
             <p class="text-4xl font-black text-white">${{ number_format($metrics['total_cost_usd'], 2) }}</p>
@@ -43,6 +43,11 @@
             <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Requisições / Taxa erro</p>
             <p class="text-4xl font-black text-white">{{ number_format($metrics['total_requests']) }}</p>
             <p class="text-xs {{ $metrics['error_rate'] > 5 ? 'text-rose-500' : 'text-zinc-500' }} mt-2">{{ $metrics['error_rate'] }}% erros/limites</p>
+        </div>
+        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl col-span-1 md:col-span-2 lg:col-span-1">
+            <p class="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-2">Margem Líquida SaaS (IA)</p>
+            <p class="text-2xl font-black text-emerald-400">R$ {{ number_format($metrics['net_margin_brl'], 2, ',', '.') }}</p>
+            <p class="text-xs text-zinc-500 mt-2">Impacto IA: <span class="text-violet-400 font-bold">{{ number_format($metrics['ia_revenue_pct'], 1) }}%</span> da Rec.</p>
         </div>
     </div>
 

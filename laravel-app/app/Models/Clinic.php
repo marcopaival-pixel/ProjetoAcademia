@@ -16,6 +16,7 @@ class Clinic extends Model
         'primary_color',
         'custom_domain',
         'is_active',
+        'enabled_modules',
         'representative_id',
         'sale_date',
         'plan_name',
@@ -28,6 +29,7 @@ class Clinic extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'enabled_modules' => 'array',
         'sale_date' => 'date',
         'commission_value' => 'decimal:2',
         'applied_discount_rate' => 'decimal:2',

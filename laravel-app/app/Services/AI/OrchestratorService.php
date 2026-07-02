@@ -15,6 +15,11 @@ use App\Services\AI\Agents\FinanceAgent;
 use App\Services\AI\Agents\SalesAgent;
 use App\Services\AI\Agents\RetentionAgent;
 use App\Services\AI\Agents\VisionAgent;
+use App\Services\AI\Agents\PainAgent;
+use App\Services\AI\Agents\SchedulingAgent;
+use App\Services\AI\Agents\PsychologyAgent;
+use App\Services\AI\Agents\MedicAgent;
+use App\Services\AI\Agents\ShopAgent;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -191,17 +196,13 @@ class OrchestratorService
 
     private function agentRequiresCredits(string $intent): bool
     {
-        $noCreditIntents = config('ai.disabled_intents', ['finance', 'sales', 'retention']);
+        // Agentes baseados em regras (sem LLM) — não debitam créditos
+        $noCreditIntents = array_merge(
+            config('ai.disabled_intents', ['finance', 'sales', 'retention']),
+            ['analytics']
+        );
 
-        if (in_array($intent, $noCreditIntents, true)) {
-            return false;
-        }
-
-        if ($intent === 'analytics') {
-            return false;
-        }
-
-        return true;
+        return ! in_array($intent, $noCreditIntents, true);
     }
 
     private function exceedsDailyBudget(?int $clinicId): bool
@@ -231,17 +232,23 @@ class OrchestratorService
     private function resolveAgent(string $intent)
     {
         return match ($intent) {
-            'training' => app(TrainingAgent::class),
-            'nutrition' => app(NutritionAgent::class),
-            'clinical', 'bioimpedance_report', 'lab_exam' => app(ClinicalAgent::class),
-            'analytics' => app(AnalyticsAgent::class),
-            'finance' => app(FinanceAgent::class),
-            'sales' => app(SalesAgent::class),
-            'retention' => app(RetentionAgent::class),
-            'vision' => app(VisionAgent::class),
-            'workout_sheet' => app(TrainingAgent::class),
-            'meal_photo' => app(NutritionAgent::class),
-            default => app(SupportAgent::class),
+            'training', 'workout_sheet'             => app(TrainingAgent::class),
+            'nutrition', 'meal_photo'               => app(NutritionAgent::class),
+            'clinical', 'bioimpedance_report',
+            'lab_exam'                              => app(ClinicalAgent::class),
+            'pain', 'pain_tracking', 'eva'          => app(PainAgent::class),
+            'scheduling', 'appointment',
+            'agenda'                               => app(SchedulingAgent::class),
+            'psychology', 'mental_health', 'mood'  => app(PsychologyAgent::class),
+            'medic', 'prescription', 'medication'  => app(MedicAgent::class),
+            'shop', 'product', 'order',
+            'cart', 'wishlist', 'points'           => app(ShopAgent::class),
+            'analytics'                            => app(AnalyticsAgent::class),
+            'finance'                              => app(FinanceAgent::class),
+            'sales'                                => app(SalesAgent::class),
+            'retention'                            => app(RetentionAgent::class),
+            'vision'                               => app(VisionAgent::class),
+            default                                => app(SupportAgent::class),
         };
     }
 

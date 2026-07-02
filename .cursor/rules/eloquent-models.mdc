@@ -18,6 +18,8 @@ Seguir `AGENTS.md`: tabelas e colunas devem refletir **migrações e BD reais** 
 
 - Não expor campos sensíveis em serialização (`$hidden`, `$visible`) alinhados ao que models similares já fazem.
 
-## Evitar
+## Casts e Tipos Numéricos
 
-- Lógica de negócio pesada no model se o projeto a centraliza em services; **scopes** e **accessors** podem seguir o estilo local.
+- **Casting de floats/decimals**: Sempre definir casts explícitos (ex: `'weight_kg' => 'float'`) para campos decimais/float na propriedade `$casts` do model, garantindo que as respostas de API/JSON retornem valores numéricos e não strings de ponto flutuante, evitando erros de tipo e falhas de asserção nos testes.
+- **Isolamento de Tenants**: Registrar sub-recursos transitivos ou models globais sem colunas diretas de tenant na `GLOBAL_ALLOWLIST` do `TenantIsolationAuditor` para evitar alertas de segurança na release.
+

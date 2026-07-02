@@ -275,6 +275,7 @@ class MenuAccessService
             'omni.webhook',
             'sanctum.',
             'registration.',
+            'pain-mapping.',
         ];
 
         foreach ($prefixes as $p) {

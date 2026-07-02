@@ -53,6 +53,9 @@ class BodyAssessment extends Model
     protected $casts = [
         'assessment_date' => 'date',
         'ai_suggestions' => 'array',
+        'weight_kg' => 'float',
+        'bf_percent' => 'float',
+        'muscle_percent' => 'float',
     ];
 
     public function user()

@@ -218,3 +218,11 @@ Route::prefix('api/ai')->name('api.ai.')->group(function () {
     Route::post('/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('orchestrator');
     Route::get('/orchestrator/status/{jobKey}', [\App\Http\Controllers\AI\OrchestratorController::class, 'status'])->name('orchestrator.status');
 });
+
+// Pain Mapping (EVA)
+Route::prefix('pain-mapping')->name('pain-mapping.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\PainMappingController::class, 'index'])->name('index');
+    Route::post('/', [\App\Http\Controllers\PainMappingController::class, 'store'])->name('store');
+    Route::delete('/{painRecord}', [\App\Http\Controllers\PainMappingController::class, 'destroy'])->name('destroy');
+});
+

@@ -71,7 +71,12 @@
                                     <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-[10px] font-black text-zinc-400 border border-white/5 shadow-inner">
                                         {{ substr($err->user?->name ?? 'G', 0, 1) }}
                                     </div>
-                                    <span class="text-xs font-bold text-zinc-400">{{ $err->user?->name ?? 'GUEST' }}</span>
+                                    <div>
+                                        <span class="text-xs font-bold text-zinc-400 block">{{ $err->user?->name ?? 'GUEST' }}</span>
+                                        @if($err->user && $err->user->academyCompany)
+                                            <span class="text-[9px] font-black text-emerald-500 uppercase tracking-wider block mt-0.5">{{ $err->user->academyCompany->name }}</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="p-6">
@@ -150,7 +155,11 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-white/5">
+                <div class="bg-zinc-950/50 p-6 rounded-2xl border border-white/5">
+                    <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Correlation ID</label>
+                    <p id="modalCorrelationId" class="text-sm font-black text-blue-400 font-mono"></p>
+                </div>
                 <div class="bg-zinc-950/50 p-6 rounded-2xl border border-white/5">
                     <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Ponto de Origem (IP)</label>
                     <p id="modalIp" class="text-sm font-black text-white font-mono"></p>
@@ -174,6 +183,9 @@
         document.getElementById('modalStack').innerText = data.stack;
         document.getElementById('modalIp').innerText = data.ip;
         document.getElementById('modalUa').innerText = data.ua;
+        
+        const correlationId = data.payload && data.payload._correlation_id ? data.payload._correlation_id : 'N/A';
+        document.getElementById('modalCorrelationId').innerText = correlationId;
         
         document.getElementById('errorModal').classList.remove('hidden');
         document.getElementById('errorModal').classList.add('flex');
