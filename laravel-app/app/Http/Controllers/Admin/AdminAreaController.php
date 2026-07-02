@@ -1321,7 +1321,7 @@ class AdminAreaController extends Controller
 
     public function systemErrors(): View
     {
-        $systemErrors = SystemError::with('user')->orderBy('created_at', 'desc')->paginate(50);
+        $systemErrors = SystemError::with('user.academyCompany')->orderBy('created_at', 'desc')->paginate(50);
         return view('admin.system_errors.index', compact('systemErrors'));
     }
 

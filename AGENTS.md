@@ -232,6 +232,9 @@ Aplicável a **qualquer** sistema ou linguagem no repositório, além das regras
 - Respeitar camadas já usadas no projeto (Controllers finos, lógica em Services/Actions, Form Requests para validação, Policies para autorização).
 - Usar Eloquent e migrações existentes; não criar tabelas ou colunas “de cabeça”.
 - Manter convenções PSR e estilo do projeto (Laravel Pint, PHP-CS-Fixer, etc., se configurados).
+- **Tipagem numérica em JSON/APIs**: Sempre definir casts explícitos (ex: `'weight_kg' => 'float'`) para campos decimais/float na propriedade `$casts` do model, garantindo que as respostas de API retornem números e não strings, evitando falhas em testes unitários e de integração.
+- **Auditoria de Isolamento Multi-tenant**: Se um novo model for global ou isolado transitivamente através do model pai (sub-recurso) e não possuir colunas diretas de tenant, adicioná-lo à `GLOBAL_ALLOWLIST` em `App\Services\TenantIsolationAuditor` para evitar falso-positivos na release.
+- **Hub de Saúde do Paciente e Modularização**: O portal do paciente (`patient.unified.dashboard`) é dinâmico e dirigido por dados (data-driven), gerenciado pelos serviços `PatientModuleManager` e `TimelineService`. Nunca crie abas, menus ou feeds estáticos de portal vinculados a profissões ou especialidades de saúde. Qualquer nova especialidade ou domínio clínico (ex: Diários, Exames, Treinos) deve ser integrada e autodescoberta através do `PatientModuleManager` e do `TimelineService`, respeitando as configurações de controle de portfólio da clínica (`enabled_modules` na tabela `clinics`).
 
 ---
 
@@ -244,3 +247,13 @@ Se um pedido do utilizador violar segurança, integridade de dados ou regras obr
 ## Fecho de recomendações (checklist mental)
 
 Antes de considerar uma alteração **concluída**, quando aplicável ao projeto: escopo respeitado; código legível e sem duplicação desnecessária; validação e autorização cobertas; segredos fora do Git; testes ou verificação manual descritos; CI/analisadores alinhados; documentação ou `.env.example` atualizados se mudou contrato ou configuração.
+
+---
+
+## Políticas de Governança de IA e Otimização de Custos
+
+- **Preservação de Margem SaaS:** A IA deve operar sob modelos otimizados (como `gpt-4o-mini`). O uso de modelos maiores (como `gpt-4o`) deve ser isolado a requisições com autorização explícita ou planos enterprise, para evitar prejuízo operacional.
+- **Prompt Caching:** Manter a estrutura dos prompts de sistema (System Prompts) estática e reutilizável para aproveitar o Prompt Caching automático das APIs da OpenAI, reduzindo em até 50% o custo dos tokens de entrada.
+- **Limite de Contexto de Histórico:** Rotinas de chat (como o NexBot) devem limitar o envio de mensagens passadas do histórico no payload (máximo de 10 mensagens anteriores) para conter o crescimento exponencial de custo.
+- **Compressão de Imagens na Vision API:** Arquivos de imagem enviados para análise de postura ou OCR de fichas devem ser comprimidos no client-side para reduzir a contagem de tokens de visão.
+- **Cache Semântico:** Sempre verificar se existe uma resposta equivalente em cache no banco de dados local antes de efetuar uma nova requisição à API de IA para dados idênticos.

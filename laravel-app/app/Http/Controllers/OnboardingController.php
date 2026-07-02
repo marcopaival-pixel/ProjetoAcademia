@@ -360,7 +360,7 @@ class OnboardingController extends Controller
      */
     public function update(Request $request)
     {
-        \Illuminate\Support\Facades\Log::info('Onboarding Update Attempt', ['user_id' => auth()->id(), 'data' => $request->all()]);
+        \Illuminate\Support\Facades\Log::info('Onboarding Update Attempt', ['user_id' => auth()->id(), 'data' => $request->except(['password', 'password_confirmation', 'cpf', 'credit_card', 'card_number'])]);
         
         $user = Auth::user();
         

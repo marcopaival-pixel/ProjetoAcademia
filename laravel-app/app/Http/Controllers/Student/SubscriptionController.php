@@ -131,11 +131,44 @@ class SubscriptionController extends Controller
         $user = auth()->user();
         $subscription = $this->getOrCreateSubscription($user);
         $newPlan = Plan::findOrFail($request->plan_id);
+        $pagamentoAtivo = AdminSetting::isTrue('pagamento_ativo', true);
 
         if ($newPlan->price > ($subscription->plan->price ?? 0)) {
-            $this->subscriptionService->upgrade($subscription, $newPlan);
+            if (!$pagamentoAtivo || $newPlan->price <= 0) {
+                $this->subscriptionService->upgrade($subscription, $newPlan);
+                return back()->with('success', 'Upgrade realizado com sucesso (Simulação Dev)!');
+            }
 
-            return back()->with('success', 'Upgrade realizado com sucesso!');
+            try {
+                return DB::transaction(function () use ($user, $newPlan, $subscription) {
+                    $gateway = $this->paymentManager->driver();
+                    $checkout = $gateway->createSubscription($user, $newPlan, [
+                        'external_reference' => "pa:{$user->id}:{$newPlan->name}"
+                    ]);
+
+                    if (! ($checkout['ok'] ?? false)) {
+                        return back()->with('error', $checkout['error'] ?? 'Erro no gateway de pagamento ao realizar upgrade.');
+                    }
+
+                    $subscription->update([
+                        'plan_id' => $newPlan->id,
+                        'status' => Subscription::STATUS_FIN_PENDENTE,
+                        'payment_method' => 'gateway',
+                        'gateway_type' => $gateway->getIdentifier(),
+                        'gateway_id' => $checkout['id'] ?? null,
+                    ]);
+
+                    $initPoint = $checkout['init_point'] ?? null;
+                    if ($initPoint) {
+                        return redirect()->away($initPoint);
+                    }
+
+                    return redirect()->route('patient.subscription.index')
+                        ->with('success', 'Upgrade iniciado. Aguarde confirmação do pagamento no gateway.');
+                });
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Falha ao processar upgrade: '.$e->getMessage());
+            }
         }
 
         $this->subscriptionService->downgrade($subscription, $newPlan);

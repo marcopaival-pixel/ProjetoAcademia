@@ -32,6 +32,16 @@ class AdminAiGovernanceController extends Controller
             'credits_today' => (int) AiCreditUsageLog::whereDate('created_at', $today)->sum('credits_consumed'),
         ];
 
+        $revenueBrl = (float) \App\Models\Payment::where('created_at', '>=', $startDate)->where('status', 'paid')->sum('amount');
+        $iaCostBrl = $metrics['total_cost_usd'] * 5.50; 
+        $netMarginBrl = $revenueBrl - $iaCostBrl;
+        $iaRevenuePct = $revenueBrl > 0 ? ($iaCostBrl / $revenueBrl) * 100 : 0;
+
+        $metrics['revenue_brl'] = $revenueBrl;
+        $metrics['ia_cost_brl'] = $iaCostBrl;
+        $metrics['net_margin_brl'] = $netMarginBrl;
+        $metrics['ia_revenue_pct'] = $iaRevenuePct;
+
         $byAgent = AIOrchestratorLog::select(
             'agent_name',
             DB::raw('count(*) as count'),

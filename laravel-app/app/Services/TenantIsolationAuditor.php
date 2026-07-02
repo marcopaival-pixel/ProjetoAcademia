@@ -107,6 +107,14 @@ class TenantIsolationAuditor
         'OmniCompany',
         'CreditoPacote',
         'DeviceToken',
+        // Shop sub-resources & Platform models (isolated via parent or global)
+        'InternalEmail',
+        'ShopCartItem',
+        'ShopCouponUsage',
+        'ShopOrderItem',
+        'ShopPointsTransaction',
+        'ShopProductImage',
+        'ShopWishlist',
     ];
 
     /**

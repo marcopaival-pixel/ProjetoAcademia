@@ -80,8 +80,8 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
             'billingType' => 'CREDIT_CARD',
             'value' => $finalAmount > 0 ? $finalAmount : $baseAmount,
             'nextDueDate' => now()->addMonth()->format('Y-m-d'),
-            'cycle' => ($plan === 'yearly') ? 'YEARLY' : 'MONTHLY',
-            'description' => "Assinatura ProjetoAcademia - {$plan}",
+            'cycle' => ($plan === 'yearly' || (is_string($plan) && $plan === 'yearly')) ? 'YEARLY' : 'MONTHLY',
+            'description' => "Assinatura ProjetoAcademia - " . ($plan instanceof \App\Models\Plan ? $plan->name : $plan),
             'externalReference' => $options['external_reference'] ?? null,
         ];
 
@@ -89,10 +89,30 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
             ->post($this->baseUrl . '/subscriptions', $payload);
 
         if ($response->successful()) {
-            return ['ok' => true, 'data' => $response->json()];
+            $data = $response->json();
+            $subId = $data['id'] ?? null;
+            $invoiceUrl = $data['invoiceUrl'] ?? null;
+            
+            if (!$invoiceUrl && $subId) {
+                $payResponse = Http::withHeaders(['access_token' => $this->token])
+                    ->get($this->baseUrl . "/payments", ['subscription' => $subId]);
+                if ($payResponse->successful()) {
+                    $payments = $payResponse->json('data');
+                    if (!empty($payments)) {
+                        $invoiceUrl = $payments[0]['invoiceUrl'] ?? null;
+                    }
+                }
+            }
+
+            return [
+                'ok' => true,
+                'id' => $subId,
+                'init_point' => $invoiceUrl,
+                'data' => $data
+            ];
         }
 
-        return ['ok' => false, 'error' => $response->json('errors.0.description')];
+        return ['ok' => false, 'error' => $response->json('errors.0.description') ?? 'Erro ao criar assinatura no Asaas'];
     }
 
     public function cancelSubscription($gatewaySubscriptionId): bool

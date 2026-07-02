@@ -176,6 +176,65 @@
         </div>
     </div>
 
+    <!-- Módulos Ativos (Atalhos Rápidos Dinâmicos) -->
+    @if(!empty($activeModules))
+        <div class="mb-12">
+            <h3 class="text-[10px] font-bold text-zinc-500 tracking-[0.15em] uppercase mb-5">Meus Módulos Habilitados</h3>
+            <div class="grid grid-cols-3 gap-4">
+                @foreach($activeModules as $key => $module)
+                    <a href="{{ Route::has($module['route']) ? route($module['route']) : '#' }}" class="bg-[var(--card-bg)] rounded-3xl border border-[var(--card-border)] p-5 flex flex-col items-center justify-center text-center hover:border-white/20 transition-all group">
+                        <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-{{ $module['icon'] }} text-xl" style="color: {{ $module['color'] === 'orange' ? '#f97316' : ($module['color'] === 'green' ? '#22c55e' : ($module['color'] === 'blue' ? '#3b82f6' : ($module['color'] === 'teal' ? '#14b8a6' : ($module['color'] === 'red' ? '#ef4444' : '#06b6d4')))) }};"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-zinc-400 group-hover:text-white transition-colors uppercase tracking-wider">{{ $module['name'] }}</span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <!-- Linha do Tempo Unificada de Saúde -->
+    <div class="mb-12">
+        <h3 class="text-[10px] font-bold text-zinc-500 tracking-[0.15em] uppercase mb-6">Linha do Tempo de Saúde (Multiprofissional)</h3>
+        
+        @if(empty($timeline))
+            <div class="bg-[var(--card-bg)] rounded-[2.5rem] border border-[var(--card-border)] p-8 text-center text-zinc-500 text-sm">
+                Nenhum evento registrado na sua linha do tempo.
+            </div>
+        @else
+            <div class="relative pl-6 border-l border-zinc-800 space-y-8">
+                @foreach($timeline as $event)
+                    <div class="relative">
+                        <!-- Ponto Indicador com cor dinâmica -->
+                        <div class="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 border-[var(--bg-dark)] flex items-center justify-center" 
+                             style="background-color: {{ $event['color'] === 'orange' ? '#f97316' : ($event['color'] === 'green' ? '#22c55e' : ($event['color'] === 'blue' ? '#3b82f6' : ($event['color'] === 'teal' ? '#14b8a6' : ($event['color'] === 'red' ? '#ef4444' : '#6366f1')))) }}; box-shadow: 0 0 10px {{ $event['color'] === 'orange' ? '#f97316' : ($event['color'] === 'green' ? '#22c55e' : ($event['color'] === 'blue' ? '#3b82f6' : ($event['color'] === 'teal' ? '#14b8a6' : ($event['color'] === 'red' ? '#ef4444' : '#6366f1')))) }}80;">
+                        </div>
+                        
+                        <div class="bg-[var(--card-bg)] rounded-[2rem] border border-[var(--card-border)] p-6 hover:border-white/10 transition-all">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-bold px-3 py-1 rounded-full bg-white/5 uppercase tracking-wider text-zinc-400">
+                                    {{ $event['badge'] }}
+                                </span>
+                                <span class="text-[10px] text-zinc-500 font-medium">
+                                    {{ \Carbon\Carbon::parse($event['timestamp'])->format('d/m/Y H:i') }}
+                                </span>
+                            </div>
+                            <h4 class="text-white font-bold text-lg tracking-tight mb-1">{{ $event['title'] }}</h4>
+                            <p class="text-zinc-400 text-sm leading-relaxed mb-3">{{ $event['description'] }}</p>
+                            
+                            @if($event['professional'])
+                                <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+                                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Profissional responsável:</span>
+                                    <span class="text-xs font-bold text-white">{{ $event['professional'] }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
     <!-- Banner Promocional -->
     <div class="bg-[var(--card-bg)] rounded-[3rem] border border-[var(--card-border)] p-8 flex items-center gap-6 relative overflow-hidden mb-12">
         <!-- Detalhe Curvo Esquerdo -->
@@ -188,7 +247,7 @@
             </p>
         </div>
         
-        <!-- Ícone / Botão para ação (se houver no futuro) -->
+        <!-- Ícone / Botão para ação -->
         <div class="absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white">
             <i class="fas fa-chevron-right text-sm"></i>
         </div>

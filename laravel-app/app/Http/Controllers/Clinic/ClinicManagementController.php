@@ -92,11 +92,13 @@ class ClinicManagementController extends Controller
             'name' => 'required|string|max:191',
             'primary_color' => 'required|string|size:7',
             'logo' => 'nullable|image|max:2048',
+            'enabled_modules' => 'nullable|array',
         ]);
 
         $clinic->update([
             'name' => $validated['name'],
             'primary_color' => $validated['primary_color'],
+            'enabled_modules' => $validated['enabled_modules'] ?? [],
         ]);
 
         if ($request->hasFile('logo')) {

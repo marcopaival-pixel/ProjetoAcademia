@@ -107,7 +107,10 @@ return Application::configure(basePath: dirname(__DIR__))
                     'method' => request()->method(),
                     'message' => $e->getMessage(),
                     'stack_trace' => substr($e->getTraceAsString(), 0, 10000), // Limite de caracteres para segurança
-                    'payload' => request()->except(['password', 'password_confirmation', '_token']),
+                    'payload' => array_merge(
+                        request()->except(['password', 'password_confirmation', '_token']),
+                        ['_correlation_id' => request()->attributes->get('request_id')]
+                    ),
                     'ip' => request()->ip(),
                     'user_agent' => request()->userAgent(),
                 ]);

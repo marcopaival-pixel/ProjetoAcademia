@@ -175,6 +175,23 @@
             </div>
         </div>
 
+        <!-- Check-in de Humor Diário -->
+        <section class="glass-card rounded-[2.5rem] p-6 space-y-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Diário</span>
+                <i data-lucide="smile" class="w-4 h-4 text-zinc-500"></i>
+            </div>
+            <h4 class="text-white font-black text-sm tracking-tight text-center">Como você está se sentindo hoje?</h4>
+            <div class="flex justify-between items-center px-4 pt-2 pb-1">
+                <button onclick="registerMood(2, 'Péssimo')" class="text-4xl grayscale hover:grayscale-0 hover:scale-125 transition-all transform origin-bottom" title="Péssimo">😖</button>
+                <button onclick="registerMood(4, 'Ruim')" class="text-4xl grayscale hover:grayscale-0 hover:scale-125 transition-all transform origin-bottom" title="Ruim">🙁</button>
+                <button onclick="registerMood(6, 'Normal')" class="text-4xl grayscale hover:grayscale-0 hover:scale-125 transition-all transform origin-bottom" title="Normal">😐</button>
+                <button onclick="registerMood(8, 'Bem')" class="text-4xl grayscale hover:grayscale-0 hover:scale-125 transition-all transform origin-bottom" title="Bem">🙂</button>
+                <button onclick="registerMood(10, 'Excelente')" class="text-4xl grayscale hover:grayscale-0 hover:scale-125 transition-all transform origin-bottom" title="Excelente">🤩</button>
+            </div>
+            <p id="mood-feedback" class="text-[10px] font-black text-center text-emerald-400 hidden uppercase tracking-widest transition-opacity">Registro salvo com sucesso!</p>
+        </section>
+
         <!-- Banner Promoção Aluno -->
         @if(!Auth::user()->hasRole('aluno'))
         <section class="glass-card rounded-[2.5rem] p-8 border-l-4 border-l-[var(--brand-primary)] bg-gradient-to-r from-[var(--brand-primary-dim)] to-transparent relative overflow-hidden group">
@@ -275,4 +292,30 @@
         </a>
     </nav>
 </div>
+
+<script>
+    function registerMood(score, label) {
+        fetch('{{ route('patient.mood.store') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                mood_score: score,
+                notes: 'Sentimento registrado via dashboard: ' + label
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.ok) {
+                const feedback = document.getElementById('mood-feedback');
+                feedback.classList.remove('hidden');
+                setTimeout(() => feedback.classList.add('hidden'), 3000);
+            }
+        })
+        .catch(error => console.error('Erro ao registrar humor:', error));
+    }
+</script>
 @endsection

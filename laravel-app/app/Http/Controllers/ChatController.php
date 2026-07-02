@@ -136,18 +136,40 @@ class ChatController extends Controller
 
         $assistantMessage = $result['message'];
         $action = $result['action'] ?? null;
+        $intent = $result['intent'] ?? 'support';
 
         // Salvar resposta da IA no histórico do usuário
         AIChat::create([
             'user_id' => $user->id,
-            'role' => 'assistant',
+            'role'    => 'assistant',
             'message' => $assistantMessage,
         ]);
 
+        // Auto-save respostas educativas longas na BibliotecaInteligente
+        // (evita gastar tokens para perguntas repetidas futuras)
+        // Exclui intents pessoais/transacionais que não devem ser cacheados globalmente
+        $noCacheIntents = ['scheduling', 'shop', 'finance', 'retention', 'pain', 'psychology'];
+        if (
+            ! in_array($intent, $noCacheIntents, true)
+            && mb_strlen($assistantMessage) > 200
+            && ! ($result['cached'] ?? false)
+        ) {
+            try {
+                $this->libraryService->salvarRespostaIA(
+                    respostaIA: ['message' => $assistantMessage],
+                    modulo: 'CHAT',
+                    categoria: strtoupper($intent),
+                    pergunta: $message,
+                );
+            } catch (\Throwable) {
+                // Falha silenciosa — não impede a resposta ao usuário
+            }
+        }
+
         return response()->json([
-            'ok' => true,
-            'message' => $assistantMessage,
-            'action' => $action, 
+            'ok'         => true,
+            'message'    => $assistantMessage,
+            'action'     => $action,
             'chat_quota' => $this->chatQuotaPayload($user),
         ]);
     }
