@@ -464,14 +464,17 @@ class PortalController extends Controller
         $primaryLink = $links->firstWhere('profissional_id', $activeProfId) ?? $links->first();
         
         $professional = $primaryLink?->professional;
+        /** @var \App\Models\User|null $professional */
         $brandingData = $professional?->branding;
+        /** @var \App\Models\ProfessionalBranding|null $brandingData */
         $permissions = $primaryLink?->patient_permissions ?? [];
 
+        $brandingLogo = $brandingData?->getAttribute('logo_path');
         $branding = [
-            'clinic_name' => $brandingData->clinic_name ?? ($professional->name ?? 'Portal do Paciente'),
-            'primary_color' => $brandingData->primary_color ?? '#3b82f6',
-            'accent_color' => $brandingData->accent_color ?? '#10b981',
-            'logo_url' => ($brandingData?->logo_path) ? asset('storage/' . $brandingData->logo_path) : null,
+            'clinic_name' => $brandingData?->getAttribute('clinic_name') ?? ($professional?->getAttribute('name') ?? 'Portal do Paciente'),
+            'primary_color' => $brandingData?->getAttribute('primary_color') ?? '#3b82f6',
+            'accent_color' => $brandingData?->getAttribute('accent_color') ?? '#10b981',
+            'logo_url' => $brandingLogo ? asset('storage/' . $brandingLogo) : null,
         ];
 
         return [

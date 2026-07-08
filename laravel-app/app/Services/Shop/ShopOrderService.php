@@ -159,11 +159,12 @@ class ShopOrderService
                 $this->refundService->refundPayments($order);
             }
 
+            /** @var \App\Models\ShopOrderItem $item */
             foreach ($order->items as $item) {
-                if ($item->product_type === ShopProduct::TYPE_PHYSICAL) {
+                if ($item->getAttribute('product_type') === ShopProduct::TYPE_PHYSICAL) {
                     $product = $item->product;
-                    if ($product && $product->manage_stock) {
-                        $this->stockService->increment($product, $item->quantity);
+                    if ($product && $product->getAttribute('manage_stock')) {
+                        $this->stockService->increment($product, (int) $item->getAttribute('quantity'));
                     }
                 }
             }

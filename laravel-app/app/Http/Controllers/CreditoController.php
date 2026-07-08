@@ -147,10 +147,10 @@ class CreditoController extends Controller
         }
 
         FinancialLogService::log([
-            'user_id' => $user->id,
+            'user_id' => $user->getKey(),
             'action' => 'PAYMENT_RECEIVED',
             'amount' => (float) $compra->valor,
-            'transaction_id' => $compra->payment_id ?? ('manual-credits-'.$compra->id),
+            'transaction_id' => $compra->payment_id ?? ('manual-credits-'.$compra->getKey()),
             'origin' => 'credito_manual',
             'observation' => 'Compra de créditos (modo teste ou aprovação manual)',
         ]);

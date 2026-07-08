@@ -10,6 +10,7 @@ trait ResolvesProfessionalPatient
 {
     protected function linkedPatient(Request $request, int $patientId): User
     {
+        /** @var User|null $patient */
         $patient = $request->user()
             ->patients()
             ->where('users.id', $patientId)

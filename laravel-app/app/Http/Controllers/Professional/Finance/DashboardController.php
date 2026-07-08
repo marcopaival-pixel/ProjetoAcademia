@@ -10,8 +10,10 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
+        /** @var \App\Models\ProfessionalProfile|null $profile */
+        $profile = $user->professionalProfile;
         
-        if (!$user->professionalProfile || !$user->professionalProfile->use_finance_module) {
+        if (!$profile || !$profile->getAttribute('use_finance_module')) {
             return redirect()->route('professional.dashboard')->with('error', 'Módulo financeiro não ativado.');
         }
 

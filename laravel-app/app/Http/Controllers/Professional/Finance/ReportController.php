@@ -43,12 +43,14 @@ class ReportController extends Controller
             ->groupBy('category_id')
             ->orderByDesc('total')
             ->get()
-            ->map(function ($item) use ($monthlyExpense) {
-                $categoryName = $item->category ? $item->category->name : 'Sem Categoria';
-                $percentage = $monthlyExpense > 0 ? ($item->total / $monthlyExpense) * 100 : 0;
+            ->map(function (\App\Models\ProfessionalFinanceEntry $item) use ($monthlyExpense) {
+                $category = $item->category;
+                $categoryName = $category ? $category->getAttribute('name') : 'Sem Categoria';
+                $total = (float) $item->getAttribute('total');
+                $percentage = $monthlyExpense > 0 ? ($total / $monthlyExpense) * 100 : 0;
                 return [
                     'name' => $categoryName,
-                    'total' => $item->total,
+                    'total' => $total,
                     'percentage' => round($percentage, 1)
                 ];
             });

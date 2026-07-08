@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class MasterUserSeeder extends Seeder
 {
@@ -15,22 +15,27 @@ class MasterUserSeeder extends Seeder
     public function run(): void
     {
         $email = 'master@academia.com';
+        $plainPassword = (string) env('MASTER_USER_PASSWORD', '');
+        $forcePasswordChange = $plainPassword === '';
 
-        // Verifica se o utilizador já existe para não criar duplicados
+        if ($forcePasswordChange) {
+            $plainPassword = Str::password(16);
+        }
+
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
-            User::create([
+        if (! $user) {
+            $user = User::create([
                 'name' => 'Master Academia',
                 'email' => $email,
-                'password_hash' => Hash::make('master123'),
                 'is_admin' => true,
                 'is_premium' => true,
-                'premium_expires_at' => Carbon::now()->addYears(50), // Vitalício
+                'premium_expires_at' => Carbon::now()->addYears(50),
                 'created_at' => Carbon::now(),
             ]);
+
+            $user->setPlainPassword($plainPassword, $forcePasswordChange);
         } else {
-            // Se já existe, apenas garante que é Admin e Premium
             $user->update([
                 'is_admin' => true,
                 'is_premium' => true,

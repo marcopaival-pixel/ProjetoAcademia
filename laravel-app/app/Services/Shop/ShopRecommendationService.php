@@ -154,7 +154,7 @@ class ShopRecommendationService
                     'goal_match',
                     [
                         'goal_tags' => $goalTags,
-                        'profile_goal' => $user->profile?->goal,
+                        'profile_goal' => $user->profile?->getAttribute('goal'),
                     ],
                 ];
             }
@@ -167,7 +167,7 @@ class ShopRecommendationService
                     'ai_tag_match',
                     [
                         'interest_tags' => $goalTags,
-                        'profile_goal' => $user->profile?->goal,
+                        'profile_goal' => $user->profile?->getAttribute('goal'),
                     ],
                 ];
             }
@@ -198,7 +198,9 @@ class ShopRecommendationService
      */
     private function userGoalTags(User $user): array
     {
-        $profileGoal = $user->profile?->goal;
+        $profile = $user->profile;
+        /** @var \App\Models\UserProfile|null $profile */
+        $profileGoal = $profile?->getAttribute('goal');
 
         if ($profileGoal === null || $profileGoal === '') {
             return [];

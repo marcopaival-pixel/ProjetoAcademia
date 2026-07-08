@@ -79,7 +79,7 @@ class ShopPointsService
                 $points,
                 'Cashback pedido '.$order->order_number,
                 'order_cashback',
-                $order->id
+                $order->getKey()
             );
 
             $order->update([
@@ -103,7 +103,7 @@ class ShopPointsService
 
         $alreadyClawed = ShopPointsTransaction::query()
             ->where('source', 'order_cashback_clawback')
-            ->where('source_id', $order->id)
+            ->where('source_id', $order->getKey())
             ->exists();
 
         if ($alreadyClawed) {
@@ -119,12 +119,12 @@ class ShopPointsService
 
                 ShopPointsTransaction::create([
                     'wallet_id' => $wallet->id,
-                    'user_id' => $user->id,
+                    'user_id' => $user->getKey(),
                     'type' => ShopPointsTransaction::TYPE_REDEEM,
                     'points' => -$deduct,
                     'description' => 'Estorno cashback pedido '.$order->order_number,
                     'source' => 'order_cashback_clawback',
-                    'source_id' => $order->id,
+                    'source_id' => $order->getKey(),
                 ]);
             }
         });
@@ -183,7 +183,7 @@ class ShopPointsService
                 'payment_gateway' => 'points',
             ]);
 
-            $orderService->markAsPaid($order, 'points-'.$order->id, 'points');
+            $orderService->markAsPaid($order, 'points-'.$order->getKey(), 'points');
             $order->update(['points_earned' => 0]);
         });
     }
@@ -197,9 +197,9 @@ class ShopPointsService
         }
 
         $redeem = ShopPointsTransaction::query()
-            ->where('user_id', $user->id)
+            ->where('user_id', $user->getKey())
             ->where('source', 'order')
-            ->where('source_id', $order->id)
+            ->where('source_id', $order->getKey())
             ->where('type', ShopPointsTransaction::TYPE_REDEEM)
             ->first();
 
@@ -209,7 +209,7 @@ class ShopPointsService
 
         $alreadyRefunded = ShopPointsTransaction::query()
             ->where('source', 'order')
-            ->where('source_id', $order->id)
+            ->where('source_id', $order->getKey())
             ->where('type', ShopPointsTransaction::TYPE_REFUND)
             ->exists();
 
@@ -219,18 +219,18 @@ class ShopPointsService
 
         $points = abs((int) $redeem->points);
 
-        DB::transaction(function () use ($user, $order, $points, $redeem) {
+        DB::transaction(function () use ($user, $order, $points) {
             $wallet = $this->getOrCreateWallet($user);
             $wallet->increment('balance_points', $points);
 
             ShopPointsTransaction::create([
                 'wallet_id' => $wallet->id,
-                'user_id' => $user->id,
+                'user_id' => $user->getKey(),
                 'type' => ShopPointsTransaction::TYPE_REFUND,
                 'points' => $points,
                 'description' => 'Estorno pedido '.$order->order_number,
                 'source' => 'order',
-                'source_id' => $order->id,
+                'source_id' => $order->getKey(),
             ]);
         });
     }

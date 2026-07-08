@@ -17,8 +17,9 @@ class DashboardController extends Controller
         $uid = auth()->id();
         $professional = auth()->user();
         $professional->generateProfessionalCode(); 
+        /** @var \App\Models\ProfessionalProfile|null $profile */
         $profile = $professional->professionalProfile;
-        $professionName = $profile && $profile->profession ? $profile->profession->name : 'Geral';
+        $professionName = $profile?->profession?->getAttribute('name') ?: 'Geral';
         
         $patientLabel = __t('Paciente');
         $patientsLabel = $patientLabel === 'Aluno' ? 'Alunos' : ($patientLabel === 'Cliente' ? 'Clientes' : 'Pacientes');
@@ -26,7 +27,9 @@ class DashboardController extends Controller
         // Check if there is an active patient
         $activePatient = null;
         if (session()->has('active_patient_id')) {
-            $activePatient = \App\Models\User::find(session('active_patient_id'));
+            /** @var \App\Models\User|null $activePatientModel */
+            $activePatientModel = \App\Models\User::find(session('active_patient_id'));
+            $activePatient = $activePatientModel;
         }
 
         // 1. MEUS ALUNOS / PACIENTES GLOBAIS
@@ -174,7 +177,7 @@ class DashboardController extends Controller
                 'next_appointment' => $nextAppointment ? \Carbon\Carbon::parse($nextAppointment->appointment_at)->format('d/m/Y H:i') : 'Não agendada',
                 'last_training' => $lastTraining ? $lastTraining->created_at->format('d/m/Y') : 'Nenhum',
                 'status' => $activePatient->last_activity_at && $activePatient->last_activity_at > now()->subDays(30) ? 'Ativo' : 'Inativo',
-                'active_plan' => $activePatient->subscription_status === 'active' ? 'Plano Premium' : 'Plano Básico', // Mocking plan status
+                'active_plan' => $activePatient->getAttribute('subscription_status') === 'active' ? 'Plano Premium' : 'Plano Básico', // Mocking plan status
             ];
         }
 

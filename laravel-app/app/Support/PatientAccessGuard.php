@@ -130,20 +130,20 @@ class PatientAccessGuard
             throw new AuthorizationException('Plano de treino não encontrado.');
         }
 
-        if ((int) $plan->user_id === (int) $user->id) {
+        if ((int) $plan->getAttribute('user_id') === (int) $user->id) {
             return $planExercise;
         }
 
-        if ((int) ($plan->creator_id ?? 0) === (int) $user->id) {
+        if ((int) ($plan->getAttribute('creator_id') ?? 0) === (int) $user->id) {
             return $planExercise;
         }
 
-        if ($user->isProfessional() && $user->patients()->where('users.id', $plan->user_id)->exists()) {
+        if ($user->isProfessional() && $user->patients()->where('users.id', $plan->getAttribute('user_id'))->exists()) {
             return $planExercise;
         }
 
         if ($user->isAdministrator()) {
-            $planOwner = User::find($plan->user_id);
+            $planOwner = User::find($plan->getAttribute('user_id'));
             if ($planOwner && self::patientBelongsToImpersonatedTenant($planOwner)) {
                 return $planExercise;
             }

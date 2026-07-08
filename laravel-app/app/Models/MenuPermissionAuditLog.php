@@ -36,7 +36,7 @@ class MenuPermissionAuditLog extends Model
     }
 
     /**
-     * @return BelongsTo<Role, MenuPermissionAuditLog>
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Role, $this>
      */
     public function role(): BelongsTo
     {
@@ -46,7 +46,7 @@ class MenuPermissionAuditLog extends Model
     /**
      * @deprecated Use role() — coluna correta é role_id.
      *
-     * @return BelongsTo<Role, MenuPermissionAuditLog>
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Role, $this>
      */
     public function profile(): BelongsTo
     {

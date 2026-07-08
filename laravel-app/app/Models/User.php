@@ -2,36 +2,43 @@
 
 namespace App\Models;
 
-use DateTimeImmutable;
+use App\Notifications\ResetPasswordCustom;
+use App\Services\AiCreditService;
+use App\Services\Lgpd\LgpdUserAnonymizationService;
+use App\Services\MonetizationService;
+use App\Support\Cpf;
+use App\Support\SubscriptionStatus;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use App\Support\SubscriptionStatus;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, Traits\HasPremiumAccess, Traits\HasOnboarding, Traits\HasProfessionalRelations, Traits\FiltersByProfessional, Traits\HasClinic;
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, Notifiable, Traits\FiltersByProfessional, Traits\HasClinic, Traits\HasOnboarding, Traits\HasPremiumAccess, Traits\HasProfessionalRelations;
 
     protected static function booted()
     {
         static::saving(function ($user) {
             if ($user->cpf) {
-                $user->cpf = \App\Support\Cpf::normalize($user->cpf);
+                $user->cpf = Cpf::normalize($user->cpf);
             }
         });
 
         static::created(function ($user) {
             $planId = $user->plan_id;
-            
-            if (!$planId) {
-                $freePlan = \App\Models\Plan::where('name', 'Free')->first();
+
+            if (! $planId) {
+                $freePlan = Plan::where('name', 'Free')->first();
                 $planId = $freePlan?->id;
             }
 
@@ -43,7 +50,7 @@ class User extends Authenticatable
                 ]);
 
                 // Inicializar Carteira de Créditos IA com base no Plano
-                $aiService = app(\App\Services\AiCreditService::class);
+                $aiService = app(AiCreditService::class);
                 $aiService->getWallet($user);
                 $aiService->renewMonthly($user);
             }
@@ -153,6 +160,16 @@ class User extends Authenticatable
         return $this->password_hash;
     }
 
+    public function setPlainPassword(string $plainPassword, bool $forceChange = false): self
+    {
+        $this->password_hash = Hash::make($plainPassword);
+        $this->force_password_change = $forceChange;
+        $this->temp_password_expires_at = $forceChange ? now()->addDay() : null;
+        $this->save();
+
+        return $this;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Relacionamentos de Perfil e RBAC
@@ -179,30 +196,41 @@ class User extends Authenticatable
         return $this->hasOne(ProfessionalProfile::class, 'user_id', 'id');
     }
 
-    public function userProfile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function userProfile(): BelongsTo
     {
         // Fallback para código que ainda usa profile_id
         return $this->belongsTo(Role::class, 'profile_id');
     }
 
-    public function userRole(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function userRole(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'profile_id');
     }
 
-    public function plan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'plan_id');
     }
 
-    public function academyCompany(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function academyCompany(): BelongsTo
     {
         return $this->belongsTo(AcademyCompany::class, 'academy_company_id');
     }
 
-    public function clinic(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class, 'clinic_id');
+    }
+
+    /**
+     * Relacionamento com o novo Tenant unificado (Organizations).
+     * Um usuário (Atleta ou Profissional) pode pertencer a vários Tenants (ex: trabalhar em 2 clínicas).
+     */
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'organization_user')
+            ->withPivot('role', 'is_active')
+            ->withTimestamps();
     }
 
     public function hasRole(string|array $role): bool
@@ -210,19 +238,14 @@ class User extends Authenticatable
         if (is_array($role)) {
             return $this->roles()->whereIn('name', $role)->exists();
         }
+
         return $this->roles()->where('name', $role)->exists();
     }
 
     public function assignRole(string $roleName): void
     {
-        // Regras de Combinação de Perfis
-        if ($roleName === 'paciente' && $this->hasRole('professional')) {
-            throw new \Exception('Um profissional não pode ser cadastrado como paciente.');
-        }
-
-        if ($roleName === 'professional' && $this->hasRole('paciente')) {
-            throw new \Exception('Um paciente não pode ser promovido a profissional (remova o perfil de paciente primeiro).');
-        }
+        // Regras de Combinação de Perfis flexibilizadas para o Ecossistema de Performance.
+        // Um usuário agora pode ser 'paciente' (Atleta) E 'professional' simultaneamente.
 
         $role = Role::where('name', $roleName)->first();
         if ($role) {
@@ -251,14 +274,17 @@ class User extends Authenticatable
     public function getInitialsAttribute(): string
     {
         $name = trim($this->name ?? '');
-        if (empty($name)) return 'NX';
+        if (empty($name)) {
+            return 'NX';
+        }
 
         $parts = preg_split('/\s+/', $name, -1, PREG_SPLIT_NO_EMPTY);
-        
+
         if (count($parts) > 1) {
             $first = mb_substr($parts[0], 0, 1);
             $last = mb_substr($parts[count($parts) - 1], 0, 1);
-            return mb_strtoupper($first . $last);
+
+            return mb_strtoupper($first.$last);
         }
 
         return mb_strtoupper(mb_substr($name, 0, 2));
@@ -274,11 +300,13 @@ class User extends Authenticatable
             if (str_starts_with($this->avatar, 'http')) {
                 return $this->avatar;
             }
-            return asset('storage/' . $this->avatar);
+
+            return asset('storage/'.$this->avatar);
         }
 
         $color = $this->hasRole('paciente') ? '3b82f6' : '10b981';
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->initials) . '&color=' . $color . '&background=09090b&bold=true&font-size=0.4';
+
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->initials).'&color='.$color.'&background=09090b&bold=true&font-size=0.4';
     }
 
     /**
@@ -286,18 +314,26 @@ class User extends Authenticatable
      */
     public function getCommunityProfileLabelAttribute(): string
     {
-        if ($this->isAdministrator()) return 'Admin';
-        if ($this->hasRole('professional')) return 'Profissional';
-        if ($this->hasRole(['manager', 'receptionist', 'supervisor'])) return 'Clínica';
-        if ($this->hasRole(['paciente', 'aluno'])) return 'Aluno';
-        
+        if ($this->isAdministrator()) {
+            return 'Admin';
+        }
+        if ($this->hasRole('professional')) {
+            return 'Profissional';
+        }
+        if ($this->hasRole(['manager', 'receptionist', 'supervisor'])) {
+            return 'Clínica';
+        }
+        if ($this->hasRole(['paciente', 'aluno'])) {
+            return 'Aluno';
+        }
+
         return 'Membro';
     }
 
     /**
      * Cache de permissões carregadas para a requisição atual.
      */
-    protected ?\Illuminate\Support\Collection $permissionsCache = null;
+    protected ?Collection $permissionsCache = null;
 
     public function permissions(): BelongsToMany
     {
@@ -316,11 +352,12 @@ class User extends Authenticatable
                     return true;
                 }
             }
+
             return false;
         }
 
         if ($this->permissionsCache === null) {
-            $this->permissionsCache = \Cache::remember("user_permissions_v2_{$this->id}", 600, function() {
+            $this->permissionsCache = \Cache::remember("user_permissions_v2_{$this->id}", 600, function () {
                 // Permissions via Roles
                 $rolePermissions = DB::table('permissions')
                     ->join('role_permissions', 'permissions.id', '=', 'role_permissions.permission_id')
@@ -345,7 +382,7 @@ class User extends Authenticatable
         }
 
         // Cache de permissões de plano (SaaS)
-        return \Cache::remember("user_plan_perm_{$this->id}_{$permission}", 600, function() use ($permission) {
+        return \Cache::remember("user_plan_perm_{$this->id}_{$permission}", 600, function () use ($permission) {
             return $this->plan?->permissions()->where('name', $permission)->exists() ?? false;
         });
     }
@@ -363,7 +400,7 @@ class User extends Authenticatable
 
     public function isAnonymized(): bool
     {
-        return $this->status === \App\Services\Lgpd\LgpdUserAnonymizationService::STATUS_ANONYMIZED;
+        return $this->status === LgpdUserAnonymizationService::STATUS_ANONYMIZED;
     }
 
     public function isActive(): bool
@@ -378,7 +415,7 @@ class User extends Authenticatable
 
     public function isEmailVerified(): bool
     {
-        return (bool) $this->email_verified || !empty($this->email_verified_at);
+        return (bool) $this->email_verified || ! empty($this->email_verified_at);
     }
 
     public function isAdministrator(): bool
@@ -464,7 +501,7 @@ class User extends Authenticatable
     /**
      * Usuários que este usuário bloqueou.
      */
-    public function blockedUsers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function blockedUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_blocks', 'blocker_id', 'blocked_id')->withTimestamps();
     }
@@ -472,7 +509,7 @@ class User extends Authenticatable
     /**
      * Usuários que bloquearam este usuário.
      */
-    public function blockers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function blockers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_blocks', 'blocked_id', 'blocker_id')->withTimestamps();
     }
@@ -480,12 +517,14 @@ class User extends Authenticatable
     public function isBlocking(User|int $user): bool
     {
         $userId = $user instanceof User ? $user->id : $user;
+
         return $this->blockedUsers()->where('blocked_id', $userId)->exists();
     }
 
     public function isBlockedBy(User|int $user): bool
     {
         $userId = $user instanceof User ? $user->id : $user;
+
         return $this->blockers()->where('blocker_id', $userId)->exists();
     }
 
@@ -494,7 +533,7 @@ class User extends Authenticatable
      */
     public function sendPasswordResetNotification($token)
     {
-        $this->notify(new \App\Notifications\ResetPasswordCustom($token));
+        $this->notify(new ResetPasswordCustom($token));
     }
 
     /**
@@ -541,7 +580,7 @@ class User extends Authenticatable
         return $this->hasMany(ProfessionalPatientRequest::class, 'patient_id');
     }
 
-    public function professionalPlan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function professionalPlan(): BelongsTo
     {
         return $this->belongsTo(ProfessionalPlan::class, 'professional_plan_id');
     }
@@ -649,9 +688,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserPlan::class)
             ->where('status', 'active')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('end_date')
-                      ->orWhere('end_date', '>=', now());
+                    ->orWhere('end_date', '>=', now());
             })
             ->latest();
     }
@@ -663,12 +702,12 @@ class User extends Authenticatable
 
     public function hasFeature(string $featureKey): bool
     {
-        return app(\App\Services\MonetizationService::class)->hasFeature($this, $featureKey);
+        return app(MonetizationService::class)->hasFeature($this, $featureKey);
     }
 
     public function getPlanLimit(string $limitKey): int
     {
-        return app(\App\Services\MonetizationService::class)->getPlanLimit($this, $limitKey);
+        return app(MonetizationService::class)->getPlanLimit($this, $limitKey);
     }
 
     /**
@@ -676,7 +715,7 @@ class User extends Authenticatable
      */
     public function isOverLimit(string $resourceType): bool
     {
-        return app(\App\Services\MonetizationService::class)->isOverLimit($this, $resourceType);
+        return app(MonetizationService::class)->isOverLimit($this, $resourceType);
     }
 
     /**
@@ -684,7 +723,7 @@ class User extends Authenticatable
      */
     public function getSurplusCount(string $resourceType): int
     {
-        return app(\App\Services\MonetizationService::class)->getSurplusCount($this, $resourceType);
+        return app(MonetizationService::class)->getSurplusCount($this, $resourceType);
     }
 
     /**
@@ -692,7 +731,7 @@ class User extends Authenticatable
      */
     public function isResourceOverLimit(string $resourceType, $resourceId): bool
     {
-        return app(\App\Services\MonetizationService::class)->isResourceOverLimit($this, $resourceType, $resourceId);
+        return app(MonetizationService::class)->isResourceOverLimit($this, $resourceType, $resourceId);
     }
 
     public function aiTransactions(): HasMany
@@ -729,12 +768,12 @@ class User extends Authenticatable
 
     public function getRemainingAiCredits(): int
     {
-        return app(\App\Services\AiCreditService::class)->getBalance($this);
+        return app(AiCreditService::class)->getBalance($this);
     }
 
     public function consumeAiCredit(string $featureCode, array $metadata = []): bool
     {
-        return app(\App\Services\AiCreditService::class)->consume($this, $featureCode, $metadata);
+        return app(AiCreditService::class)->consume($this, $featureCode, $metadata);
     }
 
     /*
@@ -748,7 +787,7 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'representative_id');
     }
 
-    public function representativeProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function representativeProfile(): HasOne
     {
         return $this->hasOne(RepresentativeProfile::class);
     }

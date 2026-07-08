@@ -87,15 +87,16 @@ class ShopSalesReportService
             ->groupBy('vendor_id')
             ->get()
             ->map(function ($row) {
-                $vendor = ShopVendor::find($row->vendor_id);
+                /** @var \App\Models\ShopOrderItem $row */
+                $vendor = ShopVendor::find($row->getAttribute('vendor_id'));
 
                 return [
-                    'vendor_id' => (int) $row->vendor_id,
+                    'vendor_id' => (int) $row->getAttribute('vendor_id'),
                     'vendor_name' => $vendor?->name ?? '—',
-                    'commission_total' => (float) $row->commission_total,
-                    'commission_paid' => (float) $row->commission_paid,
-                    'commission_pending' => (float) $row->commission_pending,
-                    'item_count' => (int) $row->item_count,
+                    'commission_total' => (float) $row->getAttribute('commission_total'),
+                    'commission_paid' => (float) $row->getAttribute('commission_paid'),
+                    'commission_pending' => (float) $row->getAttribute('commission_pending'),
+                    'item_count' => (int) $row->getAttribute('item_count'),
                 ];
             })
             ->sortByDesc('commission_total')

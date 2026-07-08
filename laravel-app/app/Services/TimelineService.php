@@ -117,7 +117,7 @@ class TimelineService
             ->map(fn($item) => [
                 'type' => 'document',
                 'title' => "Documento Clínico: {$item->title}",
-                'description' => "Anexado por " . ($item->professional->name ?? 'Clínica') . " (" . $item->document_type . ")",
+                'description' => "Anexado por " . ($item->professional->name ?? 'Clínica') . " (" . $item->getAttribute('document_type') . ")",
                 'timestamp' => $item->created_at,
                 'badge' => 'Documento',
                 'icon' => 'file-medical',
