@@ -27,7 +27,7 @@ class PatientDocument extends Model
         return $this->belongsTo(User::class, 'patient_id');
     }
 
-    public function professional()
+    public function professional(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'professional_id');
     }

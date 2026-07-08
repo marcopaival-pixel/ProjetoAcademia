@@ -33,11 +33,17 @@ if (! function_exists('__t')) {
 
         // Se não tem na sessão, pega a principal do profile
         if (!$specialty && $user->professionalProfile) {
-            $specialty = $user->professionalProfile->especialidade;
+            /** @var \App\Models\ProfessionalProfile|null $profile */
+            $profile = $user->professionalProfile;
+            $specialty = $profile ? $profile->especialidade : null;
         }
 
         if ($termLower === 'paciente' || $termLower === 'aluno') {
-            return $specialty && $specialty->client_term ? $specialty->client_term : 'Paciente';
+            if ($specialty instanceof \App\Models\Especialidade && $specialty->client_term) {
+                return $specialty->client_term;
+            }
+
+            return 'Paciente';
         }
 
         // Adicionar outros mapeamentos aqui (ex: 'prontuário' vs 'anamnese')

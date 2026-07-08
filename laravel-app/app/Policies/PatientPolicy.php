@@ -30,16 +30,21 @@ class PatientPolicy
         $companyId = TenantContext::getCompanyId() ?? $user->academy_company_id;
         $clinicId = TenantContext::get() ?? $user->clinic_id;
 
-        if ($patient->academy_company_id && $companyId) {
-            return (int) $patient->academy_company_id === (int) $companyId;
+        $patientCompany = $patient->getAttribute('academy_company_id');
+        $patientClinic = $patient->getAttribute('clinic_id');
+        $patientUserId = $patient->getAttribute('user_id');
+        $patientProfessionalId = $patient->getAttribute('professional_id') ?? 0;
+
+        if ($patientCompany && $companyId) {
+            return (int) $patientCompany === (int) $companyId;
         }
 
-        if ($patient->clinic_id && $clinicId) {
-            return (int) $patient->clinic_id === (int) $clinicId;
+        if ($patientClinic && $clinicId) {
+            return (int) $patientClinic === (int) $clinicId;
         }
 
-        return (int) $patient->user_id === (int) $user->id
-            || (int) ($patient->professional_id ?? 0) === (int) $user->id;
+        return (int) $patientUserId === (int) $user->id
+            || (int) $patientProfessionalId === (int) $user->id;
     }
 
     public function update(User $user, Patient $patient): bool

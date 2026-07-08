@@ -21,6 +21,14 @@ class AuthInterceptor(
             requestBuilder.header("X-Active-Patient-Id", patientId.toString())
         }
 
+        tokenStore.getActiveRole()?.let { role ->
+            requestBuilder.header("X-Active-Role", role)
+        }
+
+        tokenStore.getActiveTenant()?.let { tenantId ->
+            requestBuilder.header("X-Active-Tenant", tenantId)
+        }
+
         return chain.proceed(requestBuilder.build())
     }
 }

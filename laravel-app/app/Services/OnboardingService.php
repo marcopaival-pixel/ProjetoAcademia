@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\AcademyCompany;
+use App\Models\ClinicOnboardingStep;
+use App\Models\Lead;
+use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class OnboardingService
@@ -22,7 +25,7 @@ class OnboardingService
         return AcademyCompany::create([
             'uuid' => (string) Str::uuid(),
             'name' => 'Nova Conta',
-            'slug' => 'nova-conta-' . Str::random(6),
+            'slug' => 'nova-conta-'.Str::random(6),
             'account_type' => $accountType,
             'onboarding_status' => 'pending',
             'current_onboarding_step' => 2, // Passo 1 (Seleção de tipo) já foi feito
@@ -65,7 +68,7 @@ class OnboardingService
             $updateData['city'] = $data['city'] ?? $company->city;
             $updateData['state'] = $data['state'] ?? $company->state;
             $updateData['country'] = $data['country'] ?? $company->country;
-            $updateData['address'] = ($data['street'] ?? '') . ', ' . ($data['number'] ?? '') . ' - ' . ($data['city'] ?? '');
+            $updateData['address'] = ($data['street'] ?? '').', '.($data['number'] ?? '').' - '.($data['city'] ?? '');
         }
 
         if ($step === 5) { // Admin Account
@@ -77,8 +80,8 @@ class OnboardingService
             $updateData['language'] = $data['language'] ?? $company->language;
             $updateData['currency'] = $data['currency'] ?? $company->currency;
             $updateData['timezone'] = $data['timezone'] ?? $company->timezone;
-            
-            if (isset($data['logo']) && $data['logo'] instanceof \Illuminate\Http\UploadedFile) {
+
+            if (isset($data['logo']) && $data['logo'] instanceof UploadedFile) {
                 if ($company->logo_path) {
                     $this->storageService->delete($company->logo_path);
                 }
@@ -91,7 +94,7 @@ class OnboardingService
         }
 
         $updateData['current_onboarding_step'] = min($step + 1, 7);
-        
+
         if ($step === 7) {
             $updateData['onboarding_status'] = 'completed';
             $updateData['is_active'] = true;
@@ -100,12 +103,12 @@ class OnboardingService
         $company->update($updateData);
 
         // Registrar no log de auditoria do onboarding
-        \App\Models\ClinicOnboardingStep::updateOrCreate(
+        ClinicOnboardingStep::updateOrCreate(
             ['academy_company_id' => $company->id, 'step_key' => "step_{$step}"],
             [
                 'is_completed' => true,
                 'completed_at' => now(),
-                'data' => $data
+                'data' => $data,
             ]
         );
 
@@ -121,16 +124,16 @@ class OnboardingService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
                 'academy_company_id' => $company->id,
                 'is_active' => true,
             ]);
+            $user->setPlainPassword($data['password']);
 
             // Atribuir papel de administrador da clínica (manager ou admin_clinic)
             // Verificar qual papel existe no sistema
-            $role = \App\Models\Role::where('name', 'manager')->first() 
-                 ?? \App\Models\Role::where('name', 'admin')->first();
-            
+            $role = Role::where('name', 'manager')->first()
+                 ?? Role::where('name', 'admin')->first();
+
             if ($role) {
                 $user->roles()->attach($role->id);
             }
@@ -150,5 +153,43 @@ class OnboardingService
             'slug' => AcademyCompany::where('slug', $value)->where('id', '!=', $excludeCompanyId)->exists(),
             default => false,
         };
+    }
+
+    /**
+     * Converte um Lead fechado em uma nova AcademyCompany.
+     */
+    public function convertLeadToTenant(Lead $lead, string $password): AcademyCompany
+    {
+        return DB::transaction(function () use ($lead, $password) {
+            // 1. Cria a conta base
+            $company = $this->start('academia');
+
+            // 2. Preenche os dados empresariais do lead
+            $company = $this->saveStep($company, 2, [
+                'name' => $lead->empresa ?? $lead->nome,
+            ]);
+
+            // 3. Preenche contato
+            $company = $this->saveStep($company, 3, [
+                'email' => $lead->email,
+                'phone' => $lead->telefone,
+                'whatsapp' => $lead->telefone,
+            ]);
+
+            // 4. Cria o usuário administrador
+            $company = $this->saveStep($company, 5, [
+                'name' => $lead->nome,
+                'email' => $lead->email,
+                'password' => $password,
+            ]);
+
+            // 5. Atualiza o lead
+            $lead->update([
+                'status' => 'fechado', // ou 'converted'
+                'converted_company_id' => $company->id,
+            ]);
+
+            return $company;
+        });
     }
 }

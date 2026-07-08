@@ -92,6 +92,45 @@
                 </div>
             </div>
 
+            <!-- NexShape AI Commercial Assistant -->
+            <div class="bg-gradient-to-br from-blue-600/[0.05] to-purple-600/[0.05] border border-blue-500/20 rounded-[2.5rem] p-8 relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/20 blur-2xl rounded-full group-hover:bg-purple-500/20 transition-all duration-700"></div>
+                
+                <div class="flex justify-between items-center mb-6 relative z-10">
+                    <h3 class="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-robot"></i> NexShape AI
+                    </h3>
+                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 animate-pulse">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-5 relative z-10">
+                    <!-- Predição -->
+                    <div>
+                        <p class="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Probabilidade de Fechamento</p>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-2 bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full" style="width: {{ $lead->ai_probability }}%"></div>
+                            </div>
+                            <span class="text-lg font-black text-white">{{ $lead->ai_probability }}%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Sugestão -->
+                    <div class="bg-zinc-950/50 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-1"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Próxima Ação Sugerida</p>
+                        <p class="text-xs text-zinc-300 font-bold leading-relaxed">{{ $lead->ai_next_action }}</p>
+                    </div>
+
+                    <!-- Resumo -->
+                    <div>
+                        <p class="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-1"><i class="fas fa-stream text-zinc-500 mr-1"></i> Resumo (Interações)</p>
+                        <p class="text-[10px] text-zinc-400 font-bold italic leading-relaxed">{{ $lead->ai_summary }}</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Demo Access Card -->
             <div class="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8">
                 <h3 class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-6">Acesso Demonstração</h3>

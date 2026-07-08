@@ -35,13 +35,14 @@ class SubscriptionController extends Controller
             }
         }
 
+        $plan = $sub->getRelationValue('plan');
         $subscription = [
-            'plan_name' => $sub->plan?->name ?? 'Profissional Starter',
-            'status' => $sub->status ?? 'active',
-            'next_billing' => $sub->end_date ? $sub->end_date->format('Y-m-d') : now()->addMonth()->format('Y-m-d'),
-            'amount' => 'R$ ' . number_format($sub->plan?->price ?? 29.90, 2, ',', '.') . '/mês',
+            'plan_name' => $plan ? ($plan->getAttribute('name') ?? 'Profissional Starter') : 'Profissional Starter',
+            'status' => $sub->getAttribute('status') ?? 'active',
+            'next_billing' => $sub->getAttribute('end_date') ? $sub->getAttribute('end_date')->format('Y-m-d') : now()->addMonth()->format('Y-m-d'),
+            'amount' => 'R$ ' . number_format($plan ? (float) $plan->getAttribute('price') : 29.90, 2, ',', '.') . '/mês',
             'card_last4' => '4242',
-            'card_brand' => $sub->payment_method ?? 'Visa',
+            'card_brand' => $sub->getAttribute('payment_method') ?? 'Visa',
         ];
 
         $payments = Payment::where('user_id', $user->id)->latest()->take(5)->get();

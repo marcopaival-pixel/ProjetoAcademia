@@ -27,7 +27,7 @@ trait FiltersByProfessionalOwner
                 return;
             }
 
-            $model = new static;
+            $model = $builder->getModel();
             $table = $model->getTable();
 
             if (in_array('professional_id', $model->getFillable(), true)) {

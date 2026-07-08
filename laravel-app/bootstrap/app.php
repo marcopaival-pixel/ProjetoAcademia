@@ -64,6 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.tenant' => \App\Http\Middleware\SetApiTenantContext::class,
             'api.role' => \App\Http\Middleware\EnsureApiRole::class,
             'api.active_patient' => \App\Http\Middleware\ResolveApiActivePatient::class,
+            'api.active_role' => \App\Http\Middleware\ActiveRoleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

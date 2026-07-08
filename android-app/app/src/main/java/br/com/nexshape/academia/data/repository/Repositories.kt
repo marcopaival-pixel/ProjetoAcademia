@@ -33,8 +33,11 @@ class NutritionRepository {
             runCatching { ApiClient.api().nutritionDiary(date.toString()).data }
         }
 
-    suspend fun addEntry(request: CreateFoodEntryRequest): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching { ApiClient.api().createFoodEntry(request) }
+    suspend fun addEntry(request: br.com.nexshape.academia.data.api.CreateFoodEntryRequest): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching { 
+            ApiClient.api().createFoodEntry(request)
+            Unit
+        }
     }
 }
 

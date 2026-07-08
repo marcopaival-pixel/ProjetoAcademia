@@ -100,7 +100,7 @@ interface NexShapeApi {
     @POST("student/appointments")
     suspend fun createAppointment(@Body body: CreateAppointmentRequest): ApiSuccessResponse<AppointmentDto>
 
-    @GET("professional/dashboard")
+    @GET("dashboard")
     suspend fun professionalDashboard(): ApiSuccessResponse<ProfessionalDashboardData>
 
     @GET("professional/patients")

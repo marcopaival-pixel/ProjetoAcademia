@@ -35,13 +35,13 @@ class AuditTenantModelsCommand extends Command
         $rows = [];
         foreach ($result['missing'] as $item) {
             $cols = $item['columns'] !== [] ? implode(', ', $item['columns']) : '—';
-            $risk = $item['has_db_columns'] ? 'ALTO (tem colunas tenant)' : 'médio';
+            $risk = ($item['has_db_columns'] ?? false) ? 'ALTO (tem colunas tenant)' : 'médio';
             $rows[] = [class_basename($item['class']), $item['table'], $cols, $risk];
         }
 
         $this->table(['Model', 'Tabela', 'Colunas DB', 'Risco'], $rows);
 
-        $high = array_filter($result['missing'], fn ($m) => $m['has_db_columns']);
+        $high = array_filter($result['missing'], fn ($m) => ($m['has_db_columns'] ?? false));
 
         return $high !== [] ? self::FAILURE : self::SUCCESS;
     }

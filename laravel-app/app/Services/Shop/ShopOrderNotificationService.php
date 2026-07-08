@@ -16,6 +16,7 @@ class ShopOrderNotificationService
     public function notifyOrderPaid(ShopOrder $order): void
     {
         $order->loadMissing('user');
+        /** @var \App\Models\User|null $user */
         $user = $order->user;
         if ($user === null) {
             return;
@@ -31,6 +32,7 @@ class ShopOrderNotificationService
     public function notifyOrderShipped(ShopOrder $order): void
     {
         $order->loadMissing('user');
+        /** @var \App\Models\User|null $user */
         $user = $order->user;
         if ($user === null) {
             return;
@@ -48,6 +50,7 @@ class ShopOrderNotificationService
     public function notifyOrderCancelled(ShopOrder $order, string $reason = ''): void
     {
         $order->loadMissing('user');
+        /** @var \App\Models\User|null $user */
         $user = $order->user;
         if ($user === null) {
             return;
@@ -66,7 +69,7 @@ class ShopOrderNotificationService
             MessagingService::sendSystemMessage($userId, $subject, $body);
         } catch (\Throwable $e) {
             Log::warning('ShopOrderNotification: falha na mensagem interna.', [
-                'order_id' => $order->id,
+                'order_id' => $order->getAttribute('id'),
                 'event' => $event,
                 'error' => $e->getMessage(),
             ]);
@@ -89,7 +92,7 @@ class ShopOrderNotificationService
             );
         } catch (\Throwable $e) {
             Log::warning('ShopOrderNotification: falha no e-mail transacional.', [
-                'order_id' => $order->id,
+                'order_id' => $order->getAttribute('id'),
                 'event' => $event,
                 'error' => $e->getMessage(),
             ]);

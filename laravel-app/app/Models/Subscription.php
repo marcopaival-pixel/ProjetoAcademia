@@ -57,6 +57,7 @@ class Subscription extends Model
     protected $fillable = [
         'user_id',
         'academy_company_id',
+        'organization_id',
         'plan_id',
         'gateway_id',
         'gateway_type',
@@ -102,6 +103,11 @@ class Subscription extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(AcademyCompany::class, 'academy_company_id');
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'organization_id');
     }
 
     public function user(): BelongsTo

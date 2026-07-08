@@ -12,9 +12,15 @@ class Organization extends Model
     protected $fillable = [
         'uuid',
         'name',
+        'slug',
         'type',
         'owner_id',
+        'parent_id',
         'tax_id',
+        'logo_path',
+        'primary_color',
+        'custom_domain',
+        'settings',
         'is_active',
     ];
 
@@ -27,9 +33,27 @@ class Organization extends Model
         });
     }
 
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'settings' => 'array',
+        ];
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Organization::class, 'parent_id');
     }
 
     public function users()

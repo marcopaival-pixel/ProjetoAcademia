@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Role;
 use Illuminate\Console\Command;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -32,7 +33,7 @@ class SmokeTestCommand extends Command
 
         foreach (['up' => '/up', 'health' => '/health', 'api_health' => '/api/v1/health', 'login' => '/login', 'home' => '/'] as $label => $path) {
             try {
-                $request = \Illuminate\Http\Request::create($path, 'GET');
+                $request = Request::create($path, 'GET');
                 $response = app()->handle($request);
                 $status = $response->getStatusCode();
                 if ($status >= 200 && $status < 500) {
@@ -96,7 +97,7 @@ class SmokeTestCommand extends Command
                 $failed++;
             }
 
-            if (trim((string) env('MP_WEBHOOK_SECRET')) !== '') {
+            if (trim((string) config('projeto.mp_webhook_secret')) !== '') {
                 $this->line('  [ok] MP_WEBHOOK_SECRET definido');
             } else {
                 $this->warn('  [!] MP_WEBHOOK_SECRET obrigatório em produção');
@@ -106,7 +107,7 @@ class SmokeTestCommand extends Command
             $previousEnv = config('app.env');
             config(['app.env' => 'production']);
             try {
-                $request = \Illuminate\Http\Request::create('/demo/start', 'GET');
+                $request = Request::create('/demo/start', 'GET');
                 $response = app()->handle($request);
                 if ($response->getStatusCode() === 404) {
                     $this->line('  [ok] Demo bloqueada em produção');

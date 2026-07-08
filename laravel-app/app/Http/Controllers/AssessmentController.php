@@ -52,7 +52,7 @@ class AssessmentController extends Controller
         return view('assessments.index', compact('assessments', 'tab', 'chartData', 'isPremium', 'targetUser'));
     }
 
-    public function create(): View
+    public function create(): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $user = Auth::user();
         
@@ -163,6 +163,7 @@ class AssessmentController extends Controller
         $assessment = BodyAssessment::create($data);
 
         // Atualizar dados de Rotina e Fitness no Perfil do Usuário
+        /** @var \App\Models\UserProfile|null $profile */
         $profile = \App\Models\UserProfile::where('user_id', $patientId)->first();
         if ($profile) {
             $profile->update($request->only([
@@ -203,13 +204,18 @@ class AssessmentController extends Controller
             );
 
             if ($profile && $profile->is_water_target_auto) {
+                $birthDateString = $profile->birth_date instanceof \Carbon\Carbon
+                    ? $profile->birth_date->toDateString()
+                    : (string) ($profile->birth_date ?? '');
+
                 $newWaterTarget = \App\Services\Nutrition::calculateWaterTarget(
                     (float)$data['weight_kg'],
-                    $profile->birth_date?->toDateString(),
+                    $birthDateString,
                     $profile->sex,
                     $profile->activity_level,
                     $profile->climate ?? 'moderate'
                 );
+
                 $profile->update(['water_target_ml' => $newWaterTarget]);
             }
         }

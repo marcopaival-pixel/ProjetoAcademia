@@ -82,14 +82,14 @@ class ProfessionalAppointmentController extends Controller
     private function formatAppointment(ProfessionalAppointment $appointment): array
     {
         return [
-            'id' => $appointment->id,
-            'patient_id' => $appointment->patient_id,
-            'patient_name' => $appointment->patient?->name,
+            'id' => $appointment->getAttribute('id'),
+            'patient_id' => $appointment->getAttribute('patient_id'),
+            'patient_name' => ($appointment->patient ? ($appointment->patient->getAttribute('name') ?? null) : null),
             'appointment_at' => $appointment->appointment_at?->toIso8601String(),
-            'status' => $appointment->status,
-            'status_label' => $appointment->status_label,
-            'service_type' => $appointment->service_type,
-            'notes' => $appointment->notes,
+            'status' => $appointment->getAttribute('status'),
+            'status_label' => $appointment->getAttribute('status_label'),
+            'service_type' => $appointment->getAttribute('service_type'),
+            'notes' => $appointment->getAttribute('notes'),
         ];
     }
 }

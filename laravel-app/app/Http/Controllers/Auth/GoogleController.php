@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuthAuditLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\Operations\AuthAuditService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Models\AuthAuditLog;
-use App\Services\Operations\AuthAuditService;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
@@ -38,8 +37,8 @@ class GoogleController extends Controller
 
         // 1. Verificar se o usuário já existe pelo google_id ou pelo e-mail
         $user = User::where('google_id', $googleUser->id)
-                    ->orWhere('email', $googleUser->email)
-                    ->first();
+            ->orWhere('email', $googleUser->email)
+            ->first();
 
         $isNewUser = false;
 
@@ -49,24 +48,24 @@ class GoogleController extends Controller
             if ($user) {
                 // 2. Login Automático / Vinculação de conta existente
                 // Se o usuário foi encontrado pelo e-mail mas não tem google_id, vinculamos agora
-                if (!$user->google_id) {
+                if (! $user->google_id) {
                     $user->google_id = $googleUser->id;
                     $user->provider = 'google';
                 }
-                
+
                 // Atualizar avatar se disponível
                 if ($googleUser->avatar) {
                     $user->avatar = $googleUser->avatar;
                 }
-                
+
                 $user->save();
             } else {
                 $isNewUser = true;
 
                 // 3. Cadastro Automático
                 // Criar um username único baseado no nome
-                $username = Str::slug($googleUser->name) . '.' . Str::random(4);
-                
+                $username = Str::slug($googleUser->name).'.'.Str::random(4);
+
                 $user = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
@@ -78,11 +77,11 @@ class GoogleController extends Controller
                     'onboarding_status' => 'pending',
                     'profile_completion_percentage' => 0,
                     'email_verified_at' => now(), // Google já validou o e-mail
-                    'password_hash' => Hash::make(Str::random(24)), // Senha aleatória forte
                 ]);
+                $user->setPlainPassword(Str::random(32));
 
                 // Atribuir papel padrão (Aluno)
-                // O usuário solicitou Aluno, Profissional ou Paciente. 
+                // O usuário solicitou Aluno, Profissional ou Paciente.
                 // Por padrão, novos cadastros sociais são Alunos até que seja definido o perfil.
                 $role = Role::where('name', 'aluno')->first();
                 if ($role) {
@@ -129,7 +128,7 @@ class GoogleController extends Controller
                 ['provider' => 'google', 'error' => $e->getMessage()]
             );
 
-            return redirect()->route('login')->with('error', 'Erro ao processar login social: ' . $e->getMessage());
+            return redirect()->route('login')->with('error', 'Erro ao processar login social: '.$e->getMessage());
         }
     }
 }

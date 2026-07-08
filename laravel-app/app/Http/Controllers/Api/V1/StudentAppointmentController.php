@@ -32,7 +32,9 @@ class StudentAppointmentController extends Controller
             $query->where('appointment_at', '>=', now()->subDays(30));
         }
 
-        $appointments = $query->get()->map(fn (ProfessionalAppointment $item): array => $this->formatAppointment($item));
+        $appointments = $query->get()->map(function (ProfessionalAppointment $item): array {
+            return $this->formatAppointment($item);
+        });
 
         return $this->success([
             'appointments' => $appointments,
@@ -104,14 +106,14 @@ class StudentAppointmentController extends Controller
     private function formatAppointment(ProfessionalAppointment $appointment): array
     {
         return [
-            'id' => $appointment->id,
-            'professional_id' => $appointment->professional_id,
-            'professional_name' => $appointment->professional?->name,
+            'id' => $appointment->getAttribute('id'),
+            'professional_id' => $appointment->getAttribute('professional_id'),
+            'professional_name' => ($appointment->professional ? ($appointment->professional->getAttribute('name') ?? null) : null),
             'appointment_at' => $appointment->appointment_at?->toIso8601String(),
-            'status' => $appointment->status,
-            'status_label' => $appointment->status_label,
-            'service_type' => $appointment->service_type,
-            'notes' => $appointment->notes,
+            'status' => $appointment->getAttribute('status'),
+            'status_label' => $appointment->getAttribute('status_label'),
+            'service_type' => $appointment->getAttribute('service_type'),
+            'notes' => $appointment->getAttribute('notes'),
         ];
     }
 

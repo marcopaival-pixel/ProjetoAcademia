@@ -48,7 +48,22 @@ abstract class BaseAgent
             return;
         }
 
-        $history = array_slice($context['chat_history'], -config('ai.chat_history_messages', 6));
+        $history = [];
+        foreach (array_slice($context['chat_history'], -config('ai.chat_history_messages', 6)) as $item) {
+            if (! is_array($item) || ! is_string($item['role'] ?? null) || ! is_string($item['content'] ?? null)) {
+                continue;
+            }
+
+            $history[] = [
+                'role' => $item['role'],
+                'content' => $item['content'],
+            ];
+        }
+
+        if ($history === []) {
+            return;
+        }
+
         $userIndex = null;
 
         for ($i = count($messages) - 1; $i >= 0; $i--) {

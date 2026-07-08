@@ -226,13 +226,15 @@ class MenuService
             $hasSpecialtyConfig = false;
             
             if ($user->professionalProfile) {
+                /** @var \App\Models\ProfessionalProfile $pp */
+                $pp = $user->professionalProfile;
                 $specialtyId = session('active_specialty_id');
                 $specialty = null;
                 
                 if ($specialtyId) {
                     $specialty = \App\Models\Especialidade::find($specialtyId);
                 } else {
-                    $specialty = $user->professionalProfile->especialidade;
+                    $specialty = $pp->especialidade;
                 }
 
                 if ($specialty && !empty($specialty->enabled_modules)) {
@@ -322,7 +324,15 @@ class MenuService
             }
 
             // FINANCEIRO
-            if ($user->professionalProfile && $user->professionalProfile->use_finance_module && (!$hasSpecialtyConfig || in_array('finance', $enabledModules))) {
+            if ($user->professionalProfile) {
+                /** @var \App\Models\ProfessionalProfile|null $pp2 */
+                $pp2 = $user->professionalProfile;
+                $useFinance = $pp2->use_finance_module ?? false;
+            } else {
+                $useFinance = false;
+            }
+
+            if ($useFinance && (!$hasSpecialtyConfig || in_array('finance', $enabledModules))) {
                 $financeItems = [
                     ['name' => 'finance_dashboard', 'label' => 'Financeiro (Resumo)', 'route' => 'professional.finance.dashboard', 'icon' => 'bar-chart-2'],
                     ['name' => 'finance_entries', 'label' => 'Lançamentos', 'route' => 'professional.finance.entries.index', 'icon' => 'list'],

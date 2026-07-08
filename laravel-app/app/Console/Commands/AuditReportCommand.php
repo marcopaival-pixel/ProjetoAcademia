@@ -96,7 +96,7 @@ class AuditReportCommand extends Command
             ->orderByDesc('total')
             ->limit(10)
             ->get()
-            ->map(fn ($row) => ['action' => $row->action, 'total' => (int) $row->total])
+            ->map(fn ($row) => ['action' => $row->action, 'total' => (int) ($row->getAttribute('total') ?? 0)])
             ->all();
     }
 
@@ -114,7 +114,7 @@ class AuditReportCommand extends Command
             ->map(fn ($row) => [
                 'event' => $row->event,
                 'success' => (bool) $row->success,
-                'total' => (int) $row->total,
+                'total' => (int) ($row->getAttribute('total') ?? 0),
             ])
             ->all();
     }

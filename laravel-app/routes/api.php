@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\LeadCaptureController;
+use App\Http\Controllers\Api\ReferralCodeController;
 use App\Http\Controllers\Api\V1\AssessmentController;
 use App\Http\Controllers\Api\V1\AuthTokenController;
 use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\ClientErrorController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EvolutionPhotoController;
 use App\Http\Controllers\Api\V1\ExerciseLogController;
@@ -12,21 +15,24 @@ use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\MediaUploadController;
 use App\Http\Controllers\Api\V1\NutritionDiaryController;
 use App\Http\Controllers\Api\V1\OrchestratorController;
+use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\PaymentStatusController;
-use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProfessionalAlertController;
 use App\Http\Controllers\Api\V1\ProfessionalAppointmentController;
 use App\Http\Controllers\Api\V1\ProfessionalDashboardController;
 use App\Http\Controllers\Api\V1\ProfessionalPatientAssessmentController;
-use App\Http\Controllers\Api\V1\ProfessionalPatientEvolutionController;
 use App\Http\Controllers\Api\V1\ProfessionalPatientController;
+use App\Http\Controllers\Api\V1\ProfessionalPatientEvolutionController;
 use App\Http\Controllers\Api\V1\ProfessionalPatientTrainingController;
 use App\Http\Controllers\Api\V1\ProfessionalProtocolController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\StudentAppointmentController;
 use App\Http\Controllers\Api\V1\StudentProfessionalController;
 use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
 use App\Http\Controllers\Api\V1\TrainingPlanController;
 use App\Http\Controllers\Api\V1\WorkoutSessionController;
+use App\Http\Middleware\SetApiTenantContext;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,6 +41,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    })->middleware('auth:sanctum');
+
+    // Lead Capture API (Public endpoint for Landing Pages)
+    Route::post('/leads', [LeadCaptureController::class, 'store']);
+
     Route::get('/health', HealthController::class)->name('health');
 
     Route::post('/client-errors', [ClientErrorController::class, 'store'])
@@ -45,13 +58,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:10,1')
         ->name('auth.token');
 
-    Route::post('/referral/verify', [\App\Http\Controllers\Api\ReferralCodeController::class, 'verify'])
+    Route::post('/referral/verify', [ReferralCodeController::class, 'verify'])
         ->middleware('throttle:15,1')
         ->name('referral.verify');
 
     Route::middleware([
         'auth:sanctum',
-        \App\Http\Middleware\SetApiTenantContext::class,
+        SetApiTenantContext::class,
         'api.active_patient',
         'throttle:api',
     ])->group(function () {
@@ -59,6 +72,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::patch('/me', [ProfileController::class, 'update'])->name('me.update');
         Route::post('/auth/refresh', [AuthTokenController::class, 'refresh'])->name('auth.refresh');
         Route::delete('/auth/token', [AuthTokenController::class, 'destroy'])->name('auth.token.revoke');
+
+        // --- Gestão de Organizations (Tenants) ---
+        Route::get('/organizations', [OrganizationController::class, 'index'])->name('organizations.index');
+        Route::post('/organizations', [OrganizationController::class, 'store'])->name('organizations.store');
+        Route::post('/organizations/{organization}/users', [OrganizationController::class, 'attachUser'])->name('organizations.users.attach');
 
         Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
         Route::delete('/devices', [DeviceController::class, 'destroy'])->name('devices.destroy');
@@ -111,8 +129,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/student/appointments', [StudentAppointmentController::class, 'store'])->name('student.appointments.store');
         });
 
+        // --- Nova Arquitetura de Contextos ---
+        Route::middleware(['api.active_role'])->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.unified');
+        });
+
         Route::middleware('api.role:professional,instructor,supervisor')->prefix('professional')->name('professional.')->group(function () {
             Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
+            // Rota legada mantida por compatibilidade; o Android novo usa /dashboard com api.active_role.
             Route::get('/patients', [ProfessionalPatientController::class, 'index'])->name('patients.index');
             Route::get('/patients/{patient}', [ProfessionalPatientController::class, 'show'])->name('patients.show');
             Route::get('/appointments', [ProfessionalAppointmentController::class, 'index'])->name('appointments.index');

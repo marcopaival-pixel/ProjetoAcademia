@@ -6,11 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\AcademyCompany;
 use App\Models\AcademyUnit;
 use App\Models\User;
-use App\Models\Role;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -106,11 +104,11 @@ class AcademyCompanyController extends Controller
             $user = User::create([
                 'name' => $data['responsible_name'],
                 'email' => $data['responsible_email'],
-                'password_hash' => Hash::make(str_replace(['.', '-', '/'], '', $data['tax_id'])), // CNPJ as default pass
                 'academy_company_id' => $company->id,
                 'status' => 'active',
                 'user_type' => 'ADMIN_CLINICA',
             ]);
+            $user->setPlainPassword(Str::password(16), true);
 
             $user->assignRole('manager');
 
@@ -119,7 +117,8 @@ class AcademyCompanyController extends Controller
             return redirect()->route('admin.clinic-onboarding.index', $company)->with('success', 'Clínica e Administrador criados com sucesso! Vamos prosseguir com o onboarding.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Erro ao criar clínica: ' . $e->getMessage())->withInput();
+
+            return back()->with('error', 'Erro ao criar clínica: '.$e->getMessage())->withInput();
         }
     }
 

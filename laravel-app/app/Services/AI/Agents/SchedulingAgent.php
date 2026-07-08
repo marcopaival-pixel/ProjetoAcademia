@@ -53,6 +53,7 @@ class SchedulingAgent extends BaseAgent
 
     private function getScheduleContext(User $user): string
     {
+        /** @var \Illuminate\Support\Collection<int, \App\Models\ProfessionalAppointment> $upcoming */
         $upcoming = \App\Models\ProfessionalAppointment::where('patient_id', $user->id)
             ->where('appointment_at', '>=', now())
             ->orderBy('appointment_at')
@@ -60,6 +61,7 @@ class SchedulingAgent extends BaseAgent
             ->with('professional:id,name')
             ->get(['id', 'appointment_at', 'status', 'professional_id', 'service_type', 'notes']);
 
+        /** @var \Illuminate\Support\Collection<int, \App\Models\ProfessionalAppointment> $past */
         $past = \App\Models\ProfessionalAppointment::where('patient_id', $user->id)
             ->where('appointment_at', '<', now())
             ->orderByDesc('appointment_at')
@@ -69,17 +71,23 @@ class SchedulingAgent extends BaseAgent
 
         $upcomingText = $upcoming->isEmpty()
             ? 'Nenhuma consulta agendada.'
-            : $upcoming->map(fn ($a) =>
-                "- {$a->appointment_at->format('d/m/Y H:i')} com {$a->professional?->name}"
-                . ($a->service_type ? " ({$a->service_type})" : '')
-                . " [{$a->status_label}]"
-            )->implode("\n");
+            : $upcoming->map(function ($a) {
+                /** @var \App\Models\ProfessionalAppointment $a */
+                $profName = ($a->professional && $a->professional->getAttribute('name')) ? $a->professional->getAttribute('name') : '';
+
+                return "- {$a->appointment_at->format('d/m/Y H:i')} com {$profName}"
+                    . ($a->service_type ? " ({$a->service_type})" : '')
+                    . " [{$a->status_label}]";
+            })->implode("\n");
 
         $pastText = $past->isEmpty()
             ? 'Nenhum histórico.'
-            : $past->map(fn ($a) =>
-                "- {$a->appointment_at->format('d/m/Y H:i')} com {$a->professional?->name} [{$a->status_label}]"
-            )->implode("\n");
+            : $past->map(function ($a) {
+                /** @var \App\Models\ProfessionalAppointment $a */
+                $profName = ($a->professional && $a->professional->getAttribute('name')) ? $a->professional->getAttribute('name') : '';
+
+                return "- {$a->appointment_at->format('d/m/Y H:i')} com {$profName} [{$a->status_label}]";
+            })->implode("\n");
 
         return "CONTEXTO DE AGENDA — Paciente: {$user->name}\n\nPróximas consultas:\n{$upcomingText}\n\nÚltimas consultas:\n{$pastText}";
     }

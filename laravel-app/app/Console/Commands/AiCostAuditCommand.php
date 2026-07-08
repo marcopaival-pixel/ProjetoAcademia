@@ -58,13 +58,16 @@ class AiCostAuditCommand extends Command
                 ->get();
 
             foreach ($offenders as $row) {
+                $clinicId = $row->getAttribute('clinic_id') ?? null;
+                $cost = $row->getAttribute('total') ?? 0;
+
                 $alerts->dispatchCritical(
                     'Limite diário IA por clínica excedido',
-                    "Clínica #{$row->clinic_id}: \${$row->total} (limite: \${$clinicLimit})",
-                    ['clinic_id' => $row->clinic_id, 'cost' => $row->total],
-                    "ai_clinic_{$row->clinic_id}_".today()->toDateString()
+                    "Clínica #{$clinicId}: \${$cost} (limite: \${$clinicLimit})",
+                    ['clinic_id' => $clinicId, 'cost' => $cost],
+                    "ai_clinic_{$clinicId}_".today()->toDateString()
                 );
-                $this->warn("Alerta: clínica #{$row->clinic_id} excedeu limite.");
+                $this->warn("Alerta: clínica #{$clinicId} excedeu limite.");
             }
         }
 

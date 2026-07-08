@@ -43,11 +43,14 @@ fun ProPatientsScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
 
+    val scope = rememberCoroutineScope()
     fun reload() {
         loading = true
-        repository.patients(search.ifBlank { null })
-            .onSuccess { patients = it; error = null; loading = false }
-            .onFailure { error = it.message; loading = false }
+        scope.launch {
+            repository.patients(search.ifBlank { null })
+                .onSuccess { patients = it; error = null; loading = false }
+                .onFailure { error = it.message; loading = false }
+        }
     }
 
     LaunchedEffect(Unit) { reload() }

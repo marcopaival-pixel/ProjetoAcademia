@@ -15,11 +15,11 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
     private lateinit var tokenStore: TokenStore
     private lateinit var sessionPreferences: SessionPreferences
-    private lateinit var api: NexShapeApi
+    private lateinit var apiInstance: NexShapeApi
     private lateinit var okHttpClient: OkHttpClient
 
     fun init(context: Context) {
-        if (::api.isInitialized) return
+        if (::apiInstance.isInitialized) return
         tokenStore = TokenStore(context.applicationContext)
         sessionPreferences = SessionPreferences(context.applicationContext)
 
@@ -44,7 +44,7 @@ object ApiClient {
             .add(KotlinJsonAdapterFactory())
             .build()
 
-        api = Retrofit.Builder()
+        apiInstance = Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
@@ -52,7 +52,7 @@ object ApiClient {
             .create(NexShapeApi::class.java)
     }
 
-    fun api(): NexShapeApi = api
+    fun api(): NexShapeApi = apiInstance
 
     fun tokenStore(): TokenStore = tokenStore
 

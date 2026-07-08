@@ -24,7 +24,9 @@ class AgendaNotificationService
             }
 
             if ($appointment->professional_id) {
-                $patientName = $appointment->patient?->name ?? 'paciente';
+                    /** @var \App\Models\User|null $patientModel */
+                    $patientModel = $appointment->patient;
+                    $patientName = $patientModel?->name ?? 'paciente';
                 MessagingService::sendSystemMessage(
                     $appointment->professional_id,
                     'Novo agendamento',

@@ -2,7 +2,14 @@
 
 namespace App\Models;
 
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CommercialProposal extends Model
 {
@@ -31,12 +38,12 @@ class CommercialProposal extends Model
         'desconto' => 'decimal:2',
     ];
 
-    public function lead()
+    public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
     }
 
-    public function plan()
+    public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
     }
@@ -46,44 +53,51 @@ class CommercialProposal extends Model
         return $this->valor - $this->desconto;
     }
 
-    public function representative()
+    public function representative(): BelongsTo
     {
         return $this->belongsTo(User::class, 'representative_id');
     }
 
-    public function clinic()
+    public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class, 'clinic_id');
     }
 
-    public function referralCode()
+    public function referralCode(): HasOne
     {
         return $this->hasOne(ReferralCode::class, 'commercial_proposal_id');
     }
 
     public function generateQrCode()
     {
-        if (!$this->representative || !$this->representative->representativeProfile) {
+        $representative = $this->getRelationValue('representative');
+        if (! $representative) {
             return null;
         }
 
-        $codeStr = $this->referralCode ? $this->referralCode->code : $this->representative->representativeProfile->code;
+        $representativeProfile = $representative->getRelationValue('representativeProfile');
+        if (! $representativeProfile) {
+            return null;
+        }
+
+        $referralCode = $this->getRelationValue('referralCode');
+        $codeStr = $referralCode ? $referralCode->getAttribute('code') : $representativeProfile->getAttribute('code');
 
         $url = route('plano', [
             'ref' => $codeStr,
             'plan_id' => $this->plan_id,
-            'discount' => $this->desconto
+            'discount' => $this->desconto,
         ]);
 
-        $qrCode = \Endroid\QrCode\Builder\Builder::create()
-            ->writer(new \Endroid\QrCode\Writer\PngWriter())
+        $qrCode = Builder::create()
+            ->writer(new PngWriter)
             ->writerOptions([])
             ->data($url)
-            ->encoding(new \Endroid\QrCode\Encoding\Encoding('UTF-8'))
-            ->errorCorrectionLevel(\Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh::class)
+            ->encoding(new Encoding('UTF-8'))
+            ->errorCorrectionLevel(ErrorCorrectionLevel::High)
             ->size(200)
             ->margin(10)
-            ->roundBlockSizeMode(\Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin::class)
+            ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
             ->build();
 
         return $qrCode->getDataUri();

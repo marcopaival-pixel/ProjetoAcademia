@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Subscription;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AiRetentionService
@@ -53,7 +54,7 @@ class AiRetentionService
         }
 
         $lastActivity = $user->last_activity_at;
-        $daysSinceLastLogin = $lastActivity ? $lastActivity->diffInDays(now()) : 999;
+        $daysSinceLastLogin = $lastActivity ? Carbon::parse($lastActivity)->diffInDays(now()) : 999;
 
         if ($daysSinceLastLogin > 21) {
             $score += 30;

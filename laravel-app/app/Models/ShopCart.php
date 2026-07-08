@@ -23,16 +23,19 @@ class ShopCart extends Model
         'expires_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<ShopCoupon, $this> */
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(ShopCoupon::class, 'coupon_id');
     }
 
+    /** @return HasMany<ShopCartItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(ShopCartItem::class, 'cart_id');

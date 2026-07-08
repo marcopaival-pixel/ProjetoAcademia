@@ -930,11 +930,14 @@ class AdminAreaController extends Controller
     {
         $exercise->load('muscles.group');
         $selectedMuscles = $exercise->muscles->map(function($m) {
+            /** @var \Illuminate\Database\Eloquent\Model $m */
+            $group = $m->getRelationValue('group');
+
             return [
-                'id' => $m->id,
-                'name' => $m->name,
-                'group' => $m->group->name,
-                'type' => $m->type
+                'id' => $m->getAttribute('id'),
+                'name' => $m->getAttribute('name'),
+                'group' => $group ? ($group->getAttribute('name') ?? null) : null,
+                'type' => $m->getAttribute('type'),
             ];
         });
         return view('admin.exercises.edit', compact('exercise', 'selectedMuscles'));

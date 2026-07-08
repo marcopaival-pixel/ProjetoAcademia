@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\Configurable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ExerciseCatalog extends Model
 {
     use Configurable;
+
     protected $table = 'exercises_catalog';
 
     protected $fillable = [
@@ -29,7 +31,7 @@ class ExerciseCatalog extends Model
         'common_mistakes' => 'array',
     ];
 
-    public function muscles()
+    public function muscles(): BelongsToMany
     {
         return $this->belongsToMany(Muscle::class, 'exercise_muscles', 'exercise_id', 'muscle_id');
     }

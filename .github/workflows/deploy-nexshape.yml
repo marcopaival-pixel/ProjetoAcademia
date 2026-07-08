@@ -40,6 +40,7 @@ jobs:
           php-version: "8.2"
           extensions: mbstring, xml, pdo_mysql, curl, fileinfo
           coverage: none
+          cache: composer
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -94,6 +95,7 @@ jobs:
         with:
           php-version: "8.2"
           extensions: mbstring, xml, pdo_mysql, curl, fileinfo, zip
+          cache: composer
 
       - name: Setup Node
         uses: actions/setup-node@v4

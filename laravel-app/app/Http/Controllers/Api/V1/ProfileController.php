@@ -14,7 +14,7 @@ class ProfileController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $user = $request->user()->loadMissing(['roles', 'branding']);
+        $user = $request->user()->loadMissing(['roles', 'branding', 'organizations']);
 
         return $this->success((new UserProfileResource($user))->resolve());
     }

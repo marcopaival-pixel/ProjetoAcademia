@@ -15,6 +15,7 @@ class HealthAlertObserver
             return;
         }
 
+        /** @var \App\Models\User|null $patient */
         $patient = $alert->user;
         if ($patient === null) {
             return;

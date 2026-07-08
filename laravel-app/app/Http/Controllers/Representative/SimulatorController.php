@@ -18,8 +18,9 @@ class SimulatorController extends Controller
         }
 
         $plans = Plan::where('is_active', true)->where('type', 'clinic')->get();
-        $maxDiscount = $user->representativeProfile->max_discount_rate;
-        $commissionRate = $user->representativeProfile->commission_rate;
+        $profile = $user->getRelationValue('representativeProfile');
+        $maxDiscount = $profile ? $profile->getAttribute('max_discount_rate') : null;
+        $commissionRate = $profile ? $profile->getAttribute('commission_rate') : null;
 
         return view('representative.simulator.index', compact('plans', 'maxDiscount', 'commissionRate'));
     }

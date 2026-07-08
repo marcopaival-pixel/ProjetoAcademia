@@ -124,7 +124,7 @@ class ShopAdminProductController extends Controller
         $product->load('images');
 
         foreach ($product->images as $image) {
-            Storage::disk('public')->delete($image->path);
+            Storage::disk('public')->delete($image->getAttribute('path'));
         }
 
         $product->delete();

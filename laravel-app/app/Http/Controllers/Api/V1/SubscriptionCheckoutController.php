@@ -29,13 +29,15 @@ class SubscriptionCheckoutController extends Controller
             ->where('type', 'student')
             ->orderBy('price')
             ->get()
-            ->map(fn (Plan $plan) => [
-                'id' => $plan->id,
-                'name' => $plan->name,
-                'price' => (float) $plan->price,
-                'billing_cycle' => $plan->billing_cycle,
-                'description' => $plan->description,
-            ]);
+            ->map(function (Plan $plan) {
+                return [
+                    'id' => $plan->getAttribute('id'),
+                    'name' => $plan->getAttribute('name'),
+                    'price' => (float) $plan->getAttribute('price'),
+                    'billing_cycle' => $plan->getAttribute('billing_cycle'),
+                    'description' => $plan->getAttribute('description'),
+                ];
+            });
 
         return $this->success(['plans' => $plans]);
     }
@@ -110,6 +112,7 @@ class SubscriptionCheckoutController extends Controller
             ]
         );
 
+        /** @var Subscription $subscription */
         $this->subscriptionService->upgrade($subscription, $plan);
 
         return $subscription->fresh();

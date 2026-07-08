@@ -70,7 +70,7 @@ class ShopOrderItem extends Model
         }
 
         $product = $this->product;
-        if ($product && $product->download_limit && $this->download_count >= $product->download_limit) {
+        if ($product && $product->getAttribute('download_limit') && $this->download_count >= $product->getAttribute('download_limit')) {
             return false;
         }
 

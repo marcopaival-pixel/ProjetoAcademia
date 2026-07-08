@@ -7,7 +7,6 @@ use App\Models\ShopCartItem;
 use App\Models\ShopCoupon;
 use App\Models\ShopProduct;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 class ShopCartService
 {
@@ -18,7 +17,7 @@ class ShopCartService
     {
         return ShopCart::firstOrCreate(
             [
-                'user_id'            => $user->id,
+                'user_id' => $user->id,
                 'academy_company_id' => $user->academy_company_id,
             ],
             ['expires_at' => now()->addDays(7)]
@@ -42,12 +41,13 @@ class ShopCartService
 
         if ($existing) {
             $existing->increment('quantity', $quantity);
+
             return $existing->fresh();
         }
 
         return $cart->items()->create([
             'product_id' => $productId,
-            'quantity'   => $quantity,
+            'quantity' => $quantity,
             'unit_price' => $product->currentPrice(),
         ]);
     }
@@ -62,6 +62,7 @@ class ShopCartService
 
         if ($quantity <= 0) {
             $item->delete();
+
             return;
         }
 
@@ -94,7 +95,7 @@ class ShopCartService
      */
     public function applyCoupon(User $user, string $code): ShopCoupon
     {
-        $cart   = $this->getOrCreateCart($user);
+        $cart = $this->getOrCreateCart($user);
         $coupon = ShopCoupon::where('code', strtoupper($code))
             ->where('academy_company_id', $user->academy_company_id)
             ->first();
@@ -132,7 +133,7 @@ class ShopCartService
      */
     public function summary(User $user): array
     {
-        $cart     = $this->getOrCreateCart($user);
+        $cart = $this->getOrCreateCart($user);
         $cart->load('items.product', 'coupon');
 
         $subtotal = $cart->subtotal();
@@ -148,12 +149,12 @@ class ShopCartService
         }
 
         return [
-            'cart'     => $cart,
+            'cart' => $cart,
             'subtotal' => $subtotal,
             'discount' => $discount,
             'shipping' => $shipping,
-            'total'    => max(0, $subtotal - $discount + $shipping),
-            'coupon'   => $coupon,
+            'total' => max(0, $subtotal - $discount + $shipping),
+            'coupon' => $coupon,
         ];
     }
 }

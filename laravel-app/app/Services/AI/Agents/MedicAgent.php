@@ -62,6 +62,7 @@ class MedicAgent extends BaseAgent
 
     private function getMedicContext(User $user): string
     {
+        /** @var \Illuminate\Support\Collection<int, \App\Models\MedicalPrescription> $prescriptions */
         $prescriptions = \App\Models\MedicalPrescription::where('patient_id', $user->id)
             ->latest('date')
             ->limit(5)
@@ -72,13 +73,17 @@ class MedicAgent extends BaseAgent
             return "CONTEXTO: O paciente {$user->name} não possui receitas médicas registradas.";
         }
 
-        $list = $prescriptions->map(fn ($p) =>
-            "- [{$p->date->format('d/m/Y')}] {$p->medicine}"
-            . ($p->dosage ? " — {$p->dosage}" : '')
-            . ($p->frequency ? ", {$p->frequency}" : '')
-            . ($p->duration ? ", por {$p->duration}" : '')
-            . " (Dr(a). {$p->professional?->name})"
-        )->implode("\n");
+        $list = $prescriptions->map(function ($p) {
+            /** @var \App\Models\MedicalPrescription $p */
+            $prof = $p->professional;
+            $profName = $prof ? ($prof->getAttribute('name') ?? '') : '';
+
+            return "- [{$p->date->format('d/m/Y')}] {$p->medicine}"
+                . ($p->dosage ? " — {$p->dosage}" : '')
+                . ($p->frequency ? ", {$p->frequency}" : '')
+                . ($p->duration ? ", por {$p->duration}" : '')
+                . " (Dr(a). {$profName})";
+        })->implode("\n");
 
         return "CONTEXTO MÉDICO — Paciente: {$user->name}\nReceitas/Prescrições registradas:\n{$list}";
     }

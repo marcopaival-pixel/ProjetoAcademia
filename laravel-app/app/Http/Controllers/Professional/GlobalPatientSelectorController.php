@@ -60,19 +60,20 @@ class GlobalPatientSelectorController extends Controller
         $alphabetical = [];
 
         foreach ($patients as $patient) {
-            $pivot = $patient->pivot;
+            /** @var \Illuminate\Database\Eloquent\Model $patient */
+            $pivot = $patient->getRelationValue('pivot');
             $data = $this->formatPatientData($patient, $pivot);
 
-            if ($pivot->is_favorite) {
+            if ($pivot && ($pivot->getAttribute('is_favorite') ?? false)) {
                 $favorites[] = $data;
             }
 
-            if ($pivot->last_accessed_at) {
+            if ($pivot && $pivot->getAttribute('last_accessed_at')) {
                 $recent[] = $data;
             }
 
             // Agrupamento Alfabético
-            $firstLetter = strtoupper(mb_substr($patient->name, 0, 1));
+            $firstLetter = strtoupper(mb_substr($patient->getAttribute('name') ?? '', 0, 1));
             if (!preg_match('/^[A-Z]$/', $firstLetter)) {
                 $firstLetter = '#';
             }

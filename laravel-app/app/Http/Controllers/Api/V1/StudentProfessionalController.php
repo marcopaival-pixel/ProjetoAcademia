@@ -20,17 +20,25 @@ class StudentProfessionalController extends Controller
             ->with(['professionalProfile', 'branding'])
             ->wherePivot('status', 'Sim')
             ->get()
-            ->map(fn (User $professional): array => [
-                'id' => $professional->id,
-                'name' => $professional->name,
-                'email' => $professional->email,
-                'specialty' => $professional->professionalProfile?->specialty,
-                'service_types' => $professional->professionalProfile?->service_types ?? [],
-                'branding' => [
-                    'clinic_name' => $professional->branding?->clinic_name,
-                    'primary_color' => $professional->branding?->primary_color,
-                ],
-            ])
+            ->map(function (User $professional): array {
+                /** @var \App\Models\ProfessionalProfile|null $profile */
+                $profile = $professional->professionalProfile;
+
+                /** @var object|null $branding */
+                $branding = $professional->branding;
+
+                return [
+                    'id' => $professional->getAttribute('id'),
+                    'name' => $professional->getAttribute('name'),
+                    'email' => $professional->getAttribute('email'),
+                    'specialty' => $profile ? ($profile->getAttribute('specialty') ?? null) : null,
+                    'service_types' => $profile ? ($profile->getAttribute('service_types') ?? []) : [],
+                    'branding' => [
+                        'clinic_name' => $branding ? ($branding->clinic_name ?? null) : null,
+                        'primary_color' => $branding ? ($branding->primary_color ?? null) : null,
+                    ],
+                ];
+            })
             ->values()
             ->all();
 

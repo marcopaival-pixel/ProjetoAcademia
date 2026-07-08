@@ -42,6 +42,7 @@ jobs:
           php-version: "8.2"
           extensions: mbstring, xml, pdo_mysql
           coverage: none
+          cache: composer
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -67,6 +68,7 @@ jobs:
           php-version: "8.2"
           extensions: mbstring
           coverage: none
+          cache: composer
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress

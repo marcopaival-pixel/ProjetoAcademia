@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
 use App\Models\Traits\FillsTenantColumns;
 use App\Models\Traits\HasClinic;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AIOrchestratorLog extends Model
 {
@@ -28,7 +28,7 @@ class AIOrchestratorLog extends Model
         'execution_time_ms',
         'status',
         'context',
-        'error_message'
+        'error_message',
     ];
 
     protected $casts = [
@@ -40,7 +40,7 @@ class AIOrchestratorLog extends Model
         'execution_time_ms' => 'integer',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

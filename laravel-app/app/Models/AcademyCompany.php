@@ -44,6 +44,10 @@ class AcademyCompany extends Model
         'mercadopago_user_id',
         'platform_fee_percent',
         'platform_fee_fixed',
+        'health_score',
+        'churn_risk_level',
+        'health_reasons',
+        'last_health_calculated_at',
     ];
 
     protected function casts(): array
@@ -55,6 +59,9 @@ class AcademyCompany extends Model
             'shared_medical_records' => 'boolean',
             'platform_fee_percent' => 'decimal:2',
             'platform_fee_fixed' => 'decimal:2',
+            'health_score' => 'integer',
+            'health_reasons' => 'array',
+            'last_health_calculated_at' => 'datetime',
         ];
     }
 

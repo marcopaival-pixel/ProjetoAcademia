@@ -24,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->scoped(\App\Services\Context\CurrentContext::class, function ($app) {
+            return new \App\Services\Context\CurrentContext();
+        });
+
         $this->app->singleton(\App\Services\Payment\PaymentGatewayManager::class, function ($app) {
             return new \App\Services\Payment\PaymentGatewayManager($app);
         });
@@ -52,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceRootUrl(rtrim((string) config('app.url'), '/').$bp);
         }
 
-        // Aplica as configurações de e-mail do banco de dados (fallback global)
+        // Aplica as configura��es de e-mail do banco de dados (fallback global)
         MailConfigService::apply();
         \App\Services\DynamicConfigService::apply();
 
@@ -68,7 +72,7 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {
             $activePatient = null;
             if (auth()->check() && session()->has('active_patient_id')) {
-                // Compartilhar apenas os dados básicos para não sobrecarregar
+                // Compartilhar apenas os dados b�sicos para n�o sobrecarregar
                 $activePatient = \App\Models\User::find(session('active_patient_id'));
                 if (!$activePatient) {
                     session()->forget('active_patient_id');
@@ -105,9 +109,15 @@ class AppServiceProvider extends ServiceProvider
 
         \Illuminate\Support\Facades\View::composer('professional.*', function ($view) {
             if (auth()->check() && auth()->user()->hasRole('professional')) {
+                /** @var \App\Models\ProfessionalProfile|null $profile */
                 $profile = auth()->user()->professionalProfile;
-                $professionName = $profile && $profile->profession ? $profile->profession->name : 'Geral';
-                
+                if ($profile && $profile->profession) {
+                    $profObj = $profile->profession;
+                    $professionName = $profObj ? ($profObj->getAttribute('name') ?? 'Geral') : 'Geral';
+                } else {
+                    $professionName = 'Geral';
+                }
+
                 $isFitness = in_array($professionName, ['Educador Físico', 'Personal Trainer']);
                 
                 $view->with('patientLabel', $isFitness ? 'Aluno' : 'Paciente');
@@ -180,7 +190,7 @@ class AppServiceProvider extends ServiceProvider
 
         \Illuminate\Support\Facades\Blade::directive('lockIcon', function ($feature) {
             return "<?php if(!auth()->check() || !auth()->user()->hasFeature($feature)): ?>
-                <i class='fas fa-lock ml-2 text-yellow-500' title='Disponível no plano Pro'></i>
+                <i class='fas fa-lock ml-2 text-yellow-500' title='Dispon�vel no plano Pro'></i>
             <?php endif; ?>";
         });
 
@@ -202,7 +212,7 @@ class AppServiceProvider extends ServiceProvider
             return "<?php endif; ?>";
         });
 
-        // Configuração de Segurança para o Laravel Pulse
+        // Configura��o de Seguran�a para o Laravel Pulse
         \Illuminate\Support\Facades\Gate::define('viewPulse', function (\App\Models\User $user) {
             return $user->isAdministrator();
         });
@@ -222,7 +232,7 @@ class AppServiceProvider extends ServiceProvider
 
         if ($this->app->environment('production') && ! (bool) config('session.secure')) {
             \Illuminate\Support\Facades\Log::warning(
-                '[security] SESSION_SECURE_COOKIE=false em produção — risco de hijack de sessão. Defina SESSION_SECURE_COOKIE=true com HTTPS.'
+                '[security] SESSION_SECURE_COOKIE=false em produ��o � risco de hijack de sess�o. Defina SESSION_SECURE_COOKIE=true com HTTPS.'
             );
         }
     }

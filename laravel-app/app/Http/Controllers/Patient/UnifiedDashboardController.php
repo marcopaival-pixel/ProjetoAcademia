@@ -163,7 +163,7 @@ class UnifiedDashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy(function($doc) {
-                return $doc->professional->name;
+                return $doc->professional->getAttribute('name');
             });
 
         // 8. Branding dinâmico (Usa o do profissional se selecionado, senão usa um padrão NexShape)

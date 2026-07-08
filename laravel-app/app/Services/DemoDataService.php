@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\User;
+use App\Models\AcademyCompany;
 use App\Models\Permission;
-use Illuminate\Support\Facades\DB;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DemoDataService
 {
@@ -19,14 +21,14 @@ class DemoDataService
     {
         $demoUser = $user ?? Auth::user();
 
-        if (!$demoUser || !$demoUser->is_demo) {
+        if (! $demoUser || ! $demoUser->is_demo) {
             // Se não houver usuário, buscar ou criar o usuário demo
             $demoUser = User::where('email', 'demo@nexshape.com.br')->first();
 
-            if (!$demoUser) {
-                $company = \App\Models\AcademyCompany::first();
-                
-                $demoUser = new User();
+            if (! $demoUser) {
+                $company = AcademyCompany::first();
+
+                $demoUser = new User;
                 $demoUser->fill([
                     'email' => 'demo@nexshape.com.br',
                     'name' => 'Usuário Demonstração',
@@ -39,10 +41,7 @@ class DemoDataService
                     'plan_id' => 2, // Premium
                     'professional_plan_id' => 3, // Profissional Premium
                 ]);
-                
-                // password_hash não é fillable, atribuir explicitamente conforme regra do Model User
-                $demoUser->password_hash = Hash::make('demo123');
-                $demoUser->save();
+                $demoUser->setPlainPassword(Str::password(16), true);
             }
         }
 
@@ -109,8 +108,8 @@ class DemoDataService
         if ($profile === 'professional') {
             // Criar um aluno demonstrativo para o profissional testar
             $patient = User::where('email', 'aluno_demo@nexshape.com.br')->first();
-            if (!$patient) {
-                $patient = new User();
+            if (! $patient) {
+                $patient = new User;
                 $patient->fill([
                     'email' => 'aluno_demo@nexshape.com.br',
                     'name' => 'Aluno Demonstração',
@@ -122,17 +121,16 @@ class DemoDataService
                     'plan_id' => 2,
                     'academy_company_id' => $user->academy_company_id,
                 ]);
-                $patient->password_hash = \Illuminate\Support\Facades\Hash::make('demo123');
-                $patient->save();
-                
-                $role = \App\Models\Role::where('name', 'aluno')->first();
+                $patient->setPlainPassword(Str::password(16), true);
+
+                $role = Role::where('name', 'aluno')->first();
                 if ($role) {
                     $patient->roles()->syncWithoutDetaching([$role->id]);
                 }
             }
 
             // Vincular o aluno ao profissional
-            if (!$user->patients()->where('users.id', $patient->id)->exists()) {
+            if (! $user->patients()->where('users.id', $patient->id)->exists()) {
                 $user->patients()->attach($patient->id, [
                     'status' => 'Sim',
                     'data_cadastro' => now(),

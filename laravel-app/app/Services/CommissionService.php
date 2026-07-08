@@ -220,13 +220,17 @@ class CommissionService
         $rate = 0.0;
 
         if ($subscription && $subscription->plan) {
-            $rate = (float) $subscription->plan->commission_rate;
+            /** @var \App\Models\Plan|null $plan */
+            $plan = $subscription->plan;
+            $rate = $plan ? (float) $plan->commission_rate : 0.0;
         }
 
         $representativeUser = User::with('representativeProfile')->find($user->representative_id);
 
         if ($rate <= 0 && $representativeUser?->representativeProfile) {
-            $rate = (float) $representativeUser->representativeProfile->commission_rate;
+            /** @var \App\Models\RepresentativeProfile|null $repProfile */
+            $repProfile = $representativeUser->representativeProfile;
+            $rate = $repProfile ? (float) $repProfile->commission_rate : 0.0;
         }
 
         if ($rate <= 0) {

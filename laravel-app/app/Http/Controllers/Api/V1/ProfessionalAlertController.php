@@ -29,16 +29,21 @@ class ProfessionalAlertController extends Controller
             $query->where('is_read', false);
         }
 
-        $alerts = $query->limit($limit)->get()->map(fn (HealthAlert $alert): array => [
-            'id' => $alert->id,
-            'patient_id' => $alert->user_id,
-            'patient_name' => $alert->user?->name,
-            'type' => $alert->type,
-            'severity' => $alert->severity,
-            'message' => $alert->message,
-            'is_read' => (bool) $alert->is_read,
-            'created_at' => $alert->created_at?->toIso8601String(),
-        ])->values()->all();
+        $alerts = $query->limit($limit)->get()->map(function (HealthAlert $alert): array {
+            /** @var \App\Models\User|null $patient */
+            $patient = $alert->user;
+
+            return [
+                'id' => $alert->getAttribute('id'),
+                'patient_id' => $alert->getAttribute('user_id'),
+                'patient_name' => $patient ? ($patient->getAttribute('name') ?? null) : null,
+                'type' => $alert->getAttribute('type'),
+                'severity' => $alert->getAttribute('severity'),
+                'message' => $alert->getAttribute('message'),
+                'is_read' => (bool) $alert->getAttribute('is_read'),
+                'created_at' => $alert->created_at?->toIso8601String(),
+            ];
+        })->values()->all();
 
         return $this->success(['alerts' => $alerts], ['count' => count($alerts)]);
     }

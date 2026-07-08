@@ -27,7 +27,7 @@ trait FiltersByRepresentative
                 return;
             }
 
-            $model = new static;
+            $model = $builder->getModel();
             $tableName = $model->getTable();
             $fillable = $model->getFillable();
 

@@ -93,8 +93,10 @@ class ShopProduct extends Model
 
     public function primaryImage(): ?ShopProductImage
     {
-        return $this->images->firstWhere('is_primary', true)
-            ?? $this->images->first();
+        /** @var ShopProductImage|null $img */
+        $img = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
+
+        return $img;
     }
 
     public function orderItems(): HasMany

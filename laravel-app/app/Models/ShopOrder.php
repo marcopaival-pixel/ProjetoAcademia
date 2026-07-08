@@ -104,7 +104,7 @@ class ShopOrder extends Model
 
     public function hasPhysicalItems(): bool
     {
-        return $this->items->contains(fn ($item) => $item->product_type === ShopProduct::TYPE_PHYSICAL);
+        return $this->items->contains(fn ($item) => $item->getAttribute('product_type') === ShopProduct::TYPE_PHYSICAL);
     }
 
     public function statusLabel(): string

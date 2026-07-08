@@ -19,11 +19,12 @@ class ShopDigitalDownloadController extends Controller
             ->with(['order', 'product'])
             ->firstOrFail();
 
-        if ($item->order?->user_id !== Auth::id()) {
+        $order = $item->getRelationValue('order');
+        if (! $order || $order->getAttribute('user_id') !== Auth::id()) {
             abort(403);
         }
 
-        if (! $this->orderAllowsDownload($item->order)) {
+        if (! $this->orderAllowsDownload($order)) {
             abort(403, 'Download disponível apenas para pedidos pagos.');
         }
 
@@ -31,7 +32,8 @@ class ShopDigitalDownloadController extends Controller
             abort(403, 'Download expirado ou limite atingido.');
         }
 
-        $path = $item->product?->downloadable_file;
+        $product = $item->getRelationValue('product');
+        $path = $product ? $product->getAttribute('downloadable_file') : null;
         if ($path === null || $path === '' || ! Storage::disk('local')->exists($path)) {
             abort(404, 'Arquivo digital não encontrado.');
         }

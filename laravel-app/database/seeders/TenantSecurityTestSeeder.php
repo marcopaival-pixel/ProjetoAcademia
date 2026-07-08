@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\AcademyCompany;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class TenantSecurityTestSeeder extends Seeder
@@ -37,22 +37,22 @@ class TenantSecurityTestSeeder extends Seeder
             [
                 'email' => 'pro@test.com',
                 'name' => 'Dr. João Silva',
-                'role' => 'professional'
+                'role' => 'professional',
             ],
             [
                 'email' => 'pac@test.com',
                 'name' => 'Maria Souza (Multi-Clínica)',
-                'role' => 'paciente'
+                'role' => 'paciente',
             ],
             [
                 'email' => 'jose@test.com',
                 'name' => 'José Santos (Apenas Alpha)',
-                'role' => 'paciente'
+                'role' => 'paciente',
             ],
             [
                 'email' => 'aluno@test.com',
                 'name' => 'Carlos Aluno (Sem Clínica)',
-                'role' => 'aluno'
+                'role' => 'aluno',
             ],
         ];
 
@@ -60,11 +60,11 @@ class TenantSecurityTestSeeder extends Seeder
 
         foreach ($users as $userData) {
             $existingId = \DB::table('users')->where('email', $userData['email'])->value('id');
-            
+
             $data = [
                 'name' => $userData['name'],
                 'uuid' => \Str::uuid(),
-                'password_hash' => \Hash::make('123456'),
+                'password_hash' => \Hash::make((string) env('TENANT_SECURITY_TEST_PASSWORD', \Str::password(16))),
                 'status' => 'active',
                 'email_verified_at' => now(),
                 'registration_approval_status' => 'approved',
@@ -90,7 +90,7 @@ class TenantSecurityTestSeeder extends Seeder
         $jose = $createdUsers['jose@test.com'];
 
         // 3. Criar Vínculos (Multi-tenant M:N)
-        
+
         // Dr. João trabalha em ambas
         $this->linkUserToClinic($profissional, $clinicaAlpha, 'professional');
         $this->linkUserToClinic($profissional, $clinicaBeta, 'professional');
@@ -103,7 +103,7 @@ class TenantSecurityTestSeeder extends Seeder
         $this->linkUserToClinic($jose, $clinicaAlpha, 'patient');
 
         // 4. Criar Dados Clínicos Isolados (Tratamentos)
-        
+
         // Maria na Alpha
         \DB::table('patient_treatment_plans')->insert([
             'patient_id' => $maria->id,
@@ -143,7 +143,7 @@ class TenantSecurityTestSeeder extends Seeder
             [
                 'user_id' => $user->id,
                 'academy_company_id' => $clinic->id,
-                'role' => $role
+                'role' => $role,
             ],
             [
                 'uuid' => \Str::uuid(),

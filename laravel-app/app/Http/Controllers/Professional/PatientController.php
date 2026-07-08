@@ -3,9 +3,25 @@
 namespace App\Http\Controllers\Professional;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ForcedPasswordResetUserMail;
+use App\Models\Plan;
+use App\Models\ProfessionalAppointment;
+use App\Models\ProfessionalPatient;
+use App\Models\ProfessionalPatientRequest;
+use App\Models\TrainingPlan;
 use App\Models\User;
+use App\Notifications\PatientActivationLink;
+use App\Rules\CpfValido;
+use App\Services\TransactionalMailService;
+use App\Support\Cpf;
+use App\Support\MailSendType;
+use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PatientController extends Controller
@@ -16,7 +32,7 @@ class PatientController extends Controller
     public function index(Request $request): View
     {
         $professional = auth()->user();
-        
+
         // Parâmetros de Filtro e Paginação
         $search = $request->get('search');
         $status = $request->get('status');
@@ -36,30 +52,34 @@ class PatientController extends Controller
 
         // Requirement: "listagem deve exibir somente usuários que possuam o perfil de Paciente"
         $query = $professional->patients()
-            ->whereHas('roles', function($q) {
+            ->whereHas('roles', function ($q) {
                 $q->where('name', 'paciente');
             })
             ->with([
-                'profile', 
+                'profile',
                 'roles',
-                'weightEntries' => function($q) { $q->orderBy('weighed_at', 'desc')->limit(2); },
-                'assessments'   => function($q) { $q->whereNotNull('bf_percent')->orderBy('assessment_date', 'desc')->limit(2); },
+                'weightEntries' => function ($q) {
+                    $q->orderBy('weighed_at', 'desc')->limit(2);
+                },
+                'assessments' => function ($q) {
+                    $q->whereNotNull('bf_percent')->orderBy('assessment_date', 'desc')->limit(2);
+                },
             ])
-            ->withCount(['foodEntries' => function($q) { 
-                $q->where('entry_date', '>=', now()->subDays(7)); 
+            ->withCount(['foodEntries' => function ($q) {
+                $q->where('entry_date', '>=', now()->subDays(7));
             }]);
 
         // Busca por Nome ou Email
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('users.name', 'like', "%{$search}%")
-                  ->orWhere('users.email', 'like', "%{$search}%");
+                    ->orWhere('users.email', 'like', "%{$search}%");
             });
         }
 
         // Filtro por Objetivo
         if ($goal) {
-            $query->whereHas('profile', function($q) use ($goal) {
+            $query->whereHas('profile', function ($q) use ($goal) {
                 $q->where('goal', $goal);
             });
         }
@@ -84,7 +104,7 @@ class PatientController extends Controller
         $paginatedPatients = $query->paginate($perPage)->withQueryString();
 
         // Transformação dos dados
-        $patients = $paginatedPatients->getCollection()->map(function($user) {
+        $patients = $paginatedPatients->getCollection()->map(function ($user) {
             $engagement = min(100, $user->food_entries_count * 7.5);
 
             $weights = $user->weightEntries;
@@ -104,18 +124,24 @@ class PatientController extends Controller
             }
 
             $nameParts = explode(' ', trim($user->name));
-            $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : ''));
+            $initials = strtoupper(mb_substr($nameParts[0], 0, 1).(count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : ''));
 
             $roles = $user->roles->pluck('name')->toArray();
             $isStudent = in_array('paciente', $roles);
             $isPatient = in_array('paciente', $roles);
             $profileType = 'Paciente';
-            if ($isStudent && $isPatient) $profileType = 'Paciente + Paciente';
-            elseif ($isStudent) $profileType = 'Paciente';
+            if ($isStudent && $isPatient) {
+                $profileType = 'Paciente + Paciente';
+            } elseif ($isStudent) {
+                $profileType = 'Paciente';
+            }
 
             // Requirement: "Mostrar status do paciente/aluno (Pendente, Ativo, Inativo)"
             $currentStatus = 'Inativo';
-            if ($user->pivot->status === 'Sim') {
+            /** @var \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot */
+            $pivot = $user->pivot ?? null;
+            $pivotStatus = $pivot ? $pivot->getAttribute('status') : null;
+            if ($pivotStatus === 'Sim') {
                 if ($user->status === 'pending') {
                     $currentStatus = 'Pendente';
                 } elseif ($user->status === 'active') {
@@ -130,11 +156,11 @@ class PatientController extends Controller
                 'name' => $user->name,
                 'initials' => $initials,
                 'status' => $currentStatus,
-                'engage_val' => (int)$engagement,
+                'engage_val' => (int) $engagement,
                 'last_weight' => $lastWeight,
-                'weight_evo' => ($weightEvo > 0 ? '+' : '') . number_format($weightEvo, 1),
-                'fat_evo' => ($fatEvo > 0 ? '+' : '') . number_format($fatEvo, 1),
-                'goal' => match($user->profile->goal ?? '') {
+                'weight_evo' => ($weightEvo > 0 ? '+' : '').number_format($weightEvo, 1),
+                'fat_evo' => ($fatEvo > 0 ? '+' : '').number_format($fatEvo, 1),
+                'goal' => match ($user->profile->goal ?? '') {
                     'maintain' => 'Saúde e Bem-Estar',
                     'gain' => 'Hipertrofia',
                     'lose' => 'Emagrecimento',
@@ -175,22 +201,22 @@ class PatientController extends Controller
         session(['active_patient_id' => $patient->id]);
 
         $user = $patient->load(['profile', 'weightEntries']);
-        
+
         // Registro de Auditoria (Item 13)
         $user->logAccess('view_patient_ehr');
 
         $profile = $user->profile;
-        
+
         $patient = [
             'id' => $user->id,
             'name' => $user->name,
-            'age' => $profile && $profile->birth_date ? \Carbon\Carbon::parse($profile->birth_date)->age : 'N/A',
+            'age' => $profile && $profile->birth_date ? Carbon::parse($profile->birth_date)->age : 'N/A',
             'height' => $profile->height_cm ?? 'N/A',
             'weight' => $user->weightEntries()->latest()->first()?->weight_kg ?? 'N/A',
             'bf' => $user->assessments()->orderBy('assessment_date', 'desc')->value('bf_percent') ?? 'N/A',
             'formula' => 'Cunningham',
             'activity_level' => $profile->activity_level ?? 'Não definido',
-            'goal' => match($profile->goal ?? '') {
+            'goal' => match ($profile->goal ?? '') {
                 'maintain' => 'Saúde e Bem-Estar',
                 'gain' => 'Hipertrofia',
                 'lose' => 'Emagrecimento',
@@ -203,7 +229,7 @@ class PatientController extends Controller
 
         // Dados de evolução para o gráfico (Reais)
         $assessments = $user->assessments()->orderBy('assessment_date', 'asc')->get();
-        
+
         $chartData = [
             'dates' => [],
             'weight' => [],
@@ -221,7 +247,7 @@ class PatientController extends Controller
                 $deltaWeight = $prev ? $assessment->weight_kg - $prev->weight_kg : 0;
                 $deltaBf = $prev ? $assessment->bf_percent - $prev->bf_percent : 0;
             }
-            
+
             $chartData['dates'][] = $assessment->assessment_date->format('d/m');
             $chartData['weight'][] = (float) $assessment->weight_kg;
             $chartData['bf'][] = (float) $assessment->bf_percent;
@@ -244,33 +270,33 @@ class PatientController extends Controller
 
     public function checkExisting(Request $request)
     {
-        $cpf = \App\Support\Cpf::normalize($request->input('cpf'));
+        $cpf = Cpf::normalize($request->input('cpf'));
         $email = $request->input('email');
-        
-        $userByCpf = $cpf ? \App\Models\User::withoutGlobalScopes()->where('cpf', $cpf)->first() : null;
-        $userByEmail = $email ? \App\Models\User::withoutGlobalScopes()->where('email', $email)->first() : null;
-        
+
+        $userByCpf = $cpf ? User::withoutGlobalScopes()->where('cpf', $cpf)->first() : null;
+        $userByEmail = $email ? User::withoutGlobalScopes()->where('email', $email)->first() : null;
+
         $existingUser = $userByCpf ?: $userByEmail;
-        
+
         if ($existingUser) {
             if ($existingUser->id === auth()->id() || $existingUser->hasRole('professional')) {
                 return response()->json(['exists' => true, 'can_reactivate' => false, 'message' => 'Profissional não pode ser cadastrado como paciente.']);
             }
-            
+
             $activeLink = auth()->user()->patients()->wherePivot('user_id', $existingUser->id)->wherePivot('status', 'Sim')->exists();
-            
+
             if ($activeLink) {
                 return response()->json(['exists' => true, 'can_reactivate' => false, 'message' => 'Este paciente/aluno já está vinculado ativamente ao seu painel.']);
             }
-            
+
             return response()->json([
                 'exists' => true,
                 'can_reactivate' => true,
                 'name' => $existingUser->name,
-                'message' => 'Tivemos um cadastro anterior encontrado para este aluno/paciente. Deseja reativar e vinculá-lo ao seu painel?'
+                'message' => 'Tivemos um cadastro anterior encontrado para este aluno/paciente. Deseja reativar e vinculá-lo ao seu painel?',
             ]);
         }
-        
+
         return response()->json(['exists' => false]);
     }
 
@@ -284,7 +310,7 @@ class PatientController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
-            'cpf' => ['required', 'string', new \App\Rules\CpfValido()],
+            'cpf' => ['required', 'string', new CpfValido],
             'phone' => 'required|string|max:20',
             'goal' => 'required|string',
             'sex' => 'required|in:M,F',
@@ -292,11 +318,11 @@ class PatientController extends Controller
             'force_reactivate' => 'nullable|boolean',
         ]);
 
-        $cpf = \App\Support\Cpf::normalize($validated['cpf']);
+        $cpf = Cpf::normalize($validated['cpf']);
 
         $professional = auth()->user();
         $maxPatients = $professional->getPlanLimit('max_patients') ?: $professional->getPlanLimit('max_students');
-        
+
         if ($maxPatients > 0) {
             $patientCount = $professional->patients()->count();
             if ($patientCount >= $maxPatients) {
@@ -307,10 +333,10 @@ class PatientController extends Controller
         $activationLink = null;
 
         try {
-            DB::transaction(function() use ($validated, $cpf, &$activationLink) {
+            DB::transaction(function () use ($validated, $cpf, &$activationLink) {
                 // Regra: Não permitir profissional como paciente
-                $userByCpf = \App\Models\User::withoutGlobalScopes()->where('cpf', $cpf)->first();
-                $userByEmail = \App\Models\User::withoutGlobalScopes()->where('email', $validated['email'])->first();
+                $userByCpf = User::withoutGlobalScopes()->where('cpf', $cpf)->first();
+                $userByEmail = User::withoutGlobalScopes()->where('email', $validated['email'])->first();
 
                 $existingUser = $userByCpf ?: $userByEmail;
 
@@ -321,87 +347,87 @@ class PatientController extends Controller
                     if ($existingUser->hasRole('professional')) {
                         throw new \Exception('Um profissional não pode ser cadastrado como paciente/aluno.');
                     }
-                    
+
                     if (empty($validated['force_reactivate'])) {
                         throw new \Exception('Já existe um usuário cadastrado com este e-mail ou CPF. Verifique os dados informados ou utilize a opção de recuperação de acesso.');
                     }
                 }
 
-            $user = $existingUser;
+                $user = $existingUser;
 
-            if (!$user) {
-                // Tenta gerar um username único baseado no e-mail
-                $baseUsername = explode('@', $validated['email'])[0];
-                $username = $baseUsername;
-                $counter = 1;
-                while (\App\Models\User::withoutGlobalScopes()->where('username', $username)->exists()) {
-                    $username = $baseUsername . $counter++;
+                if (! $user) {
+                    // Tenta gerar um username único baseado no e-mail
+                    $baseUsername = explode('@', $validated['email'])[0];
+                    $username = $baseUsername;
+                    $counter = 1;
+                    while (User::withoutGlobalScopes()->where('username', $username)->exists()) {
+                        $username = $baseUsername.$counter++;
+                    }
+
+                    $user = new User([
+                        'name' => $validated['name'],
+                        'email' => $validated['email'],
+                        'cpf' => $cpf,
+                        'phone' => $validated['phone'],
+                        'username' => $username,
+                        'onboarding_status' => 'pending',
+                        'perfil_paciente_completo' => false,
+                        'status' => 'pending',
+                        'plan_id' => Plan::where('name', 'Free')->value('id'),
+                        'academy_company_id' => auth()->user()->academy_company_id,
+                    ]);
+                    $user->password_hash = Hash::make(Str::random(16));
+                    $user->save();
+                } else {
+                    // Se o usuário já existe, atualizamos o nome para o informado pelo profissional nesta ficha,
+                    // caso o nome atual seja genérico ou incompleto.
+                    $user->update([
+                        'name' => $user->name ?: $validated['name'],
+                        'cpf' => $user->cpf ?: $cpf,
+                        'academy_company_id' => $user->academy_company_id ?: auth()->user()->academy_company_id,
+                    ]);
                 }
 
-                $user = new \App\Models\User([
-                    'name' => $validated['name'],
-                    'email' => $validated['email'],
-                    'cpf' => $cpf,
-                    'phone' => $validated['phone'],
-                    'username' => $username,
-                    'onboarding_status' => 'pending',
-                    'perfil_paciente_completo' => false,
-                    'status' => 'pending',
-                    'plan_id' => \App\Models\Plan::where('name', 'Free')->value('id'),
-                    'academy_company_id' => auth()->user()->academy_company_id,
-                ]);
-                $user->password_hash = \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16));
-                $user->save();
-            } else {
-                // Se o usuário já existe, atualizamos o nome para o informado pelo profissional nesta ficha,
-                // caso o nome atual seja genérico ou incompleto.
-                $user->update([
-                    'name' => $user->name ?: $validated['name'],
-                    'cpf' => $user->cpf ?: $cpf,
-                    'academy_company_id' => $user->academy_company_id ?: auth()->user()->academy_company_id
-                ]);
-            }
+                // Garante o perfil de Paciente (Item: "O sistema deve automaticamente definir o perfil como Paciente")
+                $user->assignRole('paciente');
 
-            // Garante o perfil de Paciente (Item: "O sistema deve automaticamente definir o perfil como Paciente")
-            $user->assignRole('paciente');
-
-            // Vincula ao profissional (Item: "Vincular o paciente ao profissional que realizou o cadastro")
-            auth()->user()->patients()->syncWithoutDetaching([$user->id => [
-                'data_cadastro' => now(), // Keeps original date if existing, else sets now
-                'status' => 'Sim',
-                'data_fim' => null,
-                'motivo_desvinculacao' => null,
-                'empresa_id' => auth()->user()->academy_company_id
-            ]]);
-            
-            // Força a atualização dos campos se for reativação (syncWithoutDetaching não atualiza campos extras se a linha já existir)
-            if (!empty($validated['force_reactivate'])) {
-                auth()->user()->patients()->updateExistingPivot($user->id, [
+                // Vincula ao profissional (Item: "Vincular o paciente ao profissional que realizou o cadastro")
+                auth()->user()->patients()->syncWithoutDetaching([$user->id => [
+                    'data_cadastro' => now(), // Keeps original date if existing, else sets now
                     'status' => 'Sim',
                     'data_fim' => null,
-                    'motivo_desvinculacao' => null
+                    'motivo_desvinculacao' => null,
+                    'empresa_id' => auth()->user()->academy_company_id,
+                ]]);
+
+                // Força a atualização dos campos se for reativação (syncWithoutDetaching não atualiza campos extras se a linha já existir)
+                if (! empty($validated['force_reactivate'])) {
+                    auth()->user()->patients()->updateExistingPivot($user->id, [
+                        'status' => 'Sim',
+                        'data_fim' => null,
+                        'motivo_desvinculacao' => null,
+                    ]);
+                    $user->status = 'active'; // Se o usuário estava inativo globalmente, reativa
+                    $user->save();
+                }
+
+                // Log de auditoria (Item 9 e 13)
+                $user->logAccess(! empty($validated['force_reactivate']) ? 'reactivate_link' : 'create_link');
+
+                // Perfil de saúde (dados antropométricos)
+                $user->profile()->updateOrCreate(['user_id' => $user->id], [
+                    'goal' => $validated['goal'],
+                    'sex' => $validated['sex'],
+                    'birth_date' => $validated['birth_date'],
                 ]);
-                $user->status = 'active'; // Se o usuário estava inativo globalmente, reativa
-                $user->save();
-            }
 
-            // Log de auditoria (Item 9 e 13)
-            $user->logAccess(!empty($validated['force_reactivate']) ? 'reactivate_link' : 'create_link');
-
-            // Perfil de saúde (dados antropométricos)
-            $user->profile()->updateOrCreate(['user_id' => $user->id], [
-                'goal' => $validated['goal'],
-                'sex' => $validated['sex'],
-                'birth_date' => $validated['birth_date'],
-            ]);
-
-            // Se o usuário for NOVO ou PENDENTE, gera o token de ativação
-            // (Item: "Gerar um link único de acesso. Enviar esse link ao paciente")
-            if ($user->status === 'pending') {
-                $activationLink = $this->createActivationToken($user);
-            }
-        });
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Se o usuário for NOVO ou PENDENTE, gera o token de ativação
+                // (Item: "Gerar um link único de acesso. Enviar esse link ao paciente")
+                if ($user->status === 'pending') {
+                    $activationLink = $this->createActivationToken($user);
+                }
+            });
+        } catch (UniqueConstraintViolationException $e) {
             return back()->withInput()->with('error', 'Erro de duplicidade: Este CPF ou E-mail já está em uso por outro usuário.');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -440,13 +466,13 @@ class PatientController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $patient->id,
+            'email' => 'required|email|unique:users,email,'.$patient->id,
             'goal' => 'required|string',
             'sex' => 'required|in:M,F',
             'birth_date' => 'required|date|before:today',
         ]);
 
-        DB::transaction(function() use ($patient, $validated) {
+        DB::transaction(function () use ($patient, $validated) {
             $patient->update([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -474,23 +500,23 @@ class PatientController extends Controller
             'professional_code' => 'required|exists:users,professional_code',
         ]);
 
-        $newProfessional = \App\Models\User::where('professional_code', $request->professional_code)->firstOrFail();
+        $newProfessional = User::where('professional_code', $request->professional_code)->firstOrFail();
         $currentProfessional = auth()->user();
 
-        DB::transaction(function() use ($patient, $newProfessional) {
+        DB::transaction(function () use ($patient, $newProfessional) {
             // Cria solicitação de transferência
-            \App\Models\ProfessionalPatientRequest::updateOrCreate(
+            ProfessionalPatientRequest::updateOrCreate(
                 [
                     'patient_id' => $patient->id,
                     'professional_id' => $newProfessional->id,
-                    'status' => 'pending'
+                    'status' => 'pending',
                 ],
                 [
                     'request_date' => now(),
-                    'message' => 'Transferência'
+                    'message' => 'Transferência',
                 ]
             );
-            
+
             // Log de auditoria
             $patient->logAccess('requested_transfer_professional');
         });
@@ -501,36 +527,36 @@ class PatientController extends Controller
     public function deactivate(Request $request, User $patient)
     {
         $request->validate([
-            'motivo_desvinculacao' => 'nullable|string|max:500'
+            'motivo_desvinculacao' => 'nullable|string|max:500',
         ]);
 
         $professional = auth()->user();
         $this->authorizePatient($patient, 'update');
 
-        DB::transaction(function() use ($request, $professional, $patient) {
+        DB::transaction(function () use ($request, $professional, $patient) {
             // 1. Inativa o vínculo na tabela pivô
             $professional->patients()->updateExistingPivot($patient->id, [
                 'status' => 'Não',
                 'data_fim' => now(),
-                'motivo_desvinculacao' => $request->input('motivo_desvinculacao')
+                'motivo_desvinculacao' => $request->input('motivo_desvinculacao'),
             ]);
-            
+
             // 2. Limpa da sessão se for o paciente ativo no momento
             if (session('active_patient_id') == $patient->id) {
                 session()->forget('active_patient_id');
             }
 
             // 3. Cancela agendamentos futuros
-            \App\Models\ProfessionalAppointment::where('professional_id', $professional->id)
+            ProfessionalAppointment::where('professional_id', $professional->id)
                 ->where('patient_id', $patient->id)
                 ->where('appointment_at', '>', now())
                 ->update(['status' => 'cancelled']);
 
             // 4. Inativa os treinos do paciente prescritos por esse profissional
-            \App\Models\TrainingPlan::where('professional_id', $professional->id)
+            TrainingPlan::where('professional_id', $professional->id)
                 ->where('user_id', $patient->id)
                 ->update(['is_active' => false]);
-                
+
             // 5. Log de auditoria
             $patient->logAccess('deactivate_link');
         });
@@ -548,7 +574,7 @@ class PatientController extends Controller
         if ($patient->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Este paciente/aluno já está ativo ou não está pendente.'
+                'message' => 'Este paciente/aluno já está ativo ou não está pendente.',
             ], 400);
         }
 
@@ -557,35 +583,35 @@ class PatientController extends Controller
         return response()->json([
             'success' => true,
             'link' => $link,
-            'message' => 'Link de ativação gerado com sucesso.'
+            'message' => 'Link de ativação gerado com sucesso.',
         ]);
     }
 
     /**
      * Helper para criar token de ativação e retornar o link.
      */
-    private function createActivationToken(\App\Models\User $user): string
+    private function createActivationToken(User $user): string
     {
         // Inativa tokens anteriores de qualquer tipo para este paciente (Item 7)
         $user->accessTokens()->where('status', 'active')->update(['status' => 'revoked']);
 
-        $token = \Illuminate\Support\Str::random(64);
-        
+        $token = Str::random(64);
+
         $user->accessTokens()->create([
             'token_hash' => hash('sha256', $token),
             'expires_at' => now()->addHours(24),
             'status' => 'active',
-            'type' => 'activation'
+            'type' => 'activation',
         ]);
 
         $url = route('patient.activate.show', ['token' => $token]);
 
         // Envia notificação por e-mail
         try {
-            $user->notify(new \App\Notifications\PatientActivationLink($url, $user->name));
+            $user->notify(new PatientActivationLink($url, $user->name));
         } catch (\Exception $e) {
             // Log do erro silencioso para não interromper o fluxo se o e-mail falhar
-            \Illuminate\Support\Facades\Log::error('Falha ao enviar e-mail de ativação: ' . $e->getMessage());
+            Log::error('Falha ao enviar e-mail de ativação: '.$e->getMessage());
         }
 
         return $url;
@@ -599,21 +625,21 @@ class PatientController extends Controller
         $this->authorizePatient($patient);
 
         // Gera um token aleatório e seguro
-        $token = \Illuminate\Support\Str::random(32);
-        
+        $token = Str::random(32);
+
         // Salva o hash no banco (Regra 25)
         $patient->accessTokens()->create([
             'token_hash' => hash('sha256', $token),
             'expires_at' => now()->addDays(7), // Token válido por 7 dias
             'status' => 'active',
-            'type' => 'access'
+            'type' => 'access',
         ]);
 
         $link = route('access', ['token' => $token]);
 
         return response()->json([
             'success' => true,
-            'link' => $link
+            'link' => $link,
         ]);
     }
 
@@ -623,35 +649,35 @@ class PatientController extends Controller
     public function setActivePatient(Request $request)
     {
         $request->validate([
-            'patient_id' => 'required|exists:users,id'
+            'patient_id' => 'required|exists:users,id',
         ]);
 
         $professional = auth()->user();
         $patientId = $request->patient_id;
 
         // Verifica se o profissional tem acesso a este paciente
-        $hasAccess = \App\Models\ProfessionalPatient::where('profissional_id', $professional->id)
+        $hasAccess = ProfessionalPatient::where('profissional_id', $professional->id)
             ->where('user_id', $patientId)
             ->whereIn('status', ['Sim', 'PENDENTE'])
             ->exists();
 
-        if (!$hasAccess) {
+        if (! $hasAccess) {
             return response()->json([
                 'success' => false,
-                'message' => 'Você não tem permissão para acessar este paciente/aluno.'
+                'message' => 'Você não tem permissão para acessar este paciente/aluno.',
             ], 403);
         }
 
         session(['active_patient_id' => $patientId]);
 
         // Atualizar o timestamp de último acesso no pivot
-        \App\Models\ProfessionalPatient::where('profissional_id', $professional->id)
+        ProfessionalPatient::where('profissional_id', $professional->id)
             ->where('user_id', $patientId)
             ->update(['last_accessed_at' => now()]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Paciente ativo atualizado com sucesso.'
+            'message' => 'Paciente ativo atualizado com sucesso.',
         ]);
     }
 
@@ -665,7 +691,7 @@ class PatientController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Paciente ativo removido.'
+            'message' => 'Paciente ativo removido.',
         ]);
     }
 
@@ -680,11 +706,11 @@ class PatientController extends Controller
         $patientsQuery = $professional->patients()
             ->wherePivotIn('status', ['active', 'pending']);
 
-        if (!empty($query)) {
-            $patientsQuery->where(function($q) use ($query) {
+        if (! empty($query)) {
+            $patientsQuery->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%")
-                  ->orWhere('cpf', 'like', "%{$query}%");
+                    ->orWhere('email', 'like', "%{$query}%")
+                    ->orWhere('cpf', 'like', "%{$query}%");
             });
         }
 
@@ -693,42 +719,42 @@ class PatientController extends Controller
         return response()->json($patients);
     }
 
-    public function approve(\Illuminate\Http\Request $request, User $patient)
+    public function approve(Request $request, User $patient)
     {
         $professional = auth()->user();
 
         $pivot = $professional->patients()->where('users.id', $patient->id)->first()?->pivot;
 
-        if (!$pivot) {
+        if (! $pivot) {
             return response()->json(['success' => false, 'message' => 'Paciente não encontrado.'], 403);
         }
 
-        if ($patient->status !== 'pending' && $pivot->status !== 'PENDENTE') {
+        if ($patient->status !== 'pending' && $pivot->getAttribute('status') !== 'PENDENTE') {
             return response()->json(['success' => false, 'message' => 'O paciente já não está pendente.']);
         }
 
         $generatedPassword = null;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($patient, $professional, $pivot, &$generatedPassword) {
-            
+        DB::transaction(function () use ($patient, $professional, $pivot, &$generatedPassword) {
+
             // Se o paciente foi cadastrado pelo profissional (status = pending, pivot = Sim)
             // Ele precisa de uma senha temporária
-            if ($patient->status === 'pending' && $pivot->status === 'Sim') {
-                $generatedPassword = \Illuminate\Support\Str::password(16, true, true, true, false);
-                $patient->password_hash = \Illuminate\Support\Facades\Hash::make($generatedPassword);
+            if ($patient->status === 'pending' && $pivot->getAttribute('status') === 'Sim') {
+                $generatedPassword = Str::password(16, true, true, true, false);
+                $patient->password_hash = Hash::make($generatedPassword);
                 $patient->force_password_change = true;
                 $patient->temp_password_expires_at = now()->addHours(24);
             }
 
             // Ativa o usuário globalmente
             $patient->status = 'active';
-            if (!$patient->activated_at) {
+            if (! $patient->activated_at) {
                 $patient->activated_at = now();
             }
             $patient->save();
 
             // Atualiza o status na tabela pivô se for PENDENTE (paciente que se cadastrou sozinho)
-            if ($pivot->status === 'PENDENTE') {
+            if ($pivot->getAttribute('status') === 'PENDENTE') {
                 $professional->patients()->updateExistingPivot($patient->id, ['status' => 'Sim']);
             }
         });
@@ -736,16 +762,16 @@ class PatientController extends Controller
         // Enviar e-mail de boas-vindas com a senha temporária se foi gerada
         if ($generatedPassword) {
             try {
-                app(\App\Services\TransactionalMailService::class)->sendToUser(
-                    new \App\Mail\ForcedPasswordResetUserMail($patient, $generatedPassword),
+                app(TransactionalMailService::class)->sendToUser(
+                    new ForcedPasswordResetUserMail($patient, $generatedPassword),
                     $patient,
                     $patient->academy_company_id,
-                    \App\Enums\MailSendType::PASSWORD_RESET,
+                    MailSendType::PASSWORD_RESET,
                     'Seu acesso foi liberado',
                     'Liberação de acesso por profissional'
                 );
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Erro ao enviar e-mail de aprovação de paciente: ' . $e->getMessage());
+                Log::error('Erro ao enviar e-mail de aprovação de paciente: '.$e->getMessage());
             }
 
             return response()->json([
@@ -768,8 +794,3 @@ class PatientController extends Controller
         $this->authorize("professionalPatient.{$ability}", $patient);
     }
 }
-
-
-
-
-

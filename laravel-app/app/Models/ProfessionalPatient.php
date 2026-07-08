@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfessionalPatient extends Model
 {
@@ -28,26 +29,26 @@ class ProfessionalPatient extends Model
         'data_fim',
         'motivo_desvinculacao',
         'is_favorite',
-        'last_accessed_at'
+        'last_accessed_at',
     ];
 
     protected $casts = [
         'patient_permissions' => 'array',
         'is_favorite' => 'boolean',
-        'last_accessed_at' => 'datetime'
+        'last_accessed_at' => 'datetime',
     ];
 
-    public function professional()
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(User::class, 'profissional_id');
     }
 
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function actor()
+    public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'linked_by');
     }

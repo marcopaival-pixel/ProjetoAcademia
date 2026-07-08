@@ -77,7 +77,7 @@ class ProfessionalSearchController extends Controller
     {
         $patient = auth()->user();
 
-        if (strtolower($patient->profile->name) === 'aluno') {
+        if (strtolower($patient->profile->getAttribute('name')) === 'aluno') {
             abort(403, 'Acesso Negado: Pacientes não têm permissão para agendar consultas diretamente via portal.');
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Api\V1\Concerns\FormatsApiResponses;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -49,7 +50,7 @@ class ProfessionalPatientController extends Controller
             ->with(['profile', 'weightEntries' => fn ($q) => $q->orderByDesc('weighed_at')->limit(1)])
             ->first();
 
-        if ($linked === null) {
+        if (! $linked instanceof User) {
             return $this->error('Sem vínculo com este aluno.', 403, 'forbidden');
         }
 
@@ -74,7 +75,9 @@ class ProfessionalPatientController extends Controller
     private function formatPatientSummary(User $patient): array
     {
         $linkStatus = 'Inativo';
-        if ($patient->pivot?->status === 'Sim') {
+        /** @var \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot */
+        $pivot = $patient->pivot ?? null;
+        if ($pivot && ($pivot->status ?? null) === 'Sim') {
             $linkStatus = $patient->status === 'pending' ? 'Pendente' : 'Ativo';
         }
 
@@ -83,7 +86,9 @@ class ProfessionalPatientController extends Controller
             'name' => $patient->name,
             'email' => $patient->email,
             'status' => $linkStatus,
-            'last_activity_at' => $patient->last_activity_at?->toIso8601String(),
+            'last_activity_at' => $patient->last_activity_at instanceof CarbonInterface
+                ? $patient->last_activity_at->toIso8601String()
+                : $patient->last_activity_at,
         ];
     }
 }

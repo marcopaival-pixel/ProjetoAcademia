@@ -48,18 +48,19 @@ class ShopAdminReportController extends Controller
             $until
         );
 
+        /** @var \App\Models\ShopVendor $vendor */
         $vendor = ShopVendor::findOrFail($validated['vendor_id']);
 
         AdminLog::create([
             'user_id' => auth()->id(),
-            'action' => "Marcou {$updated} comissão(ões) shopping como pagas — vendor #{$vendor->id}",
+            'action' => "Marcou {$updated} comissão(ões) shopping como pagas — vendor #{$vendor->getAttribute('id')}",
             'ip_address' => $request->ip(),
-            'payload' => ['vendor_id' => $vendor->id, 'updated' => $updated, 'until' => $until->toDateString()],
+            'payload' => ['vendor_id' => $vendor->getAttribute('id'), 'updated' => $updated, 'until' => $until->toDateString()],
         ]);
 
         return redirect()
             ->route('admin.shop.reports.index', $request->only(['from', 'to']))
-            ->with('success', "Foram liquidadas {$updated} linha(s) de comissão para {$vendor->name}.");
+            ->with('success', "Foram liquidadas {$updated} linha(s) de comissão para {$vendor->getAttribute('name')}.");
     }
 
     public function exportCsv(Request $request): StreamedResponse
@@ -85,10 +86,13 @@ class ShopAdminReportController extends Controller
                     'Pedido', 'Aluno', 'E-mail', 'Total', 'Desconto', 'Status', 'Pago em', 'Gateway',
                 ], ';');
                 foreach ($orders as $order) {
+                    /** @var \App\Models\User|null $orderUser */
+                    $orderUser = $order->user;
+
                     fputcsv($out, [
                         $order->order_number,
-                        $order->user?->name ?? '',
-                        $order->user?->email ?? '',
+                        $orderUser?->getAttribute('name') ?? '',
+                        $orderUser?->getAttribute('email') ?? '',
                         number_format((float) $order->total, 2, '.', ''),
                         number_format((float) $order->discount_amount, 2, '.', ''),
                         $order->status,

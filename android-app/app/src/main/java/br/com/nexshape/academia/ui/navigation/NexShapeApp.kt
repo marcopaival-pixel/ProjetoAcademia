@@ -53,6 +53,8 @@ import br.com.nexshape.academia.ui.chat.ChatScreen
 import br.com.nexshape.academia.ui.evolution.EvolutionScreen
 import br.com.nexshape.academia.ui.home.HomeScreen
 import br.com.nexshape.academia.ui.login.LoginScreen
+import br.com.nexshape.academia.ui.login.ProfileSelectorScreen
+import br.com.nexshape.academia.ui.login.roleToCardData
 import br.com.nexshape.academia.ui.nutrition.NutritionScreen
 import br.com.nexshape.academia.ui.profile.ProfileScreen
 import br.com.nexshape.academia.ui.professional.ProAgendaScreen
@@ -100,6 +102,7 @@ fun NexShapeApp() {
     }
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var appMode by remember { mutableStateOf(sessionPreferences.getAppMode()) }
+    var showRoleSelector by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner, isLoggedIn) {
         if (!isLoggedIn) {
@@ -120,7 +123,35 @@ fun NexShapeApp() {
             onLoggedIn = {
                 isLoggedIn = true
                 isUnlocked = true
+                ApiClient.tokenStore().saveActiveRole(null)
+                ApiClient.tokenStore().saveActiveTenant(null)
                 appMode = sessionPreferences.getAppMode()
+            },
+        )
+        return
+    }
+
+    // Seletor de perfil para usuários com múltiplos papéis
+    if (showRoleSelector) {
+        val userName = ApiClient.tokenStore().getName() ?: "Usuário"
+        val availableRoles = ApiClient.tokenStore().getAvailableRoles()
+        ProfileSelectorScreen(
+            userName = userName,
+            availableRoles = availableRoles,
+            onRoleSelected = { selectedRole ->
+                ApiClient.tokenStore().saveActiveRole(selectedRole)
+                showRoleSelector = false
+                // Mapear role selecionada para AppMode
+                when (selectedRole) {
+                    "professional", "instructor", "supervisor", "admin", "clinic_admin" -> {
+                        appMode = AppMode.PROFESSIONAL
+                        sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
+                    }
+                    else -> {
+                        appMode = AppMode.STUDENT
+                        sessionPreferences.setAppMode(AppMode.STUDENT)
+                    }
+                }
             },
         )
         return
@@ -149,7 +180,12 @@ fun NexShapeApp() {
             authRepository.loadProfile()
                 .onSuccess { loaded ->
                     profile = loaded
-                    if (loaded.isProfessional && !loaded.isStudent) {
+                    val availableRoles = ApiClient.tokenStore().getAvailableRoles()
+                    val selectableCards = availableRoles.mapNotNull { roleToCardData(it) }
+
+                    if (selectableCards.size > 1 && ApiClient.tokenStore().getActiveRole().isNullOrBlank()) {
+                        showRoleSelector = true
+                    } else if (loaded.isProfessional && !loaded.isStudent) {
                         appMode = AppMode.PROFESSIONAL
                         sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
                     } else if (loaded.isStudent && !loaded.isProfessional) {

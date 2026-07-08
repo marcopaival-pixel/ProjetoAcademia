@@ -78,9 +78,9 @@ class ExecutiveDashboardService
 
             $churnRate = $saasMetrics->getChurnRate();
 
-            $premiumActive = $overview['premium_subscriptions_active'];
+            $premiumActive = $overview['premium_subscriptions_active'] ?? 0;
             $retentionRate = $overview['total_users'] > 0
-                ? round(($overview['active_users_30d'] / max(1, $overview['total_users'])) * 100, 1)
+                ? round((($overview['active_users_30d'] ?? 0) / max(1, $overview['total_users'])) * 100, 1)
                 : 0;
 
             $usersByCity = DB::table('user_profiles')
@@ -137,7 +137,7 @@ class ExecutiveDashboardService
                 'inactive_users' => $inactiveUsers,
                 'pending_users' => $pendingUsers,
                 'premium_active' => $premiumActive,
-                'active_users_30d' => $overview['active_users_30d'],
+                'active_users_30d' => $overview['active_users_30d'] ?? 0,
                 'new_users_7d' => $overview['new_users_7d'],
                 'total_clinics' => $totalClinics,
                 'total_academies' => $totalAcademies,
@@ -213,7 +213,8 @@ class ExecutiveDashboardService
             ? "strftime('%Y-%m', created_at)"
             : "DATE_FORMAT(created_at, '%Y-%m')";
 
-        $rows = User::select(
+            /** @var \Illuminate\Support\Collection $rows */
+            $rows = User::select(
             DB::raw("{$monthExpr} as month"),
             DB::raw('count(*) as total')
         )
@@ -222,11 +223,14 @@ class ExecutiveDashboardService
             ->orderBy('month')
             ->get();
 
-        return $rows->map(fn ($r) => [
-            'month' => $r->month,
-            'label' => Carbon::createFromFormat('Y-m', $r->month)->translatedFormat('M/y'),
-            'total' => (int) $r->total,
-        ])->values()->all();
+        return $rows->map(function ($r) {
+            $month = $r->month ?? ($r->{'month'} ?? '');
+            return [
+                'month' => $month,
+                'label' => $month ? Carbon::createFromFormat('Y-m', $month)->translatedFormat('M/y') : '',
+                'total' => (int) ($r->total ?? 0),
+            ];
+        })->values()->all();
     }
 
     private function getMonthlyRevenue(int $months): array

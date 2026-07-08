@@ -47,6 +47,11 @@ class TrainingPlan extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function professional(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'professional_id');
+    }
+
     public function exercises(): HasMany
     {
         return $this->hasMany(TrainingPlanExercise::class)->orderBy('position');

@@ -37,7 +37,14 @@
                     <div class="bg-zinc-900 border border-white/5 p-5 rounded-3xl hover:border-white/10 hover:bg-zinc-800/50 transition-all cursor-grab active:cursor-grabbing shadow-sm shadow-black/20 group/card relative" data-id="{{ $lead->id }}">
                         <div class="flex justify-between items-start mb-3">
                             <span class="text-[8px] text-zinc-600 font-black uppercase tracking-wider">{{ $lead->origem ?? 'Direto' }}</span>
-                            <div class="w-2 h-2 rounded-full bg-{{$lead->responsavel_id ? 'blue' : 'zinc'}}-500/50"></div>
+                            <div class="flex items-center gap-2">
+                                @if($lead->ai_probability)
+                                <span class="text-[8px] font-black {{ $lead->ai_probability > 70 ? 'text-emerald-500' : ($lead->ai_probability < 30 ? 'text-red-500' : 'text-yellow-500') }} bg-zinc-800 px-2 py-0.5 rounded-full">
+                                    {{ $lead->ai_probability }}%
+                                </span>
+                                @endif
+                                <div class="w-2 h-2 rounded-full bg-{{$lead->responsavel_id ? 'blue' : 'zinc'}}-500/50"></div>
+                            </div>
                         </div>
                         <h4 class="text-sm font-bold text-white mb-1">{{ $lead->nome }}</h4>
                         <p class="text-[10px] text-zinc-500 font-bold uppercase truncate">{{ $lead->empresa ?? 'Pessoa Física' }}</p>

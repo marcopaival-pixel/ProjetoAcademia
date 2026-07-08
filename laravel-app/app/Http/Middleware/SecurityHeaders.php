@@ -44,16 +44,16 @@ class SecurityHeaders
         );
 
         // Content-Security-Policy: base segura
-        // - 'unsafe-eval' adicionado para suporte completo ao Alpine.js e plugins
+        // - 'unsafe-eval' fica restrito ao ambiente local para ferramentas de desenvolvimento
         // - Em local: permite servidor Vite (npm run dev, tipicamente :5173) para @vite carregar CSS/JS
         // - CDNs usados no layout (Font Awesome, etc.)
-        $scriptSrc = "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com";
+        $scriptSrc = "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com";
         $styleSrc = "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net";
         $connectSrc = "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://unpkg.com";
 
         if (app()->isLocal()) {
             // Em local, permite qualquer origem local/dev para facilitar Vite, Livewire, etc.
-            $scriptSrc .= ' http: https: ws: wss:';
+            $scriptSrc .= " 'unsafe-eval' http: https: ws: wss:";
             $styleSrc .= ' http: https:';
             $connectSrc .= ' http: https: ws: wss:';
         }

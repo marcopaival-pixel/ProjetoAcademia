@@ -2,27 +2,26 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Plan;
-use App\Models\PaymentWebhookLog;
 use App\Models\AdminSetting;
+use App\Models\PaymentWebhookLog;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class TestEnvironmentSeeder extends Seeder
 {
     public function run(): void
     {
         // 1. Criar Usuário de Teste (Admin)
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => 'teste@nexshape.com.br'],
             [
                 'name' => 'Usuário Beta Tester',
-                'password_hash' => Hash::make('Mudar@123'),
                 'is_admin' => true,
                 'status' => 'active',
             ]
         );
+        $user->setPlainPassword((string) env('TEST_USER_PASSWORD', Str::password(16)));
 
         // 2. Criar Logs de Webhook para inspeção
         PaymentWebhookLog::create([
@@ -32,16 +31,16 @@ class TestEnvironmentSeeder extends Seeder
             'payload' => [
                 'action' => 'payment.created',
                 'data' => ['id' => '778899'],
-                'user_id' => '123456789'
+                'user_id' => '123456789',
             ],
             'headers' => [
                 'user-agent' => 'MercadoPago-Webhook/1.0',
-                'x-signature' => 'abc123def456'
+                'x-signature' => 'abc123def456',
             ],
             'status_code' => 200,
             'status_message' => 'OK',
             'processing_time' => 0.1450,
-            'ip_address' => '127.0.0.1'
+            'ip_address' => '127.0.0.1',
         ]);
 
         PaymentWebhookLog::create([
@@ -53,17 +52,17 @@ class TestEnvironmentSeeder extends Seeder
                 'payment' => [
                     'id' => 'pay_554433',
                     'customer' => 'cus_001',
-                    'value' => 149.90
-                ]
+                    'value' => 149.90,
+                ],
             ],
             'headers' => [
                 'host' => 'nexshape.com.br',
-                'content-type' => 'application/json'
+                'content-type' => 'application/json',
             ],
             'status_code' => 200,
             'status_message' => 'OK',
             'processing_time' => 0.0890,
-            'ip_address' => '127.0.0.1'
+            'ip_address' => '127.0.0.1',
         ]);
 
         PaymentWebhookLog::create([
@@ -75,7 +74,7 @@ class TestEnvironmentSeeder extends Seeder
             'status_message' => 'Internal Server Error',
             'error' => 'Syntax error: unexpected token { in JSON at position 45',
             'processing_time' => 0.0120,
-            'ip_address' => '127.0.0.1'
+            'ip_address' => '127.0.0.1',
         ]);
 
         // 3. Garantir configurações de segurança dinâmicas
@@ -83,7 +82,7 @@ class TestEnvironmentSeeder extends Seeder
         AdminSetting::set('password_require_uppercase', 'true');
         AdminSetting::set('password_require_numeric', 'true');
         AdminSetting::set('password_require_special', 'true');
-        
+
         // 4. Configurações de Ambiente
         AdminSetting::set('app_debug', 'true');
         AdminSetting::set('app_url', 'http://localhost');

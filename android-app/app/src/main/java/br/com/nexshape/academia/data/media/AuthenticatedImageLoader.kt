@@ -20,7 +20,7 @@ object AuthenticatedImageLoader {
     }
 
     fun shutdown() {
-        instance?.let { CoilUtils.shutdown(it) }
+        instance?.shutdown()
         instance = null
     }
 }

@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\ProfessionalAppointment;
-use App\Models\AppointmentWaitlist;
-use App\Models\ProfessionalAvailability;
+use App\Models\AdminLog;
 use App\Models\AgendaSetting;
+use App\Models\AppointmentWaitlist;
+use App\Models\ProfessionalAppointment;
+use App\Models\ProfessionalAvailability;
+use App\Models\ProfessionalProfile;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
 
 class AgendaService
 {
@@ -56,10 +58,11 @@ class AgendaService
             $this->notificationService->notifyAppointmentScheduled($appointment);
 
             DB::commit();
+
             return $appointment;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Erro ao agendar: " . $e->getMessage());
+            Log::error('Erro ao agendar: '.$e->getMessage());
             throw $e;
         }
     }
@@ -70,7 +73,7 @@ class AgendaService
     public function cancelAppointment(User $user, ProfessionalAppointment $appointment)
     {
         $this->enforceProfileCancellationRules($user, $appointment);
-        
+
         $plan = $user->plan ? strtolower($user->plan->name) : 'free';
         $hoursUntilAppointment = Carbon::now()->diffInHours(Carbon::parse($appointment->appointment_at), false);
 
@@ -94,11 +97,11 @@ class AgendaService
     public function updateAppointmentStatus(User $user, ProfessionalAppointment $appointment, string $status)
     {
         // Validar se o usuário é o profissional ou tem permissão
-        if ($appointment->professional_id != $user->id && !$user->isAdministrator()) {
+        if ($appointment->professional_id != $user->id && ! $user->isAdministrator()) {
             throw ValidationException::withMessages(['error' => 'Sem permissão para alterar este agendamento.']);
         }
 
-        if (!array_key_exists($status, ProfessionalAppointment::getStatuses())) {
+        if (! array_key_exists($status, ProfessionalAppointment::getStatuses())) {
             throw ValidationException::withMessages(['error' => 'Status inválido.']);
         }
 
@@ -112,54 +115,54 @@ class AgendaService
     {
         $date = Carbon::parse($date);
         $dayOfWeek = $date->dayOfWeek;
-        
-        $profile = \App\Models\ProfessionalProfile::where('user_id', $professionalId)->first();
+
+        $profile = ProfessionalProfile::where('user_id', $professionalId)->first();
         $duration = $profile->appointment_duration ?? 60;
         $interval = $profile->appointment_interval ?? 15;
-        
+
         $availabilities = ProfessionalAvailability::where('professional_id', $professionalId)
             ->where('day_of_week', $dayOfWeek)
             ->get();
-            
+
         $bookedSlots = ProfessionalAppointment::where('professional_id', $professionalId)
             ->whereBetween('appointment_at', [
                 $date->copy()->startOfDay(),
                 $date->copy()->endOfDay(),
             ])
             ->whereIn('status', [
-                ProfessionalAppointment::STATUS_SCHEDULED, 
-                ProfessionalAppointment::STATUS_CONFIRMED, 
-                ProfessionalAppointment::STATUS_IN_PROGRESS, 
-                ProfessionalAppointment::STATUS_FINISHED
+                ProfessionalAppointment::STATUS_SCHEDULED,
+                ProfessionalAppointment::STATUS_CONFIRMED,
+                ProfessionalAppointment::STATUS_IN_PROGRESS,
+                ProfessionalAppointment::STATUS_FINISHED,
             ])
             ->pluck('appointment_at');
-            
+
         $slots = [];
-        
+
         foreach ($availabilities as $avail) {
-            $current = Carbon::parse($date->toDateString() . ' ' . $avail->start_time);
-            $end = Carbon::parse($date->toDateString() . ' ' . $avail->end_time);
-            
+            $current = Carbon::parse($date->toDateString().' '.$avail->start_time);
+            $end = Carbon::parse($date->toDateString().' '.$avail->end_time);
+
             while ($current->copy()->addMinutes($duration)->lte($end)) {
                 $isBooked = $bookedSlots->contains(function ($val) use ($current) {
                     return $val->eq($current);
                 });
-                
+
                 $slots[] = [
                     'time' => $current->format('H:i'),
-                    'available' => !$isBooked && ($date->isFuture() || ($date->isToday() && $current->isFuture()))
+                    'available' => ! $isBooked && ($date->isFuture() || ($date->isToday() && $current->isFuture())),
                 ];
-                
+
                 $current->addMinutes($duration + $interval);
             }
         }
-        
+
         return $slots;
     }
 
     public function addToWaitlist(User $user, $professionalId, $date)
     {
-        // Enforce aluno rules 
+        // Enforce aluno rules
         if ($user->profile->name === 'aluno' && $professionalId == null) {
             // Need a valid prof
         }
@@ -168,7 +171,7 @@ class AgendaService
             'patient_id' => $user->id,
             'professional_id' => $professionalId,
             'requested_date' => Carbon::parse($date),
-            'status' => 'waiting'
+            'status' => 'waiting',
         ]);
 
         $this->logAction($user, "Entrou na lista de espera para o dia {$date}");
@@ -188,7 +191,7 @@ class AgendaService
             return true;
         }
 
-        $profile = strtolower($user->profile?->name ?? $user->getRoleNames()->first() ?? '');
+        $profile = strtolower($user->profile?->name ?? collect($user->getRoleNames())->first() ?? '');
 
         if ($profile === 'professional' || $profile === 'instructor') {
             if ($professionalId != $user->id) {
@@ -293,9 +296,9 @@ class AgendaService
     {
         $profileName = $user->getRoleNames()[0] ?? 'user';
         Log::info("[AGENDA] UserID: {$user->id} | Perfil: {$profileName} | Action: {$action}");
-        \App\Models\AdminLog::create([
+        AdminLog::create([
             'user_id' => $user->id,
-            'action' => "AGENDA: " . $action . " (Por: {$user->name} - Perfil: {$profileName})",
+            'action' => 'AGENDA: '.$action." (Por: {$user->name} - Perfil: {$profileName})",
             'ip_address' => request()->ip(),
             'created_at' => now(),
         ]);

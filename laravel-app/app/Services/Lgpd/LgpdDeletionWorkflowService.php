@@ -32,11 +32,14 @@ class LgpdDeletionWorkflowService
      */
     public function pendingUsers(int $limit = 100): Collection
     {
-        return $this->pendingUsersQuery()
+        /** @var Collection<int, User> $users */
+        $users = $this->pendingUsersQuery()
             ->with(['consents' => fn ($q) => $q->where('consent_type', self::CONSENT_DELETION_REQUEST)->orderByDesc('created_at')])
             ->orderBy('id')
             ->limit($limit)
             ->get();
+
+        return $users;
     }
 
     public function pendingCount(): int

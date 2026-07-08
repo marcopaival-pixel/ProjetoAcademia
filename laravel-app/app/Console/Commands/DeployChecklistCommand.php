@@ -6,6 +6,7 @@ use App\Models\DeployRelease;
 use App\Services\Operations\SystemHealthService;
 use App\Support\AppVersion;
 use Illuminate\Console\Command;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -90,7 +91,7 @@ class DeployChecklistCommand extends Command
 
         foreach (['up' => '/up', 'health' => '/health', 'api_health' => '/api/v1/health'] as $label => $path) {
             try {
-                $request = \Illuminate\Http\Request::create($path, 'GET');
+                $request = Request::create($path, 'GET');
                 $response = app()->handle($request);
                 $status = $response->getStatusCode();
                 if ($status >= 200 && $status < 500) {
@@ -135,14 +136,14 @@ class DeployChecklistCommand extends Command
                 $failed++;
             }
 
-            if (trim((string) env('MP_WEBHOOK_SECRET')) !== '') {
+            if (trim((string) config('projeto.mp_webhook_secret')) !== '') {
                 $this->line('  [ok] MP_WEBHOOK_SECRET definido');
             } else {
                 $this->warn('  [!] MP_WEBHOOK_SECRET obrigatório em produção');
                 $failed++;
             }
 
-            if (trim((string) env('APP_PUBLIC_URL')) !== '') {
+            if (trim((string) config('projeto.public_url')) !== '') {
                 $this->line('  [ok] APP_PUBLIC_URL definido');
             } else {
                 $this->warn('  [!] APP_PUBLIC_URL não definido (Mercado Pago / webhooks)');

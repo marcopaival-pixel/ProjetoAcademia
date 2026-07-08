@@ -1,48 +1,30 @@
 <?php
 
-
-
 namespace App\Http\Resources\Api\V1;
 
-
-
+use App\Models\User;
 use App\Services\PanelAccessService;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Http\Resources\Json\JsonResource;
 
-
-
-/** @mixin \App\Models\User */
-
+/** @mixin User */
 class UserProfileResource extends JsonResource
-
 {
-
     /**
-
      * @return array<string, mixed>
-
      */
-
     public function toArray(Request $request): array
-
     {
 
         $panels = $this->resolvePanels();
 
         $activePatientId = $request->attributes->get('active_patient_id');
 
-
-
         if ($activePatientId === null && $this->hasRole(['aluno', 'paciente'])) {
 
             $activePatientId = (int) $this->id;
 
         }
-
-
 
         return [
 
@@ -52,6 +34,10 @@ class UserProfileResource extends JsonResource
 
             'email' => $this->email,
 
+            /**
+             * Roles normalizadas para o novo ecossistema.
+             * O array é garantido mesmo que o usuário não tenha roles.
+             */
             'roles' => $this->getRoleNames(),
 
             'is_premium' => (bool) $this->hasPremiumAccess(),
@@ -72,27 +58,37 @@ class UserProfileResource extends JsonResource
 
             'branding' => $this->resolveBranding(),
 
+            /**
+             * Tenants (Organizations) ao qual este usuário pertence.
+             * Permite ao app saber em quais centros esportivos o usuário está vinculado.
+             */
+            'organizations' => $this->whenLoaded('organizations', function () {
+                return $this->organizations->map(function (\App\Models\Organization $org) {
+                    /** @var \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot */
+                    $pivot = $org->getRelationValue('pivot');
+
+                    return [
+                        'id' => $org->id,
+                        'name' => $org->name,
+                        'type' => $org->type,
+                        'role' => $pivot?->getAttribute('role'),
+                    ];
+                })->values()->all();
+            }),
+
         ];
 
     }
 
-
-
     /**
-
      * @return list<string>
-
      */
-
     private function resolvePanels(): array
-
     {
 
         $panels = [];
 
         $service = app(PanelAccessService::class);
-
-
 
         foreach ([
 
@@ -109,29 +105,19 @@ class UserProfileResource extends JsonResource
         ] as $panel) {
 
             if ($service->userCanUsePanel($this->resource, $panel)) {
-
                 $panels[] = $panel;
-
             }
 
         }
-
-
 
         return $panels;
 
     }
 
-
-
     /**
-
      * @return array<string, mixed>
-
      */
-
     private function resolveBranding(): array
-
     {
 
         $defaults = [
@@ -144,21 +130,15 @@ class UserProfileResource extends JsonResource
 
         ];
 
-
-
         if ($this->hasRole(['aluno', 'paciente'])) {
 
+            /** @var \App\Models\User|null $professional */
             $professional = $this->professionals()
-
                 ->with('branding')
-
                 ->wherePivot('status', 'Sim')
-
                 ->first();
 
-
-
-            if ($professional?->branding) {
+            if ($professional && ($professional->branding ?? null)) {
 
                 return array_merge($defaults, [
 
@@ -174,8 +154,6 @@ class UserProfileResource extends JsonResource
 
         }
 
-
-
         if ($this->isProfessional() && $this->branding) {
 
             return array_merge($defaults, [
@@ -190,11 +168,7 @@ class UserProfileResource extends JsonResource
 
         }
 
-
-
         return $defaults;
 
     }
-
 }
-

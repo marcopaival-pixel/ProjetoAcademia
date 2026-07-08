@@ -106,8 +106,9 @@ class AssessmentController extends Controller
 
         $assessment = BodyAssessment::create($data);
 
+        /** @var \App\Models\UserProfile|null $profile */
         $profile = $user->profile;
-        if ($assessment->bf_percent === null && $profile && $profile->height_cm > 0) {
+        if ($assessment->bf_percent === null && $profile && ($profile->height_cm ?? 0) > 0) {
             $calcBf = \App\Services\Nutrition::calculateBodyFatPercent(
                 $profile->sex,
                 (float) $profile->height_cm,
@@ -116,9 +117,9 @@ class AssessmentController extends Controller
                 (float) $assessment->hips
             );
 
-            if ($calcBf !== null) {
-                $assessment->update(['bf_percent' => $calcBf]);
-            }
+                if ($calcBf !== null) {
+                    $assessment->update(['bf_percent' => $calcBf]);
+                }
         }
 
         $motor = app(\App\Services\IntelligenceMotorService::class);
@@ -132,9 +133,13 @@ class AssessmentController extends Controller
             );
 
             if ($profile && $profile->is_water_target_auto) {
+                $birthDateString = $profile->birth_date instanceof \Carbon\Carbon
+                    ? $profile->birth_date->toDateString()
+                    : (string) ($profile->birth_date ?? '');
+
                 $newWaterTarget = \App\Services\Nutrition::calculateWaterTarget(
                     (float) $data['weight_kg'],
-                    $profile->birth_date?->toDateString(),
+                    $birthDateString,
                     $profile->sex,
                     $profile->activity_level,
                     $profile->climate ?? 'moderate'

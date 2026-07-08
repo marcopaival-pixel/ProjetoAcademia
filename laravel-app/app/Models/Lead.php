@@ -20,6 +20,7 @@ class Lead extends Model
         'valor_estimado',
         'previsao_fechamento',
         'converted_user_id',
+        'converted_company_id',
     ];
 
     protected $casts = [
@@ -49,5 +50,25 @@ class Lead extends Model
     public function onboardingSteps()
     {
         return $this->hasMany(OnboardingStep::class)->orderBy('order');
+    }
+
+    public function convertedCompany()
+    {
+        return $this->belongsTo(AcademyCompany::class, 'converted_company_id');
+    }
+
+    public function getAiProbabilityAttribute()
+    {
+        return app(\App\Services\AiCommercialAssistantService::class)->estimateProbability($this);
+    }
+
+    public function getAiNextActionAttribute()
+    {
+        return app(\App\Services\AiCommercialAssistantService::class)->suggestNextAction($this);
+    }
+
+    public function getAiSummaryAttribute()
+    {
+        return app(\App\Services\AiCommercialAssistantService::class)->summarizeInteractions($this);
     }
 }

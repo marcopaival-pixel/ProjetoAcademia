@@ -2,17 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Especialidade;
+use App\Models\Plan;
+use App\Models\ProfessionalProfile;
+use App\Models\Role;
+use App\Models\TrainingPlan;
 use App\Models\User;
 use App\Models\UserProfile;
-use App\Models\ProfessionalProfile;
-use App\Models\TrainingPlan;
-use App\Models\Role;
-use App\Models\Plan;
-use App\Models\Especialidade;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class BulkImportService
 {
@@ -27,13 +26,13 @@ class BulkImportService
         $results = [
             'success_count' => 0,
             'error_count' => 0,
-            'errors' => []
+            'errors' => [],
         ];
 
         $rowCount = 0;
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
             $rowCount++;
-            
+
             // Basic data cleaning
             $row = array_map('trim', $row);
 
@@ -60,11 +59,12 @@ class BulkImportService
             } catch (\Exception $e) {
                 DB::rollBack();
                 $results['error_count']++;
-                $results['errors'][] = "Linha {$rowCount}: " . $e->getMessage();
+                $results['errors'][] = "Linha {$rowCount}: ".$e->getMessage();
             }
         }
 
         fclose($handle);
+
         return $results;
     }
 
@@ -73,7 +73,9 @@ class BulkImportService
      */
     private function importPaciente(array $row, int $line): void
     {
-        if (count($row) < 12) throw new \Exception("Dados insuficientes.");
+        if (count($row) < 12) {
+            throw new \Exception('Dados insuficientes.');
+        }
 
         $nome = $row[0];
         $cpf = preg_replace('/\D/', '', $row[1]);
@@ -90,9 +92,15 @@ class BulkImportService
         $obs = $row[12] ?? null;
         $proRespEmail = $row[13] ?? null;
 
-        if (empty($nome)) throw new \Exception("Nome obrigatório.");
-        if (empty($cpf)) throw new \Exception("CPF obrigatório.");
-        if (empty($email)) throw new \Exception("E-mail obrigatório.");
+        if (empty($nome)) {
+            throw new \Exception('Nome obrigatório.');
+        }
+        if (empty($cpf)) {
+            throw new \Exception('CPF obrigatório.');
+        }
+        if (empty($email)) {
+            throw new \Exception('E-mail obrigatório.');
+        }
 
         $user = User::where('cpf', $cpf)->orWhere('email', $email)->first();
 
@@ -107,6 +115,7 @@ class BulkImportService
                     );
                 }
             }
+
             return;
         }
 
@@ -117,12 +126,14 @@ class BulkImportService
             'cpf' => $cpf,
             'phone' => $phone,
             'status' => $status,
-            'password_hash' => Hash::make(Str::random(12)),
             'registration_approval_status' => 'approved',
         ]);
+        $user->setPlainPassword(Str::password(16), true);
 
         $role = Role::where('name', 'paciente')->first();
-        if ($role) $user->roles()->attach($role->id);
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
 
         UserProfile::create([
             'user_id' => $user->id,
@@ -145,7 +156,7 @@ class BulkImportService
                     'status' => 'Ativo',
                     'data_cadastro' => now(),
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -156,7 +167,9 @@ class BulkImportService
      */
     private function importProfessional(array $row, int $line): void
     {
-        if (count($row) < 7) throw new \Exception("Dados insuficientes.");
+        if (count($row) < 7) {
+            throw new \Exception('Dados insuficientes.');
+        }
 
         $nome = $row[0];
         $cpf = preg_replace('/\D/', '', $row[1]);
@@ -166,16 +179,30 @@ class BulkImportService
         $regNumber = $row[5];
         $status = strtolower($row[6]) === 'ativo' ? 'active' : 'inactive';
 
-        if (empty($nome)) throw new \Exception("Nome obrigatório.");
-        if (empty($cpf)) throw new \Exception("CPF obrigatório.");
-        if (empty($email)) throw new \Exception("E-mail obrigatório.");
-        if (empty($regNumber)) throw new \Exception("Registro profissional obrigatório.");
+        if (empty($nome)) {
+            throw new \Exception('Nome obrigatório.');
+        }
+        if (empty($cpf)) {
+            throw new \Exception('CPF obrigatório.');
+        }
+        if (empty($email)) {
+            throw new \Exception('E-mail obrigatório.');
+        }
+        if (empty($regNumber)) {
+            throw new \Exception('Registro profissional obrigatório.');
+        }
 
-        if (User::where('cpf', $cpf)->exists()) throw new \Exception("CPF já cadastrado.");
-        if (User::where('email', $email)->exists()) throw new \Exception("E-mail já cadastrado.");
+        if (User::where('cpf', $cpf)->exists()) {
+            throw new \Exception('CPF já cadastrado.');
+        }
+        if (User::where('email', $email)->exists()) {
+            throw new \Exception('E-mail já cadastrado.');
+        }
 
         $especialidade = Especialidade::where('nome', $especialidadeNome)->first();
-        if (!$especialidade) throw new \Exception("Especialidade '{$especialidadeNome}' não encontrada.");
+        if (! $especialidade) {
+            throw new \Exception("Especialidade '{$especialidadeNome}' não encontrada.");
+        }
 
         $user = User::create([
             'name' => $nome,
@@ -183,12 +210,14 @@ class BulkImportService
             'cpf' => $cpf,
             'phone' => $phone,
             'status' => $status,
-            'password_hash' => Hash::make(Str::random(12)),
             'registration_approval_status' => 'approved',
         ]);
+        $user->setPlainPassword(Str::password(16), true);
 
         $role = Role::where('name', 'professional')->first();
-        if ($role) $user->roles()->attach($role->id);
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
 
         ProfessionalProfile::create([
             'user_id' => $user->id,
@@ -205,7 +234,9 @@ class BulkImportService
      */
     private function importAluno(array $row, int $line): void
     {
-        if (count($row) < 10) throw new \Exception("Dados insuficientes.");
+        if (count($row) < 10) {
+            throw new \Exception('Dados insuficientes.');
+        }
 
         $nome = $row[0];
         $cpf = preg_replace('/\D/', '', $row[1]);
@@ -218,29 +249,41 @@ class BulkImportService
         $goalLabel = $row[8];
         $status = strtolower($row[9]) === 'ativo' ? 'active' : 'inactive';
 
-        if (empty($nome)) throw new \Exception("Nome obrigatório.");
-        if (empty($cpf)) throw new \Exception("CPF obrigatório.");
-        if (empty($email)) throw new \Exception("E-mail obrigatório.");
+        if (empty($nome)) {
+            throw new \Exception('Nome obrigatório.');
+        }
+        if (empty($cpf)) {
+            throw new \Exception('CPF obrigatório.');
+        }
+        if (empty($email)) {
+            throw new \Exception('E-mail obrigatório.');
+        }
 
-        if (User::where('cpf', $cpf)->exists()) throw new \Exception("CPF já cadastrado.");
-        if (User::where('email', $email)->exists()) throw new \Exception("E-mail já cadastrado.");
+        if (User::where('cpf', $cpf)->exists()) {
+            throw new \Exception('CPF já cadastrado.');
+        }
+        if (User::where('email', $email)->exists()) {
+            throw new \Exception('E-mail já cadastrado.');
+        }
 
-        $plainPassword = Str::random(12);
+        $plainPassword = Str::password(16);
         $user = User::create([
             'name' => $nome,
             'email' => $email,
             'cpf' => $cpf,
             'phone' => $phone,
             'status' => $status,
-            'password_hash' => Hash::make($plainPassword),
             'registration_approval_status' => 'approved',
         ]);
+        $user->setPlainPassword($plainPassword, true);
 
         $role = Role::where('name', 'aluno')->first();
-        if ($role) $user->roles()->attach($role->id);
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
 
         // Notificar administrador sobre a senha gerada
-        \App\Services\SystemMessageService::sendPasswordNotificationToAdmin($user, $plainPassword);
+        SystemMessageService::sendPasswordNotificationToAdmin($user, $plainPassword);
 
         // Map goal label to key if possible
         $goals = UserProfile::getAvailableGoals();
@@ -261,9 +304,9 @@ class BulkImportService
             'goal' => $goalKey,
             'disease_details' => $row[10] ?? null,
         ]);
-        
+
         // Handle plano if provided
-        if (!empty($row[11])) {
+        if (! empty($row[11])) {
             $plan = Plan::where('name', 'LIKE', "%{$row[11]}%")->first();
             if ($plan) {
                 $user->update(['plan_id' => $plan->id]);
@@ -276,7 +319,9 @@ class BulkImportService
      */
     private function importWorkout(array $row, int $line): void
     {
-        if (count($row) < 6) throw new \Exception("Dados insuficientes.");
+        if (count($row) < 6) {
+            throw new \Exception('Dados insuficientes.');
+        }
 
         $nome = $row[0];
         $desc = $row[1];
@@ -285,10 +330,14 @@ class BulkImportService
         $duracao = (int) $row[4];
         $status = strtolower($row[5]) === 'ativo' ? 1 : 0;
 
-        if (empty($nome)) throw new \Exception("Nome do treino obrigatório.");
-        
+        if (empty($nome)) {
+            throw new \Exception('Nome do treino obrigatório.');
+        }
+
         $validLevels = ['Iniciante', 'Intermediário', 'Avançado'];
-        if (!in_array($nivel, $validLevels)) throw new \Exception("Nível inválido. Use: Iniciante, Intermediário ou Avançado.");
+        if (! in_array($nivel, $validLevels)) {
+            throw new \Exception('Nível inválido. Use: Iniciante, Intermediário ou Avançado.');
+        }
 
         TrainingPlan::create([
             'user_id' => auth()->id(), // Admin as creator
@@ -307,7 +356,9 @@ class BulkImportService
      */
     private function parseDate(string $date): ?string
     {
-        if (empty($date)) return null;
+        if (empty($date)) {
+            return null;
+        }
         try {
             return Carbon::createFromFormat('d/m/Y', $date)->format('Y-m-d');
         } catch (\Exception $e) {

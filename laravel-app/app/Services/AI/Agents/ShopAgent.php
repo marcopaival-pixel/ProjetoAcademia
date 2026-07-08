@@ -94,7 +94,9 @@ class ShopAgent extends BaseAgent
         }
 
         // 3. Produtos em destaque alinhados ao objetivo do usuário (isolados por tenant)
-        $userGoal = $user->profile?->goal ?? null;
+        /** @var \App\Models\UserProfile|null $profile */
+        $profile = $user->profile;
+        $userGoal = $profile?->goal ?? null;
         $productQuery = ShopProduct::published()->inStock()->featured()
             ->when($companyId, fn ($q) => $q->where('academy_company_id', $companyId))
             ->limit(5);

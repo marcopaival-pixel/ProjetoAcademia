@@ -19,6 +19,17 @@ class AuthRepository(
             val response = ApiClient.api().login(LoginRequest(email.trim(), password))
             tokenStore.saveToken(response.accessToken, response.user.email, response.user.name)
             val profile = ApiClient.api().profile().data
+            
+            val availableRoles = profile.roles ?: emptyList()
+            tokenStore.saveAvailableRoles(availableRoles)
+            
+            if (availableRoles.size == 1) {
+                tokenStore.saveActiveRole(availableRoles.first())
+            } else {
+                tokenStore.saveActiveRole(null)
+                tokenStore.saveActiveTenant(null)
+            }
+
             appContext?.let { PushTokenManager.registerIfAvailable(it) }
             profile
         }.recoverCatching { error ->
@@ -37,6 +48,10 @@ class AuthRepository(
         tokenStore.clear()
         if (appContext != null) {
             ApiClient.sessionPreferences().clear()
+            
+            // Segurança: Limpar a base de dados offline e cancelar tarefas agendadas (WorkManager)
+            br.com.nexshape.academia.data.local.AppDatabase.get(appContext).clearAllTables()
+            androidx.work.WorkManager.getInstance(appContext).cancelAllWork()
         }
     }
 

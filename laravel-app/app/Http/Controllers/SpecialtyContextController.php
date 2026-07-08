@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Especialidade;
+use App\Models\ProfessionalProfile;
+use Illuminate\Http\Request;
 
 class SpecialtyContextController extends Controller
 {
@@ -13,26 +14,26 @@ class SpecialtyContextController extends Controller
     public function switch(Request $request)
     {
         $request->validate([
-            'especialidade_id' => 'required|exists:especialidades,id'
+            'especialidade_id' => 'required|exists:especialidades,id',
         ]);
 
         $user = auth()->user();
 
-        if (!$user || !$user->hasRole('professional')) {
+        if (! $user || ! $user->hasRole('professional')) {
             return response()->json(['error' => 'Acesso negado'], 403);
         }
 
         $profile = $user->professionalProfile;
-        
-        if (!$profile) {
+
+        if (! $profile instanceof ProfessionalProfile) {
             return response()->json(['error' => 'Perfil profissional não encontrado'], 404);
         }
 
         // Verifica se o profissional tem essa especialidade
-        $hasSpecialty = $profile->especialidade_id == $request->especialidade_id || 
+        $hasSpecialty = $profile->especialidade_id == $request->especialidade_id ||
                         $profile->especialidades()->where('especialidade_id', $request->especialidade_id)->exists();
 
-        if (!$hasSpecialty) {
+        if (! $hasSpecialty) {
             return response()->json(['error' => 'Especialidade não vinculada ao seu perfil'], 403);
         }
 

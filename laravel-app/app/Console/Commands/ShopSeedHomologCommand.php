@@ -14,7 +14,7 @@ class ShopSeedHomologCommand extends Command
     public function handle(): int
     {
         $this->info('A executar ShopHomologSeeder...');
-        $this->seed(ShopHomologSeeder::class);
+        app(ShopHomologSeeder::class)->run();
 
         return self::SUCCESS;
     }

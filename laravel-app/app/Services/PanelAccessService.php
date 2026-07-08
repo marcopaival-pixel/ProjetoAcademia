@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -42,19 +43,23 @@ class PanelAccessService
             return $sessionRole;
         }
 
-        if ($user->isAdministrator() && $user->roles->isEmpty()) {
+        if ($user->isAdministrator() && $user->roles()->count() === 0) {
             return 'admin';
         }
 
-        if ($user->roles->count() === 1) {
-            return (string) $user->roles->first()->name;
+        if ($user->roles()->count() === 1) {
+            /** @var Role|null $r */
+            $r = $user->roles()->first();
+            return (string) ($r?->name ?? 'aluno');
         }
 
         if ($user->isAdministrator()) {
             return 'admin';
         }
 
-        return (string) ($user->roles->first()?->name ?? 'aluno');
+        /** @var Role|null $r2 */
+        $r2 = $user->roles()->first();
+        return (string) ($r2?->name ?? 'aluno');
     }
 
     public function panelForActiveRole(string $activeRole, User $user): string

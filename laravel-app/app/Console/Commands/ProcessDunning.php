@@ -39,14 +39,19 @@ class ProcessDunning extends Command
             ->get();
 
         foreach ($overdueSubscriptions as $subscription) {
-            if (!$subscription->user) continue;
+            if (! $subscription->user) {
+                continue;
+            }
+
+            /** @var \App\Models\User|null $user */
+            $user = $subscription->user;
 
             // Dependendo dos dias de atraso, dispara e-mails diferentes
             $daysOverdue = $subscription->days_overdue;
 
             if ($daysOverdue == 1 || $daysOverdue == 3) {
                 // Alerta de falha no cartão
-                Mail::to($subscription->user->email)->queue(new PaymentFailedMail($subscription->user, $daysOverdue));
+                Mail::to($user->email)->queue(new PaymentFailedMail($user, $daysOverdue));
                 Log::info("Dunning: Enviado PaymentFailedMail para usuário {$subscription->user_id} (Atraso: {$daysOverdue} dias)");
             }
             
@@ -56,7 +61,7 @@ class ProcessDunning extends Command
                 app(\App\Services\SubscriptionService::class)->suspend($subscription, 'Inadimplência não resolvida após 5 dias');
                 
                 // Enviar aviso de suspensão
-                Mail::to($subscription->user->email)->queue(new SubscriptionSuspendedMail($subscription->user));
+                Mail::to($user->email)->queue(new SubscriptionSuspendedMail($user));
                 Log::info("Dunning: Assinatura suspensa e e-mail enviado para usuário {$subscription->user_id}");
             }
         }
