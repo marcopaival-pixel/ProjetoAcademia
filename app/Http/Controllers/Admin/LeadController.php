@@ -22,7 +22,11 @@ class LeadController extends Controller
     public function funnel()
     {
         $leadsByStatus = Lead::all()->groupBy('status');
-        $statuses = ['Novo', 'Em contato', 'Em negociação', 'Convertido', 'Perdido'];
+        $statuses = [
+            'Lead', 'Contato', 'Qualificado', 'Diagnóstico', 'Demonstração', 
+            'Proposta', 'Negociação', 'Fechado', 'Implantação', 'Treinamento', 
+            'Cliente Ativo', 'Perdido'
+        ];
         
         return view('admin.leads.funnel', compact('leadsByStatus', 'statuses'));
     }
@@ -42,7 +46,7 @@ class LeadController extends Controller
             'empresa' => 'nullable|string|max:255',
             'origem' => 'nullable|string|max:255',
             'responsavel_id' => 'nullable|exists:users,id',
-            'status' => 'required|in:Novo,Em contato,Em negociação,Convertido,Perdido',
+            'status' => 'required|in:Lead,Contato,Qualificado,Diagnóstico,Demonstração,Proposta,Negociação,Fechado,Implantação,Treinamento,Cliente Ativo,Perdido',
             'observacao' => 'nullable|string',
             'valor_estimado' => 'nullable|numeric|min:0',
             'previsao_fechamento' => 'nullable|date',
@@ -84,7 +88,7 @@ class LeadController extends Controller
             'empresa' => 'nullable|string|max:255',
             'origem' => 'nullable|string|max:255',
             'responsavel_id' => 'nullable|exists:users,id',
-            'status' => 'required|in:Novo,Em contato,Em negociação,Convertido,Perdido',
+            'status' => 'required|in:Lead,Contato,Qualificado,Diagnóstico,Demonstração,Proposta,Negociação,Fechado,Implantação,Treinamento,Cliente Ativo,Perdido',
             'observacao' => 'nullable|string',
             'valor_estimado' => 'nullable|numeric|min:0',
             'previsao_fechamento' => 'nullable|date',
@@ -153,7 +157,7 @@ class LeadController extends Controller
     public function updateStatus(Request $request, Lead $lead)
     {
         $validated = $request->validate([
-            'status' => 'required|in:Novo,Em contato,Em negociação,Convertido,Perdido',
+            'status' => 'required|in:Lead,Contato,Qualificado,Diagnóstico,Demonstração,Proposta,Negociação,Fechado,Implantação,Treinamento,Cliente Ativo,Perdido',
         ]);
 
         $lead->update(['status' => $validated['status']]);

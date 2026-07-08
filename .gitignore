@@ -1,5 +1,7 @@
 /.phpunit.cache
 /node_modules
+Fabrica/node_modules/
+/storage/phpstan/
 /public/build
 /public/hot
 /public/storage

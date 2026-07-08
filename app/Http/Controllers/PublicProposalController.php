@@ -11,8 +11,10 @@ class PublicProposalController extends Controller
     public function show($token)
     {
         $proposal = CommercialProposal::where('token', $token)->with(['lead', 'plan'])->firstOrFail();
-        
-        if ($proposal->validade->isPast() && $proposal->status == 'Pendente') {
+        /** @var \App\Models\CommercialProposal $proposal */
+        $plan = $proposal->getRelationValue('plan');
+
+        if ($proposal->getAttribute('validade')->isPast() && $proposal->getAttribute('status') == 'Pendente') {
             return view('public.proposals.expired', compact('proposal'));
         }
 
@@ -31,13 +33,16 @@ class PublicProposalController extends Controller
         $proposal->lead->update(['status' => 'Convertido']);
 
         // Cria o Contrato Digital
+        $plan = $proposal->getRelationValue('plan');
+        $planName = $plan ? ($plan->getAttribute('name') ?? '') : '';
+
         \App\Models\Contract::create([
-            'lead_id' => $proposal->lead_id,
-            'proposal_id' => $proposal->id,
+            'lead_id' => $proposal->getAttribute('lead_id'),
+            'proposal_id' => $proposal->getAttribute('id'),
             'status' => 'Assinado',
             'signed_at' => now(),
             'token' => \Illuminate\Support\Str::random(40),
-            'content' => "Contrato de prestação de serviços baseado na proposta {$proposal->token}. Plano: {$proposal->plan?->name}."
+            'content' => "Contrato de prestação de serviços baseado na proposta {$proposal->getAttribute('token')}. Plano: {$planName}."
         ]);
 
         // Inicializa Onboarding
@@ -49,8 +54,10 @@ class PublicProposalController extends Controller
             ['title' => 'Lançamento Oficial', 'order' => 5],
         ];
 
+        /** @var \App\Models\Lead $lead */
+        $lead = $proposal->getRelationValue('lead');
         foreach ($steps as $step) {
-            $proposal->lead->onboardingSteps()->create($step);
+            $lead->onboardingSteps()->create($step);
         }
 
         return back()->with('success', 'Proposta aceita com sucesso! Nossa equipe entrará em contato para o onboarding.');
