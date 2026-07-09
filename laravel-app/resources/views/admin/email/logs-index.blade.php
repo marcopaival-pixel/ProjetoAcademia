@@ -69,7 +69,7 @@
                             </td>
                             <td class="px-6 py-5 text-right">
                                 @if($log->erro)
-                                    <button type="button" class="text-rose-500/60 hover:text-rose-500 transition-colors" title="{{ $log->erro }}" onclick="alert('Detalhe do Erro:\n\n{{ addslashes($log->erro) }}')">
+                                    <button type="button" class="text-rose-500/60 hover:text-rose-500 transition-colors" title="{{ $log->erro }}" onclick="window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js('Detalhe do Erro: '.$log->erro), type: 'error' } }))">
                                         <i data-lucide="message-square-warning" class="w-4 h-4"></i>
                                     </button>
                                 @else

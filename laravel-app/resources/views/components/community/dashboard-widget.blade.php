@@ -1,20 +1,20 @@
 @props(['posts', 'showActions' => true])
 
-<div class="lg:col-span-12 group bg-zinc-900/50 backdrop-blur-3xl border border-white/5 p-12 rounded-[4rem] relative overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.5)] transition-all hover:border-emerald-500/20" x-data="{ loading: false }">
+<div class="lg:col-span-12 group bg-zinc-900/50 backdrop-blur-3xl border border-white/5 p-5 sm:p-8 lg:p-12 rounded-[2rem] sm:rounded-[3rem] lg:rounded-[4rem] relative overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.5)] transition-all hover:border-emerald-500/20" x-data="{ loading: false }">
     <!-- Mesh Gradient Background -->
     <div class="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none group-hover:scale-125 transition-transform duration-1000"></div>
     <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none group-hover:scale-125 transition-transform duration-1000"></div>
     
-    <div class="flex flex-col lg:flex-row items-center justify-between mb-16 relative z-10 gap-8">
-        <div class="flex items-center gap-6">
-            <div class="relative">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-10 sm:mb-16 relative z-10 gap-8">
+        <div class="flex items-start sm:items-center gap-4 sm:gap-6 min-w-0 w-full">
+            <div class="relative flex-shrink-0">
                 <div class="absolute -inset-2 bg-gradient-to-tr from-emerald-500 to-blue-500 rounded-3xl blur-md opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                <div class="w-16 h-16 bg-zinc-950 border border-white/10 text-emerald-500 rounded-2xl flex items-center justify-center shadow-2xl relative z-10">
-                    <i data-lucide="users" class="w-8 h-8"></i>
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-zinc-950 border border-white/10 text-emerald-500 rounded-2xl flex items-center justify-center shadow-2xl relative z-10">
+                    <i data-lucide="users" class="w-6 h-6 sm:w-8 sm:h-8"></i>
                 </div>
             </div>
-            <div>
-                <h3 class="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <div class="min-w-0 flex-1">
+                <h3 class="text-2xl sm:text-3xl md:text-4xl leading-none font-black text-white uppercase tracking-tighter flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     🗨️ Comunidade <span class="text-emerald-500 italic">NexShape</span>
                 </h3>
                 <div class="flex items-center gap-3 mt-2">
@@ -25,19 +25,19 @@
         </div>
         
         @if($showActions)
-        <div class="flex flex-wrap items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto">
             @auth
-                <button @click="$dispatch('open-post-modal')" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl shadow-emerald-500/20 active:scale-95">
+                <button @click="$dispatch('open-post-modal')" class="flex-1 sm:flex-none px-5 sm:px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 active:scale-95">
                     <i data-lucide="plus-circle" class="w-5 h-5"></i>
                     Nova Publicação
                 </button>
             @else
-                <a href="{{ route('login') }}" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl shadow-emerald-500/20 active:scale-95">
+                <a href="{{ route('login') }}" class="flex-1 sm:flex-none px-5 sm:px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 active:scale-95">
                     <i data-lucide="plus-circle" class="w-5 h-5"></i>
                     Participar Agora
                 </a>
             @endauth
-            <a href="{{ route('community.index') }}" class="px-8 py-4 bg-zinc-950/50 hover:bg-zinc-900 text-white border border-white/5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3 backdrop-blur-xl group/btn">
+            <a href="{{ route('community.index') }}" class="flex-1 sm:flex-none px-5 sm:px-8 py-4 bg-zinc-950/50 hover:bg-zinc-900 text-white border border-white/5 rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 backdrop-blur-xl group/btn">
                 Ir para o Feed
                 <i data-lucide="arrow-right" class="w-4 h-4 text-emerald-500 group-hover/btn:translate-x-1 transition-transform"></i>
             </a>

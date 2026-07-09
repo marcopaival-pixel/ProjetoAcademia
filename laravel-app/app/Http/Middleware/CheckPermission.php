@@ -28,6 +28,10 @@ class CheckPermission
             return redirect()->route('login')->with('error', 'Sua conta está bloqueada.');
         }
 
+        if ($user->is_demo && session('is_demo_mode')) {
+            return $next($request);
+        }
+
         if (! $user->hasPermission($permission)) {
             $panelRedirect = app(PanelAccessService::class)->wrongPanelRedirect($request, $user);
             if ($panelRedirect !== null) {

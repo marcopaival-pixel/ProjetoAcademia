@@ -138,7 +138,7 @@
 <script>
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert('Link copiado!');
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Link copiado!', type: 'success' } }));
         });
     }
 </script>

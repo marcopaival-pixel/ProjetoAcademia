@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
@@ -93,7 +94,13 @@ class SubscriptionController extends Controller
                     ->with('success', 'Assinatura iniciada. Aguarde a confirmação do pagamento.');
             });
         } catch (\Throwable $e) {
-            return back()->with('error', 'Falha ao processar pagamento: '.$e->getMessage());
+            Log::error('Falha ao processar assinatura do aluno.', [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'exception' => $e,
+            ]);
+
+            return back()->with('error', 'Não foi possível processar o pagamento agora. Tente novamente em instantes.');
         }
     }
 
@@ -102,20 +109,20 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'method' => 'required|in:card,pix,boleto',
             'card_token' => 'nullable',
-            'card_number' => 'nullable|string',
-            'card_expiry' => 'nullable|string',
-            'card_cvv' => 'nullable|string',
+            'card_last_four' => 'nullable|string|size:4',
+            'card_brand' => 'nullable|string|max:30',
+            'card_expiry' => 'nullable|string|max:10',
         ]);
 
         $user = auth()->user();
         $subscription = $this->getOrCreateSubscription($user);
 
         $cardData = [];
-        if ($validated['method'] === 'card' && $request->card_number) {
+        if ($validated['method'] === 'card' && $request->filled('card_token')) {
             $cardData = [
-                'card_brand' => 'card',
-                'card_last_four' => substr(str_replace(' ', '', $request->card_number), -4),
-                'card_expiry' => $request->card_expiry,
+                'card_brand' => $validated['card_brand'] ?? 'card',
+                'card_last_four' => $validated['card_last_four'] ?? null,
+                'card_expiry' => $validated['card_expiry'] ?? null,
             ];
         }
 
@@ -136,7 +143,7 @@ class SubscriptionController extends Controller
         if ($newPlan->price > ($subscription->plan->price ?? 0)) {
             if (!$pagamentoAtivo || $newPlan->price <= 0) {
                 $this->subscriptionService->upgrade($subscription, $newPlan);
-                return back()->with('success', 'Upgrade realizado com sucesso (Simulação Dev)!');
+                return back()->with('success', 'Upgrade realizado com sucesso.');
             }
 
             try {
@@ -167,7 +174,13 @@ class SubscriptionController extends Controller
                         ->with('success', 'Upgrade iniciado. Aguarde confirmação do pagamento no gateway.');
                 });
             } catch (\Throwable $e) {
-                return back()->with('error', 'Falha ao processar upgrade: '.$e->getMessage());
+                Log::error('Falha ao processar upgrade de assinatura do aluno.', [
+                    'user_id' => $user->id,
+                    'plan_id' => $newPlan->id,
+                    'exception' => $e,
+                ]);
+
+                return back()->with('error', 'Não foi possível processar o upgrade agora. Tente novamente em instantes.');
             }
         }
 

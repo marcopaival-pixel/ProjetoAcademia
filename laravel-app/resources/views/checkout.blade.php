@@ -46,6 +46,11 @@
     <div class="bg-zinc-900/30 backdrop-blur-3xl p-8 md:p-12 rounded-[3.5rem] border border-white/5 relative overflow-hidden">
         <div class="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/5 blur-[80px] rounded-full"></div>
 
+        <div x-show="errorMessage" x-transition class="mb-8 p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-300 text-sm font-bold flex items-center gap-3">
+            <i data-lucide="alert-circle" class="w-5 h-5 shrink-0"></i>
+            <span x-text="errorMessage"></span>
+        </div>
+
         <!-- ETAPA 1: Resumo do Plano -->
         <div x-show="currentStep === 1" x-transition.opacity.duration.400ms class="space-y-10">
             <div class="flex flex-col md:flex-row gap-10 items-center">
@@ -147,34 +152,16 @@
                             <span class="text-[10px] font-black uppercase tracking-widest" :class="formData.payment_method === 'pix' ? 'text-white' : 'text-zinc-500'">PIX</span>
                         </button>
                     </div>
-
-                    <!-- Card Fields -->
-                    <div x-show="formData.payment_method === 'credit_card'" x-transition class="space-y-6 pt-2">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-4 md:col-span-2">
-                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Número do Cartão</label>
-                                <input type="text" x-model="formData.card_number" placeholder="0000 0000 0000 0000"
-                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
-                            </div>
-                            <div class="space-y-4 md:col-span-2">
-                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nome Impresso</label>
-                                <input type="text" x-model="formData.card_name" placeholder="Como no cartão"
-                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none uppercase">
-                            </div>
-                            <div class="space-y-4">
-                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Validade (MM/AA)</label>
-                                <input type="text" x-model="formData.card_expiry" placeholder="MM/AA"
-                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
-                            </div>
-                            <div class="space-y-4">
-                                <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">CVV</label>
-                                <input type="text" x-model="formData.card_cvv" placeholder="123"
-                                       class="w-full bg-zinc-950 border border-zinc-800 text-white p-5 rounded-2xl focus:border-emerald-500 transition-all outline-none">
-                            </div>
+                    <div class="p-6 bg-blue-500/10 border border-blue-500/20 rounded-3xl flex items-start gap-4">
+                        <i data-lucide="shield-check" class="w-6 h-6 text-blue-400 shrink-0"></i>
+                        <div class="space-y-2">
+                            <p class="text-sm text-blue-200 font-bold">Pagamento protegido pelo gateway</p>
+                            <p class="text-xs text-blue-300/80 font-medium leading-relaxed">
+                                Os dados de cartão ou PIX serão informados apenas na página segura do provedor de pagamento. Este sistema não coleta número de cartão nem CVV diretamente.
+                            </p>
                         </div>
                     </div>
-
-                    <div class="flex gap-4 pt-6">
+<div class="flex gap-4 pt-6">
                         <button @click="prevStep()" class="flex-1 py-6 bg-zinc-950 border border-zinc-800 text-zinc-500 font-black rounded-3xl hover:text-white transition-all text-sm tracking-widest uppercase italic">Voltar</button>
                         <button @click="nextStep()" class="flex-[2] py-6 bg-white text-zinc-950 font-black rounded-3xl hover:bg-emerald-500 transition-all active:scale-95 shadow-2xl text-sm tracking-widest uppercase italic">Revisar Assinatura</button>
                     </div>
@@ -263,10 +250,8 @@
             </div>
 
             <div x-show="pagamentoAtivo && formData.payment_method === 'pix'" class="p-8 bg-zinc-950 border border-zinc-800 rounded-[2.5rem] space-y-6 animate-fade-in">
-                <p class="text-xs font-black text-zinc-400 uppercase tracking-widest italic">Escaneie o QR Code para ativar</p>
-                <div class="w-48 h-48 bg-white p-4 rounded-3xl mx-auto shadow-2xl">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=NexShapePaymentSimulated" alt="PIX QR Code" class="w-full h-full">
-                </div>
+                <i data-lucide="qr-code" class="w-12 h-12 text-emerald-500 mx-auto"></i>
+                <p class="text-xs font-black text-zinc-400 uppercase tracking-widest italic">O PIX será gerado pelo gateway seguro.</p>
             </div>
 
             <a href="{{ route('dashboard') }}" class="inline-block px-12 py-6 bg-white text-zinc-950 font-black rounded-3xl hover:bg-emerald-500 transition-all active:scale-95 shadow-2xl text-sm tracking-widest uppercase italic">
@@ -293,17 +278,14 @@ function checkoutFlow() {
     return {
         currentStep: 1,
         isProcessing: false,
+        errorMessage: '',
         pagamentoAtivo: {{ $pagamentoAtivo ? 'true' : 'false' }},
         formData: {
             plan_id: '{{ $plan->id }}',
             payment_method: 'credit_card',
             name: '',
             email: '',
-            password: '',
-            card_number: '',
-            card_name: '',
-            card_expiry: '',
-            card_cvv: ''
+            password: ''
         },
 
         getStepLabel(step) {
@@ -316,6 +298,7 @@ function checkoutFlow() {
         },
 
         nextStep() {
+            this.errorMessage = '';
             if (!this.pagamentoAtivo && this.currentStep === 2) {
                 this.finalize();
                 return;
@@ -324,11 +307,13 @@ function checkoutFlow() {
         },
 
         prevStep() {
+            this.errorMessage = '';
             if (this.currentStep > 1) this.currentStep--;
         },
 
         async finalize() {
             this.isProcessing = true;
+            this.errorMessage = '';
             
             try {
                 const response = await fetch('{{ route('checkout.process') }}', {
@@ -350,11 +335,11 @@ function checkoutFlow() {
                     this.currentStep = this.pagamentoAtivo ? 5 : 3;
                     if (window.lucide) window.lucide.createIcons();
                 } else {
-                    alert(result.message || 'Ocorreu um erro ao processar.');
+                    this.errorMessage = result.message || 'Ocorreu um erro ao processar.';
                 }
             } catch (error) {
                 console.error(error);
-                alert('Erro na comunicação com o servidor.');
+                this.errorMessage = 'Não foi possível comunicar com o servidor. Tente novamente em instantes.';
             } finally {
                 this.isProcessing = false;
             }

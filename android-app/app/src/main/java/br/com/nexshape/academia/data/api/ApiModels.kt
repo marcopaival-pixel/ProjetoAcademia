@@ -45,6 +45,25 @@ data class LoginRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class RegisterRequest(
+    val name: String,
+    val email: String,
+    val password: String,
+    @Json(name = "password_confirmation") val passwordConfirmation: String,
+    @Json(name = "account_type") val accountType: String,
+    @Json(name = "device_name") val deviceName: String = "nexshape-android",
+)
+
+@JsonClass(generateAdapter = true)
+data class RegisterResponse(
+    val message: String,
+    @Json(name = "token_type") val tokenType: String? = null,
+    @Json(name = "access_token") val accessToken: String? = null,
+    @Json(name = "expires_at") val expiresAt: String? = null,
+    val user: AuthUserDto? = null,
+)
+
+@JsonClass(generateAdapter = true)
 data class RefreshRequest(
     @Json(name = "device_name") val deviceName: String = "nexshape-android",
 )
@@ -207,6 +226,7 @@ data class ExerciseSyncRequest(
     @Json(name = "activity_type") val activityType: String? = null,
     @Json(name = "duration_min") val durationMin: Int? = null,
     @Json(name = "calories_burned") val caloriesBurned: Int? = null,
+    val rpe: Int? = null,
     val notes: String? = null,
 )
 
@@ -217,13 +237,34 @@ data class ExerciseSyncData(
 )
 
 @JsonClass(generateAdapter = true)
+data class WorkoutSessionDto(
+    val id: Int,
+    @Json(name = "session_date") val sessionDate: String,
+    @Json(name = "rpe_score") val rpeScore: Int,
+    val mood: String? = null,
+    val notes: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkoutSessionRequest(
+    @Json(name = "session_date") val sessionDate: String,
+    @Json(name = "rpe_score") val rpeScore: Int,
+    val mood: String? = null,
+    val notes: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
 data class BodyAssessmentDto(
     val id: Int,
     @Json(name = "assessment_date") val assessmentDate: String,
     @Json(name = "weight_kg") val weightKg: Double? = null,
     @Json(name = "bf_percent") val bfPercent: Double? = null,
     @Json(name = "muscle_percent") val musclePercent: Double? = null,
+    val neck: Double? = null,
+    val chest: Double? = null,
     val waist: Double? = null,
+    val abdomen: Double? = null,
+    val hips: Double? = null,
     val notes: String? = null,
     val status: String? = null,
 )
@@ -239,7 +280,11 @@ data class CreateAssessmentRequest(
     @Json(name = "weight_kg") val weightKg: Double? = null,
     @Json(name = "bf_percent") val bfPercent: Double? = null,
     @Json(name = "muscle_percent") val musclePercent: Double? = null,
+    val neck: Double? = null,
+    val chest: Double? = null,
     val waist: Double? = null,
+    val abdomen: Double? = null,
+    val hips: Double? = null,
     val notes: String? = null,
 )
 

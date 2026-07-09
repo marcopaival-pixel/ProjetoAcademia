@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
@@ -185,9 +186,16 @@ class CheckoutController extends Controller
                 ]);
             });
         } catch (\Exception $e) {
+            Log::error('Falha ao processar checkout.', [
+                'user_id' => Auth::id(),
+                'plan_id' => $request->input('plan_id'),
+                'payment_method' => $request->input('payment_method'),
+                'exception' => $e,
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao processar ativação: ' . $e->getMessage(),
+                'message' => 'Não foi possível processar sua assinatura agora. Tente novamente em instantes.',
             ], 422);
         }
     }

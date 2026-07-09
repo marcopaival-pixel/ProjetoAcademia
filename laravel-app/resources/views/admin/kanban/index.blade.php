@@ -214,7 +214,7 @@
             .then(response => response.json())
             .then(data => {
                 if(!data.success) {
-                    alert('Erro ao sincronizar tarefa');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao sincronizar tarefa', type: 'error' } }));
                     window.location.reload();
                 }
             });

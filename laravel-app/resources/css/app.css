@@ -133,8 +133,9 @@ body {
   span,
   button,
   label {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     word-break: normal;
+    hyphens: none;
   }
 
   table {

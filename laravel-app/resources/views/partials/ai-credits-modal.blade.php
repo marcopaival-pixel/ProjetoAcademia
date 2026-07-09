@@ -28,11 +28,11 @@
             } else if (data.success) {
                 window.location.reload(); 
             } else {
-                alert(data.message || 'Erro ao processar compra');
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Erro ao processar compra', type: 'error' } }));
             }
         } catch (e) {
             console.error('Erro ao comprar:', e);
-            alert('Erro na comunicação com o servidor');
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro na comunicação com o servidor', type: 'error' } }));
         } finally {
             this.loading = false;
         }

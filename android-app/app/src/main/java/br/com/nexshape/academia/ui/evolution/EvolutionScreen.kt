@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import br.com.nexshape.academia.data.api.BodyAssessmentDto
 import br.com.nexshape.academia.data.api.CreateAssessmentRequest
@@ -112,10 +114,13 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
                     photoPart = part,
                     type = "front".toRequestBody("text/plain".toMediaTypeOrNull()),
                     date = LocalDate.now().toString().toRequestBody("text/plain".toMediaTypeOrNull()),
-                    weight = null,
+                    weight = assessments.firstOrNull()?.weightKg?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull()),
                 )
             }.onSuccess { reload() }
-                .onFailure { error = it.message; loading = false }
+                .onFailure {
+                    error = it.message
+                    loading = false
+                }
         }
     }
 
@@ -152,6 +157,12 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
                 }
             }
 
+            PlanHint(
+                assessmentCount = assessments.size,
+                photoCount = photos.size,
+                modifier = Modifier.padding(16.dp),
+            )
+
             when {
                 loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -159,40 +170,8 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
                 error != null -> Box(Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
                     Text(error!!, color = MaterialTheme.colorScheme.error)
                 }
-                EvolutionTab.entries[selectedTab] == EvolutionTab.Measures -> {
-                    if (assessments.isEmpty()) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Nenhuma avaliação registrada.")
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(assessments, key = { it.id }) { item ->
-                                AssessmentCard(item)
-                            }
-                        }
-                    }
-                }
-                else -> {
-                    if (photos.isEmpty()) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Nenhuma foto de evolução.")
-                        }
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            contentPadding = PaddingValues(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(photos, key = { it.id }) { photo ->
-                                EvolutionPhotoCard(photo)
-                            }
-                        }
-                    }
-                }
+                EvolutionTab.entries[selectedTab] == EvolutionTab.Measures -> MeasuresList(assessments)
+                else -> PhotosGrid(photos)
             }
         }
     }
@@ -200,21 +179,81 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
     if (showMeasureDialog) {
         MeasureDialog(
             onDismiss = { showMeasureDialog = false },
-            onSave = { weight, bf ->
+            onSave = { request ->
                 scope.launch {
-                    repository.createAssessment(
-                        CreateAssessmentRequest(
-                            assessmentDate = LocalDate.now().toString(),
-                            weightKg = weight,
-                            bfPercent = bf,
-                        ),
-                    ).onSuccess {
-                        showMeasureDialog = false
-                        reload()
-                    }.onFailure { error = it.message }
+                    repository.createAssessment(request)
+                        .onSuccess {
+                            showMeasureDialog = false
+                            reload()
+                        }
+                        .onFailure { error = it.message }
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun MeasuresList(assessments: List<BodyAssessmentDto>) {
+    if (assessments.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Nenhuma avaliacao registrada.")
+        }
+        return
+    }
+
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(assessments, key = { it.id }) { item ->
+            AssessmentCard(item)
+        }
+    }
+}
+
+@Composable
+private fun PhotosGrid(photos: List<EvolutionPhotoDto>) {
+    if (photos.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Nenhuma foto de evolucao.")
+        }
+        return
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(photos, key = { it.id }) { photo ->
+            EvolutionPhotoCard(photo)
+        }
+    }
+}
+
+@Composable
+private fun PlanHint(
+    assessmentCount: Int,
+    photoCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text("Limites do plano aplicados pela API", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Avaliacoes carregadas: $assessmentCount. Fotos carregadas: $photoCount.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Text(
+                "No Free, o historico pode ser reduzido e uploads podem retornar plan_limit_reached.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }
 
@@ -225,8 +264,13 @@ private fun AssessmentCard(item: BodyAssessmentDto) {
             Text(item.assessmentDate, style = MaterialTheme.typography.titleMedium)
             item.weightKg?.let { Text("Peso: ${it} kg") }
             item.bfPercent?.let { Text("Gordura: ${it}%") }
-            item.musclePercent?.let { Text("Músculo: ${it}%") }
+            item.musclePercent?.let { Text("Musculo: ${it}%") }
+            item.neck?.let { Text("Pescoco: ${it} cm") }
+            item.chest?.let { Text("Torax: ${it} cm") }
             item.waist?.let { Text("Cintura: ${it} cm") }
+            item.abdomen?.let { Text("Abdomen: ${it} cm") }
+            item.hips?.let { Text("Quadril: ${it} cm") }
+            item.notes?.takeIf { it.isNotBlank() }?.let { Text("Obs.: $it") }
         }
     }
 }
@@ -251,37 +295,60 @@ private fun EvolutionPhotoCard(photo: EvolutionPhotoDto) {
 @Composable
 private fun MeasureDialog(
     onDismiss: () -> Unit,
-    onSave: (weight: Double?, bf: Double?) -> Unit,
+    onSave: (CreateAssessmentRequest) -> Unit,
 ) {
     var weight by remember { mutableStateOf("") }
     var bf by remember { mutableStateOf("") }
+    var muscle by remember { mutableStateOf("") }
+    var neck by remember { mutableStateOf("") }
+    var chest by remember { mutableStateOf("") }
+    var waist by remember { mutableStateOf("") }
+    var abdomen by remember { mutableStateOf("") }
+    var hips by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova avaliação") },
+        title = { Text("Nova avaliacao") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = { Text("Peso (kg)") },
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = bf,
-                    onValueChange = { bf = it },
-                    label = { Text("Gordura (%)") },
-                    singleLine = true,
-                )
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                item { NumberField("Peso (kg)", weight) { weight = onlyDecimal(it) } }
+                item { NumberField("Gordura (%)", bf) { bf = onlyDecimal(it) } }
+                item { NumberField("Musculo (%)", muscle) { muscle = onlyDecimal(it) } }
+                item { NumberField("Pescoco (cm)", neck) { neck = onlyDecimal(it) } }
+                item { NumberField("Torax (cm)", chest) { chest = onlyDecimal(it) } }
+                item { NumberField("Cintura (cm)", waist) { waist = onlyDecimal(it) } }
+                item { NumberField("Abdomen (cm)", abdomen) { abdomen = onlyDecimal(it) } }
+                item { NumberField("Quadril (cm)", hips) { hips = onlyDecimal(it) } }
+                item {
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Observacoes") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onSave(
-                    weight.toDoubleOrNull(),
-                    bf.toDoubleOrNull(),
-                )
-            }) {
+            TextButton(
+                onClick = {
+                    onSave(
+                        CreateAssessmentRequest(
+                            assessmentDate = LocalDate.now().toString(),
+                            weightKg = weight.toDoubleOrNull(),
+                            bfPercent = bf.toDoubleOrNull(),
+                            musclePercent = muscle.toDoubleOrNull(),
+                            neck = neck.toDoubleOrNull(),
+                            chest = chest.toDoubleOrNull(),
+                            waist = waist.toDoubleOrNull(),
+                            abdomen = abdomen.toDoubleOrNull(),
+                            hips = hips.toDoubleOrNull(),
+                            notes = notes.ifBlank { null },
+                        ),
+                    )
+                },
+            ) {
                 Text("Salvar")
             }
         },
@@ -290,3 +357,24 @@ private fun MeasureDialog(
         },
     )
 }
+
+@Composable
+private fun NumberField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+    )
+}
+
+private fun onlyDecimal(value: String): String =
+    value.filterIndexed { index, char ->
+        char.isDigit() || (char == '.' && value.indexOf('.') == index)
+    }

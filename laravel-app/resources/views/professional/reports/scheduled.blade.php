@@ -89,7 +89,7 @@
                         Nossa IA irá consolidar os dados e enviar o relatório automaticamente na frequência escolhida.
                     </p>
                 </div>
-                <button type="button" onclick="alert('Funcionalidade em fase de ativação no servidor de produção.')" class="px-12 py-5 bg-blue-600 text-white text-[11px] font-black rounded-3xl uppercase tracking-[0.2em] hover:bg-blue-500 transition-all shadow-2xl shadow-blue-600/30">
+                <button type="button" onclick="window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Funcionalidade em fase de ativação no servidor de produção.', type: 'error' } }))" class="px-12 py-5 bg-blue-600 text-white text-[11px] font-black rounded-3xl uppercase tracking-[0.2em] hover:bg-blue-500 transition-all shadow-2xl shadow-blue-600/30">
                     Salvar Agendamento
                 </button>
             </div>
@@ -105,6 +105,5 @@
     }
 </style>
 @endsection
-
 
 

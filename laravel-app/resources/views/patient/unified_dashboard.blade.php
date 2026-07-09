@@ -79,10 +79,10 @@
         </div>
         <!-- Botões -->
         <div class="flex gap-3 shrink-0">
-            <a href="#" class="w-14 h-14 rounded-2xl glass-btn flex items-center justify-center text-zinc-400">
+            <a href="{{ route('patient.messages') }}" class="w-14 h-14 rounded-2xl glass-btn flex items-center justify-center text-zinc-400">
                 <i class="far fa-envelope text-xl"></i>
             </a>
-            <a href="#" class="w-14 h-14 rounded-2xl glass-btn flex items-center justify-center text-zinc-400">
+            <a href="{{ route('patient.agenda') }}" class="w-14 h-14 rounded-2xl glass-btn flex items-center justify-center text-zinc-400">
                 <i class="far fa-bell text-xl"></i>
             </a>
         </div>
@@ -124,9 +124,9 @@
             <!-- Score Gauge -->
             <div class="relative w-40 h-40 shrink-0 ml-4">
                 <div class="absolute inset-0 rounded-full bg-[#06070a] shadow-inner border border-white/5"></div>
-                <div class="absolute inset-[8px] rounded-full score-ring" style="--score: {{ $summary['health_score'] ?? 100 }};"></div>
+                <div class="absolute inset-[8px] rounded-full score-ring" style="--score: {{ $summary['health_score'] ?? 0 }};"></div>
                 <div class="absolute inset-[14px] rounded-full bg-[#0c0e12] flex flex-col items-center justify-center z-10 border border-black/50">
-                    <span class="text-5xl font-black text-white leading-none tracking-tighter">{{ $summary['health_score'] ?? 100 }}</span>
+                    <span class="text-5xl font-black text-white leading-none tracking-tighter">{{ $summary['health_score'] ?? '--' }}</span>
                     <span class="text-[10px] font-bold text-zinc-500 tracking-[0.2em] uppercase mt-1">Score</span>
                 </div>
             </div>
@@ -289,4 +289,3 @@
     </div>
 </div>
 @endsection
-

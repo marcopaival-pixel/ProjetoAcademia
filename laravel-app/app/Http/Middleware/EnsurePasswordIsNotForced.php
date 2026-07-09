@@ -17,7 +17,13 @@ class EnsurePasswordIsNotForced
     {
         $user = $request->user();
 
-        if ($user && $user->force_password_change && !$request->routeIs('password.change.force*') && !$request->routeIs('logout')) {
+        if (
+            $user
+            && $user->force_password_change
+            && !$request->routeIs('password.change.force*')
+            && !$request->routeIs('logout')
+            && !$request->routeIs('demo.stop')
+        ) {
             return redirect()->route('password.change.force')
                 ->with('warning', 'Você deve alterar sua senha antes de continuar.');
         }

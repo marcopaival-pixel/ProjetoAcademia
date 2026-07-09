@@ -172,6 +172,9 @@ class MenuAccessService
         $exactMenus = Cache::remember('menu_route_resolver_exact_menus', 300, fn () => Menu::query()
             ->where('is_container', false)
             ->where('match_mode', 'exact')
+            ->orderByDesc('is_required')
+            ->orderBy('order')
+            ->orderBy('id')
             ->get());
 
         foreach ($exactMenus as $menu) {

@@ -337,10 +337,10 @@ function nexBot() {
                         message: '✅ ' + d.message 
                     });
                 } else {
-                    alert('Erro ao executar ação: ' + d.error);
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao executar ação: ' + d.error, type: 'error' } }));
                 }
             } catch (e) {
-                alert('Erro de conexão ao executar ação.');
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro de conexão ao executar ação.', type: 'error' } }));
             } finally {
                 this.scrollToBottom();
                 this.$nextTick(() => { lucide.createIcons(); });

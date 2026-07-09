@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Professional;
 
 use App\Http\Controllers\Controller;
+use App\Models\BodyAssessment;
+use App\Models\HealthAlert;
+use App\Models\ProfessionalAppointment;
+use App\Models\Subscription;
+use App\Models\TrainingPlan;
+use App\Models\User;
+use App\Support\PatientAccessGuard;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -27,9 +33,8 @@ class DashboardController extends Controller
         // Check if there is an active patient
         $activePatient = null;
         if (session()->has('active_patient_id')) {
-            /** @var \App\Models\User|null $activePatientModel */
-            $activePatientModel = \App\Models\User::find(session('active_patient_id'));
-            $activePatient = $activePatientModel;
+            $activePatientId = PatientAccessGuard::resolveActivePatientId($professional);
+            $activePatient = $activePatientId ? User::find($activePatientId) : null;
         }
 
         // 1. MEUS ALUNOS / PACIENTES GLOBAIS
@@ -53,66 +58,87 @@ class DashboardController extends Controller
             ->count();
 
         // 2. INDICADORES OPERACIONAIS GERAIS
-        $activeWorkoutsCount = \App\Models\TrainingPlan::where('professional_id', $uid)
+        $activeWorkoutsCount = TrainingPlan::where('professional_id', $uid)
             ->where('is_active', true)
             ->count();
 
-        $assessmentsMonthCount = \App\Models\BodyAssessment::where('professional_id', $uid)
+        $assessmentsMonthCount = BodyAssessment::where('professional_id', $uid)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
 
-        $appointmentsMonthCount = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
+        $appointmentsMonthCount = ProfessionalAppointment::where('professional_id', $uid)
             ->whereMonth('appointment_at', now()->month)
             ->whereYear('appointment_at', now()->year)
             ->count();
             
-        $appointmentsCompletedMonth = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
+        $appointmentsCompletedMonth = ProfessionalAppointment::where('professional_id', $uid)
             ->whereMonth('appointment_at', now()->month)
             ->whereYear('appointment_at', now()->year)
             ->where('appointment_at', '<', now())
             ->count();
 
-        $revenuePerPatient = 150;
-        $revenueMonth = $activePatientsCount * $revenuePerPatient; // Simulação
+        $revenueMonth = null;
 
         // 3. AGENDA DE HOJE GERAL
         $todayStart = now()->startOfDay();
         $todayEnd = now()->endOfDay();
 
-        $todayAppointments = \App\Models\ProfessionalAppointment::with('patient')
+        $todayAppointments = ProfessionalAppointment::with('patient')
             ->where('professional_id', $uid)
             ->whereBetween('appointment_at', [$todayStart, $todayEnd])
             ->orderBy('appointment_at')
             ->get();
 
         // 4. PENDÊNCIAS GERAIS
-        $pendingAssessmentsCount = \App\Models\BodyAssessment::where('professional_id', $uid)
+        $pendingAssessmentsCount = BodyAssessment::where('professional_id', $uid)
             ->where('status', 'pending')
             ->count();
 
-        $expiredTrainingsCount = \App\Models\TrainingPlan::where('professional_id', $uid)
+        $expiredTrainingsCount = TrainingPlan::where('professional_id', $uid)
             ->where('is_active', true)
             ->where('created_at', '<', now()->subDays(45))
             ->count();
 
-        $pendingAppointmentsCount = \App\Models\ProfessionalAppointment::where('professional_id', $uid)
+        $pendingAppointmentsCount = ProfessionalAppointment::where('professional_id', $uid)
             ->where('appointment_at', '>=', $todayStart)
             ->where('status', 'pending')
             ->count();
 
         $inactiveOver30Days = $inactivePatientsCount;
         $pendingDocumentsCount = 0;
-        $unreadMessagesCount = \App\Models\HealthAlert::whereIn('user_id', $professional->patients()->pluck('users.id'))
+        $unreadMessagesCount = HealthAlert::whereIn('user_id', $professional->patients()->pluck('users.id'))
             ->where('is_read', false)->count();
 
         // 5. ATIVIDADE RECENTE
-        $recentActivities = [
-            ['icon' => 'dumbbell', 'text' => 'Treino criado para João Silva', 'time' => 'Há 2 horas', 'color' => 'emerald'],
-            ['icon' => 'clipboard-check', 'text' => 'Avaliação de Maria Souza concluída', 'time' => 'Há 4 horas', 'color' => 'blue'],
-            ['icon' => 'video', 'text' => 'Consulta com Pedro Alves finalizada', 'time' => 'Há 5 horas', 'color' => 'purple'],
-            ['icon' => 'file-text', 'text' => 'Plano alimentar enviado para Ana Costa', 'time' => 'Ontem', 'color' => 'amber'],
-        ];
+        $recentWorkouts = TrainingPlan::where('professional_id', $uid)
+            ->with('user:id,name')
+            ->latest()
+            ->limit(3)
+            ->get()
+            ->map(fn ($plan) => [
+                'icon' => 'dumbbell',
+                'text' => 'Treino criado para '.($plan->user?->name ?? 'paciente'),
+                'time' => $plan->created_at?->diffForHumans() ?? '',
+                'color' => 'emerald',
+            ]);
+
+        $recentAssessments = BodyAssessment::where('professional_id', $uid)
+            ->with('user:id,name')
+            ->latest()
+            ->limit(3)
+            ->get()
+            ->map(fn ($assessment) => [
+                'icon' => 'clipboard-check',
+                'text' => 'Avaliação registrada para '.($assessment->user?->name ?? 'paciente'),
+                'time' => $assessment->created_at?->diffForHumans() ?? '',
+                'color' => 'blue',
+            ]);
+
+        $recentActivities = $recentWorkouts
+            ->concat($recentAssessments)
+            ->take(5)
+            ->values();
 
         // 6. ÚLTIMOS ACESSADOS
         $recentPatients = $professional->patients()->with(['profile'])
@@ -165,19 +191,30 @@ class DashboardController extends Controller
         // 9. DADOS DO PACIENTE ATIVO (Se aplicável)
         $activePatientStats = [];
         if ($activePatient) {
-            $lastAssessment = \App\Models\BodyAssessment::where('user_id', $activePatient->id)->orderBy('created_at', 'desc')->first();
-            $nextAppointment = \App\Models\ProfessionalAppointment::where('patient_id', $activePatient->id)
+            $lastAssessment = BodyAssessment::where('user_id', $activePatient->id)
+                ->where('professional_id', $uid)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            $nextAppointment = ProfessionalAppointment::where('patient_id', $activePatient->id)
+                ->where('professional_id', $uid)
                 ->where('appointment_at', '>', now())
                 ->orderBy('appointment_at', 'asc')
                 ->first();
-            $lastTraining = \App\Models\TrainingPlan::where('user_id', $activePatient->id)->orderBy('created_at', 'desc')->first();
+            $lastTraining = TrainingPlan::where('user_id', $activePatient->id)
+                ->where('professional_id', $uid)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            $subscription = Subscription::with('plan')
+                ->where('user_id', $activePatient->id)
+                ->latest()
+                ->first();
             
             $activePatientStats = [
                 'last_assessment' => $lastAssessment ? $lastAssessment->created_at->format('d/m/Y') : 'Nenhuma',
                 'next_appointment' => $nextAppointment ? \Carbon\Carbon::parse($nextAppointment->appointment_at)->format('d/m/Y H:i') : 'Não agendada',
                 'last_training' => $lastTraining ? $lastTraining->created_at->format('d/m/Y') : 'Nenhum',
                 'status' => $activePatient->last_activity_at && $activePatient->last_activity_at > now()->subDays(30) ? 'Ativo' : 'Inativo',
-                'active_plan' => $activePatient->getAttribute('subscription_status') === 'active' ? 'Plano Premium' : 'Plano Básico', // Mocking plan status
+                'active_plan' => $subscription?->plan?->name ?? 'Sem plano ativo',
             ];
         }
 
@@ -212,6 +249,3 @@ class DashboardController extends Controller
         ));
     }
 }
-
-
-

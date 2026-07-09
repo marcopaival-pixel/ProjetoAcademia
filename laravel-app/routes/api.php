@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\ProfessionalPatientEvolutionController;
 use App\Http\Controllers\Api\V1\ProfessionalPatientTrainingController;
 use App\Http\Controllers\Api\V1\ProfessionalProtocolController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\RegisterController;
 use App\Http\Controllers\Api\V1\StudentAppointmentController;
 use App\Http\Controllers\Api\V1\StudentProfessionalController;
 use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
@@ -57,6 +58,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('/auth/token', [AuthTokenController::class, 'store'])
         ->middleware('throttle:10,1')
         ->name('auth.token');
+
+    Route::post('/auth/register', [RegisterController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('auth.register');
 
     Route::post('/referral/verify', [ReferralCodeController::class, 'verify'])
         ->middleware('throttle:15,1')

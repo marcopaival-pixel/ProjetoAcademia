@@ -19,6 +19,9 @@ interface NexShapeApi {
     @POST("auth/token")
     suspend fun login(@Body body: LoginRequest): AuthTokenResponse
 
+    @POST("auth/register")
+    suspend fun register(@Body body: RegisterRequest): RegisterResponse
+
     @POST("auth/refresh")
     suspend fun refresh(@Body body: RefreshRequest = RefreshRequest()): AuthTokenResponse
 
@@ -51,6 +54,12 @@ interface NexShapeApi {
 
     @POST("exercise-logs/sync")
     suspend fun syncExercise(@Body body: ExerciseSyncRequest): ApiSuccessResponse<ExerciseSyncData>
+
+    @GET("workout-sessions")
+    suspend fun workoutSessions(@Query("limit") limit: Int = 30): ApiSuccessResponse<List<WorkoutSessionDto>>
+
+    @POST("workout-sessions")
+    suspend fun createWorkoutSession(@Body body: WorkoutSessionRequest): ApiSuccessResponse<WorkoutSessionDto>
 
     @POST("devices")
     suspend fun registerDevice(@Body body: DeviceRegisterRequest): ApiSuccessResponse<Map<String, Any?>>

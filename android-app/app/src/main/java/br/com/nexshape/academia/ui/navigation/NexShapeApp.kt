@@ -3,9 +3,10 @@ package br.com.nexshape.academia.ui.navigation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Group
@@ -19,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ import br.com.nexshape.academia.ui.login.LoginScreen
 import br.com.nexshape.academia.ui.login.ProfileSelectorScreen
 import br.com.nexshape.academia.ui.login.roleToCardData
 import br.com.nexshape.academia.ui.nutrition.NutritionScreen
+import br.com.nexshape.academia.ui.professionals.ProfessionalsScreen
 import br.com.nexshape.academia.ui.profile.ProfileScreen
 import br.com.nexshape.academia.ui.professional.ProAgendaScreen
 import br.com.nexshape.academia.ui.professional.ProAlertsScreen
@@ -71,6 +74,7 @@ private enum class StudentTab(val label: String) {
     Agenda("Agenda"),
     Nutrition("Nutrição"),
     Chat("NexBot"),
+    Professionals("Mentores"),
     Profile("Perfil"),
 }
 
@@ -123,8 +127,6 @@ fun NexShapeApp() {
             onLoggedIn = {
                 isLoggedIn = true
                 isUnlocked = true
-                ApiClient.tokenStore().saveActiveRole(null)
-                ApiClient.tokenStore().saveActiveTenant(null)
                 appMode = sessionPreferences.getAppMode()
             },
         )
@@ -188,9 +190,18 @@ fun NexShapeApp() {
                     } else if (loaded.isProfessional && !loaded.isStudent) {
                         appMode = AppMode.PROFESSIONAL
                         sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
+                        ApiClient.tokenStore().saveActiveRole(resolveProfessionalRole(availableRoles))
                     } else if (loaded.isStudent && !loaded.isProfessional) {
                         appMode = AppMode.STUDENT
                         sessionPreferences.setAppMode(AppMode.STUDENT)
+                        ApiClient.tokenStore().saveActiveRole(resolveStudentRole(availableRoles))
+                    } else if (ApiClient.tokenStore().getActiveRole().isNullOrBlank()) {
+                        ApiClient.tokenStore().saveActiveRole(
+                            when (appMode) {
+                                AppMode.PROFESSIONAL -> resolveProfessionalRole(availableRoles)
+                                AppMode.STUDENT -> resolveStudentRole(availableRoles)
+                            },
+                        )
                     }
                 }
         }
@@ -216,6 +227,7 @@ fun NexShapeApp() {
             canSwitchToStudent = canUseStudent,
             onSwitchMode = {
                 sessionPreferences.setAppMode(AppMode.STUDENT)
+                ApiClient.tokenStore().saveActiveRole(resolveStudentRole(ApiClient.tokenStore().getAvailableRoles()))
                 appMode = AppMode.STUDENT
             },
             onLogout = handleLogout,
@@ -226,6 +238,7 @@ fun NexShapeApp() {
             canSwitchToPro = canUsePro,
             onSwitchMode = {
                 sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
+                ApiClient.tokenStore().saveActiveRole(resolveProfessionalRole(ApiClient.tokenStore().getAvailableRoles()))
                 appMode = AppMode.PROFESSIONAL
             },
             onLogout = handleLogout,
@@ -242,14 +255,31 @@ private fun StudentShell(
     onLogout: () -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(StudentTab.Home) }
+    val bottomTabs = listOf(
+        StudentTab.Home,
+        StudentTab.Training,
+        StudentTab.Evolution,
+        StudentTab.Nutrition,
+        StudentTab.Profile,
+    )
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                StudentTab.entries.forEach { tab ->
+            NavigationBar(
+                containerColor = Color(0xFF080C10),
+                contentColor = Color.White,
+            ) {
+                bottomTabs.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF04110D),
+                            selectedTextColor = Color(0xFF19F5A6),
+                            indicatorColor = Color(0xFF10B981),
+                            unselectedIconColor = Color(0xFFA3AAB5),
+                            unselectedTextColor = Color(0xFFA3AAB5),
+                        ),
                         icon = {
                             Icon(
                                 imageVector = when (tab) {
@@ -258,7 +288,8 @@ private fun StudentShell(
                                     StudentTab.Evolution -> Icons.Default.MonitorHeart
                                     StudentTab.Agenda -> Icons.Default.CalendarMonth
                                     StudentTab.Nutrition -> Icons.Default.Restaurant
-                                    StudentTab.Chat -> Icons.Default.Chat
+                                    StudentTab.Chat -> Icons.AutoMirrored.Filled.Chat
+                                    StudentTab.Professionals -> Icons.Default.Group
                                     StudentTab.Profile -> Icons.Default.Person
                                 },
                                 contentDescription = tab.label,
@@ -271,12 +302,23 @@ private fun StudentShell(
         },
     ) { padding ->
         when (selectedTab) {
-            StudentTab.Home -> HomeScreen(modifier = Modifier.padding(padding), authRepository = authRepository)
+            StudentTab.Home -> HomeScreen(
+                modifier = Modifier.padding(padding),
+                authRepository = authRepository,
+                onOpenTraining = { selectedTab = StudentTab.Training },
+                onOpenEvolution = { selectedTab = StudentTab.Evolution },
+                onOpenAgenda = { selectedTab = StudentTab.Agenda },
+                onOpenNutrition = { selectedTab = StudentTab.Nutrition },
+                onOpenChat = { selectedTab = StudentTab.Chat },
+                onOpenProfessionals = { selectedTab = StudentTab.Professionals },
+                onOpenProfile = { selectedTab = StudentTab.Profile },
+            )
             StudentTab.Training -> TrainingScreen(modifier = Modifier.padding(padding))
             StudentTab.Evolution -> EvolutionScreen(modifier = Modifier.padding(padding))
             StudentTab.Agenda -> AgendaScreen(modifier = Modifier.padding(padding))
             StudentTab.Nutrition -> NutritionScreen(modifier = Modifier.padding(padding))
             StudentTab.Chat -> ChatScreen(modifier = Modifier.padding(padding))
+            StudentTab.Professionals -> ProfessionalsScreen(modifier = Modifier.padding(padding))
             StudentTab.Profile -> ProfileScreen(
                 modifier = Modifier.padding(padding),
                 authRepository = authRepository,
@@ -288,6 +330,18 @@ private fun StudentShell(
         }
     }
 }
+
+private fun resolveStudentRole(roles: List<String>): String? =
+    when {
+        "aluno" in roles -> "aluno"
+        "paciente" in roles -> "paciente"
+        else -> roles.firstOrNull()
+    }
+
+private fun resolveProfessionalRole(roles: List<String>): String? =
+    listOf("professional", "instructor", "supervisor", "admin", "clinic_admin")
+        .firstOrNull { it in roles }
+        ?: roles.firstOrNull()
 
 @Composable
 private fun ProShell(

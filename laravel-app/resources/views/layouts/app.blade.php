@@ -19,6 +19,8 @@
         session(['paivatech_origin' => 'paivatech']);
     }
     $showPaivaBacklink = session('paivatech_origin') === 'paivatech' || request()->get('from') === 'paivatech';
+    $publicLoginUrl = session('is_demo_mode') ? route('demo.stop', ['next' => 'login']) : route('login');
+    $publicRegisterUrl = session('is_demo_mode') ? route('demo.stop', ['next' => 'register']) : route('register');
 @endphp
 
 <!DOCTYPE html>
@@ -168,8 +170,8 @@
                     <a href="{{ route('home') }}#features" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Recursos</a>
                     <a href="{{ route('home') }}#pricing" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Preços</a>
                     <div class="w-px h-6 bg-zinc-800 mx-2"></div>
-                    <a href="{{ route('login') }}" class="text-[10px] font-black text-zinc-400 hover:text-emerald-500 uppercase tracking-[0.2em] transition-all">Autenticar</a>
-                    <a href="{{ route('register') }}" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-xl shadow-emerald-500/10 active:scale-95">
+                    <a href="{{ $publicLoginUrl }}" class="text-[10px] font-black text-zinc-400 hover:text-emerald-500 uppercase tracking-[0.2em] transition-all">Autenticar</a>
+                    <a href="{{ $publicRegisterUrl }}" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-xl shadow-emerald-500/10 active:scale-95">
                         Começar Agora
                     </a>
                 </nav>
@@ -215,7 +217,7 @@
                     <ul class="space-y-4">
                         <li><a href="{{ route('home') }}#features" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Recursos</a></li>
                         <li><a href="{{ route('home') }}#pricing" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Planos</a></li>
-                        <li><a href="{{ route('register') }}" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Criar Conta</a></li>
+                        <li><a href="{{ $publicRegisterUrl }}" class="text-zinc-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest italic">Criar Conta</a></li>
                     </ul>
                 </div>
 

@@ -16,9 +16,9 @@
         </div>
         
         <div class="flex gap-4">
-            <button class="px-6 py-3 bg-zinc-800/50 hover:bg-zinc-800 border border-white/5 rounded-2xl text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg backdrop-blur-md">
+            <a href="{{ route('support.tickets.create') }}" class="px-6 py-3 bg-zinc-800/50 hover:bg-zinc-800 border border-white/5 rounded-2xl text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg backdrop-blur-md">
                 <i class="fas fa-headset text-emerald-400"></i> Suporte Financeiro
-            </button>
+            </a>
         </div>
     </div>
 
@@ -45,9 +45,9 @@
             </div>
             {{ session('error') ?? 'Você possui uma fatura pendente. Evite a suspensão dos seus benefícios regularizando o pagamento.' }}
             @if($isPending)
-                <button class="ml-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all">
+                <a href="{{ route('patient.subscription.plans') }}" class="ml-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all">
                     Pagar Agora
-                </button>
+                </a>
             @endif
         </div>
     @endif
@@ -97,22 +97,14 @@
                     <!-- Mini Gráfico Financeiro (Visual SaaS) -->
                     <div class="w-full md:w-48 shrink-0 bg-black/40 rounded-3xl p-5 border border-white/5 space-y-4">
                         <div class="text-[10px] text-zinc-500 font-black uppercase tracking-widest flex justify-between items-center">
-                            <span>Uso do Ciclo</span>
+                            <span>Status do Ciclo</span>
                             <i class="fas fa-chart-line text-emerald-500"></i>
                         </div>
-                        <div class="flex items-end justify-between h-20 gap-1.5">
-                            <div class="w-full bg-emerald-500/20 rounded-t-sm h-[30%] hover:bg-emerald-500/40 transition-colors relative group cursor-pointer">
-                                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">Sem 1</div>
-                            </div>
-                            <div class="w-full bg-emerald-500/20 rounded-t-sm h-[50%] hover:bg-emerald-500/40 transition-colors relative group cursor-pointer">
-                                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">Sem 2</div>
-                            </div>
-                            <div class="w-full bg-emerald-500 rounded-t-sm h-[80%] hover:bg-emerald-400 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.3)] relative group cursor-pointer">
-                                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-emerald-500 text-black font-bold text-[8px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">Atual</div>
-                            </div>
-                            <div class="w-full bg-white/5 rounded-t-sm h-[100%]"></div>
+                        <div class="h-20 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-center px-4">
+                            <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                                {{ $subscription?->next_billing_date ? 'Renova em '.$subscription->next_billing_date->diffForHumans() : 'Sem renovação agendada' }}
+                            </span>
                         </div>
-                        <div class="text-[9px] text-zinc-500 text-center font-bold">12 dias restantes</div>
                     </div>
                 </div>
             </div>
@@ -178,7 +170,7 @@
                 
                 <div class="space-y-6 relative before:absolute before:inset-y-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none">
                     
-                    @forelse(($subscription && $subscription->logs && $subscription->logs->isNotEmpty()) ? $subscription->logs : collect([ (object)['created_at' => now(), 'event' => 'pagamento_realizado', 'amount' => $subscription?->plan?->price ?? 99.90, 'new_status' => 'ativo'] ]) as $index => $log)
+                    @forelse(($subscription && $subscription->logs && $subscription->logs->isNotEmpty()) ? $subscription->logs : collect() as $index => $log)
                         <!-- Item Timeline -->
                         <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                             <!-- Ícone central -->
@@ -244,9 +236,13 @@
 
                     <div>
                         <div class="text-zinc-500 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Número do Cartão</div>
-                        <div class="text-white text-xl font-mono tracking-widest flex gap-4 drop-shadow-md">
-                            <span>••••</span> <span>••••</span> <span>••••</span> <span class="text-emerald-400 font-bold">{{ $subscription?->card_last_four ?? '0000' }}</span>
-                        </div>
+                        @if($subscription?->card_last_four)
+                            <div class="text-white text-xl font-mono tracking-widest flex gap-4 drop-shadow-md">
+                                <span>****</span> <span>****</span> <span>****</span> <span class="text-emerald-400 font-bold">{{ $subscription->card_last_four }}</span>
+                            </div>
+                        @else
+                            <div class="text-zinc-500 text-sm font-bold uppercase tracking-widest">Nenhum cartao cadastrado</div>
+                        @endif
                     </div>
 
                     <div class="flex items-end justify-between pt-2">
@@ -263,7 +259,7 @@
 
                 <div class="mt-8 pt-6 border-t border-white/10 relative z-10 flex gap-3">
                     <button onclick="showCardModal()" class="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors backdrop-blur-md">
-                        Trocar Cartão
+                        {{ $subscription?->card_last_four ? 'Trocar Cartao' : 'Cadastrar Cartao' }}
                     </button>
                     @if($subscription?->card_last_four)
                         <button class="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-colors">
@@ -280,21 +276,14 @@
                 </h4>
                 
                 <div class="bg-black/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-white/5 mb-6 group hover:border-emerald-500/30 transition-colors">
-                    <div class="w-24 h-24 bg-white p-2 rounded-xl mb-4 group-hover:scale-105 transition-transform shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-                        <!-- Mock QRCode image -->
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MockPixCode" alt="QR Code PIX" class="w-full h-full opacity-90">
+                    <div class="w-24 h-24 bg-zinc-900 p-2 rounded-xl mb-4 flex items-center justify-center border border-white/5">
+                        <i class="fab fa-pix text-4xl text-emerald-400"></i>
                     </div>
-                    <p class="text-xs text-zinc-400 mb-2">Escaneie o QR Code ou copie o código abaixo para renovar sua assinatura.</p>
+                    <p class="text-xs text-zinc-400 mb-2">O PIX e gerado no checkout do plano selecionado, com codigo valido retornado pelo gateway de pagamento.</p>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-[9px] text-zinc-500 font-black uppercase tracking-widest ml-1">PIX Copia e Cola</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" readonly value="00020126580014br.gov.bcb.pix0136mock-pix-code-1234-5678-90ab-cdef0000" class="flex-1 bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-xs text-zinc-400 font-mono focus:outline-none truncate">
-                        <button class="w-11 h-11 shrink-0 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center transition-colors" title="Copiar PIX" onclick="navigator.clipboard.writeText('00020126580014br.gov.bcb.pix0136mock-pix-code-1234-5678-90ab-cdef0000'); alert('Código PIX copiado!')">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
+                    <a href="{{ route('patient.subscription.plans') }}" class="block w-full text-center py-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors border border-emerald-500/20">Gerar cobranca PIX</a>
                 </div>
             </div>
 
@@ -402,43 +391,20 @@
     <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="hideCardModal()"></div>
     
     <div class="relative w-full max-w-lg bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up">
-        <form action="{{ route('patient.subscription.update-payment') }}" method="POST" class="p-10 space-y-8">
-            @csrf
-            <input type="hidden" name="method" value="card">
-            
+        <div class="p-10 space-y-8">
             <div class="text-center space-y-2 mb-8">
                 <div class="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-credit-card text-2xl text-emerald-400"></i>
                 </div>
                 <h3 class="text-2xl font-black text-white tracking-tight">Atualizar Cartão</h3>
-                <p class="text-zinc-500 text-sm">Insira os dados do seu novo cartão. O processamento é 100% seguro e criptografado.</p>
+                <p class="text-zinc-500 text-sm">A atualização de cartão deve ocorrer em checkout seguro com tokenização do gateway de pagamento.</p>
             </div>
 
-            <div class="space-y-5 bg-black/20 p-6 rounded-3xl border border-white/5">
-                <div class="space-y-2">
-                    <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Número do Cartão</label>
-                    <div class="relative">
-                        <i class="fas fa-credit-card absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"></i>
-                        <input type="text" name="card_number" id="modal_card_number" required placeholder="0000 0000 0000 0000" maxlength="19"
-                            class="w-full bg-zinc-900 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all font-mono tracking-widest">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Validade</label>
-                        <input type="text" name="card_expiry" id="modal_card_expiry" required placeholder="MM/AA" maxlength="5"
-                            class="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3.5 text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all text-center">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">CVV</label>
-                        <div class="relative">
-                            <input type="text" name="card_cvv" required placeholder="•••" maxlength="4"
-                                class="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3.5 text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all text-center">
-                            <i class="fas fa-info-circle absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600" title="Código de 3 dígitos no verso do cartão"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="space-y-5 bg-black/20 p-6 rounded-3xl border border-white/5 text-center">
+                <i class="fas fa-shield-alt text-3xl text-emerald-400"></i>
+                <p class="text-sm text-zinc-400 leading-relaxed">
+                    Por segurança, este painel não coleta número do cartão nem CVV diretamente.
+                </p>
             </div>
 
             <div class="flex items-center gap-2 text-[10px] font-medium text-zinc-500 justify-center">
@@ -449,11 +415,11 @@
                 <button type="button" onclick="hideCardModal()" class="px-8 py-4 bg-transparent hover:bg-white/5 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px] border border-white/10">
                     Cancelar
                 </button>
-                <button type="submit" class="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-900/20">
-                    Salvar Cartão
-                </button>
+                <a href="{{ route('patient.subscription.plans') }}" class="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-900/20 text-center">
+                    Abrir Checkout
+                </a>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -484,28 +450,6 @@
         modal.classList.remove('flex');
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
-    }
-
-    // Máscaras
-    const modalNumber = document.getElementById('modal_card_number');
-    const modalExpiry = document.getElementById('modal_card_expiry');
-
-    if(modalNumber) {
-        modalNumber.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            let formatted = value.match(/.{1,4}/g)?.join(' ') || '';
-            e.target.value = formatted;
-        });
-    }
-
-    if(modalExpiry) {
-        modalExpiry.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
-            }
-            e.target.value = value;
-        });
     }
 </script>
 

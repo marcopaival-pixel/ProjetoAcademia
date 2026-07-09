@@ -223,7 +223,7 @@
                 btn.disabled = false;
             } else if (data.exists && !data.can_reactivate) {
                 // Se já é ativo ou é um profissional
-                alert(data.message);
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message, type: 'error' } }));
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
             } else {
@@ -255,6 +255,5 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection
-
 
 

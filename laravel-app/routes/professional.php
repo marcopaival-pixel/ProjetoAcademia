@@ -87,6 +87,8 @@ Route::middleware(['auth', 'professional.panel', 'panel.isolation', 'patient_lin
             Route::get('/create', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'store'])->name('store');
             Route::post('/apply-protocol', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'applyProtocol'])->name('apply-protocol');
+            Route::get('/{training}/pdf', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'exportPdf'])->name('pdf');
+            Route::get('/{training}/print-compact', [\App\Http\Controllers\Professional\PatientTrainingController::class, 'printCompact'])->name('print-compact');
         });
     });
 

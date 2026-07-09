@@ -12,6 +12,8 @@ use App\Models\TrainingPlan;
 use App\Models\LoadLog;
 use App\Models\BodyAssessment;
 use App\Models\HealthAlert;
+use App\Models\Payment;
+use App\Models\Subscription;
 use App\Services\PanelAccessService;
 use App\Services\ProgressionService;
 use Illuminate\Http\RedirectResponse;
@@ -147,6 +149,14 @@ class DashboardController extends Controller
                 'body_analysis' => ['label' => 'Fazer Análise Corporal IA', 'done' => BodyAssessment::where('user_id', $uid)->exists(), 'route' => route('body-analysis.index'), 'premium' => true]
             ];
 
+            $subscription = Subscription::with('plan')
+                ->where('user_id', $uid)
+                ->latest()
+                ->first();
+            $lastPayment = Payment::where('user_id', $uid)
+                ->latest()
+                ->first();
+
             return [
                 'calorieTarget' => $calorieTarget,
                 'waterTarget' => $waterTarget,
@@ -180,6 +190,14 @@ class DashboardController extends Controller
                     ->take(5)
                     ->get(),
                 'aiCreditWallet' => app(\App\Services\AiCreditService::class)->getWallet($user),
+                'subscriptionSummary' => [
+                    'plan_name' => $subscription?->plan?->name ?? ($user->hasPremiumAccess() ? 'Premium' : 'Free'),
+                    'status' => $subscription?->getFinancialStatus() ?? 'inactive',
+                    'next_billing_date' => $subscription?->next_billing_date,
+                    'last_payment_status' => $lastPayment?->status,
+                    'last_payment_amount' => $lastPayment?->amount,
+                    'last_payment_at' => $lastPayment?->created_at,
+                ],
                 'evolutionStatus' => app(\App\Services\EvolutionStatusService::class)->getEvolutionStatus($user),
                 'systemAccessLinks' => $user->systemAccessLinks()->get(),
             ];

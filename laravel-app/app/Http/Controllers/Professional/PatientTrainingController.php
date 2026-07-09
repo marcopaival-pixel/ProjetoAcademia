@@ -8,8 +8,10 @@ use App\Models\ExerciseCatalog;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanExercise;
 use App\Models\User;
+use App\Services\DompdfPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class PatientTrainingController extends Controller
 {
@@ -161,6 +163,43 @@ class PatientTrainingController extends Controller
 
         return redirect()->route('professional.patients.trainings.index', $patient->id)
             ->with('success', 'Protocolo aplicado ao paciente com sucesso. Revise os exercícios se necessário.');
+    }
+
+    public function exportPdf(User $patient, TrainingPlan $training, DompdfPdfService $dompdfPdf)
+    {
+        $this->authorizePatientTraining($patient);
+
+        if ((int) $training->user_id !== (int) $patient->id) {
+            abort(404);
+        }
+
+        $training->load('exercises.catalogExercise', 'exercises.sets');
+
+        $plan = $training;
+        $user = $patient;
+        $html = view('progression.pdf-report', compact('plan', 'user'))->render();
+        $binary = $dompdfPdf->render($html, 'A4', 'portrait', true, 'DejaVu Sans');
+        $filename = 'Treino_'.Str::slug($patient->name.'_'.$training->name, '_').'.pdf';
+
+        return response($binary, 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+    }
+
+    public function printCompact(User $patient, TrainingPlan $training)
+    {
+        $this->authorizePatientTraining($patient);
+
+        if ((int) $training->user_id !== (int) $patient->id) {
+            abort(404);
+        }
+
+        $training->load('exercises.catalogExercise', 'exercises.sets');
+
+        return view('professional.patient-trainings.print-compact', [
+            'patient' => $patient,
+            'plan' => $training,
+        ]);
     }
 
     private function authorizePatientTraining(User $patient): void

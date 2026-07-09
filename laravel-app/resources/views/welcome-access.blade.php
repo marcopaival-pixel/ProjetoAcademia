@@ -62,7 +62,7 @@
 <script>
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert('Link copiado para a área de transferência!');
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Link copiado para a área de transferência!', type: 'success' } }));
         });
     }
 

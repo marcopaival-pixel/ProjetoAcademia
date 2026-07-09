@@ -956,9 +956,9 @@
                     this.notes = last.notes || '';
                     this.fetchHistory();
                     setTimeout(() => lucide.createIcons(), 50);
-                    alert('Último treino carregado com sucesso!');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Último treino carregado com sucesso!', type: 'success' } }));
                 } else {
-                    alert('Nenhum treino anterior encontrado.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhum treino anterior encontrado.', type: 'error' } }));
                 }
             },
 
@@ -993,7 +993,7 @@
                     }
                 } catch (e) {
                     console.error('Error sharing card:', e);
-                    alert('Erro ao gerar card. Tente novamente.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao gerar card. Tente novamente.', type: 'error' } }));
                 }
             },
 

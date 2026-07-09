@@ -151,7 +151,7 @@ function simulator() {
                         }
                     });
                 } else {
-                    alert('Selecione um plano antes de gerar a proposta.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione um plano antes de gerar a proposta.', type: 'error' } }));
                 }
                 return;
             }

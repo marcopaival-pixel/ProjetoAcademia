@@ -539,7 +539,7 @@
             // Custom terms validation
             const terms = document.getElementById('terms');
             if (!terms.checked) {
-                alert('Você precisa aceitar os termos para continuar.');
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Você precisa aceitar os termos para continuar.', type: 'error' } }));
                 return;
             }
 

@@ -352,7 +352,7 @@
                     }
                 } catch (error) {
                     console.error('Erro ao salvar log:', error);
-                    alert('Erro ao salvar o progresso. Tente novamente.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao salvar o progresso. Tente novamente.', type: 'error' } }));
                 } finally {
                     this.submitting = false;
                 }

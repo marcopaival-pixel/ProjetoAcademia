@@ -9,11 +9,14 @@
         <!-- Coluna Principal (Feed) -->
         <div class="lg:col-span-8 space-y-8">
             <!-- Header da Comunidade -->
-    <div class="relative overflow-hidden rounded-[3rem] bg-zinc-900 border border-zinc-800 p-8 shadow-2xl">
+    <div class="relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] bg-zinc-900 border border-zinc-800 p-5 sm:p-8 shadow-2xl">
         <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full"></div>
         <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="space-y-2 text-center md:text-left">
-                <h1 class="text-4xl font-black text-white tracking-tighter uppercase italic">Comunidade <span class="text-emerald-500">NexShape</span></h1>
+            <div class="space-y-2 text-center md:text-left min-w-0">
+                <h1 class="text-3xl sm:text-4xl leading-none font-black text-white tracking-tighter uppercase italic flex flex-wrap justify-center md:justify-start gap-x-3 gap-y-1">
+                    <span>Comunidade</span>
+                    <span class="text-emerald-500">NexShape</span>
+                </h1>
                 <p class="text-zinc-500 font-medium">Compartilhe sua evolução, motive outros atletas e conquiste medalhas.</p>
             </div>
             <button @click="$dispatch('open-post-modal')" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl transition-all shadow-xl shadow-emerald-500/10 flex items-center gap-3 text-xs uppercase tracking-widest active:scale-95">

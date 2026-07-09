@@ -8,6 +8,7 @@ use App\Models\ProfessionalAppointment;
 use App\Models\ProfessionalAvailability;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AgendaController extends Controller

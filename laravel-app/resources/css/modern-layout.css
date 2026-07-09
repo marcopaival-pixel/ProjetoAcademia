@@ -579,8 +579,9 @@ body {
     .admin-sidebar-nav .nav-link .label,
     .admin-sidebar-nav .submenu-link {
         white-space: normal;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
         word-break: normal;
+        hyphens: none;
     }
 }
 

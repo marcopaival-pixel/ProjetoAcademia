@@ -320,9 +320,9 @@
         const patientId = document.getElementById('patient-id').value;
         const specialtyId = document.getElementById('specialty-id').value;
 
-        if (!patientId) return alert('Por favor, selecione um {{ mb_strtolower($patientLabel) }}.');
-        if (!specialtyId) return alert('Por favor, selecione a especialidade.');
-        if (!prompt) return alert('Por favor, descreva o objetivo.');
+        if (!patientId) return window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Por favor, selecione um {{ mb_strtolower($patientLabel) }}.', type: 'error' } }));
+        if (!specialtyId) return window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Por favor, selecione a especialidade.', type: 'error' } }));
+        if (!prompt) return window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Por favor, descreva o objetivo.', type: 'error' } }));
 
         const btnText = document.getElementById('btn-text');
         const btnIcon = document.getElementById('btn-icon');
@@ -347,10 +347,10 @@
                 lastResult = result.data || result.content;
                 renderResult(lastResult);
             } else {
-                alert('Erro na geração: ' + (result.error || 'Tente ser mais específico.'));
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro na geração: ' + (result.error || 'Tente ser mais específico.'), type: 'error' } }));
             }
         } catch (e) {
-            alert('Falha na conexão com o motor AI.');
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Falha na conexão com o motor AI.', type: 'error' } }));
         } finally {
             btnText.textContent = 'GERAR PRESCRIÇÃO AI';
             btnIcon.classList.remove('hidden');
@@ -439,13 +439,13 @@
             });
             const result = await response.json();
             if (result.success) {
-                alert('Prescrição registrada com sucesso no prontuário!');
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Prescrição registrada com sucesso no prontuário!', type: 'success' } }));
                 loadPatientHistory();
             } else {
-                alert('Erro ao salvar.');
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao salvar.', type: 'error' } }));
             }
         } catch (e) {
-            alert('Falha ao registrar.');
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Falha ao registrar.', type: 'error' } }));
         }
     }
 
@@ -527,6 +527,5 @@
     }
 </style>
 @endsection
-
 
 

@@ -74,8 +74,8 @@
                         class="relative flex items-center gap-3 bg-zinc-900 px-5 py-2.5 rounded-2xl border border-white/10">
                         <span class="text-2xl animate-bounce-slow">🔥</span>
                         <div>
-                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">Sequência Atual</p>
-                            <p class="text-white font-black text-lg leading-none">12 Dias</p>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">Treinos Cadastrados</p>
+                            <p class="text-white font-black text-lg leading-none">{{ $trainingCount }}</p>
                         </div>
                     </div>
                 </div>
@@ -219,6 +219,48 @@
             </div>
         </div>
 
+        @php
+            $subscriptionStatus = strtolower((string) ($subscriptionSummary['status'] ?? 'inactive'));
+            $subscriptionIsOk = in_array($subscriptionStatus, ['active', 'trialing'], true);
+            $subscriptionIsPending = in_array($subscriptionStatus, ['pending', 'overdue', 'suspended', 'blocked'], true);
+        @endphp
+        <div class="bg-zinc-900 border {{ $subscriptionIsOk ? 'border-emerald-500/20' : ($subscriptionIsPending ? 'border-amber-500/20' : 'border-zinc-800') }} p-8 rounded-[3rem] shadow-2xl">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl {{ $subscriptionIsOk ? 'bg-emerald-500/10 text-emerald-400' : ($subscriptionIsPending ? 'bg-amber-500/10 text-amber-400' : 'bg-zinc-800 text-zinc-400') }} flex items-center justify-center">
+                            <i data-lucide="credit-card" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Status Financeiro</p>
+                            <h3 class="text-2xl font-black text-white tracking-tighter">{{ $subscriptionSummary['plan_name'] }}</h3>
+                        </div>
+                    </div>
+                    <p class="text-sm text-zinc-400 font-medium">
+                        Situação: <span class="{{ $subscriptionIsOk ? 'text-emerald-400' : ($subscriptionIsPending ? 'text-amber-400' : 'text-zinc-300') }} font-black uppercase">{{ $subscriptionSummary['status'] }}</span>
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:min-w-[520px]">
+                    <div>
+                        <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Próxima Cobrança</p>
+                        <p class="text-sm font-black text-white">{{ $subscriptionSummary['next_billing_date']?->format('d/m/Y') ?: '--' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Último Pagamento</p>
+                        <p class="text-sm font-black text-white">
+                            {{ $subscriptionSummary['last_payment_amount'] !== null ? 'R$ '.number_format((float) $subscriptionSummary['last_payment_amount'], 2, ',', '.') : '--' }}
+                        </p>
+                    </div>
+                    <div class="flex items-end">
+                        <a href="{{ route('patient.subscription.index') }}" class="w-full py-3 bg-white text-zinc-950 font-black rounded-2xl text-center text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all">
+                            Gerenciar Assinatura
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         @if($systemAccessLinks->isNotEmpty())
         <!-- My Systems - Direct Access Links -->
         <div class="space-y-8">
@@ -265,7 +307,11 @@
         <script>
             function copyToClipboard(text) {
                 navigator.clipboard.writeText(text).then(() => {
-                    alert('Link copiado para a área de transferência!');
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-6 right-6 z-[9999] px-5 py-3 rounded-2xl bg-emerald-500 text-zinc-950 text-xs font-black uppercase tracking-widest shadow-2xl';
+                    toast.textContent = 'Link copiado';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2400);
                 });
             }
         </script>

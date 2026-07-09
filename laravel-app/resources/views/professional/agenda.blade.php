@@ -184,12 +184,11 @@ function updateStatus(id, status) {
         if (data.success) {
             window.location.reload();
         } else {
-            alert('Erro ao atualizar status: ' + data.message);
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao atualizar status: ' + data.message, type: 'error' } }));
         }
     });
 }
 </script>
 @endsection
-
 
 

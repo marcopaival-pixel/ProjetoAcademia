@@ -11,6 +11,68 @@ servers:
       baseUrl:
         default: https://app.example.com
 paths:
+  /user:
+    get:
+      summary: Utilizador autenticado legado
+      tags: [Perfil]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Utilizador autenticado
+        '401':
+          description: Não autenticado
+  /leads:
+    post:
+      summary: Capturar lead público
+      tags: [Comercial]
+      responses:
+        '201':
+          description: Lead registado
+  /auth/register:
+    post:
+      summary: Registar utilizador via API
+      tags: [Autenticação]
+      responses:
+        '201':
+          description: Utilizador registado
+        '422':
+          description: Dados inválidos
+  /organizations:
+    get:
+      summary: Listar organizações do utilizador
+      tags: [Organizações]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de organizações
+    post:
+      summary: Criar organização
+      tags: [Organizações]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Organização criada
+  /organizations/{id}/users:
+    post:
+      summary: Vincular utilizador a organização
+      tags: [Organizações]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Utilizador vinculado
+  /dashboard:
+    get:
+      summary: Dashboard unificado por contexto ativo
+      tags: [Dashboard]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Dados do dashboard
   /health:
     get:
       summary: Health check público

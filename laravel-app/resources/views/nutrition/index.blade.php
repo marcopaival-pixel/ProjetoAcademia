@@ -88,10 +88,10 @@
                         this.aiStackSuggestion = data.suggestion;
                         this.aiCredits--;
                     } else {
-                        alert(data.error || 'Erro ao gerar sugestão.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.error || 'Erro ao gerar sugestão.', type: 'error' } }));
                     }
                 } catch (e) {
-                    alert('Erro ao gerar sugestão da IA.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao gerar sugestão da IA.', type: 'error' } }));
                 } finally {
                     this.aiStackLoading = false;
                 }
@@ -112,10 +112,10 @@
                     if (data.success) {
                         window.location.reload();
                     } else {
-                        alert('Erro ao adotar o stack.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao adotar o stack.', type: 'error' } }));
                     }
                 } catch (e) {
-                    alert('Erro na comunicação com o servidor.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro na comunicação com o servidor.', type: 'error' } }));
                 }
             },
             async generateMeal() {
@@ -177,11 +177,11 @@
                     if (resp.ok && data.success) {
                         window.location.reload(); 
                     } else {
-                        alert('Erro ao registrar água: ' + (data.message || 'Erro desconhecido'));
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao registrar água: ' + (data.message || 'Erro desconhecido'), type: 'error' } }));
                     }
                 } catch (e) {
                     console.error('Erro ao registrar água', e);
-                    alert('Falha de conexão ao registrar água.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Falha de conexão ao registrar água.', type: 'error' } }));
                 }
             },
             async adoptSuggestedMeal() {
@@ -220,7 +220,7 @@
                         window.location.href = '{{ route('diary') }}?flash=added';
                     }
                 } catch (e) {
-                    alert('Erro ao registrar refeição.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro ao registrar refeição.', type: 'error' } }));
                 }
             },
             searchQuery: '',
@@ -305,10 +305,10 @@
                         this.photoOpen = false;
                         this.photoFile = null;
                     } else {
-                        alert(data.error || 'Erro ao analisar foto.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.error || 'Erro ao analisar foto.', type: 'error' } }));
                     }
                 } catch (e) {
-                    alert('Erro na comunicação com o servidor.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro na comunicação com o servidor.', type: 'error' } }));
                 } finally { this.isAnalyzingPhoto = false; }
             },
             aiInput: '',
@@ -338,7 +338,7 @@
                         if (data.code === 'credits_exceeded') {
                             window.dispatchEvent(new CustomEvent('open-ai-credits-modal'));
                         } else {
-                            alert(data.error || 'Erro ao processar IA.');
+                            window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.error || 'Erro ao processar IA.', type: 'error' } }));
                         }
                     }
                 } catch (e) {} finally { this.isProcessingAI = false; }

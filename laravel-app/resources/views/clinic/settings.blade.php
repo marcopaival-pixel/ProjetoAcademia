@@ -200,7 +200,7 @@ function copyInviteUrl() {
     copyText.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(copyText.value);
     
-    alert("Link de convite copiado!");
+    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Link de convite copiado!', type: 'success' } }));
 }
 </script>
 @endsection

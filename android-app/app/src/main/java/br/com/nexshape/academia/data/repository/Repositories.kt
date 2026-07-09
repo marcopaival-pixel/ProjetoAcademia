@@ -9,6 +9,7 @@ import br.com.nexshape.academia.data.api.NutritionDiaryData
 import br.com.nexshape.academia.data.api.TrainingPlanDetailDto
 import br.com.nexshape.academia.data.api.TrainingPlanSummaryDto
 import br.com.nexshape.academia.data.api.UpdateAppointmentStatusRequest
+import br.com.nexshape.academia.data.api.WorkoutSessionRequest
 import br.com.nexshape.academia.data.local.AppDatabase
 import br.com.nexshape.academia.data.local.PendingSyncEntity
 import com.squareup.moshi.Moshi
@@ -24,6 +25,14 @@ class TrainingRepository {
 
     suspend fun planDetail(id: Int): Result<TrainingPlanDetailDto> = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().trainingPlan(id).data }
+    }
+
+    suspend fun sessions(limit: Int = 10) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().workoutSessions(limit).data }
+    }
+
+    suspend fun saveSession(request: WorkoutSessionRequest) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().createWorkoutSession(request).data }
     }
 }
 

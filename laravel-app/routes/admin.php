@@ -152,6 +152,11 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\FinancialDashboardController::class, 'management'])->name('management');
             Route::get('/reports', [\App\Http\Controllers\Admin\FinancialDashboardController::class, 'reports'])->name('reports');
             Route::post('/actions/{subscription}/{action}', [\App\Http\Controllers\Admin\FinancialDashboardController::class, 'processAction'])->name('actions');
+            Route::get('/fiscal-settings', [\App\Http\Controllers\Admin\FiscalSettingController::class, 'edit'])->name('fiscal-settings.edit');
+            Route::post('/fiscal-settings', [\App\Http\Controllers\Admin\FiscalSettingController::class, 'update'])->name('fiscal-settings.update');
+            Route::get('/fiscal-invoices', [\App\Http\Controllers\Admin\FiscalInvoiceController::class, 'index'])->name('fiscal-invoices.index');
+            Route::post('/fiscal-invoices/{fiscalInvoice}/retry', [\App\Http\Controllers\Admin\FiscalInvoiceController::class, 'retry'])->name('fiscal-invoices.retry');
+            Route::post('/fiscal-invoices/{fiscalInvoice}/cancel', [\App\Http\Controllers\Admin\FiscalInvoiceController::class, 'cancel'])->name('fiscal-invoices.cancel');
             
             // Consumo de IA
             Route::prefix('ai-credits')->name('ai-credits.')->group(function () {

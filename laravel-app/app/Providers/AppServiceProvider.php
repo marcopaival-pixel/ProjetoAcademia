@@ -2,41 +2,83 @@
 
 namespace App\Providers;
 
-use App\Support\Theme;
+use App\Contracts\InvoiceGatewayInterface;
+use App\Contracts\PaymentGatewayInterface;
+use App\Listeners\MailNotificationAuditListener;
+use App\Models\ExerciseEntry;
+use App\Models\FiscalSetting;
+use App\Models\HealthAlert;
+use App\Models\ProfessionalFinanceEntry;
+use App\Models\ProfessionalProfile;
+use App\Models\User;
+use App\Models\WaterEntry;
+use App\Observers\ExerciseEntryObserver;
+use App\Observers\HealthAlertObserver;
+use App\Observers\ProfessionalFinanceEntryObserver;
+use App\Observers\WaterEntryObserver;
+use App\Policies\FinancialReportPolicy;
+use App\Policies\ProfessionalPatientPolicy;
+use App\Services\Context\CurrentContext;
+use App\Services\DynamicConfigService;
+use App\Services\Fiscal\FakeInvoiceGateway;
 use App\Services\MailConfigService;
 use App\Services\MenuAccessService;
+use App\Services\OCR\GoogleVisionOCRService;
+use App\Services\OCR\OCRServiceInterface;
+use App\Services\Operations\JobMetricsRecorder;
+use App\Services\Payment\PaymentGatewayManager;
+use App\Support\Theme;
 use Illuminate\Cache\RateLimiting\Limit;
-use App\Listeners\MailNotificationAuditListener;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
-use App\Models\User;
-use App\Policies\FinancialReportPolicy;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Horizon\Horizon;
+use Sentry\SentrySdk;
+use Sentry\State\Scope;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->scoped(\App\Services\Context\CurrentContext::class, function ($app) {
-            return new \App\Services\Context\CurrentContext();
+        $this->app->scoped(CurrentContext::class, function ($app) {
+            return new CurrentContext;
         });
 
-        $this->app->singleton(\App\Services\Payment\PaymentGatewayManager::class, function ($app) {
-            return new \App\Services\Payment\PaymentGatewayManager($app);
+        $this->app->singleton(PaymentGatewayManager::class, function ($app) {
+            return new PaymentGatewayManager($app);
         });
 
-        $this->app->bind(\App\Contracts\PaymentGatewayInterface::class, function ($app) {
-            return $app->make(\App\Services\Payment\PaymentGatewayManager::class)->driver();
+        $this->app->bind(PaymentGatewayInterface::class, function ($app) {
+            return $app->make(PaymentGatewayManager::class)->driver();
         });
 
-        $this->app->bind(\App\Services\OCR\OCRServiceInterface::class, \App\Services\OCR\GoogleVisionOCRService::class);
+        $this->app->bind(InvoiceGatewayInterface::class, function () {
+            $setting = FiscalSetting::active();
+            $provider = $setting?->provider ?: (string) config('fiscal.provider', '');
+
+            if ($provider === '' && app()->environment(['local', 'testing'])) {
+                $provider = 'fake';
+            }
+
+            if ($provider === 'fake') {
+                return new FakeInvoiceGateway;
+            }
+
+            throw new \RuntimeException("Gateway fiscal não implementado: {$provider}");
+        });
+
+        $this->app->bind(OCRServiceInterface::class, GoogleVisionOCRService::class);
     }
 
     public function boot(): void
@@ -46,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin.financial.management', fn (User $user) => $financialPolicy->viewManagement($user));
         Gate::define('admin.financial.reports', fn (User $user) => $financialPolicy->viewReports($user));
 
-        $professionalPatientPolicy = new \App\Policies\ProfessionalPatientPolicy;
+        $professionalPatientPolicy = new ProfessionalPatientPolicy;
         Gate::define('professionalPatient.view', fn (User $user, User $patient) => $professionalPatientPolicy->view($user, $patient));
         Gate::define('professionalPatient.update', fn (User $user, User $patient) => $professionalPatientPolicy->update($user, $patient));
         Gate::define('professionalPatient.delete', fn (User $user, User $patient) => $professionalPatientPolicy->delete($user, $patient));
@@ -56,25 +98,25 @@ class AppServiceProvider extends ServiceProvider
             URL::forceRootUrl(rtrim((string) config('app.url'), '/').$bp);
         }
 
-        // Aplica as configura��es de e-mail do banco de dados (fallback global)
+        // Aplica as configurações de e-mail do banco de dados (fallback global)
         MailConfigService::apply();
-        \App\Services\DynamicConfigService::apply();
+        DynamicConfigService::apply();
 
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationSending::class, function ($event) {
-            if ($event->channel === 'mail' && $event->notifiable instanceof \App\Models\User) {
+        Event::listen(NotificationSending::class, function ($event) {
+            if ($event->channel === 'mail' && $event->notifiable instanceof User) {
                 MailConfigService::apply($event->notifiable->academy_company_id);
             }
         });
 
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationSent::class, [MailNotificationAuditListener::class, 'handleSent']);
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Notifications\Events\NotificationFailed::class, [MailNotificationAuditListener::class, 'handleFailed']);
+        Event::listen(NotificationSent::class, [MailNotificationAuditListener::class, 'handleSent']);
+        Event::listen(NotificationFailed::class, [MailNotificationAuditListener::class, 'handleFailed']);
 
-        \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {
+        View::composer('layouts.app', function ($view) {
             $activePatient = null;
             if (auth()->check() && session()->has('active_patient_id')) {
-                // Compartilhar apenas os dados b�sicos para n�o sobrecarregar
-                $activePatient = \App\Models\User::find(session('active_patient_id'));
-                if (!$activePatient) {
+                // Compartilhar apenas os dados básicos para não sobrecarregar
+                $activePatient = User::find(session('active_patient_id'));
+                if (! $activePatient) {
                     session()->forget('active_patient_id');
                 }
             }
@@ -87,7 +129,7 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        \Illuminate\Support\Facades\View::composer('partials.topbar', function ($view) {
+        View::composer('partials.topbar', function ($view) {
             $user = auth()->user();
             if ($user) {
                 $view->with([
@@ -98,7 +140,7 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        \Illuminate\Support\Facades\View::composer('partials.admin-sidebar', function ($view) {
+        View::composer('partials.admin-sidebar', function ($view) {
             $user = auth()->user();
             $map = [];
             if ($user !== null) {
@@ -107,9 +149,9 @@ class AppServiceProvider extends ServiceProvider
             $view->with('adminNavVisible', $map);
         });
 
-        \Illuminate\Support\Facades\View::composer('professional.*', function ($view) {
+        View::composer('professional.*', function ($view) {
             if (auth()->check() && auth()->user()->hasRole('professional')) {
-                /** @var \App\Models\ProfessionalProfile|null $profile */
+                /** @var ProfessionalProfile|null $profile */
                 $profile = auth()->user()->professionalProfile;
                 if ($profile && $profile->profession) {
                     $profObj = $profile->profession;
@@ -119,33 +161,33 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 $isFitness = in_array($professionName, ['Educador Físico', 'Personal Trainer']);
-                
+
                 $view->with('patientLabel', $isFitness ? 'Aluno' : 'Paciente');
                 $view->with('patientsLabel', $isFitness ? 'Alunos' : 'Pacientes');
             }
         });
 
-        \Illuminate\Support\Facades\RateLimiter::for('openfoodfacts', function (\Illuminate\Http\Request $request) {
+        RateLimiter::for('openfoodfacts', function (Request $request) {
             $uid = (int) ($request->user()?->id ?? 0);
             $per = max(5, (int) config('services.openfoodfacts.max_requests_per_minute', 30));
 
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute($per)->by($uid > 0 ? 'off-'.$uid : 'off-ip-'.$request->ip());
+            return Limit::perMinute($per)->by($uid > 0 ? 'off-'.$uid : 'off-ip-'.$request->ip());
         });
 
-        \Illuminate\Support\Facades\RateLimiter::for('privacy-download', function (\Illuminate\Http\Request $request) {
+        RateLimiter::for('privacy-download', function (Request $request) {
             $uid = (int) ($request->user()?->id ?? 0);
 
-            return \Illuminate\Cache\RateLimiting\Limit::perHour(20)->by($uid > 0 ? 'privacy-u-'.$uid : 'privacy-ip-'.$request->ip());
+            return Limit::perHour(20)->by($uid > 0 ? 'privacy-u-'.$uid : 'privacy-ip-'.$request->ip());
         });
 
-        \Illuminate\Support\Facades\RateLimiter::for('marketing-tracking', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by('mkt-ip-'.$request->ip());
+        RateLimiter::for('marketing-tracking', function (Request $request) {
+            return Limit::perMinute(60)->by('mkt-ip-'.$request->ip());
         });
 
-        \Illuminate\Support\Facades\RateLimiter::for('client-errors', function (\Illuminate\Http\Request $request) {
+        RateLimiter::for('client-errors', function (Request $request) {
             $limit = max(1, (int) config('observability.client_errors.rate_limit', 10));
 
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute($limit)->by('client-err-ip-'.$request->ip());
+            return Limit::perMinute($limit)->by('client-err-ip-'.$request->ip());
         });
 
         RateLimiter::for('api', function (Request $request) {
@@ -154,7 +196,7 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(120)->by($userId > 0 ? 'api-u-'.$userId : 'api-ip-'.$request->ip());
         });
 
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Queue\Events\JobProcessed::class, function ($event) {
+        Event::listen(JobProcessed::class, function ($event) {
             $durationMs = 0;
             if (isset($event->job) && method_exists($event->job, 'payload')) {
                 $payload = $event->job->payload();
@@ -164,37 +206,40 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
 
-            \App\Services\Operations\JobMetricsRecorder::recordCompleted($durationMs);
+            JobMetricsRecorder::recordCompleted($durationMs);
         });
 
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Queue\Events\JobFailed::class, function () {
-            \App\Services\Operations\JobMetricsRecorder::recordFailed();
+        Event::listen(JobFailed::class, function () {
+            JobMetricsRecorder::recordFailed();
         });
 
-        if (class_exists(\Sentry\SentrySdk::class) && config('sentry.dsn')) {
-            \Sentry\configureScope(function (\Sentry\State\Scope $scope): void {
+        if (class_exists(SentrySdk::class) && config('sentry.dsn')) {
+            \Sentry\configureScope(function (Scope $scope): void {
                 $scope->setTag('app', 'nexshape');
             });
         }
 
         // Feature and Plan Directives
-        \Illuminate\Support\Facades\Blade::if('feature', function ($key) {
+        Blade::if('feature', function ($key) {
             return auth()->check() && auth()->user()->hasFeature($key);
         });
 
-        \Illuminate\Support\Facades\Blade::if('planLimit', function ($key, $currentCount) {
-            if (!auth()->check()) return false;
+        Blade::if('planLimit', function ($key, $currentCount) {
+            if (! auth()->check()) {
+                return false;
+            }
             $limit = auth()->user()->getPlanLimit($key);
+
             return $limit === 0 || $currentCount < $limit;
         });
 
-        \Illuminate\Support\Facades\Blade::directive('lockIcon', function ($feature) {
+        Blade::directive('lockIcon', function ($feature) {
             return "<?php if(!auth()->check() || !auth()->user()->hasFeature($feature)): ?>
-                <i class='fas fa-lock ml-2 text-yellow-500' title='Dispon�vel no plano Pro'></i>
+                <i class='fas fa-lock ml-2 text-yellow-500' title='Disponível no plano Pro'></i>
             <?php endif; ?>";
         });
 
-        \Illuminate\Support\Facades\Blade::directive('monetizationGate', function ($featureCode) {
+        Blade::directive('monetizationGate', function ($featureCode) {
             return "<?php 
                 \$monetizationResult = app(\App\Services\MonetizationService::class)->checkAccess(auth()->user(), $featureCode);
                 if (!\$monetizationResult['allowed']): 
@@ -208,31 +253,31 @@ class AppServiceProvider extends ServiceProvider
                 else: ?>";
         });
 
-        \Illuminate\Support\Facades\Blade::directive('endMonetizationGate', function () {
-            return "<?php endif; ?>";
+        Blade::directive('endMonetizationGate', function () {
+            return '<?php endif; ?>';
         });
 
-        // Configura��o de Seguran�a para o Laravel Pulse
-        \Illuminate\Support\Facades\Gate::define('viewPulse', function (\App\Models\User $user) {
+        // Configuração de Segurança para o Laravel Pulse
+        Gate::define('viewPulse', function (User $user) {
             return $user->isAdministrator();
         });
 
-        if (class_exists(\Laravel\Horizon\Horizon::class)) {
-            \Laravel\Horizon\Horizon::auth(function ($request) {
+        if (class_exists(Horizon::class)) {
+            Horizon::auth(function ($request) {
                 $user = $request->user();
 
                 return $user && $user->isAdministrator();
             });
         }
         // Achievements Observers
-        \App\Models\WaterEntry::observe(\App\Observers\WaterEntryObserver::class);
-        \App\Models\ExerciseEntry::observe(\App\Observers\ExerciseEntryObserver::class);
-        \App\Models\ProfessionalFinanceEntry::observe(\App\Observers\ProfessionalFinanceEntryObserver::class);
-        \App\Models\HealthAlert::observe(\App\Observers\HealthAlertObserver::class);
+        WaterEntry::observe(WaterEntryObserver::class);
+        ExerciseEntry::observe(ExerciseEntryObserver::class);
+        ProfessionalFinanceEntry::observe(ProfessionalFinanceEntryObserver::class);
+        HealthAlert::observe(HealthAlertObserver::class);
 
         if ($this->app->environment('production') && ! (bool) config('session.secure')) {
-            \Illuminate\Support\Facades\Log::warning(
-                '[security] SESSION_SECURE_COOKIE=false em produ��o � risco de hijack de sess�o. Defina SESSION_SECURE_COOKIE=true com HTTPS.'
+            Log::warning(
+                '[security] SESSION_SECURE_COOKIE=false em produção é risco de hijack de sessão. Defina SESSION_SECURE_COOKIE=true com HTTPS.'
             );
         }
     }

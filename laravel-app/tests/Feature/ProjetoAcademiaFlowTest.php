@@ -70,6 +70,23 @@ class ProjetoAcademiaFlowTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_demo_user_with_forced_password_can_leave_demo_for_registration(): void
+    {
+        $user = User::factory()->create([
+            'is_demo' => true,
+            'force_password_change' => true,
+            'temp_password_expires_at' => now()->addHour(),
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->withSession(['is_demo_mode' => true, 'demo_profile' => 'professional'])
+            ->get(route('demo.stop', ['next' => 'register']))
+            ->assertRedirect(route('register'));
+
+        $this->assertGuest();
+    }
+
     public function test_legacy_diary_php_same_as_diary_route(): void
     {
         $user = User::factory()->create();

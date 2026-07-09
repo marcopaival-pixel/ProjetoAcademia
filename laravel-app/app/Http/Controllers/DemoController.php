@@ -43,7 +43,7 @@ class DemoController extends Controller
         return redirect()->route('dashboard')->with('success', 'Modo Demonstração Ativado! Explore o sistema livremente.');
     }
 
-    public function stop()
+    public function stop(Request $request)
     {
         // Se estiver logado como demo, deslogar
         if (Auth::user()?->is_demo) {
@@ -51,6 +51,14 @@ class DemoController extends Controller
         }
 
         session()->forget(['is_demo_mode', 'demo_profile']);
+
+        if ($request->query('next') === 'login') {
+            return redirect()->route('login')->with('info', 'Você saiu do Modo Demonstração.');
+        }
+
+        if ($request->query('next') === 'register') {
+            return redirect()->route('register')->with('info', 'Você saiu do Modo Demonstração.');
+        }
 
         return redirect()->route('home')->with('info', 'Você saiu do Modo Demonstração.');
     }

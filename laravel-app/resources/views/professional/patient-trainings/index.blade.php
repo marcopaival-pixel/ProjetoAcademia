@@ -47,10 +47,12 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <!-- Funcionalidades futuras para visualização, edição e cópia -->
-                        <button class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors" title="Visualizar/Imprimir">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                        <a href="{{ route('professional.patients.trainings.print-compact', [$patient->id, $plan->id]) }}" target="_blank" class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors" title="Impressora pequena">
+                            <i class="fas fa-print"></i>
+                        </a>
+                        <a href="{{ route('professional.patients.trainings.pdf', [$patient->id, $plan->id]) }}" class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors" title="Exportar PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
                     </div>
                 </div>
             @endforeach
@@ -98,6 +100,4 @@
     </div>
 </div>
 @endsection
-
-
 

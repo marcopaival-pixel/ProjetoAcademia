@@ -3,6 +3,9 @@
 @section('title', 'NEX SHAPE — Ecossistema de Elite para Treino e Nutrição')
 
 @section('content')
+@php
+    $publicRegisterUrl = session('is_demo_mode') ? route('demo.stop', ['next' => 'register']) : route('onboarding.welcome');
+@endphp
 <div class="space-y-32 py-10 px-6 max-w-[1400px] mx-auto overflow-hidden font-['Outfit']">
     
     <!-- App Promotion Banner -->
@@ -32,7 +35,7 @@
             </p>
 
             <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-6">
-                <a href="{{ route('onboarding.welcome') }}" class="group relative px-10 py-5 bg-white text-zinc-950 font-black rounded-[2rem] hover:bg-blue-500 hover:text-white transition-all shadow-2xl active:scale-95">
+                <a href="{{ $publicRegisterUrl }}" class="group relative px-10 py-5 bg-white text-zinc-950 font-black rounded-[2rem] hover:bg-blue-500 hover:text-white transition-all shadow-2xl active:scale-95">
                     <span class="relative z-10">COMEÇAR AGORA — É GRÁTIS</span>
                 </a>
                 <a href="{{ route('demo.start') }}" class="px-10 py-5 bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 text-emerald-400 font-black rounded-[2rem] hover:bg-emerald-500/20 transition-all active:scale-95 flex items-center gap-2">
@@ -84,6 +87,103 @@
                 <!-- Anel orbital externo animado -->
                 <div class="globe-orbit">
                     <div class="globe-orbit__dot"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Android App Section -->
+    <section id="android-app" class="relative overflow-hidden rounded-[3rem] border border-emerald-500/20 bg-zinc-900/40 px-6 py-12 md:px-12 md:py-16">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.16),transparent_36%),radial-gradient(circle_at_18%_82%,rgba(59,130,246,0.12),transparent_32%)] pointer-events-none"></div>
+
+        <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="space-y-7 text-center lg:text-left">
+                <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <i data-lucide="smartphone" class="w-4 h-4"></i>
+                    <span class="text-[10px] font-black uppercase tracking-[0.22em]">App Android NexShape</span>
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase italic">
+                        Leve o treino no <span class="text-emerald-500">bolso.</span>
+                    </h2>
+                    <p class="text-zinc-400 text-lg font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
+                        O sistema tambem acompanha alunos e pacientes pelo app Android, com agenda, treinos, evolucao, nutricao e notificacoes integradas ao painel web.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="rounded-2xl bg-zinc-950/70 border border-white/5 p-4">
+                        <i data-lucide="calendar-check" class="w-5 h-5 text-blue-400 mb-3"></i>
+                        <p class="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Agenda e avisos</p>
+                    </div>
+                    <div class="rounded-2xl bg-zinc-950/70 border border-white/5 p-4">
+                        <i data-lucide="dumbbell" class="w-5 h-5 text-emerald-400 mb-3"></i>
+                        <p class="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Treinos no celular</p>
+                    </div>
+                    <div class="rounded-2xl bg-zinc-950/70 border border-white/5 p-4">
+                        <i data-lucide="wifi-off" class="w-5 h-5 text-amber-400 mb-3"></i>
+                        <p class="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Sync offline</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                    <a href="{{ $publicRegisterUrl }}" class="px-8 py-4 bg-emerald-500 text-zinc-950 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10">
+                        Criar conta
+                    </a>
+                    <a href="#pricing" class="px-8 py-4 bg-white/5 text-white border border-white/10 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all">
+                        Ver planos com app
+                    </a>
+                </div>
+            </div>
+
+            <div class="flex justify-center lg:justify-end">
+                <div class="relative w-[260px] sm:w-[320px] aspect-[9/18] rounded-[2.5rem] border border-white/15 bg-zinc-950 p-4 shadow-2xl shadow-emerald-950/40">
+                    <div class="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-black border border-white/10"></div>
+                    <div class="h-full rounded-[2rem] bg-gradient-to-b from-zinc-900 to-zinc-950 border border-white/5 overflow-hidden p-5 flex flex-col">
+                        <div class="flex items-center justify-between pt-4">
+                            <div>
+                                <p class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">NexShape</p>
+                                <p class="text-white text-xl font-black tracking-tight">Hoje</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 space-y-4">
+                            <div class="rounded-2xl bg-white/[0.04] border border-white/5 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-[10px] text-zinc-500 font-black uppercase">Treino A</span>
+                                    <span class="text-[10px] text-emerald-400 font-black">72%</span>
+                                </div>
+                                <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                                    <div class="h-full w-[72%] bg-emerald-500"></div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="rounded-2xl bg-white/[0.04] border border-white/5 p-4">
+                                    <p class="text-2xl text-white font-black">8</p>
+                                    <p class="text-[9px] text-zinc-500 font-black uppercase">Séries</p>
+                                </div>
+                                <div class="rounded-2xl bg-white/[0.04] border border-white/5 p-4">
+                                    <p class="text-2xl text-white font-black">2.1L</p>
+                                    <p class="text-[9px] text-zinc-500 font-black uppercase">Água</p>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl bg-blue-500/10 border border-blue-500/20 p-4">
+                                <p class="text-[10px] text-blue-300 font-black uppercase tracking-widest">Próxima sessão</p>
+                                <p class="text-white text-sm font-bold mt-1">19:30 - Mobilidade</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto grid grid-cols-4 gap-2 pt-6">
+                            <div class="h-9 rounded-xl bg-emerald-500/20"></div>
+                            <div class="h-9 rounded-xl bg-white/5"></div>
+                            <div class="h-9 rounded-xl bg-white/5"></div>
+                            <div class="h-9 rounded-xl bg-white/5"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -414,7 +514,7 @@
             <h2 class="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">Sua revolução estética <br> começa por aqui.</h2>
             <p class="text-white/80 text-xl font-medium max-w-2xl mx-auto">Junte-se a milhares de usuários que já utilizam a NexShape para hackear seus resultados.</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="{{ route('register') }}" class="px-12 py-6 bg-zinc-950 text-white font-black rounded-3xl hover:bg-white hover:text-zinc-950 transition-all active:scale-95 shadow-2xl text-lg">
+                <a href="{{ $publicRegisterUrl }}" class="px-12 py-6 bg-zinc-950 text-white font-black rounded-3xl hover:bg-white hover:text-zinc-950 transition-all active:scale-95 shadow-2xl text-lg">
                     CRIAR CONTA AGORA
                 </a>
                 <a href="#pricing" class="px-12 py-6 bg-white/10 backdrop-blur-md text-white font-black rounded-3xl hover:bg-white/20 transition-all active:scale-95 text-lg">

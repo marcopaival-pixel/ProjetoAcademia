@@ -282,6 +282,11 @@ class AgendaService
             ->where('end_time', '>=', $time)
             ->first();
 
+        $hasConfiguredAvailability = ProfessionalAvailability::where('professional_id', $professionalId)->exists();
+        if ($hasConfiguredAvailability && ! $availability) {
+            throw ValidationException::withMessages(['appointment_at' => 'Horario fora da disponibilidade do profissional.']);
+        }
+
         // Se o profissional registrou horários, validamos. Se não, assumimos que ele precisa configurar.
         // Como o sistema evolui, podemos usar as AgendaSettings para horários globais tbm.
         $globalStart = AgendaSetting::where('key', 'business_start_time')->value('value') ?? '06:00:00';

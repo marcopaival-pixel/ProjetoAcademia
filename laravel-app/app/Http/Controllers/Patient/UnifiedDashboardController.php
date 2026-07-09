@@ -69,7 +69,7 @@ class UnifiedDashboardController extends Controller
             'goal' => $profile ? $profile->goal : null,
             'last_update' => $patient->updated_at,
             'status' => $patient->status === 'active' ? 'Ativo' : 'Pendente',
-            'health_score' => $patient->health_score ?? 85,
+            'health_score' => $patient->health_score,
             'profile_type' => $patient->hasRole('aluno') ? 'Aluno + Paciente' : 'Paciente',
             'has_evolution_data' => $hasEvolutionData,
         ];

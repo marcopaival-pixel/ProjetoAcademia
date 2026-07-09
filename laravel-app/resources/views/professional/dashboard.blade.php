@@ -201,8 +201,10 @@
                     </div>
                     <div class="p-5 bg-emerald-500/10 rounded-3xl border border-emerald-500/20 text-center">
                         <i data-lucide="dollar-sign" class="w-6 h-6 text-emerald-400 mx-auto mb-2"></i>
-                        <p class="text-xl font-black text-emerald-400 tracking-tighter mt-1">R$ {{ number_format($revenueMonth, 2, ',', '.') }}</p>
-                        <p class="text-emerald-500/70 text-[9px] font-black uppercase tracking-widest mt-1">Receita Mensal</p>
+                        <p class="text-xl font-black text-emerald-400 tracking-tighter mt-1">
+                            {{ $revenueMonth !== null ? 'R$ '.number_format($revenueMonth, 2, ',', '.') : '--' }}
+                        </p>
+                        <p class="text-emerald-500/70 text-[9px] font-black uppercase tracking-widest mt-1">Receita Registrada</p>
                     </div>
                 </div>
             </div>
@@ -211,7 +213,7 @@
             <div class="bg-zinc-900/40 backdrop-blur-2xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
                 <h2 class="text-2xl font-black text-white tracking-tighter mb-8">Atividade Recente</h2>
                 <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-zinc-800 before:to-transparent">
-                    @foreach($recentActivities as $act)
+                    @forelse($recentActivities as $act)
                     <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                         <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-zinc-950 bg-{{ $act['color'] }}-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
                             <i data-lucide="{{ $act['icon'] }}" class="w-4 h-4"></i>
@@ -223,7 +225,12 @@
                             <p class="text-sm font-bold text-white">{{ $act['text'] }}</p>
                         </div>
                     </div>
-                    @endforeach
+                    @empty
+                    <div class="text-center py-8">
+                        <i data-lucide="activity" class="w-10 h-10 text-zinc-700 mx-auto mb-3"></i>
+                        <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">Nenhuma atividade recente</p>
+                    </div>
+                    @endforelse
                 </div>
             </div>
             

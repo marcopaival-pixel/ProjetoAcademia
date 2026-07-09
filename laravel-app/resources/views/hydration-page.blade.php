@@ -369,12 +369,12 @@
                         loadChart();
                         document.getElementById('custom-amount').value = '';
                     } else {
-                        alert('Erro de Sincronização: ' + (data.message || 'Falha no servidor.'));
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro de Sincronização: ' + (data.message || 'Falha no servidor.'), type: 'error' } }));
                     }
                 })
                 .catch(err => {
                     console.error('Core Trace Error:', err);
-                    alert('Falha crítica na rede. Verifique sua conexão.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Falha crítica na rede. Verifique sua conexão.', type: 'error' } }));
                 });
         }
 
@@ -435,12 +435,12 @@
                         toggleSettingsModal();
                         refreshStatus();
                     } else {
-                        alert('Erro: ' + (data.message || 'Falha na resposta.'));
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Erro: ' + (data.message || 'Falha na resposta.'), type: 'error' } }));
                     }
                 })
                 .catch(err => {
                     console.error('Core Sync Error:', err);
-                    alert('Falha total na sincronização hídrica.');
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Falha total na sincronização hídrica.', type: 'error' } }));
                 });
         }
 

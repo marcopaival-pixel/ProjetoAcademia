@@ -2,13 +2,14 @@
 
 namespace App\Services\Payment;
 
-use App\Models\User;
-use App\Models\Payment;
-use App\Models\Subscription;
-use App\Models\Plan;
-use App\Models\CreditoCompra;
+use App\Jobs\IssueSubscriptionInvoice;
 use App\Models\AiCreditPackage;
 use App\Models\AiCreditTransaction;
+use App\Models\CreditoCompra;
+use App\Models\Payment;
+use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\User;
 use App\Services\AiCreditService;
 use App\Services\CommissionService;
 use App\Services\FinancialLogService;
@@ -86,8 +87,10 @@ class PaymentProcessor
                     'amount' => $amount,
                     'transaction_id' => $gatewayId,
                     'origin' => $gateway,
-                    'payload' => ['reference' => $reference]
+                    'payload' => ['reference' => $reference],
                 ]);
+
+                IssueSubscriptionInvoice::dispatch($payment);
             }
 
             return ['ok' => true, 'message' => 'Pagamento processado com sucesso'];
@@ -97,7 +100,7 @@ class PaymentProcessor
     protected function processSubscription(User $user, string $planCode, string $gateway, string $gatewayId): Subscription
     {
         $plan = Plan::where('name', $planCode)->first() ?? Plan::first();
-        
+
         $lookup = $gatewayId !== ''
             ? ['gateway_type' => $gateway, 'gateway_id' => $gatewayId]
             : ['user_id' => $user->id, 'gateway_type' => $gateway];
@@ -117,7 +120,7 @@ class PaymentProcessor
 
         $user->update([
             'is_premium' => true,
-            'premium_expires_at' => $subscription->end_date
+            'premium_expires_at' => $subscription->end_date,
         ]);
 
         return $subscription->fresh(['plan']);
@@ -171,5 +174,4 @@ class PaymentProcessor
             $user->increment('ai_credits', $compra->quantidade);
         }
     }
-
 }
