@@ -106,6 +106,32 @@
                             </div>
                         </div>
 
+                        <div class="border-t border-white/5 pt-6">
+                            @php
+                                $enabledModules = $clinic->enabled_modules ?? array_keys($medicalRecordModules);
+                                $portalModuleKeys = ['workout', 'nutrition', 'clinical_docs', 'prescriptions', 'pain_tracking', 'body_composition'];
+                                $professionalModules = collect($medicalRecordModules)->except($portalModuleKeys)->all();
+                            @endphp
+
+                            <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-4 block">Módulos Habilitados no Prontuário Profissional</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                @foreach($professionalModules as $key => $module)
+                                    <label class="flex items-start gap-3 p-4 rounded-2xl bg-zinc-900/50 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                                        <input type="checkbox" name="enabled_modules[]" value="{{ $key }}"
+                                            {{ in_array($key, $enabledModules, true) ? 'checked' : '' }}
+                                            class="mt-1 rounded border-zinc-700 bg-zinc-800 text-blue-500 focus:ring-blue-500/20">
+                                        <span class="flex-1">
+                                            <span class="flex items-center gap-2 text-xs font-bold text-zinc-300">
+                                                <i class="{{ $module['icon'] }} text-blue-400 text-xs"></i>
+                                                {{ $module['label'] }}
+                                            </span>
+                                            <span class="block text-[10px] text-zinc-600 mt-1 leading-relaxed">{{ $module['description'] }}</span>
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
                         <div class="flex justify-end pt-4">
                             <button type="submit" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                                 Atualizar {{ $clinic->name }}

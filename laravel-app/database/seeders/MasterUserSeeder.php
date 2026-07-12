@@ -25,7 +25,7 @@ class MasterUserSeeder extends Seeder
         $user = User::where('email', $email)->first();
 
         if (! $user) {
-            $user = User::create([
+            $user = new User([
                 'name' => 'Master Academia',
                 'email' => $email,
                 'is_admin' => true,
@@ -33,8 +33,8 @@ class MasterUserSeeder extends Seeder
                 'premium_expires_at' => Carbon::now()->addYears(50),
                 'created_at' => Carbon::now(),
             ]);
-
-            $user->setPlainPassword($plainPassword, $forcePasswordChange);
+            $user->password_hash = \Illuminate\Support\Facades\Hash::make($plainPassword);
+            $user->save();
         } else {
             $user->update([
                 'is_admin' => true,

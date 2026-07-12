@@ -26,4 +26,16 @@ class MedicalCertificatePolicy
 
         return false;
     }
+
+    public function update(User $user, MedicalCertificate $certificate): bool
+    {
+        return $user->isProfessional()
+            && (int) $certificate->professional_id === (int) $user->id
+            && $this->view($user, $certificate);
+    }
+
+    public function delete(User $user, MedicalCertificate $certificate): bool
+    {
+        return $this->update($user, $certificate);
+    }
 }

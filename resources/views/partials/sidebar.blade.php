@@ -45,11 +45,11 @@
             }
         @endphp
         <a href="{{ route($homeRoute) }}" class="sidebar-logo flex items-center gap-4 group">
-            <div class="w-12 h-12 {{ $isClinica ? 'bg-blue-600' : 'bg-emerald-500' }} text-zinc-950 rounded-2xl flex items-center justify-center shadow-lg {{ $isClinica ? 'shadow-blue-500/20' : 'shadow-emerald-500/20' }} transform group-hover:rotate-12 transition-all duration-500">
-                <i data-lucide="{{ $isClinica ? 'stethoscope' : 'zap' }}" class="w-6 h-6 fill-current"></i>
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg {{ $isClinica ? 'shadow-blue-500/20' : 'shadow-emerald-500/20' }} transform group-hover:rotate-12 transition-all duration-500 overflow-hidden">
+                <img src="{{ asset('images/nexshape-icon.svg') }}" alt="NexShape" class="w-full h-full object-cover">
             </div>
             <div class="flex flex-col">
-                <span class="text-xl font-black text-white tracking-tighter uppercase leading-none">NEX<span class="{{ $isClinica ? 'text-blue-500' : 'text-emerald-500' }}">SHAPE</span></span>
+                <span class="text-xl font-semibold text-white tracking-tight leading-none">NexShape</span>
                 <span class="text-[8px] font-black text-zinc-700 uppercase tracking-[0.4em] mt-1 italic">{{ $isClinica ? 'CLINIC EDITION' : 'PRO EDITION' }}</span>
             </div>
         </a>

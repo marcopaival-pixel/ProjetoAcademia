@@ -85,20 +85,69 @@
 
             {{-- Entrega --}}
             @if($order->shipping_address || $order->tracking_code)
-            <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6">
-                <h2 class="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <i class="fas fa-truck text-emerald-400 text-xs"></i>
-                    Entrega
-                </h2>
-                @if($order->tracking_code)
-                <p class="text-xs text-zinc-400 mb-2">Código de rastreio: <span class="font-black text-white font-mono">{{ $order->tracking_code }}</span></p>
-                @endif
+            <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-truck text-emerald-400 text-xs"></i>
+                        Entrega
+                    </h2>
+                    @if($order->tracking_code)
+                    <span class="text-xs bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-full text-zinc-300 font-mono">
+                        {{ $order->tracking_code }}
+                    </span>
+                    @endif
+                </div>
+
+                {{-- Linha do tempo visual de entrega --}}
+                @php
+                    $steps = [
+                        ['status' => 'pending', 'label' => 'Pedido Realizado', 'icon' => 'file-invoice-dollar'],
+                        ['status' => 'paid', 'label' => 'Pagamento Confirmado', 'icon' => 'check-circle'],
+                        ['status' => 'shipped', 'label' => 'Enviado', 'icon' => 'shipping-fast'],
+                        ['status' => 'delivered', 'label' => 'Entregue', 'icon' => 'home'],
+                    ];
+
+                    $currentStatusIndex = 0;
+                    if ($order->isPaid()) $currentStatusIndex = 1;
+                    if (in_array($order->status, ['shipped'])) $currentStatusIndex = 2;
+                    if (in_array($order->status, ['delivered', 'completed'])) $currentStatusIndex = 3;
+                @endphp
+                <div class="relative py-4">
+                    <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-zinc-800 pointer-events-none"></div>
+                    <div class="space-y-6">
+                        @foreach($steps as $idx => $step)
+                            @php
+                                $isCompleted = $currentStatusIndex >= $idx;
+                                $isCurrent = $currentStatusIndex === $idx;
+                            @endphp
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all z-10
+                                    {{ $isCompleted ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-zinc-900 border-zinc-850 text-zinc-600' }}
+                                    {{ $isCurrent ? 'ring-4 ring-emerald-500/20' : '' }}">
+                                    <i class="fas fa-{{ $step['icon'] }} text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold transition-colors {{ $isCompleted ? 'text-white' : 'text-zinc-500' }}">
+                                        {{ $step['label'] }}
+                                    </p>
+                                    @if($isCurrent)
+                                        <span class="text-[9px] font-black uppercase text-emerald-500 tracking-wider">Status Atual</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
                 @if($order->shipping_address)
                 @php $addr = $order->shipping_address; @endphp
-                <p class="text-xs text-zinc-400">
-                    {{ $addr['street'] ?? '' }}, {{ $addr['number'] ?? '' }} — {{ $addr['city'] ?? '' }}/{{ $addr['state'] ?? '' }}
-                    @if(isset($addr['cep'])) · CEP {{ $addr['cep'] }} @endif
-                </p>
+                <div class="pt-4 border-t border-zinc-800/80">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Endereço de Entrega</p>
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        {{ $addr['street'] ?? '' }}, {{ $addr['number'] ?? '' }} — {{ $addr['city'] ?? '' }}/{{ $addr['state'] ?? '' }}
+                        @if(isset($addr['cep'])) · CEP {{ $addr['cep'] }} @endif
+                    </p>
+                </div>
                 @endif
             </div>
             @endif

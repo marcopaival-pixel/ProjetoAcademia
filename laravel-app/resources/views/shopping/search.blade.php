@@ -26,13 +26,39 @@
             <form action="{{ route('shopping.search') }}" method="GET" id="filter-form">
                 <input type="hidden" name="q" value="{{ $query }}">
 
+                {{-- Ordenação --}}
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+                    <h3 class="text-xs font-black text-white uppercase tracking-widest mb-3">Ordem</h3>
+                    <select name="ordem" onchange="document.getElementById('filter-form').submit()"
+                            class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500/50">
+                        <option value="recent" {{ $sort === 'recent' ? 'selected' : '' }}>Recomendados</option>
+                        <option value="price_asc" {{ $sort === 'price_asc' ? 'selected' : '' }}>Menor preço</option>
+                        <option value="price_desc" {{ $sort === 'price_desc' ? 'selected' : '' }}>Maior preço</option>
+                    </select>
+                </div>
+
+                {{-- Preço --}}
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+                    <h3 class="text-xs font-black text-white uppercase tracking-widest mb-3">Preço (R$)</h3>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" name="preco_min" value="{{ $minPrice }}" placeholder="Mín"
+                               class="w-full bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                        <span class="text-zinc-500 text-xs">até</span>
+                        <input type="number" name="preco_max" value="{{ $maxPrice }}" placeholder="Máx"
+                               class="w-full bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full mt-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-750 text-white rounded-xl text-xs font-bold transition-colors">
+                        Filtrar
+                    </button>
+                </div>
+
                 {{-- Tipo --}}
                 <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
                     <h3 class="text-xs font-black text-white uppercase tracking-widest mb-3">Tipo</h3>
                     <div class="space-y-2">
                         @foreach(['' => 'Todos', 'physical' => 'Físico', 'digital' => 'Digital', 'service' => 'Serviço'] as $val => $label)
                         <label class="flex items-center gap-2.5 cursor-pointer group">
-                            <input type="radio" name="tipo" value="{{ $val }}"
+                             <input type="radio" name="tipo" value="{{ $val }}"
                                    {{ $type === $val ? 'checked' : '' }}
                                    onchange="document.getElementById('filter-form').submit()"
                                    class="w-4 h-4 accent-emerald-500">

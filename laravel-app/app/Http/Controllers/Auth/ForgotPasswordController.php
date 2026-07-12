@@ -8,6 +8,7 @@ use App\Models\AuthAuditLog;
 use App\Services\Operations\AuthAuditService;
 use App\Services\TransactionalMailService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 
@@ -70,5 +71,52 @@ class ForgotPasswordController extends Controller
         );
 
         return back()->withErrors(['email' => __($status)]);
+    }
+
+    public function sendResetLinkApi(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['email' => ['required', 'email']]);
+
+        $status = Password::broker()->sendResetLink(
+            ['email' => $validated['email']],
+            function (User $user, string $token) {
+                $err = app(TransactionalMailService::class)->validateUserForOutgoingMail($user);
+                if ($err !== null) {
+                    Log::warning('password_reset_blocked', [
+                        'user_id' => $user->id,
+                        'reason' => $err,
+                    ]);
+
+                    return 'blocked:'.$err;
+                }
+                $user->sendPasswordResetNotification($token);
+
+                return null;
+            }
+        );
+
+        if (is_string($status) && str_starts_with($status, 'blocked:')) {
+            return response()->json([
+                'error' => [
+                    'message' => substr($status, 8),
+                    'code' => 'password_reset_blocked',
+                ],
+            ], 422);
+        }
+
+        $success = $status === Password::RESET_LINK_SENT;
+
+        app(AuthAuditService::class)->log(
+            AuthAuditLog::EVENT_PASSWORD_RESET_REQUEST,
+            User::where('email', $validated['email'])->value('id'),
+            $validated['email'],
+            $success,
+            $request,
+            $success ? [] : ['status' => $status],
+        );
+
+        return response()->json([
+            'message' => 'Se este e-mail estiver cadastrado, enviaremos as instrucoes para redefinir sua senha.',
+        ]);
     }
 }

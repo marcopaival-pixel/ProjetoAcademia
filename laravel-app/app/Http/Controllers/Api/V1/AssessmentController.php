@@ -61,6 +61,67 @@ class AssessmentController extends Controller
         return $this->success((new BodyAssessmentResource($assessment))->resolve());
     }
 
+    public function summary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $profile = $user->profile;
+
+        $assessments = BodyAssessment::query()
+            ->where('user_id', $user->id)
+            ->orderBy('assessment_date')
+            ->get();
+
+        $first = $assessments->first();
+        $latest = $assessments->last();
+        $previous = $assessments->count() >= 2 ? $assessments->slice(-2, 1)->first() : null;
+
+        $heightM = ($profile?->height_cm ?? 0) > 0 ? ((float) $profile->height_cm / 100) : null;
+        $currentWeight = $latest?->weight_kg !== null ? (float) $latest->weight_kg : null;
+        $initialWeight = $first?->weight_kg !== null ? (float) $first->weight_kg : null;
+        $targetWeight = $profile?->target_weight_kg !== null ? (float) $profile->target_weight_kg : null;
+
+        return $this->success([
+            'current_weight_kg' => $currentWeight,
+            'initial_weight_kg' => $initialWeight,
+            'target_weight_kg' => $targetWeight,
+            'height_cm' => $profile?->height_cm,
+            'bmi' => ($heightM && $currentWeight) ? round($currentWeight / ($heightM * $heightM), 1) : null,
+            'current_bf_percent' => $latest?->bf_percent !== null ? (float) $latest->bf_percent : null,
+            'current_muscle_percent' => $latest?->muscle_percent !== null ? (float) $latest->muscle_percent : null,
+            'last_assessment_date' => $latest?->assessment_date?->toDateString(),
+            'next_assessment_date' => $latest?->assessment_date?->copy()->addDays(30)->toDateString(),
+            'deltas' => [
+                'weight_kg' => ($latest && $previous && $latest->weight_kg !== null && $previous->weight_kg !== null)
+                    ? round((float) $latest->weight_kg - (float) $previous->weight_kg, 2)
+                    : null,
+                'bf_percent' => ($latest && $previous && $latest->bf_percent !== null && $previous->bf_percent !== null)
+                    ? round((float) $latest->bf_percent - (float) $previous->bf_percent, 2)
+                    : null,
+                'muscle_percent' => ($latest && $previous && $latest->muscle_percent !== null && $previous->muscle_percent !== null)
+                    ? round((float) $latest->muscle_percent - (float) $previous->muscle_percent, 2)
+                    : null,
+            ],
+            'goal_progress_percent' => $this->goalProgressPercent($initialWeight, $currentWeight, $targetWeight),
+            'assessments_count' => $assessments->count(),
+        ]);
+    }
+
+    private function goalProgressPercent(?float $initialWeight, ?float $currentWeight, ?float $targetWeight): ?int
+    {
+        if ($initialWeight === null || $currentWeight === null || $targetWeight === null) {
+            return null;
+        }
+
+        $total = abs($initialWeight - $targetWeight);
+        if ($total <= 0.0) {
+            return 100;
+        }
+
+        $done = abs($initialWeight - $currentWeight);
+
+        return (int) min(100, max(0, round(($done / $total) * 100)));
+    }
+
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();

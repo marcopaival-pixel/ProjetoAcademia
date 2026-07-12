@@ -10,10 +10,15 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EvolutionPhotoController;
 use App\Http\Controllers\Api\V1\ExerciseLogController;
+use App\Http\Controllers\Api\V1\ExerciseCatalogController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\HydrationController;
+use App\Http\Controllers\Api\V1\LoadLogController;
 use App\Http\Controllers\Api\V1\MediaController;
+use App\Http\Controllers\Api\V1\MealTemplateController;
 use App\Http\Controllers\Api\V1\MediaUploadController;
 use App\Http\Controllers\Api\V1\NutritionDiaryController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrchestratorController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\PaymentStatusController;
@@ -29,9 +34,13 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RegisterController;
 use App\Http\Controllers\Api\V1\StudentAppointmentController;
 use App\Http\Controllers\Api\V1\StudentProfessionalController;
+use App\Http\Controllers\Api\V1\StudentMedicalDocumentController;
+use App\Http\Controllers\Api\V1\StudentGamificationController;
+use App\Http\Controllers\Api\V1\StudentActiveRestController;
 use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
 use App\Http\Controllers\Api\V1\TrainingPlanController;
 use App\Http\Controllers\Api\V1\WorkoutSessionController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Middleware\SetApiTenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +72,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:10,1')
         ->name('auth.register');
 
+    Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'sendResetLinkApi'])
+        ->middleware('throttle:5,1')
+        ->name('auth.forgot-password');
+
     Route::post('/referral/verify', [ReferralCodeController::class, 'verify'])
         ->middleware('throttle:15,1')
         ->name('referral.verify');
@@ -75,6 +88,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     ])->group(function () {
         Route::get('/me', [ProfileController::class, 'show'])->name('me');
         Route::patch('/me', [ProfileController::class, 'update'])->name('me.update');
+        Route::post('/onboarding/profile', [ProfileController::class, 'completeOnboarding'])->name('onboarding.profile');
         Route::post('/auth/refresh', [AuthTokenController::class, 'refresh'])->name('auth.refresh');
         Route::delete('/auth/token', [AuthTokenController::class, 'destroy'])->name('auth.token.revoke');
 
@@ -85,6 +99,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
         Route::delete('/devices', [DeviceController::class, 'destroy'])->name('devices.destroy');
+
+        Route::get('/notifications/unread-counts', [NotificationController::class, 'unreadCounts'])->name('notifications.unread-counts');
 
         Route::get('/payments/status', PaymentStatusController::class)->name('payments.status');
 
@@ -100,22 +116,38 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::middleware('api.role:aluno,paciente')->group(function () {
             Route::get('/training-plans', [TrainingPlanController::class, 'index'])->name('training-plans.index');
+            Route::post('/training-plans', [TrainingPlanController::class, 'store'])->name('training-plans.store');
             Route::get('/training-plans/{training_plan}', [TrainingPlanController::class, 'show'])->name('training-plans.show');
+            Route::put('/training-plans/{training_plan}', [TrainingPlanController::class, 'update'])->name('training-plans.update');
+            Route::delete('/training-plans/{training_plan}', [TrainingPlanController::class, 'destroy'])->name('training-plans.destroy');
+            Route::get('/exercise-catalog', [ExerciseCatalogController::class, 'index'])->name('exercise-catalog.index');
 
             Route::get('/exercise-logs', [ExerciseLogController::class, 'index'])->name('exercise-logs.index');
             Route::post('/exercise-logs/sync', [ExerciseLogController::class, 'sync'])->name('exercise-logs.sync');
             Route::delete('/exercise-logs/{id}', [ExerciseLogController::class, 'destroy'])->name('exercise-logs.destroy');
+            Route::post('/load-logs', [LoadLogController::class, 'store'])->name('load-logs.store');
 
             Route::get('/nutrition/diary', [NutritionDiaryController::class, 'index'])->name('nutrition.diary');
             Route::post('/nutrition/diary', [NutritionDiaryController::class, 'store'])->name('nutrition.diary.store');
             Route::put('/nutrition/diary/{foodEntry}', [NutritionDiaryController::class, 'update'])->name('nutrition.diary.update');
             Route::delete('/nutrition/diary/{foodEntry}', [NutritionDiaryController::class, 'destroy'])->name('nutrition.diary.destroy');
+            Route::post('/nutrition/goal', [NutritionDiaryController::class, 'updateGoal'])->name('nutrition.goal.update');
+            Route::get('/nutrition/meal-templates', [MealTemplateController::class, 'index'])->name('nutrition.meal-templates.index');
+            Route::post('/nutrition/meal-templates/{mealTemplate}/apply', [MealTemplateController::class, 'apply'])->name('nutrition.meal-templates.apply');
+
+            Route::get('/hydration/status', [HydrationController::class, 'status'])->name('hydration.status');
+            Route::post('/hydration/entries', [HydrationController::class, 'store'])->name('hydration.entries.store');
+            Route::delete('/hydration/entries/{waterEntry}', [HydrationController::class, 'destroy'])->name('hydration.entries.destroy');
 
             Route::get('/workout-sessions', [WorkoutSessionController::class, 'index'])->name('workout-sessions.index');
+            Route::get('/workout-sessions/active', [WorkoutSessionController::class, 'active'])->name('workout-sessions.active');
             Route::post('/workout-sessions', [WorkoutSessionController::class, 'store'])->name('workout-sessions.store');
+            Route::post('/workout-sessions/start', [WorkoutSessionController::class, 'start'])->name('workout-sessions.start');
+            Route::patch('/workout-sessions/{workoutSession}', [WorkoutSessionController::class, 'updateState'])->name('workout-sessions.update');
 
             Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
             Route::post('/assessments', [AssessmentController::class, 'store'])->name('assessments.store');
+            Route::get('/assessments/summary', [AssessmentController::class, 'summary'])->name('assessments.summary');
             Route::get('/assessments/{assessment}', [AssessmentController::class, 'show'])->name('assessments.show');
 
             Route::get('/evolution-photos', [EvolutionPhotoController::class, 'index'])->name('evolution-photos.index');
@@ -126,12 +158,34 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/uploads/nutrition-photo', [MediaUploadController::class, 'nutritionPhoto'])->name('uploads.nutrition-photo');
 
             Route::get('/subscriptions/plans', [SubscriptionCheckoutController::class, 'plans'])->name('subscriptions.plans');
+            Route::get('/subscriptions/current', [SubscriptionCheckoutController::class, 'current'])->name('subscriptions.current');
             Route::post('/subscriptions/checkout', [SubscriptionCheckoutController::class, 'checkout'])->name('subscriptions.checkout');
+            Route::post('/subscriptions/cancel', [SubscriptionCheckoutController::class, 'cancel'])->name('subscriptions.cancel');
 
             Route::get('/student/professionals', [StudentProfessionalController::class, 'index'])->name('student.professionals.index');
+            Route::get('/student/professionals/search', [StudentProfessionalController::class, 'search'])->name('student.professionals.search');
+            Route::get('/student/professionals/requests', [StudentProfessionalController::class, 'requests'])->name('student.professionals.requests');
+            Route::post('/student/professionals/requests', [StudentProfessionalController::class, 'storeRequest'])->name('student.professionals.requests.store');
+            Route::post('/student/professionals/links/{link}/permissions', [StudentProfessionalController::class, 'updatePermissions'])->name('student.professionals.links.permissions');
+            Route::post('/student/professionals/links/{link}/revoke', [StudentProfessionalController::class, 'revoke'])->name('student.professionals.links.revoke');
             Route::get('/student/appointments/slots', [StudentAppointmentController::class, 'slots'])->name('student.appointments.slots');
             Route::get('/student/appointments', [StudentAppointmentController::class, 'index'])->name('student.appointments.index');
             Route::post('/student/appointments', [StudentAppointmentController::class, 'store'])->name('student.appointments.store');
+            Route::post('/student/appointments/waitlist', [StudentAppointmentController::class, 'waitlist'])->name('student.appointments.waitlist');
+
+            // --- Relatórios e Documentos Clínicos (Paciente) ---
+            Route::get('/student/medical-documents', [StudentMedicalDocumentController::class, 'index'])->name('student.medical-documents.index');
+            Route::get('/student/medical-documents/reports/{report}/download', [StudentMedicalDocumentController::class, 'downloadReport'])->name('student.medical-documents.reports.download');
+            Route::get('/student/medical-documents/prescriptions/{prescription}/download', [StudentMedicalDocumentController::class, 'downloadPrescription'])->name('student.medical-documents.prescriptions.download');
+            Route::get('/student/medical-documents/certificates/{certificate}/download', [StudentMedicalDocumentController::class, 'downloadCertificate'])->name('student.medical-documents.certificates.download');
+
+            // --- Gamificação (Conquistas e Rankings) ---
+            Route::get('/student/gamification', [StudentGamificationController::class, 'index'])->name('student.gamification.index');
+
+            // --- Descanso Ativo ---
+            Route::get('/student/active-rest', [StudentActiveRestController::class, 'index'])->name('student.active-rest.index');
+            Route::post('/student/active-rest/{id}/favorite', [StudentActiveRestController::class, 'toggleFavorite'])->name('student.active-rest.favorite');
+            Route::post('/student/active-rest/{id}/log', [StudentActiveRestController::class, 'storeLog'])->name('student.active-rest.log');
         });
 
         // --- Nova Arquitetura de Contextos ---
@@ -143,6 +197,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
             // Rota legada mantida por compatibilidade; o Android novo usa /dashboard com api.active_role.
             Route::get('/patients', [ProfessionalPatientController::class, 'index'])->name('patients.index');
+            Route::get('/patients/requests', [ProfessionalPatientController::class, 'requests'])->name('patients.requests');
+            Route::post('/patients/requests/{id}/approve', [ProfessionalPatientController::class, 'approveRequest'])->name('patients.requests.approve');
+            Route::post('/patients/requests/{id}/reject', [ProfessionalPatientController::class, 'rejectRequest'])->name('patients.requests.reject');
             Route::get('/patients/{patient}', [ProfessionalPatientController::class, 'show'])->name('patients.show');
             Route::get('/appointments', [ProfessionalAppointmentController::class, 'index'])->name('appointments.index');
             Route::patch('/appointments/{appointment}/status', [ProfessionalAppointmentController::class, 'updateStatus'])->name('appointments.status');

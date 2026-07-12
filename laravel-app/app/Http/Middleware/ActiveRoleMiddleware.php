@@ -33,6 +33,23 @@ class ActiveRoleMiddleware
 
         $activeRole = $request->header('X-Active-Role');
         $activeTenantId = $request->header('X-Active-Tenant');
+        $activeContextId = $request->header('X-Active-Context-ID');
+
+        if ($activeContextId) {
+            if (str_starts_with($activeContextId, 'professional:')) {
+                $profId = (int) substr($activeContextId, 13);
+                $request->attributes->set('active_professional_id', $profId);
+                session(['active_professional_id' => $profId]);
+            } elseif (str_starts_with($activeContextId, 'clinic:')) {
+                $clinicId = (int) substr($activeContextId, 7);
+                $request->attributes->set('active_clinic_id', $clinicId);
+                session(['active_clinic_id' => $clinicId]);
+            } elseif ($activeContextId === 'personal') {
+                $request->attributes->set('active_personal_context', true);
+                session(['active_personal_context' => true]);
+                session()->forget(['active_professional_id', 'active_clinic_id']);
+            }
+        }
 
         $tenant = null;
 

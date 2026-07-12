@@ -3,19 +3,19 @@
   "short_name": "NexShape",
   "start_url": "/patient/portal",
   "display": "standalone",
-  "background_color": "#06080c",
-  "theme_color": "#3b82f6",
+  "background_color": "#071014",
+  "theme_color": "#00ACC1",
   "icons": [
     {
-      "src": "/images/logo.webp",
+      "src": "/images/nexshape-icon.svg",
       "sizes": "512x512",
-      "type": "image/webp",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/images/logo.webp",
+      "src": "/images/nexshape-icon.svg",
       "sizes": "512x512",
-      "type": "image/webp",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     }
   ],

@@ -42,11 +42,42 @@
                     <a href="{{ route('professional.patients.medical-records.certificates.download', [$patient->id, $certificate->id]) }}" class="flex-1 py-3 bg-blue-600/10 text-blue-500 rounded-xl text-sm font-black hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2">
                         <i class="fas fa-download"></i> Baixar PDF
                     </a>
-                    <button class="p-3 bg-zinc-800 text-zinc-400 rounded-xl hover:text-white transition-all">
-                        <i class="fas fa-print"></i>
+                    <button x-data @click="$dispatch('open-modal', 'edit-certificate-{{ $certificate->id }}')" class="p-3 bg-zinc-800 text-zinc-400 rounded-xl hover:text-white transition-all">
+                        <i class="fas fa-pen"></i>
                     </button>
+                    <form method="POST" action="{{ route('professional.patients.medical-records.certificates.destroy', [$patient->id, $certificate->id]) }}" onsubmit="return confirm('Remover este atestado?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="p-3 bg-zinc-800 text-red-400 rounded-xl hover:text-red-300 transition-all">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
+
+            <x-modal name="edit-certificate-{{ $certificate->id }}" focusable>
+                <form method="POST" action="{{ route('professional.patients.medical-records.certificates.update', [$patient->id, $certificate->id]) }}" class="p-8">
+                    @csrf
+                    @method('PUT')
+                    <h2 class="text-2xl font-black text-white mb-6">Editar Atestado</h2>
+                    <div class="space-y-4">
+                        <input type="text" name="reason" value="{{ $certificate->reason }}" required class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="date" name="start_date" value="{{ $certificate->start_date?->format('Y-m-d') }}" required class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500">
+                            <input type="date" name="end_date" value="{{ $certificate->end_date?->format('Y-m-d') }}" required class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" name="period" value="{{ $certificate->period }}" placeholder="Período" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500">
+                            <input type="date" name="date" value="{{ $certificate->date?->format('Y-m-d') }}" required class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <textarea name="observations" rows="3" class="w-full bg-zinc-800 border-none rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-blue-500">{{ $certificate->observations }}</textarea>
+                    </div>
+                    <div class="mt-8 flex justify-end gap-4">
+                        <button type="button" x-on:click="$dispatch('close')" class="px-6 py-3 bg-zinc-800 text-zinc-400 rounded-xl font-bold hover:bg-zinc-700 transition-all">Cancelar</button>
+                        <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-500 transition-all">Atualizar</button>
+                    </div>
+                </form>
+            </x-modal>
         @empty
             <div class="md:col-span-2 bg-zinc-900 border border-dashed border-zinc-800 rounded-[2rem] p-12 text-center">
                 <div class="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-600">
@@ -109,6 +140,4 @@
     </form>
 </x-modal>
 @endsection
-
-
 

@@ -30,8 +30,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="api-base" content="{{ url('/api/v1') }}">
-    <meta name="theme-color" content="#080a0f">
+    <meta name="theme-color" content="#00ACC1">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/nexshape-icon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/nexshape-icon.svg') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap">
     <title>@yield('title') — NEX SHAPE PRO</title>
     <script>
@@ -157,20 +159,24 @@
 
             <div class="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
                 <a href="{{ route('home') }}" class="flex items-center gap-4 group">
-                    <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform group-hover:-rotate-6 transition-transform duration-500">
-                        <img src="{{ $customLogo ?: asset('images/logo_Academia.webp') }}" alt="N" class="w-8 h-8 object-contain brightness-0 invert">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform group-hover:-rotate-6 transition-transform duration-500 overflow-hidden">
+                        <img src="{{ $customLogo ?: asset('images/nexshape-icon.svg') }}" alt="NexShape" class="w-full h-full object-cover">
                     </div>
                     <div class="hidden sm:block">
-                        <span class="text-xl font-black text-white tracking-tighter uppercase italic">NEX <span class="text-emerald-500">SHAPE</span></span>
+                        <span class="text-xl font-semibold text-white tracking-tight">NexShape</span>
                         <p class="text-[8px] text-zinc-500 font-black uppercase tracking-[0.3em] -mt-1">Pro Performance</p>
                     </div>
                 </a>
                 
-                <nav class="hidden md:flex items-center gap-10">
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="{{ route('home') }}" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Home</a>
                     <a href="{{ route('home') }}#features" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Recursos</a>
-                    <a href="{{ route('home') }}#pricing" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Preços</a>
+                    <a href="{{ route('home') }}#pricing" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Planos</a>
+                    <a href="{{ route('shopping.index') }}" class="text-[10px] font-black text-emerald-400 hover:text-emerald-300 uppercase tracking-[0.2em] transition-all">Shopping Fitness</a>
+                    <a href="#blog" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Blog</a>
+                    <a href="#contact" class="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-all">Contato</a>
                     <div class="w-px h-6 bg-zinc-800 mx-2"></div>
-                    <a href="{{ $publicLoginUrl }}" class="text-[10px] font-black text-zinc-400 hover:text-emerald-500 uppercase tracking-[0.2em] transition-all">Autenticar</a>
+                    <a href="{{ $publicLoginUrl }}" class="text-[10px] font-black text-zinc-400 hover:text-emerald-500 uppercase tracking-[0.2em] transition-all">Login</a>
                     <a href="{{ $publicRegisterUrl }}" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-xl shadow-emerald-500/10 active:scale-95">
                         Começar Agora
                     </a>
@@ -232,7 +238,7 @@
 
                 <!-- Paivatech Logo (Preserved as requested) -->
                 <div class="md:col-span-4 flex items-center justify-end">
-                     <img src="{{ asset('images/logo.webp') }}" alt="Logo" class="h-32 w-auto opacity-20 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                     <img src="{{ asset('images/nexshape-logo.svg') }}" alt="NexShape" class="h-32 w-auto opacity-20 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
                 </div>
             </div>
             

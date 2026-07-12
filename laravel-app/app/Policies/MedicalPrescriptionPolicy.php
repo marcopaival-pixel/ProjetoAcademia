@@ -26,4 +26,16 @@ class MedicalPrescriptionPolicy
 
         return false;
     }
+
+    public function update(User $user, MedicalPrescription $prescription): bool
+    {
+        return $user->isProfessional()
+            && (int) $prescription->professional_id === (int) $user->id
+            && $this->view($user, $prescription);
+    }
+
+    public function delete(User $user, MedicalPrescription $prescription): bool
+    {
+        return $this->update($user, $prescription);
+    }
 }

@@ -92,6 +92,11 @@ fun ProPatientCareScreen(modifier: Modifier = Modifier) {
     }
 }
 
+private fun onlyDigits(value: String): String = value.filter { it.isDigit() }
+
+private fun onlyDecimal(value: String): String =
+    value.filterIndexed { index, char -> char.isDigit() || (char == '.' && value.indexOf('.') == index) }
+
 @Composable
 private fun ProPatientTrainingTab(patientId: Int) {
     val repository = remember { ProfessionalRepository() }
@@ -234,6 +239,14 @@ private fun ProPatientAssessmentTab(patientId: Int) {
     var showCreate by remember { mutableStateOf(false) }
     var weight by remember { mutableStateOf("") }
     var bf by remember { mutableStateOf("") }
+    var muscle by remember { mutableStateOf("") }
+    var neck by remember { mutableStateOf("") }
+    var chest by remember { mutableStateOf("") }
+    var waist by remember { mutableStateOf("") }
+    var abdomen by remember { mutableStateOf("") }
+    var hips by remember { mutableStateOf("") }
+    var bloodPressure by remember { mutableStateOf("") }
+    var heartRate by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
     fun reload() {
@@ -263,6 +276,9 @@ private fun ProPatientAssessmentTab(patientId: Int) {
                             Text(item.assessmentDate ?: "—", style = MaterialTheme.typography.titleSmall)
                             item.weightKg?.let { Text("Peso: $it kg") }
                             item.bfPercent?.let { Text("BF: $it%") }
+                            item.musclePercent?.let { Text("Musculo: $it%") }
+                            item.waist?.let { Text("Cintura: $it cm") }
+                            item.abdomen?.let { Text("Abdomen: $it cm") }
                             item.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                         }
                     }
@@ -276,20 +292,18 @@ private fun ProPatientAssessmentTab(patientId: Int) {
             onDismissRequest = { showCreate = false },
             title = { Text("Registrar avaliação") },
             text = {
-                Column {
-                    OutlinedTextField(value = weight, onValueChange = { weight = it }, label = { Text("Peso (kg)") })
-                    OutlinedTextField(
-                        value = bf,
-                        onValueChange = { bf = it },
-                        label = { Text("Gordura (%)") },
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Observações") },
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
+                LazyColumn {
+                    item { OutlinedTextField(value = weight, onValueChange = { weight = onlyDecimal(it) }, label = { Text("Peso (kg)") }) }
+                    item { OutlinedTextField(value = bf, onValueChange = { bf = onlyDecimal(it) }, label = { Text("Gordura (%)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = muscle, onValueChange = { muscle = onlyDecimal(it) }, label = { Text("Musculo (%)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = neck, onValueChange = { neck = onlyDecimal(it) }, label = { Text("Pescoco (cm)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = chest, onValueChange = { chest = onlyDecimal(it) }, label = { Text("Torax (cm)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = waist, onValueChange = { waist = onlyDecimal(it) }, label = { Text("Cintura (cm)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = abdomen, onValueChange = { abdomen = onlyDecimal(it) }, label = { Text("Abdomen (cm)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = hips, onValueChange = { hips = onlyDecimal(it) }, label = { Text("Quadril (cm)") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = bloodPressure, onValueChange = { bloodPressure = it.take(20) }, label = { Text("Pressao arterial") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = heartRate, onValueChange = { heartRate = onlyDigits(it).take(3) }, label = { Text("Frequencia cardiaca") }, modifier = Modifier.padding(top = 8.dp)) }
+                    item { OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Observacoes") }, modifier = Modifier.padding(top = 8.dp)) }
                 }
             },
             confirmButton = {
@@ -302,7 +316,15 @@ private fun ProPatientAssessmentTab(patientId: Int) {
                                     assessmentDate = LocalDate.now().toString(),
                                     weightKg = weight.toDoubleOrNull(),
                                     bfPercent = bf.toDoubleOrNull(),
+                                    musclePercent = muscle.toDoubleOrNull(),
+                                    neck = neck.toDoubleOrNull(),
+                                    chest = chest.toDoubleOrNull(),
+                                    waist = waist.toDoubleOrNull(),
+                                    abdomen = abdomen.toDoubleOrNull(),
+                                    hips = hips.toDoubleOrNull(),
                                     notes = notes.ifBlank { null },
+                                    bloodPressure = bloodPressure.ifBlank { null },
+                                    heartRate = heartRate.toIntOrNull(),
                                 ),
                             )
                                 .onSuccess {
@@ -329,6 +351,8 @@ private fun ProPatientPhotosTab(patientId: Int) {
     var photos by remember { mutableStateOf<List<EvolutionPhotoDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showPhotoTypeDialog by remember { mutableStateOf(false) }
+    var selectedPhotoType by remember { mutableStateOf("front") }
 
     fun reload() {
         scope.launch {
@@ -358,7 +382,7 @@ private fun ProPatientPhotosTab(patientId: Int) {
                 repository.uploadPatientEvolutionPhoto(
                     patientId = patientId,
                     photoPart = part,
-                    type = "front".toRequestBody("text/plain".toMediaTypeOrNull()),
+                    type = selectedPhotoType.toRequestBody("text/plain".toMediaTypeOrNull()),
                     date = LocalDate.now().toString().toRequestBody("text/plain".toMediaTypeOrNull()),
                 )
             }.onSuccess { reload() }
@@ -402,12 +426,39 @@ private fun ProPatientPhotosTab(patientId: Int) {
         }
 
         FloatingActionButton(
-            onClick = { photoPicker.launch("image/*") },
+            onClick = { showPhotoTypeDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
         ) {
             Icon(Icons.Default.Add, contentDescription = "Adicionar foto")
         }
+    }
+
+    if (showPhotoTypeDialog) {
+        AlertDialog(
+            onDismissRequest = { showPhotoTypeDialog = false },
+            title = { Text("Tipo da foto") },
+            text = {
+                Column {
+                    listOf("front" to "Frontal", "side" to "Lateral", "back" to "Posterior", "custom" to "Outro").forEach { (value, label) ->
+                        TextButton(
+                            onClick = {
+                                selectedPhotoType = value
+                                showPhotoTypeDialog = false
+                                photoPicker.launch("image/*")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPhotoTypeDialog = false }) { Text("Cancelar") }
+            },
+        )
     }
 }

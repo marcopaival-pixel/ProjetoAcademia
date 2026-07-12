@@ -302,4 +302,49 @@ class ShopSmokeTest extends TestCase
             'product_id' => $productB->id,
         ]);
     }
+
+    public function test_guest_can_access_public_shopping_vitrine_and_pages(): void
+    {
+        $company = AcademyCompany::create([
+            'name' => 'Academia Shop Public',
+            'slug' => 'academia-shop-public-test',
+        ]);
+
+        $product = $this->seedShopCatalog($company);
+
+        // Vitrine principal
+        $this->get(route('shopping.index'))
+            ->assertOk()
+            ->assertSee($product->name, false);
+
+        // Categoria
+        $this->get(route('shopping.category', $product->category->slug))
+            ->assertOk()
+            ->assertSee($product->name, false);
+
+        // Detalhes do produto
+        $this->get(route('shopping.product.show', $product->slug))
+            ->assertOk()
+            ->assertSee($product->name, false);
+
+        // Busca
+        $this->get(route('shopping.search', ['q' => 'Whey']))
+            ->assertOk()
+            ->assertSee($product->name, false);
+    }
+
+    public function test_guest_is_redirected_to_login_on_protected_shopping_routes(): void
+    {
+        // Carrinho
+        $this->get(route('shopping.cart.index'))
+            ->assertRedirect(route('login'));
+
+        // Checkout
+        $this->get(route('shopping.checkout.index'))
+            ->assertRedirect(route('login'));
+
+        // Pedidos
+        $this->get(route('shopping.orders.index'))
+            ->assertRedirect(route('login'));
+    }
 }

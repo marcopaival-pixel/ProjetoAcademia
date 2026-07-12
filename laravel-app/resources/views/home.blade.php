@@ -21,7 +21,7 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                Aprovado por +1000 Profissionais
+                Gestao, treino e nutricao com IA
             </div>
 
             <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.85]">
@@ -189,19 +189,134 @@
         </div>
     </section>
 
+    <!-- Shopping Fitness Section -->
+    <section id="shopping-fitness" class="relative overflow-hidden rounded-[3rem] border border-zinc-800/80 bg-zinc-900/20 px-6 py-12 md:px-12 md:py-16">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.12),transparent_36%),radial-gradient(circle_at_80%_80%,rgba(99,102,241,0.08),transparent_36%)] pointer-events-none"></div>
+
+        <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Col 1: Promo Info -->
+            <div class="space-y-7 text-center lg:text-left">
+                <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <i class="fas fa-shopping-cart text-sm"></i>
+                    <span class="text-[10px] font-black uppercase tracking-[0.22em]">Shopping Fitness</span>
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase italic">
+                        Tudo para seu <span class="text-emerald-500">Treino & Dieta.</span>
+                    </h2>
+                    <p class="text-zinc-400 text-lg font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
+                        Explore nossa loja integrada e tenha acesso rápido aos melhores produtos selecionados para o seu objetivo físico.
+                    </p>
+                </div>
+
+                <!-- Features list -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex items-center gap-3 text-zinc-300">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        <span class="text-sm font-bold">Suplementos alimentares</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-zinc-300">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        <span class="text-sm font-bold">Roupas esportivas de alta performance</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-zinc-300">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        <span class="text-sm font-bold">Equipamentos & Acessórios</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-zinc-300">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                            <i class="fas fa-check text-xs"></i>
+                        </div>
+                        <span class="text-sm font-bold">Recomendado pelo profissional</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                    <a href="{{ route('shopping.index') }}" class="px-8 py-4 bg-emerald-500 text-zinc-950 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/10 active:scale-95">
+                        Ver Loja
+                    </a>
+                </div>
+            </div>
+
+            <!-- Col 2: Integrations/Interactive Showcase -->
+            <div class="space-y-6">
+                <div class="rounded-3xl bg-zinc-950/50 border border-white/5 p-6 space-y-6 relative overflow-hidden">
+                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-sync text-emerald-400"></i>
+                        Integração Inteligente NexShape
+                    </h3>
+
+                    <!-- Interactive Example 1: Training -->
+                    <div class="flex gap-4 p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-zinc-500 font-bold uppercase">Durante o Treino</p>
+                            <p class="text-sm text-white font-medium mt-0.5">"Você utiliza faixa elástica? Veja os produtos compatíveis em nossa loja."</p>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Example 2: Nutrition -->
+                    <div class="flex gap-4 p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                            <i class="fas fa-apple-alt"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-zinc-500 font-bold uppercase">Na Nutrição</p>
+                            <p class="text-sm text-white font-medium mt-0.5">"Seu nutricionista recomendou whey protein. Adicione ao carrinho em 1 clique."</p>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Example 3: Body Analysis / IA -->
+                    <div class="flex gap-4 p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+                        <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 flex-shrink-0">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-zinc-500 font-bold uppercase">Pelo Assistente de IA</p>
+                            <p class="text-sm text-white font-medium mt-0.5">"Com base no seu objetivo de hipertrofia, estes suplementos podem potencializar seus resultados."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @if($activeClinics->isNotEmpty())
     <!-- Social Proof / Logos -->
     <section class="py-10 border-y border-white/5 bg-zinc-900/10">
         <div class="max-w-5xl mx-auto px-6">
             <p class="text-center text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6 italic">Clínicas e Academias que já vivem o futuro com IA</p>
             <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40 hover:opacity-80 transition-all duration-500">
-                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">CLINIC<span class="text-emerald-500">PRO</span></div>
-                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">ELITE<span class="text-blue-500">FIT</span></div>
-                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">NEXUS<span class="text-indigo-500">MED</span></div>
-                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">ALPHA<span class="text-amber-500">GYM</span></div>
-                <div class="text-xl md:text-2xl font-black text-white tracking-tighter grayscale hover:grayscale-0 transition-all">VITALITY<span class="text-rose-500">CARE</span></div>
+                @foreach($activeClinics as $clinic)
+                    <div class="flex items-center gap-2.5 grayscale hover:grayscale-0 transition-all">
+                        @if($clinic->logo_path)
+                            <img src="{{ asset('storage/' . $clinic->logo_path) }}" alt="{{ $clinic->name }}" class="h-6 w-auto object-contain">
+                        @endif
+                        <div class="flex flex-col">
+                            <span class="text-xl md:text-2xl font-black text-white tracking-tighter uppercase leading-none">{{ $clinic->name }}</span>
+                            @if($clinic->academyCompany && ($clinic->academyCompany->city || $clinic->academyCompany->state))
+                                <span class="text-[8px] font-bold text-zinc-500 uppercase tracking-wider mt-0.5">
+                                    {{ $clinic->academyCompany->city }}{{ $clinic->academyCompany->state ? ' - ' . $clinic->academyCompany->state : '' }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Value Prop: Bento Grid Section -->
     <section id="features" class="space-y-16 py-20 relative">
@@ -457,6 +572,7 @@
 
     </section>
 
+    @if($testimonials->isNotEmpty())
     <!-- Depoimentos Reais B2B -->
     <section class="py-20 relative z-10">
         <div class="text-center space-y-6 max-w-3xl mx-auto mb-16">
@@ -467,43 +583,40 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6">
-            <div class="bg-zinc-900/40 border border-white/5 p-8 rounded-3xl relative">
-                <div class="text-emerald-500 mb-4"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
-                <p class="text-zinc-400 font-medium italic mb-6">"Desde que implementamos o NexShape, nossa retenção de alunos subiu drasticamente. A inteligência artificial de treino encanta todo novo cliente."</p>
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold border-2 border-zinc-700">RC</div>
-                    <div>
-                        <div class="text-white font-bold">Roberto Carlos</div>
-                        <div class="text-zinc-500 text-xs">Gestor, Alpha Gym</div>
+            @foreach($testimonials as $item)
+                <div class="bg-zinc-900/40 border p-8 rounded-3xl relative {{ $item->featured ? 'border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)] transform md:-translate-y-4' : 'border-white/5' }}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="text-emerald-500"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
+                        <div class="flex items-center gap-0.5 text-amber-400">
+                            @for($i = 1; $i <= 5; $i++)
+                                @if($i <= $item->rating)
+                                    <i class="fas fa-star text-[10px]"></i>
+                                @else
+                                    <i class="far fa-star text-[10px] text-zinc-700"></i>
+                                @endif
+                            @endfor
+                        </div>
+                    </div>
+                    
+                    <p class="font-medium italic mb-6 {{ $item->featured ? 'text-zinc-300' : 'text-zinc-400' }}">"{{ $item->testimonial }}"</p>
+                    
+                    <div class="flex items-center gap-4">
+                        <img src="{{ $item->avatar_url }}" alt="{{ $item->name }}" class="w-12 h-12 rounded-full object-cover border-2 {{ $item->featured ? 'border-emerald-500/50' : 'border-zinc-700' }}">
+                        <div>
+                            <div class="text-white font-bold">{{ $item->name }}</div>
+                            <div class="text-xs {{ $item->featured ? 'text-zinc-400' : 'text-zinc-500' }}">
+                                {{ $item->profession }}
+                                @if($item->city || $item->state)
+                                    · {{ $item->city }}{{ $item->state ? '-' . $item->state : '' }}
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="bg-zinc-900/40 border border-emerald-500/20 p-8 rounded-3xl relative shadow-[0_0_30px_rgba(16,185,129,0.05)] transform md:-translate-y-4">
-                <div class="text-emerald-500 mb-4"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
-                <p class="text-zinc-300 font-medium italic mb-6">"Os laudos e as avaliações por IA mudaram a percepção de valor do meu acompanhamento. Hoje consigo cobrar mais pela mesma consultoria online."</p>
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold border-2 border-emerald-500/50">MM</div>
-                    <div>
-                        <div class="text-white font-bold">Mariana Mendes</div>
-                        <div class="text-zinc-400 text-xs">Personal Trainer Elite</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-zinc-900/40 border border-white/5 p-8 rounded-3xl relative">
-                <div class="text-emerald-500 mb-4"><i data-lucide="quote" class="w-8 h-8 opacity-50"></i></div>
-                <p class="text-zinc-400 font-medium italic mb-6">"O Prontuário Digital do NexShape Business é o mais fluido que já usei. Finalmente centralizamos toda a nossa equipe multidisciplinar em um app moderno."</p>
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold border-2 border-zinc-700">Dr</div>
-                    <div>
-                        <div class="text-white font-bold">Dr. Fernando</div>
-                        <div class="text-zinc-500 text-xs">Diretor, Clínica Nexus</div>
-                    </div>
-                </div>
-            </div>
+            @endforeach
         </div>
     </section>
+    @endif
 
     <!-- Final CTA -->
     <section class="text-center py-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-emerald-600 rounded-[4rem] shadow-2xl shadow-blue-500/20 relative overflow-hidden group">

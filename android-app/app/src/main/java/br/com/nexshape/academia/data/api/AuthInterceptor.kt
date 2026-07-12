@@ -29,6 +29,10 @@ class AuthInterceptor(
             requestBuilder.header("X-Active-Tenant", tenantId)
         }
 
+        tokenStore.getActiveContextId()?.let { contextId ->
+            requestBuilder.header("X-Active-Context-ID", contextId)
+        }
+
         return chain.proceed(requestBuilder.build())
     }
 }

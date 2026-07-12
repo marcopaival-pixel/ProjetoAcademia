@@ -15,7 +15,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#080a0f">
+    <meta name="theme-color" content="#00ACC1">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/nexshape-icon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/nexshape-icon.svg') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap">
     <title>Painel Admin - @yield('title', 'Dashboard') — NEX SHAPE PRO</title>
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/sidebar-toggle.js'])
@@ -174,4 +176,3 @@
     @stack('scripts')
 </body>
 </html>
-

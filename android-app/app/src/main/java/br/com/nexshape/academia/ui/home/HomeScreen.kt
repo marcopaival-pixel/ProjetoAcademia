@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.WaterDrop
@@ -47,8 +48,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.nexshape.academia.data.api.ApiClient
 import br.com.nexshape.academia.data.api.ProfileDto
 import br.com.nexshape.academia.data.repository.AgendaRepository
 import br.com.nexshape.academia.data.repository.AuthRepository
@@ -67,6 +70,10 @@ fun HomeScreen(
     onOpenChat: () -> Unit,
     onOpenProfessionals: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenDocuments: () -> Unit,
+    onOpenGamification: () -> Unit,
+    onOpenActiveRest: () -> Unit,
+    onOpenNotifications: () -> Unit,
 ) {
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var summary by remember { mutableStateOf(HomeSummary()) }
@@ -81,7 +88,8 @@ fun HomeScreen(
             .onSuccess { profile = it }
             .onFailure { error = it.message }
 
-        val trainingCount = trainingRepository.listPlans().getOrNull()?.size
+        val trainingResponse = trainingRepository.getPlansResponse().getOrNull()
+        val trainingCount = trainingResponse?.data?.size
         val nutritionCalories = nutritionRepository.diary().getOrNull()?.totals?.calories
         val assessments = evolutionRepository.assessments().getOrNull().orEmpty()
         val photos = evolutionRepository.photos().getOrNull().orEmpty()
@@ -90,6 +98,8 @@ fun HomeScreen(
 
         summary = HomeSummary(
             trainingPlans = trainingCount,
+            hasProfessionalLink = trainingResponse?.meta?.hasProfessionalLink,
+            canCreateOwnWorkout = trainingResponse?.meta?.canCreateOwnWorkout,
             nutritionCalories = nutritionCalories,
             assessments = assessments.size,
             evolutionPhotos = photos.size,
@@ -117,6 +127,10 @@ fun HomeScreen(
                 onOpenChat = onOpenChat,
                 onOpenProfessionals = onOpenProfessionals,
                 onOpenProfile = onOpenProfile,
+                onOpenDocuments = { onOpenDocuments() },
+                onOpenGamification = { onOpenGamification() },
+                onOpenActiveRest = { onOpenActiveRest() },
+                onOpenNotifications = { onOpenNotifications() },
             )
             error != null -> Text(
                 text = error!!,
@@ -142,7 +156,14 @@ private fun HomeContent(
     onOpenChat: () -> Unit,
     onOpenProfessionals: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenDocuments: () -> Unit,
+    onOpenGamification: () -> Unit,
+    onOpenActiveRest: () -> Unit,
+    onOpenNotifications: () -> Unit,
 ) {
+    val activeRole = remember { ApiClient.tokenStore().getActiveRole() }
+    val isPatient = activeRole == "patient" || activeRole == "paciente"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -156,7 +177,7 @@ private fun HomeContent(
         ) {
             Column {
                 Text(
-                    text = "NEXSHAPE",
+                    text = if (isPatient) "PORTAL DE SAUDE" else "NEXSHAPE",
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
@@ -199,7 +220,7 @@ private fun HomeContent(
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "Seu hub de treino, nutricao e evolucao esta pronto para hoje.",
+            text = if (isPatient) "Seu portal de acompanhamento clinico e saude." else "Seu hub de treino, nutricao e evolucao esta pronto para hoje.",
             color = Color(0xFFA3AAB5),
             fontSize = 15.sp,
             lineHeight = 21.sp,
@@ -214,57 +235,98 @@ private fun HomeContent(
 
         Spacer(Modifier.height(18.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            QuickMetricCard(
-                title = "Treino",
-                value = summary.trainingPlans?.let { "$it plano(s)" } ?: "Planos",
-                icon = Icons.Filled.FitnessCenter,
-                onClick = onOpenTraining,
-                modifier = Modifier.weight(1f),
-            )
-            QuickMetricCard(
-                title = "Agenda",
-                value = "${summary.appointments ?: 0} consulta(s)",
-                icon = Icons.Filled.CalendarMonth,
-                onClick = onOpenAgenda,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        if (isPatient) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                QuickMetricCard(
+                    title = "Agenda",
+                    value = "${summary.appointments ?: 0} consultas",
+                    icon = Icons.Filled.CalendarMonth,
+                    onClick = onOpenAgenda,
+                    modifier = Modifier.weight(1f),
+                )
+                QuickMetricCard(
+                    title = "Evolucao",
+                    value = summary.latestWeightKg?.let { "${it} kg" }
+                        ?: "${summary.assessments ?: 0} avaliacoes",
+                    icon = Icons.Filled.MonitorHeart,
+                    onClick = onOpenEvolution,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-        QuickMetricCard(
-            title = "Nutricao",
-            value = summary.nutritionCalories?.let { "$it kcal hoje" } ?: "Diario alimentar",
-            icon = Icons.Filled.Restaurant,
-            onClick = onOpenNutrition,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            QuickMetricCard(
-                title = "Evolucao",
-                value = summary.latestWeightKg?.let { "${it} kg" }
-                    ?: "${summary.assessments ?: 0} avaliacao(oes)",
-                icon = Icons.Filled.MonitorHeart,
-                onClick = onOpenEvolution,
-                modifier = Modifier.weight(1f),
-            )
             QuickMetricCard(
                 title = "Mentores",
-                value = "${summary.professionals ?: 0} vinculado(s)",
+                value = if ((summary.professionals ?: 0) > 0) {
+                    "${summary.professionals} vinculados"
+                } else {
+                    "Independente"
+                },
                 icon = Icons.Filled.Groups,
                 onClick = onOpenProfessionals,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                QuickMetricCard(
+                    title = "Treino",
+                    value = summary.trainingPlans?.let { "$it planos" } ?: "Planos",
+                    icon = Icons.Filled.FitnessCenter,
+                    onClick = onOpenTraining,
+                    modifier = Modifier.weight(1f),
+                )
+                QuickMetricCard(
+                    title = "Agenda",
+                    value = "${summary.appointments ?: 0} consultas",
+                    icon = Icons.Filled.CalendarMonth,
+                    onClick = onOpenAgenda,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            QuickMetricCard(
+                title = "Nutricao",
+                value = summary.nutritionCalories?.let { "$it kcal hoje" } ?: "Diario alimentar",
+                icon = Icons.Filled.Restaurant,
+                onClick = onOpenNutrition,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                QuickMetricCard(
+                    title = "Evolucao",
+                    value = summary.latestWeightKg?.let { "${it} kg" }
+                        ?: "${summary.assessments ?: 0} avaliacoes",
+                    icon = Icons.Filled.MonitorHeart,
+                    onClick = onOpenEvolution,
+                    modifier = Modifier.weight(1f),
+                )
+                QuickMetricCard(
+                    title = "Mentores",
+                    value = if ((summary.professionals ?: 0) > 0) {
+                        "${summary.professionals} vinculados"
+                    } else {
+                        "Independente"
+                    },
+                    icon = Icons.Filled.Groups,
+                    onClick = onOpenProfessionals,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
 
         Spacer(Modifier.height(26.dp))
@@ -283,50 +345,81 @@ private fun HomeContent(
             modifier = Modifier.padding(top = 4.dp, bottom = 14.dp),
         )
 
-        ModuleCard(
-            title = "NexBot",
-            description = if (profile.isPremium) "Coach IA com historico do aluno." else "Free com limite diario de mensagens.",
-            icon = Icons.AutoMirrored.Filled.Chat,
-            status = if (profile.isPremium) "VIP" else "Free limitado",
-            onClick = onOpenChat,
-        )
-        ModuleCard(
-            title = "Assinatura",
-            description = "Planos, upgrade e checkout mobile.",
-            icon = Icons.Filled.Lock,
-            status = "Disponivel",
-            onClick = onOpenProfile,
-        )
-        ModuleCard(
-            title = "Hidratacao",
-            description = "Nex Hydra existe no web, mas falta endpoint API v1 dedicado.",
-            icon = Icons.Filled.WaterDrop,
-            status = "Pendente API",
-            enabled = false,
-        )
-        ModuleCard(
-            title = "Ranking e trofeus",
-            description = "Arena e conquistas existem no web como recursos Premium.",
-            icon = Icons.Filled.EmojiEvents,
-            status = "Pendente API",
-            premium = true,
-            enabled = false,
-        )
-        ModuleCard(
-            title = "Descanso ativo",
-            description = "Modulo Premium no web; falta contrato API mobile.",
-            icon = Icons.Filled.SelfImprovement,
-            status = "Pendente API",
-            premium = true,
-            enabled = false,
-        )
-        ModuleCard(
-            title = "Relatorios e documentos",
-            description = "PDFs, laudos, receitas e atestados ainda precisam de API v1.",
-            icon = Icons.Filled.Description,
-            status = "Pendente API",
-            enabled = false,
-        )
+        if (isPatient) {
+            ModuleCard(
+                title = "Relatorios e documentos",
+                description = "Visualizar laudos, receitas e atestados emitidos.",
+                icon = Icons.Filled.Description,
+                status = "Disponivel",
+                onClick = onOpenDocuments,
+            )
+            ModuleCard(
+                title = "Notificacoes",
+                description = "Mensagens e avisos pendentes da plataforma.",
+                icon = Icons.Filled.Notifications,
+                status = "Disponivel",
+                onClick = onOpenNotifications,
+            )
+            ModuleCard(
+                title = "Assinatura",
+                description = "Planos, upgrade e checkout mobile.",
+                icon = Icons.Filled.Lock,
+                status = "Disponivel",
+                onClick = onOpenProfile,
+            )
+        } else {
+            ModuleCard(
+                title = "NexBot",
+                description = if (profile.isPremium) "Coach IA com historico do aluno." else "Free com limite diario de mensagens.",
+                icon = Icons.AutoMirrored.Filled.Chat,
+                status = if (profile.isPremium) "VIP" else "Free limitado",
+                onClick = onOpenChat,
+            )
+            ModuleCard(
+                title = "Assinatura",
+                description = "Planos, upgrade e checkout mobile.",
+                icon = Icons.Filled.Lock,
+                status = "Disponivel",
+                onClick = onOpenProfile,
+            )
+            ModuleCard(
+                title = "Hidratacao",
+                description = "Nex Hydra - Acompanhe seu consumo diario de agua.",
+                icon = Icons.Filled.WaterDrop,
+                status = "Disponivel",
+                onClick = onOpenNutrition,
+            )
+            ModuleCard(
+                title = "Ranking e trofeus",
+                description = "Sua posição na arena e conquistas desbloqueadas.",
+                icon = Icons.Filled.EmojiEvents,
+                status = if (profile.isPremium) "Disponivel" else "Premium",
+                premium = !profile.isPremium,
+                onClick = onOpenGamification,
+            )
+            ModuleCard(
+                title = "Descanso ativo",
+                description = "Sessões de alongamento, mobilidade e regeneração muscular.",
+                icon = Icons.Filled.SelfImprovement,
+                status = if (profile.isPremium) "Disponivel" else "Premium",
+                premium = !profile.isPremium,
+                onClick = onOpenActiveRest,
+            )
+            ModuleCard(
+                title = "Relatorios e documentos",
+                description = "Visualizar laudos, receitas e atestados emitidos.",
+                icon = Icons.Filled.Description,
+                status = "Disponivel",
+                onClick = onOpenDocuments,
+            )
+            ModuleCard(
+                title = "Notificacoes",
+                description = "Mensagens e avisos pendentes da plataforma.",
+                icon = Icons.Filled.Notifications,
+                status = "Disponivel",
+                onClick = onOpenNotifications,
+            )
+        }
     }
 }
 
@@ -365,6 +458,12 @@ private fun HighlightCard(
         Text(
             text = buildString {
                 append("Use as abas abaixo para acompanhar treinos, evolucao, agenda, nutricao e conversar com o NexBot.")
+                if (summary.hasProfessionalLink == false) {
+                    append(" Voce esta em modo aluno independente.")
+                }
+                if (summary.trainingPlans == 0 && summary.canCreateOwnWorkout == true) {
+                    append(" Comece criando sua primeira ficha.")
+                }
                 if ((summary.evolutionPhotos ?: 0) > 0) {
                     append(" Voce ja tem ${summary.evolutionPhotos} foto(s) de evolucao registrada(s).")
                 }
@@ -378,6 +477,8 @@ private fun HighlightCard(
 
 private data class HomeSummary(
     val trainingPlans: Int? = null,
+    val hasProfessionalLink: Boolean? = null,
+    val canCreateOwnWorkout: Boolean? = null,
     val nutritionCalories: Int? = null,
     val assessments: Int? = null,
     val evolutionPhotos: Int? = null,
@@ -422,17 +523,24 @@ private fun QuickMetricCard(
             )
         }
 
-        Column(modifier = Modifier.padding(start = 12.dp)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp),
+        ) {
             Text(
                 text = title,
                 color = Color(0xFFA3AAB5),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = value,
                 color = Color.White,
-                fontSize = 15.sp,
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(top = 3.dp),
             )
@@ -448,6 +556,7 @@ private fun ModuleCard(
     status: String,
     enabled: Boolean = true,
     premium: Boolean = false,
+    showLockWhenDisabled: Boolean = true,
     onClick: (() -> Unit)? = null,
 ) {
     val borderColor = when {
@@ -475,7 +584,7 @@ private fun ModuleCard(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = if (enabled) icon else Icons.Filled.Lock,
+                imageVector = if (enabled || !showLockWhenDisabled) icon else Icons.Filled.Lock,
                 contentDescription = null,
                 tint = if (premium) Color(0xFFF59E0B) else Color(0xFF19F5A6),
                 modifier = Modifier.size(22.dp),

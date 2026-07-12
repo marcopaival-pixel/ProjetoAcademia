@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Concerns;
 
 use App\Models\ExerciseCatalog;
 use App\Models\ExerciseSet;
+use App\Models\LoadLog;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanExercise;
 
@@ -42,10 +43,12 @@ trait FormatsTrainingPlans
 
                 return [
                     'id' => $exercise->id,
+                    'exercise_id' => $exercise->exercise_id,
                     'position' => $exercise->position,
                     'name' => $exercise->custom_name ?? $catalog?->name,
                     'muscle_group' => $catalog?->muscle_group,
                     'notes' => $exercise->notes,
+                    'last_log' => $this->lastLoadLogPayload($exercise),
                     'sets' => $exercise->sets->map(fn (ExerciseSet $set): array => [
                         'id' => $set->id,
                         'set_number' => $set->set_number,
@@ -57,5 +60,31 @@ trait FormatsTrainingPlans
                 ];
             })->values()->all(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function lastLoadLogPayload(TrainingPlanExercise $exercise): ?array
+    {
+        $log = LoadLog::query()
+            ->where('user_id', $exercise->trainingPlan->user_id)
+            ->where('exercise_id', $exercise->exercise_id)
+            ->latest('log_date')
+            ->latest('id')
+            ->first();
+
+        if (! $log) {
+            return null;
+        }
+
+        return [
+            'id' => $log->id,
+            'log_date' => $log->log_date?->toDateString(),
+            'set_number' => $log->set_number,
+            'reps_done' => $log->reps_done,
+            'weight_kg' => $log->weight_kg !== null ? (float) $log->weight_kg : null,
+            'rpe' => $log->rpe,
+        ];
     }
 }

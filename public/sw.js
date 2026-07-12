@@ -1,10 +1,10 @@
-const CACHE_NAME = 'nexshape-patient-v1';
+const CACHE_NAME = 'nexshape-patient-v2';
 const OFFLINE_URL = '/offline.html';
 
 const ASSETS_TO_CACHE = [
     '/',
     '/offline.html',
-    '/images/logo.webp'
+    '/images/nexshape-icon.svg'
 ];
 
 self.addEventListener('install', (event) => {

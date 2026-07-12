@@ -1,10 +1,9 @@
 @extends('layouts.app')
 
-@section('title', 'Prontuário - ' . $patient->name)
+@section('title', 'Prontuario - ' . $patient->name)
 
 @section('content')
 <div class="space-y-6">
-    <!-- Patient Header -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 shadow-xl">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="flex items-center gap-4">
@@ -37,23 +36,14 @@
             </div>
         </div>
 
-        <!-- Secondary Menu -->
         <div class="mt-8 flex flex-wrap gap-2 border-t border-zinc-800 pt-6">
             @php
-                $menuItems = [
-                    ['route' => 'professional.patients.medical-records.summary', 'label' => 'Resumo', 'icon' => 'fas fa-id-badge'],
-                    ['route' => 'professional.patients.trainings.index', 'label' => 'Treinos', 'icon' => 'fas fa-dumbbell'],
-                    ['route' => 'professional.patients.medical-records.evolutions.index', 'label' => 'Evolução / Atendimentos', 'icon' => 'fas fa-notes-medical'],
-                    ['route' => 'professional.patients.medical-records.reports.index', 'label' => 'Laudos', 'icon' => 'fas fa-file-medical-alt'],
-                    ['route' => 'professional.patients.medical-records.prescriptions.index', 'label' => 'Receitas', 'icon' => 'fas fa-prescription-bottle-alt'],
-                    ['route' => 'professional.patients.medical-records.certificates.index', 'label' => 'Atestados', 'icon' => 'fas fa-file-contract'],
-                    ['route' => 'professional.patients.medical-records.documents', 'label' => 'Exames / Documentos', 'icon' => 'fas fa-folder-open'],
-                    ['route' => 'professional.patients.medical-records.history', 'label' => 'Histórico', 'icon' => 'fas fa-history'],
-                ];
+                $menuItems = $medicalRecordMenuItems
+                    ?? app(\App\Services\MedicalRecordModuleManager::class)->navigationForProfessional(auth()->user(), $patient);
             @endphp
 
             @foreach($menuItems as $item)
-                <a href="{{ route($item['route'], $patient->id) }}" 
+                <a href="{{ route($item['route'], $patient->id) }}"
                    class="px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 {{ request()->routeIs($item['route']) ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white' }}">
                     <i class="{{ $item['icon'] }}"></i>
                     {{ $item['label'] }}
@@ -65,6 +55,3 @@
     @yield('medical-content')
 </div>
 @endsection
-
-
-

@@ -109,6 +109,11 @@ class ShopProduct extends Model
         return $this->hasMany(ShopWishlist::class, 'product_id');
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ShopProductReview::class, 'product_id');
+    }
+
     // ── Scopes ─────────────────────────────────────────────────────────────────
 
     public function scopePublished($query)

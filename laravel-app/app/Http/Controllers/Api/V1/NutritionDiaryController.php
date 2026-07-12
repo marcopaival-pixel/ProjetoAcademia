@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\V1\Concerns\FormatsApiResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\FoodEntryResource;
 use App\Models\FoodEntry;
+use App\Models\UserProfile;
+use App\Models\WeightEntry;
+use App\Services\Nutrition;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -34,7 +37,51 @@ class NutritionDiaryController extends Controller
         return $this->success([
             'date' => $date,
             'totals' => $totals,
+            'targets' => $this->nutritionTargets($user),
             'entries' => FoodEntryResource::collection($entries)->resolve(),
+        ]);
+    }
+
+    public function updateGoal(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'goal' => ['required', 'in:lose,lose_aggressive,recomp,maintain,gain,performance'],
+            'split' => ['required', 'in:cutting,bulking,maintenance'],
+        ]);
+
+        $user = $request->user();
+        $profile = UserProfile::firstOrCreate(['user_id' => $user->id]);
+        $latestWeight = WeightEntry::where('user_id', $user->id)
+            ->orderByDesc('weighed_at')
+            ->value('weight_kg');
+
+        $calc = Nutrition::estimateTarget(
+            (string) $profile->birth_date,
+            (int) $profile->height_cm,
+            $profile->sex ?: 'M',
+            $profile->activity_level ?: 'moderate',
+            $data['goal'],
+            (float) $latestWeight
+        );
+
+        $kcal = $calc['ok'] ? $calc['target'] : ($profile->daily_calorie_target ?? 2000);
+        $macros = match ($data['split']) {
+            'cutting' => ['p' => 0.40, 'c' => 0.35, 'f' => 0.25],
+            'bulking' => ['p' => 0.25, 'c' => 0.55, 'f' => 0.20],
+            'maintenance' => ['p' => 0.30, 'c' => 0.40, 'f' => 0.30],
+        };
+
+        $profile->update([
+            'goal' => $data['goal'],
+            'daily_calorie_target' => $kcal,
+            'protein_target_g' => round(($kcal * $macros['p']) / 4, 1),
+            'carbs_target_g' => round(($kcal * $macros['c']) / 4, 1),
+            'fat_target_g' => round(($kcal * $macros['f']) / 9, 1),
+        ]);
+
+        return $this->success([
+            'message' => 'Estrategia nutricional atualizada com sucesso.',
+            'targets' => $this->nutritionTargets($user),
         ]);
     }
 
@@ -108,5 +155,21 @@ class NutritionDiaryController extends Controller
         }
 
         return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function nutritionTargets($user): array
+    {
+        $profile = UserProfile::firstOrCreate(['user_id' => $user->id]);
+
+        return [
+            'goal' => $profile->goal ?? 'maintain',
+            'calories' => $profile->daily_calorie_target !== null ? (int) $profile->daily_calorie_target : null,
+            'protein_g' => $profile->protein_target_g !== null ? (float) $profile->protein_target_g : null,
+            'carbs_g' => $profile->carbs_target_g !== null ? (float) $profile->carbs_target_g : null,
+            'fat_g' => $profile->fat_target_g !== null ? (float) $profile->fat_target_g : null,
+        ];
     }
 }

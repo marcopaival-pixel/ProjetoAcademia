@@ -14,7 +14,8 @@ class TrainingPlanPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('portal.access');
+        return $user->hasPermission('portal.access')
+            || $user->hasRole(['aluno', 'paciente']);
     }
 
     /**
@@ -48,6 +49,18 @@ class TrainingPlanPolicy
      */
     public function create(User $user): bool
     {
+        if ($user->hasRole(['aluno', 'paciente'])) {
+            $primaryLink = \App\Models\ProfessionalPatient::where('user_id', $user->id)
+                ->where('status', 'Sim')
+                ->first();
+
+            if ($primaryLink) {
+                return (bool) $primaryLink->hasPermission('can_create_own_workout');
+            }
+
+            return $user->hasFeature('create_workout');
+        }
+
         return $user->hasPermission('portal.access');
     }
 

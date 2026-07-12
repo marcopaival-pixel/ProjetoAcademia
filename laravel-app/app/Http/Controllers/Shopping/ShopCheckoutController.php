@@ -62,11 +62,25 @@ class ShopCheckoutController extends Controller
         $user = Auth::user();
 
         try {
+            $shippingMethod = $request->input('shipping_method');
+            $shippingAddress = $request->input('shipping_address');
+            $shippingAmount = 0.00;
+
+            if (in_array($shippingMethod, ['correios', 'transportadora'])) {
+                $cep = preg_replace('/[^0-9]/', '', $shippingAddress['cep'] ?? '');
+                // Simulação inteligente de frete baseada no CEP (SP/Sudeste vs outros)
+                if (str_starts_with($cep, '0')) {
+                    $shippingAmount = 14.90; // Grande São Paulo e interior de SP
+                } else {
+                    $shippingAmount = 24.90; // Demais regiões/estados
+                }
+            }
+
             $order = $this->orderService->createFromCart($user, [
                 'payment_method'  => $request->input('payment_method'),
-                'shipping_method' => $request->input('shipping_method'),
-                'shipping_address' => $request->input('shipping_address'),
-                'shipping_amount'  => 0, // calculado no futuro via API de frete
+                'shipping_method' => $shippingMethod,
+                'shipping_address' => $shippingAddress,
+                'shipping_amount'  => $shippingAmount,
                 'notes'           => $request->input('notes'),
             ]);
 

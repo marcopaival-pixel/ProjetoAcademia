@@ -26,4 +26,16 @@ class MedicalReportPolicy
 
         return false;
     }
+
+    public function update(User $user, MedicalReport $report): bool
+    {
+        return $user->isProfessional()
+            && (int) $report->professional_id === (int) $user->id
+            && $this->view($user, $report);
+    }
+
+    public function delete(User $user, MedicalReport $report): bool
+    {
+        return $this->update($user, $report);
+    }
 }

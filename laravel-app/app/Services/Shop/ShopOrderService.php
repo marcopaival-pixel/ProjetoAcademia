@@ -46,6 +46,9 @@ class ShopOrderService
                 }
             }
 
+            $shippingAmount = (float) ($checkoutData['shipping_amount'] ?? $summary['shipping']);
+            $total = max(0.00, round(($summary['subtotal'] - $summary['discount']) + $shippingAmount, 2));
+
             // Cria o pedido
             $order = ShopOrder::create([
                 'academy_company_id' => $user->academy_company_id,
@@ -53,9 +56,9 @@ class ShopOrderService
                 'coupon_id'          => $summary['coupon']?->id,
                 'subtotal'           => $summary['subtotal'],
                 'discount_amount'    => $summary['discount'],
-                'shipping_amount'    => $checkoutData['shipping_amount'] ?? $summary['shipping'],
+                'shipping_amount'    => $shippingAmount,
                 'tax_amount'         => 0,
-                'total'              => $summary['total'],
+                'total'              => $total,
                 'payment_method'     => $checkoutData['payment_method'] ?? null,
                 'shipping_method'    => $checkoutData['shipping_method'] ?? null,
                 'shipping_address'   => $checkoutData['shipping_address'] ?? null,

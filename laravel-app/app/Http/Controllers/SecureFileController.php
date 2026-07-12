@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminLog;
 use App\Models\BodyAnalysis;
 use App\Models\EvolutionPhoto;
 use App\Models\PatientDocument;
@@ -33,23 +34,38 @@ class SecureFileController extends Controller
     private function serveEvolution($user, int $id)
     {
         $photo = EvolutionPhoto::findOrFail($id);
+        $response = $this->secureFiles->streamEvolutionPhoto($user, $photo);
 
-        return $this->secureFiles->streamEvolutionPhoto($user, $photo);
+        $this->logSecureFileAccess($user, 'evolution', $photo->id, (int) $photo->user_id, [
+            'path' => $photo->photo_path,
+        ]);
+
+        return $response;
     }
 
     private function serveBodyAnalysis($user, int $id)
     {
         $analysis = BodyAnalysis::findOrFail($id);
+        $response = $this->secureFiles->streamForOwner($user, $analysis->photo_path, (int) $analysis->user_id);
 
-        return $this->secureFiles->streamForOwner($user, $analysis->photo_path, (int) $analysis->user_id);
+        $this->logSecureFileAccess($user, 'body-analysis', $analysis->id, (int) $analysis->user_id, [
+            'path' => $analysis->photo_path,
+        ]);
+
+        return $response;
     }
 
     private function serveGallery($user, int $id)
     {
         $photo = Photo::findOrFail($id);
         PatientAccessGuard::assertStudentDataAccess($user, (int) $photo->student_id);
+        $response = $this->secureFiles->streamPath($photo->file_path);
 
-        return $this->secureFiles->streamPath($photo->file_path);
+        $this->logSecureFileAccess($user, 'gallery', $photo->id, (int) $photo->student_id, [
+            'path' => $photo->file_path,
+        ]);
+
+        return $response;
     }
 
     private function servePatientDocument($user, int $id)
@@ -57,22 +73,51 @@ class SecureFileController extends Controller
         $document = PatientDocument::findOrFail($id);
 
         if ((int) $document->patient_id === (int) $user->id) {
-            return $this->secureFiles->streamPath($document->file_path);
+            return $this->streamPatientDocument($user, $document);
         }
 
         if ($user->isProfessional() || $user->hasRole(['instructor', 'supervisor'])) {
             PatientAccessGuard::assertProfessionalPatientLink($user, (int) $document->patient_id);
 
-            return $this->secureFiles->streamPath($document->file_path);
+            return $this->streamPatientDocument($user, $document);
         }
 
         if ($user->isAdministrator()) {
             $owner = $document->patient ?? \App\Models\User::find($document->patient_id);
             if ($owner && PatientAccessGuard::patientBelongsToImpersonatedTenant($owner)) {
-                return $this->secureFiles->streamPath($document->file_path);
+                return $this->streamPatientDocument($user, $document);
             }
         }
 
         abort(403, 'Acesso não autorizado a este documento.');
+    }
+
+    private function streamPatientDocument($user, PatientDocument $document)
+    {
+        $response = $this->secureFiles->streamPath($document->file_path);
+
+        $this->logSecureFileAccess($user, 'patient-document', $document->id, (int) $document->patient_id, [
+            'path' => $document->file_path,
+            'document_type' => $document->type ?? null,
+        ]);
+
+        return $response;
+    }
+
+    private function logSecureFileAccess($user, string $type, int $recordId, int $patientId, array $extra = []): void
+    {
+        AdminLog::create([
+            'user_id' => $user?->id,
+            'action' => 'ACCESS_SECURE_FILE',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'payload' => array_merge([
+                'type' => $type,
+                'record_id' => $recordId,
+                'patient_id' => $patientId,
+                'timestamp' => now()->toDateTimeString(),
+            ], $extra),
+            'created_at' => now(),
+        ]);
     }
 }
