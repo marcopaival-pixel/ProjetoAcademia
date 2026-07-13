@@ -24,7 +24,7 @@ class CreditoController extends Controller
     public function buy()
     {
         // Verificar se a compra de créditos está ativa
-        $ativa = SystemSetting::where('key', 'compra_creditos_ativa')->first()?->value === 'true';
+        $ativa = SystemSetting::isTrue('compra_creditos_ativa', true);
         if (!$ativa && !auth()->user()->isAdministrator()) {
             return redirect()->route('dashboard')->with('error', 'A compra de créditos está temporariamente desativada.');
         }
