@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\AcademyCompany;
 use App\Models\Clinic;
 use App\Models\User;
+use App\Services\MedicalRecordModuleManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ClinicManagementController extends Controller
 {
@@ -48,7 +50,9 @@ class ClinicManagementController extends Controller
 
         $inviteUrl = route('register', ['company_slug' => $company->slug, 'tipo_acesso' => 'professional']);
 
-        return view('clinic.settings', compact('company', 'clinics', 'team', 'inviteUrl'));
+        $medicalRecordModules = app(MedicalRecordModuleManager::class)->clinicModuleOptions();
+
+        return view('clinic.settings', compact('company', 'clinics', 'team', 'inviteUrl', 'medicalRecordModules'));
     }
 
     public function storeClinic(Request $request)
@@ -88,11 +92,14 @@ class ClinicManagementController extends Controller
             abort(403);
         }
 
+        $allowedModules = array_keys(app(MedicalRecordModuleManager::class)->clinicModuleOptions());
+
         $validated = $request->validate([
             'name' => 'required|string|max:191',
             'primary_color' => 'required|string|size:7',
             'logo' => 'nullable|image|max:2048',
             'enabled_modules' => 'nullable|array',
+            'enabled_modules.*' => ['string', Rule::in($allowedModules)],
         ]);
 
         $clinic->update([

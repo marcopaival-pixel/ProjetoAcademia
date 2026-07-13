@@ -121,7 +121,7 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-        $request->session()->forget(['active_clinic_id', 'impersonated_clinic_id']);
+        $request->session()->forget(['active_clinic_id', 'impersonated_clinic_id', 'active_professional_id']);
         $request->session()->flash('success', 'Acesso autorizado. Bem-vindo de volta!');
 
         \Log::info('Login success for: ' . $user->email . ' | Admin: ' . ($user->isAdministrator() ? 'YES' : 'NO'));
@@ -132,6 +132,7 @@ class LoginController extends Controller
         }
 
         if ($user->isAdministrator()) {
+            session(['active_role' => 'admin']);
             \Log::info('Redirecting admin to dashboard: ' . route('admin.dashboard'));
             // Usamos redirect() direto se não houver intended real para evitar loops em caminhos de login
             $target = $request->session()->pull('url.intended', route('admin.dashboard'));
@@ -145,10 +146,12 @@ class LoginController extends Controller
         }
 
         if ($user->hasRole('professional')) {
+            session(['active_role' => 'professional']);
             return redirect()->intended(route('professional.dashboard'));
         }
         
         if ($user->hasRole('paciente')) {
+            session(['active_role' => 'paciente']);
             $professionals = $user->professionals()->wherePivot('status', 'Sim')->get();
             $defaultTarget = ($professionals->count() > 1) 
                 ? route('patient.dashboard.choice') 
@@ -163,6 +166,7 @@ class LoginController extends Controller
         }
 
         $defaultTarget = route('dashboard');
+        session(['active_role' => $user->hasRole('aluno') ? 'aluno' : ($user->roles()->first()?->name ?? 'aluno')]);
         $target = session()->pull('url.intended', $defaultTarget);
         
         // Proteção Extra: Se o usuário não for admin, nunca redirecionar para /admin via intended

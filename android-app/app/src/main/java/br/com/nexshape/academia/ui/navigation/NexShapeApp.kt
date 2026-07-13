@@ -3,11 +3,16 @@ package br.com.nexshape.academia.ui.navigation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
@@ -16,6 +21,7 @@ import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -47,17 +53,26 @@ import br.com.nexshape.academia.data.repository.AuthRepository
 import br.com.nexshape.academia.data.repository.OfflineSyncRepository
 import br.com.nexshape.academia.security.BiometricHelper
 import br.com.nexshape.academia.ui.security.AppLockScreen
+import br.com.nexshape.academia.ui.components.NexNeon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import br.com.nexshape.academia.ui.agenda.AgendaScreen
 import br.com.nexshape.academia.ui.chat.ChatScreen
+import br.com.nexshape.academia.ui.clinical.ClinicalConductScreen
+import br.com.nexshape.academia.ui.community.CommunityScreen
 import br.com.nexshape.academia.ui.evolution.EvolutionScreen
+import br.com.nexshape.academia.ui.health.ExamsMeasuresScreen
 import br.com.nexshape.academia.ui.home.HomeScreen
 import br.com.nexshape.academia.ui.login.LoginScreen
 import br.com.nexshape.academia.ui.login.ProfileSelectorScreen
 import br.com.nexshape.academia.ui.login.roleToCardData
+import br.com.nexshape.academia.ui.login.ProfileCardData
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import br.com.nexshape.academia.ui.nutrition.NutritionScreen
+import br.com.nexshape.academia.ui.notifications.NotificationsScreen
 import br.com.nexshape.academia.ui.professionals.ProfessionalsScreen
 import br.com.nexshape.academia.ui.profile.ProfileScreen
 import br.com.nexshape.academia.ui.professional.ProAgendaScreen
@@ -66,6 +81,10 @@ import br.com.nexshape.academia.ui.professional.ProHomeScreen
 import br.com.nexshape.academia.ui.professional.ProPatientCareScreen
 import br.com.nexshape.academia.ui.professional.ProPatientsScreen
 import br.com.nexshape.academia.ui.training.TrainingScreen
+import br.com.nexshape.academia.ui.documents.DocumentsScreen
+import br.com.nexshape.academia.ui.gamification.GamificationScreen
+import br.com.nexshape.academia.ui.activerest.ActiveRestScreen
+import br.com.nexshape.academia.ui.messages.MessagesScreen
 
 private enum class StudentTab(val label: String) {
     Home("Início"),
@@ -76,6 +95,14 @@ private enum class StudentTab(val label: String) {
     Chat("NexBot"),
     Professionals("Mentores"),
     Profile("Perfil"),
+    Documents("Documentos"),
+    Gamification("Conquistas e rankings"),
+    ActiveRest("Descanso ativo"),
+    Community("Comunidade"),
+    Messages("Mensagens"),
+    Clinical("Clinico"),
+    ExamsMeasures("Exames"),
+    Notifications("Notificacoes"),
 }
 
 private enum class ProTab(val label: String) {
@@ -107,6 +134,7 @@ fun NexShapeApp() {
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var appMode by remember { mutableStateOf(sessionPreferences.getAppMode()) }
     var showRoleSelector by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(lifecycleOwner, isLoggedIn) {
         if (!isLoggedIn) {
@@ -133,28 +161,76 @@ fun NexShapeApp() {
         return
     }
 
+    var showContextSelector by remember { mutableStateOf(false) }
+    var contextOptions by remember { mutableStateOf<List<ProfileCardData>>(emptyList()) }
+
     // Seletor de perfil para usuários com múltiplos papéis
     if (showRoleSelector) {
         val userName = ApiClient.tokenStore().getName() ?: "Usuário"
         val availableRoles = ApiClient.tokenStore().getAvailableRoles()
         ProfileSelectorScreen(
             userName = userName,
-            availableRoles = availableRoles,
-            onRoleSelected = { selectedRole ->
+            cards = availableRoles.mapNotNull { roleToCardData(it) },
+            onCardSelected = { selectedRoleCard ->
+                val selectedRole = selectedRoleCard.id
                 ApiClient.tokenStore().saveActiveRole(selectedRole)
+                ApiClient.tokenStore().setActiveRoleConfirmed(true)
                 showRoleSelector = false
-                // Mapear role selecionada para AppMode
-                when (selectedRole) {
-                    "professional", "instructor", "supervisor", "admin", "clinic_admin" -> {
-                        appMode = AppMode.PROFESSIONAL
-                        sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
-                    }
-                    else -> {
+                
+                if (selectedRole == "student" || selectedRole == "aluno" || selectedRole == "athlete") {
+                    val contexts = profile?.accessContexts ?: emptyList()
+                    if (contexts.size > 1) {
+                        contextOptions = contexts.map { ctx ->
+                            ProfileCardData(
+                                id = "${ctx.type}:${ctx.id}",
+                                title = ctx.label,
+                                subtitle = when(ctx.type) {
+                                    "personal" -> "Minha assinatura, meus treinos, minhas metas e minha evolução"
+                                    else -> "Treinos, avaliações e orientações vinculadas"
+                                },
+                                features = emptyList(),
+                                icon = when(ctx.type) {
+                                    "personal" -> androidx.compose.material.icons.Icons.Default.FitnessCenter
+                                    "professional" -> androidx.compose.material.icons.Icons.Default.Person
+                                    else -> androidx.compose.material.icons.Icons.Default.AdminPanelSettings
+                                },
+                                gradient = when(ctx.type) {
+                                    "personal" -> listOf(Color(0xFF1A73E8), Color(0xFF0D47A1))
+                                    "professional" -> listOf(Color(0xFF2E7D32), Color(0xFF1B5E20))
+                                    else -> listOf(Color(0xFF6A1B9A), Color(0xFF4A148C))
+                                }
+                            )
+                        }
+                        showContextSelector = true
+                    } else {
+                        if (contexts.isNotEmpty()) {
+                            val firstCtx = contexts.first()
+                            ApiClient.tokenStore().saveActiveContextId("${firstCtx.type}:${firstCtx.id}")
+                        }
                         appMode = AppMode.STUDENT
                         sessionPreferences.setAppMode(AppMode.STUDENT)
                     }
+                } else {
+                    appMode = AppMode.PROFESSIONAL
+                    sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
                 }
             },
+        )
+        return
+    }
+
+    if (showContextSelector) {
+        val userName = ApiClient.tokenStore().getName() ?: "Usuário"
+        ProfileSelectorScreen(
+            userName = userName,
+            titleText = "Como deseja acessar seu painel hoje?",
+            cards = contextOptions,
+            onCardSelected = { selectedContext ->
+                ApiClient.tokenStore().saveActiveContextId(selectedContext.id)
+                showContextSelector = false
+                appMode = AppMode.STUDENT
+                sessionPreferences.setAppMode(AppMode.STUDENT)
+            }
         )
         return
     }
@@ -182,27 +258,66 @@ fun NexShapeApp() {
             authRepository.loadProfile()
                 .onSuccess { loaded ->
                     profile = loaded
+                    error = null
+                    
+                    val freshRoles = loaded.roles?.toMutableList() ?: mutableListOf()
+                    if ((freshRoles.contains("student") || freshRoles.contains("aluno") || freshRoles.contains("athlete")) && loaded.studentStatus == "vinculado") {
+                        if (!freshRoles.contains("paciente")) {
+                            freshRoles.add("paciente")
+                        }
+                    }
+                    ApiClient.tokenStore().saveAvailableRoles(freshRoles)
+                    
                     val availableRoles = ApiClient.tokenStore().getAvailableRoles()
                     val selectableCards = availableRoles.mapNotNull { roleToCardData(it) }
 
-                    if (selectableCards.size > 1 && ApiClient.tokenStore().getActiveRole().isNullOrBlank()) {
+                    if (selectableCards.size > 1 && !ApiClient.tokenStore().isActiveRoleConfirmed()) {
                         showRoleSelector = true
-                    } else if (loaded.isProfessional && !loaded.isStudent) {
-                        appMode = AppMode.PROFESSIONAL
-                        sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
-                        ApiClient.tokenStore().saveActiveRole(resolveProfessionalRole(availableRoles))
-                    } else if (loaded.isStudent && !loaded.isProfessional) {
-                        appMode = AppMode.STUDENT
-                        sessionPreferences.setAppMode(AppMode.STUDENT)
-                        ApiClient.tokenStore().saveActiveRole(resolveStudentRole(availableRoles))
-                    } else if (ApiClient.tokenStore().getActiveRole().isNullOrBlank()) {
-                        ApiClient.tokenStore().saveActiveRole(
-                            when (appMode) {
-                                AppMode.PROFESSIONAL -> resolveProfessionalRole(availableRoles)
-                                AppMode.STUDENT -> resolveStudentRole(availableRoles)
-                            },
-                        )
+                    } else {
+                        val activeRole = ApiClient.tokenStore().getActiveRole() ?: resolveStudentRole(availableRoles)
+                        ApiClient.tokenStore().saveActiveRole(activeRole)
+
+                        if (activeRole == "student" || activeRole == "aluno" || activeRole == "athlete") {
+                            val contexts = loaded.accessContexts ?: emptyList()
+                            if (contexts.size > 1 && ApiClient.tokenStore().getActiveContextId().isNullOrBlank()) {
+                                contextOptions = contexts.map { ctx ->
+                                    ProfileCardData(
+                                        id = "${ctx.type}:${ctx.id}",
+                                        title = ctx.label,
+                                        subtitle = when(ctx.type) {
+                                            "personal" -> "Minha assinatura, meus treinos, minhas metas e minha evolução"
+                                            else -> "Treinos, avaliações e orientações vinculadas"
+                                        },
+                                        features = emptyList(),
+                                        icon = when(ctx.type) {
+                                            "personal" -> androidx.compose.material.icons.Icons.Default.FitnessCenter
+                                            "professional" -> androidx.compose.material.icons.Icons.Default.Person
+                                            else -> androidx.compose.material.icons.Icons.Default.AdminPanelSettings
+                                        },
+                                        gradient = when(ctx.type) {
+                                            "personal" -> listOf(Color(0xFF1A73E8), Color(0xFF0D47A1))
+                                            "professional" -> listOf(Color(0xFF2E7D32), Color(0xFF1B5E20))
+                                            else -> listOf(Color(0xFF6A1B9A), Color(0xFF4A148C))
+                                        }
+                                    )
+                                }
+                                showContextSelector = true
+                            } else {
+                                if (ApiClient.tokenStore().getActiveContextId().isNullOrBlank() && contexts.isNotEmpty()) {
+                                    val firstCtx = contexts.first()
+                                    ApiClient.tokenStore().saveActiveContextId("${firstCtx.type}:${firstCtx.id}")
+                                }
+                                appMode = AppMode.STUDENT
+                                sessionPreferences.setAppMode(AppMode.STUDENT)
+                            }
+                        } else {
+                            appMode = AppMode.PROFESSIONAL
+                            sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
+                        }
                     }
+                }
+                .onFailure { err ->
+                    error = err.message ?: "Erro de conexao com o servidor"
                 }
         }
     }
@@ -219,6 +334,34 @@ fun NexShapeApp() {
         }
     }
 
+    if (profile == null) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = error ?: "Carregando perfil...",
+                color = if (error != null) Color.Red else Color(0xFF19F5A6),
+            )
+            if (error != null) {
+                androidx.compose.material3.Button(onClick = {
+                    scope.launch {
+                        authRepository.loadProfile()
+                            .onSuccess { profile = it; error = null }
+                            .onFailure { error = it.message ?: "Erro ao carregar perfil" }
+                    }
+                }) {
+                    Text("Tentar Novamente")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                androidx.compose.material3.TextButton(onClick = handleLogout) {
+                    Text("Voltar para o Login", color = NexNeon)
+                }
+            }
+        }
+        return
+    }
+
     when {
         appMode == AppMode.PROFESSIONAL && canUsePro -> ProShell(
             sessionPreferences = sessionPreferences,
@@ -228,19 +371,28 @@ fun NexShapeApp() {
             onSwitchMode = {
                 sessionPreferences.setAppMode(AppMode.STUDENT)
                 ApiClient.tokenStore().saveActiveRole(resolveStudentRole(ApiClient.tokenStore().getAvailableRoles()))
+                ApiClient.tokenStore().setActiveRoleConfirmed(true)
                 appMode = AppMode.STUDENT
             },
             onLogout = handleLogout,
         )
-        else -> StudentShell(
+        canUseStudent -> StudentShell(
             authRepository = authRepository,
             appLockStore = appLockStore,
             canSwitchToPro = canUsePro,
             onSwitchMode = {
                 sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
                 ApiClient.tokenStore().saveActiveRole(resolveProfessionalRole(ApiClient.tokenStore().getAvailableRoles()))
+                ApiClient.tokenStore().setActiveRoleConfirmed(true)
                 appMode = AppMode.PROFESSIONAL
             },
+            onLogout = handleLogout,
+        )
+        else -> ProfileScreen(
+            modifier = Modifier,
+            authRepository = authRepository,
+            appLockStore = appLockStore,
+            showSubscription = false,
             onLogout = handleLogout,
         )
     }
@@ -254,14 +406,29 @@ private fun StudentShell(
     onSwitchMode: () -> Unit,
     onLogout: () -> Unit,
 ) {
-    var selectedTab by remember { mutableStateOf(StudentTab.Home) }
-    val bottomTabs = listOf(
-        StudentTab.Home,
-        StudentTab.Training,
-        StudentTab.Evolution,
-        StudentTab.Nutrition,
-        StudentTab.Profile,
-    )
+    val activeRole = remember { ApiClient.tokenStore().getActiveRole() }
+    val isPatient = activeRole == "patient" || activeRole == "paciente"
+
+    var selectedTab by remember(activeRole) { mutableStateOf(StudentTab.Home) }
+    val bottomTabs = remember(isPatient) {
+        if (isPatient) {
+            listOf(
+                StudentTab.Home,
+                StudentTab.Evolution,
+                StudentTab.Agenda,
+                StudentTab.Documents,
+                StudentTab.Profile,
+            )
+        } else {
+            listOf(
+                StudentTab.Home,
+                StudentTab.Training,
+                StudentTab.Evolution,
+                StudentTab.Nutrition,
+                StudentTab.Profile,
+            )
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -291,6 +458,14 @@ private fun StudentShell(
                                     StudentTab.Chat -> Icons.AutoMirrored.Filled.Chat
                                     StudentTab.Professionals -> Icons.Default.Group
                                     StudentTab.Profile -> Icons.Default.Person
+                                    StudentTab.Documents -> Icons.Default.Description
+                                    StudentTab.Gamification -> Icons.Default.EmojiEvents
+                                    StudentTab.ActiveRest -> Icons.Default.SelfImprovement
+                                    StudentTab.Community -> Icons.Default.Group
+                                    StudentTab.Messages -> Icons.AutoMirrored.Filled.Chat
+                                    StudentTab.Clinical -> Icons.Default.MedicalServices
+                                    StudentTab.ExamsMeasures -> Icons.Default.Description
+                                    StudentTab.Notifications -> Icons.Default.Notifications
                                 },
                                 contentDescription = tab.label,
                             )
@@ -312,8 +487,19 @@ private fun StudentShell(
                 onOpenChat = { selectedTab = StudentTab.Chat },
                 onOpenProfessionals = { selectedTab = StudentTab.Professionals },
                 onOpenProfile = { selectedTab = StudentTab.Profile },
+                onOpenDocuments = { selectedTab = StudentTab.Documents },
+                onOpenGamification = { selectedTab = StudentTab.Gamification },
+                onOpenActiveRest = { selectedTab = StudentTab.ActiveRest },
+                onOpenCommunity = { selectedTab = StudentTab.Community },
+                onOpenMessages = { selectedTab = StudentTab.Messages },
+                onOpenClinical = { selectedTab = StudentTab.Clinical },
+                onOpenExamsMeasures = { selectedTab = StudentTab.ExamsMeasures },
+                onOpenNotifications = { selectedTab = StudentTab.Notifications },
             )
-            StudentTab.Training -> TrainingScreen(modifier = Modifier.padding(padding))
+            StudentTab.Training -> TrainingScreen(
+                modifier = Modifier.padding(padding),
+                onNavigateToChat = { selectedTab = StudentTab.Chat }
+            )
             StudentTab.Evolution -> EvolutionScreen(modifier = Modifier.padding(padding))
             StudentTab.Agenda -> AgendaScreen(modifier = Modifier.padding(padding))
             StudentTab.Nutrition -> NutritionScreen(modifier = Modifier.padding(padding))
@@ -327,6 +513,14 @@ private fun StudentShell(
                 onSwitchToPro = onSwitchMode,
                 onLogout = onLogout,
             )
+            StudentTab.Documents -> DocumentsScreen(modifier = Modifier.padding(padding))
+            StudentTab.Gamification -> GamificationScreen(modifier = Modifier.padding(padding))
+            StudentTab.ActiveRest -> ActiveRestScreen(modifier = Modifier.padding(padding))
+            StudentTab.Community -> CommunityScreen(modifier = Modifier.padding(padding))
+            StudentTab.Messages -> MessagesScreen(modifier = Modifier.padding(padding))
+            StudentTab.Clinical -> ClinicalConductScreen(modifier = Modifier.padding(padding))
+            StudentTab.ExamsMeasures -> ExamsMeasuresScreen(modifier = Modifier.padding(padding))
+            StudentTab.Notifications -> NotificationsScreen(modifier = Modifier.padding(padding))
         }
     }
 }

@@ -150,21 +150,33 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('professional.*', function ($view) {
-            if (auth()->check() && auth()->user()->hasRole('professional')) {
-                /** @var ProfessionalProfile|null $profile */
-                $profile = auth()->user()->professionalProfile;
-                if ($profile && $profile->profession) {
-                    $profObj = $profile->profession;
-                    $professionName = $profObj ? ($profObj->getAttribute('name') ?? 'Geral') : 'Geral';
-                } else {
-                    $professionName = 'Geral';
+            $patientLabel = 'Paciente';
+            $patientsLabel = 'Pacientes';
+
+            if (auth()->check()) {
+                $user = auth()->user();
+                if ($user->hasRole('professional')) {
+                    /** @var ProfessionalProfile|null $profile */
+                    $profile = $user->professionalProfile;
+                    if ($profile && $profile->profession) {
+                        $profObj = $profile->profession;
+                        $professionName = $profObj ? ($profObj->getAttribute('name') ?? 'Geral') : 'Geral';
+                    } else {
+                        $professionName = 'Geral';
+                    }
+
+                    $isFitness = in_array($professionName, ['Educador Físico', 'Personal Trainer']);
+                    $patientLabel = $isFitness ? 'Aluno' : 'Paciente';
+                    $patientsLabel = $isFitness ? 'Alunos' : 'Pacientes';
+                } elseif ($user->hasRole(['aluno', 'paciente'])) {
+                    $isAluno = $user->hasRole('aluno');
+                    $patientLabel = $isAluno ? 'Aluno' : 'Paciente';
+                    $patientsLabel = $isAluno ? 'Alunos' : 'Pacientes';
                 }
-
-                $isFitness = in_array($professionName, ['Educador Físico', 'Personal Trainer']);
-
-                $view->with('patientLabel', $isFitness ? 'Aluno' : 'Paciente');
-                $view->with('patientsLabel', $isFitness ? 'Alunos' : 'Pacientes');
             }
+
+            $view->with('patientLabel', $patientLabel);
+            $view->with('patientsLabel', $patientsLabel);
         });
 
         RateLimiter::for('openfoodfacts', function (Request $request) {

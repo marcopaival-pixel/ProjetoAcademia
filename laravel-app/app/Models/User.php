@@ -501,6 +501,11 @@ class User extends Authenticatable
         return $this->hasMany(HealthMetric::class, 'user_id');
     }
 
+    public function healthPermissions(): HasMany
+    {
+        return $this->hasMany(HealthPermission::class, 'patient_id');
+    }
+
     public function evolutionPhotos(): HasMany
     {
         return $this->hasMany(EvolutionPhoto::class, 'user_id');

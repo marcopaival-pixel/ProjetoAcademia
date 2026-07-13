@@ -100,6 +100,32 @@ class StudentAppointmentController extends Controller
         }
     }
 
+    public function waitlist(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'professional_id' => ['required', 'integer', 'exists:users,id'],
+            'date' => ['required', 'date'],
+        ]);
+
+        $user = $request->user();
+        $professionalId = (int) $validated['professional_id'];
+
+        $this->ensureProfessionalLink($user, $professionalId);
+
+        $waitlist = $this->agendaService->addToWaitlist(
+            $user,
+            $professionalId,
+            Carbon::parse($validated['date'])->toDateString()
+        );
+
+        return $this->success([
+            'id' => $waitlist->id,
+            'professional_id' => $professionalId,
+            'requested_date' => $waitlist->requested_date?->toDateString(),
+            'status' => $waitlist->status,
+        ], status: 201);
+    }
+
     /**
      * @return array<string, mixed>
      */

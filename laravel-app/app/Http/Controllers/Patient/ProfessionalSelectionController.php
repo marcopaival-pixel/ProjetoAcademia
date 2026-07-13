@@ -48,8 +48,8 @@ class ProfessionalSelectionController extends Controller
 
         $this->setProfessionalSession($request->professional_id);
 
-        return redirect()->route('patient.portal')
-            ->with('success', 'Profissional selecionado com sucesso.');
+        return redirect()->route('dashboard')
+            ->with('success', 'Vínculo ativo alterado com sucesso.');
     }
 
     private function setProfessionalSession($id)

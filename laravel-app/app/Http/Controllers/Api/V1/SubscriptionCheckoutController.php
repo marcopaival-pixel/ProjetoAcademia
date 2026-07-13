@@ -42,6 +42,40 @@ class SubscriptionCheckoutController extends Controller
         return $this->success(['plans' => $plans]);
     }
 
+    public function current(Request $request): JsonResponse
+    {
+        $subscription = Subscription::query()
+            ->with(['plan:id,name,price,billing_cycle,description', 'pendingPlan:id,name,price,billing_cycle'])
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->first();
+
+        return $this->success([
+            'subscription' => $subscription ? $this->formatSubscription($subscription) : null,
+            'is_premium' => $request->user()->hasPremiumAccess(),
+        ]);
+    }
+
+    public function cancel(Request $request): JsonResponse
+    {
+        $subscription = Subscription::query()
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->first();
+
+        if (! $subscription) {
+            return $this->error('Nenhuma assinatura ativa encontrada para cancelamento.', 404, 'subscription_not_found');
+        }
+
+        $this->subscriptionService->cancel($subscription);
+        $subscription->refresh()->load(['plan:id,name,price,billing_cycle,description', 'pendingPlan:id,name,price,billing_cycle']);
+
+        return $this->success([
+            'message' => 'Cancelamento agendado com sucesso.',
+            'subscription' => $this->formatSubscription($subscription),
+        ]);
+    }
+
     public function checkout(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -116,6 +150,39 @@ class SubscriptionCheckoutController extends Controller
         $this->subscriptionService->upgrade($subscription, $plan);
 
         return $subscription->fresh();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatSubscription(Subscription $subscription): array
+    {
+        return [
+            'id' => $subscription->id,
+            'status' => $subscription->canonicalStatus(),
+            'financial_status' => $subscription->getFinancialStatus(),
+            'payment_method' => $subscription->payment_method,
+            'gateway_type' => $subscription->gateway_type,
+            'start_date' => $subscription->start_date?->toDateString(),
+            'end_date' => $subscription->end_date?->toDateString(),
+            'next_billing_date' => $subscription->next_billing_date?->toDateString(),
+            'cancelled_at' => $subscription->cancelled_at?->toIso8601String(),
+            'days_overdue' => $subscription->days_overdue,
+            'retry_count' => $subscription->retry_count,
+            'plan' => $subscription->plan ? [
+                'id' => $subscription->plan->id,
+                'name' => $subscription->plan->name,
+                'price' => (float) $subscription->plan->price,
+                'billing_cycle' => $subscription->plan->billing_cycle,
+                'description' => $subscription->plan->description,
+            ] : null,
+            'pending_plan' => $subscription->pendingPlan ? [
+                'id' => $subscription->pendingPlan->id,
+                'name' => $subscription->pendingPlan->name,
+                'price' => (float) $subscription->pendingPlan->price,
+                'billing_cycle' => $subscription->pendingPlan->billing_cycle,
+            ] : null,
+        ];
     }
 
     /**

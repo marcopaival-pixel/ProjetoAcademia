@@ -43,13 +43,20 @@ class ShopController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $cartSummary = $this->cartService->summary($user);
+        $cartSummary = ($user && $user->academy_company_id) ? $this->cartService->summary($user) : [
+            'cart' => null,
+            'subtotal' => 0.0,
+            'discount' => 0.0,
+            'shipping' => 0.0,
+            'total' => 0.0,
+            'coupon' => null,
+        ];
 
-        $wishlistIds = ShopWishlist::where('user_id', $user->id)
+        $wishlistIds = ($user && $user->academy_company_id) ? ShopWishlist::where('user_id', $user->id)
             ->pluck('product_id')
-            ->toArray();
+            ->toArray() : [];
 
-        $recommended = $this->recommendationService->recommendedProductsFor($user);
+        $recommended = ($user && $user->academy_company_id) ? $this->recommendationService->recommendedProductsFor($user) : collect();
 
         return view('shopping.index', compact(
             'featured',
@@ -69,6 +76,9 @@ class ShopController extends Controller
         $query = $request->get('q', '');
         $type  = $request->get('tipo');
         $catId = $request->get('categoria');
+        $minPrice = $request->get('preco_min');
+        $maxPrice = $request->get('preco_max');
+        $sort = $request->get('ordem', 'recent');
 
         $products = ShopProduct::published()
             ->with('images', 'category')
@@ -79,14 +89,23 @@ class ShopController extends Controller
             }))
             ->when($type, fn ($q) => $q->ofType($type))
             ->when($catId, fn ($q) => $q->where('category_id', $catId))
-            ->orderByDesc('is_featured')
-            ->orderByDesc('published_at')
+            ->when($minPrice, fn ($q) => $q->where('price', '>=', $minPrice))
+            ->when($maxPrice, fn ($q) => $q->where('price', '<=', $maxPrice))
+            ->when($sort, function ($q) use ($sort) {
+                if ($sort === 'price_asc') {
+                    $q->orderBy('price', 'asc');
+                } elseif ($sort === 'price_desc') {
+                    $q->orderBy('price', 'desc');
+                } else {
+                    $q->orderByDesc('is_featured')->orderByDesc('published_at');
+                }
+            })
             ->paginate(16)
             ->withQueryString();
 
         $categories = ShopCategory::active()->orderBy('sort_order')->get();
 
-        return view('shopping.search', compact('products', 'query', 'categories', 'type', 'catId'));
+        return view('shopping.search', compact('products', 'query', 'categories', 'type', 'catId', 'minPrice', 'maxPrice', 'sort'));
     }
 
     /**

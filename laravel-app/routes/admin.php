@@ -43,6 +43,7 @@ use App\Http\Controllers\Admin\ConfigurationCenter\FieldController;
 use App\Http\Controllers\Admin\ConfigurationCenter\DynamicCrudController;
 use App\Http\Controllers\Admin\ConfigurationCenter\AuditController;
 use App\Http\Controllers\Admin\ObservabilityController;
+use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\OmniChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -344,6 +345,19 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [AdminCouponController::class, 'index'])->name('index');
             Route::post('/{coupon}/approve', [AdminCouponController::class, 'approve'])->name('approve');
             Route::post('/{coupon}/reject', [AdminCouponController::class, 'reject'])->name('reject');
+        });
+
+        // Gestão de Depoimentos (Testimonials)
+        Route::prefix('testimonials')->name('admin.testimonials.')->group(function () {
+            Route::get('/', [TestimonialController::class, 'index'])->name('index');
+            Route::get('/create', [TestimonialController::class, 'create'])->name('create');
+            Route::post('/', [TestimonialController::class, 'store'])->name('store');
+            Route::get('/{testimonial}/edit', [TestimonialController::class, 'edit'])->name('edit');
+            Route::put('/{testimonial}', [TestimonialController::class, 'update'])->name('update');
+            Route::delete('/{testimonial}', [TestimonialController::class, 'destroy'])->name('destroy');
+            Route::patch('/{testimonial}/toggle-approve', [TestimonialController::class, 'toggleApprove'])->name('toggle-approve');
+            Route::patch('/{testimonial}/toggle-feature', [TestimonialController::class, 'toggleFeature'])->name('toggle-feature');
+            Route::patch('/{testimonial}/toggle-visibility', [TestimonialController::class, 'toggleVisibility'])->name('toggle-visibility');
         });
 
         // PDF Suite, Gerador e Histórico

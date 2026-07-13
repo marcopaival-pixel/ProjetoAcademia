@@ -4,12 +4,20 @@ import android.content.Context
 import br.com.nexshape.academia.data.api.ApiClient
 import br.com.nexshape.academia.data.api.CreatePatientAssessmentRequest
 import br.com.nexshape.academia.data.api.CreatePatientTrainingPlanRequest
+import br.com.nexshape.academia.data.api.CreateTrainingPlanRequest
+import br.com.nexshape.academia.data.api.ExerciseCatalogDto
 import br.com.nexshape.academia.data.api.ExerciseSyncRequest
+import br.com.nexshape.academia.data.api.CreateLoadLogRequest
 import br.com.nexshape.academia.data.api.NutritionDiaryData
 import br.com.nexshape.academia.data.api.TrainingPlanDetailDto
 import br.com.nexshape.academia.data.api.TrainingPlanSummaryDto
+import br.com.nexshape.academia.data.api.TrainingPlansResponse
+import br.com.nexshape.academia.data.api.StartWorkoutSessionRequest
+import br.com.nexshape.academia.data.api.SaveWorkoutImportRequest
+import br.com.nexshape.academia.data.api.UpdateWorkoutSessionRequest
 import br.com.nexshape.academia.data.api.UpdateAppointmentStatusRequest
 import br.com.nexshape.academia.data.api.WorkoutSessionRequest
+import br.com.nexshape.academia.data.api.WorkoutImportData
 import br.com.nexshape.academia.data.local.AppDatabase
 import br.com.nexshape.academia.data.local.PendingSyncEntity
 import com.squareup.moshi.Moshi
@@ -23,16 +31,63 @@ class TrainingRepository {
         runCatching { ApiClient.api().trainingPlans().data }
     }
 
+    suspend fun getPlansResponse(): Result<TrainingPlansResponse> = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().trainingPlans() }
+    }
+
     suspend fun planDetail(id: Int): Result<TrainingPlanDetailDto> = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().trainingPlan(id).data }
+    }
+
+    suspend fun createPlan(request: CreateTrainingPlanRequest): Result<TrainingPlanSummaryDto> = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().createTrainingPlan(request).data }
+    }
+
+    suspend fun updatePlan(id: Int, request: CreateTrainingPlanRequest): Result<TrainingPlanSummaryDto> = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().updateTrainingPlan(id, request).data }
+    }
+
+    suspend fun deletePlan(id: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().deleteTrainingPlan(id)
+            Unit
+        }
+    }
+
+    suspend fun exerciseCatalog(search: String? = null): Result<List<ExerciseCatalogDto>> = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().exerciseCatalog(search).data.exercises }
+    }
+
+    suspend fun processWorkoutImport(photoPart: okhttp3.MultipartBody.Part): Result<WorkoutImportData> = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().processWorkoutImport(photoPart).data }
+    }
+
+    suspend fun saveWorkoutImport(request: SaveWorkoutImportRequest) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().saveWorkoutImport(request).data }
     }
 
     suspend fun sessions(limit: Int = 10) = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().workoutSessions(limit).data }
     }
 
+    suspend fun activeSession() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().activeWorkoutSession().data }
+    }
+
+    suspend fun startSession(planId: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().startWorkoutSession(StartWorkoutSessionRequest(planId)).data }
+    }
+
+    suspend fun updateSession(id: Int, request: UpdateWorkoutSessionRequest) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().updateWorkoutSession(id, request).data }
+    }
+
     suspend fun saveSession(request: WorkoutSessionRequest) = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().createWorkoutSession(request).data }
+    }
+
+    suspend fun saveLoadLog(request: CreateLoadLogRequest) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().createLoadLog(request).data }
     }
 }
 
@@ -48,6 +103,68 @@ class NutritionRepository {
             Unit
         }
     }
+
+    suspend fun updateEntry(id: Int, request: br.com.nexshape.academia.data.api.CreateFoodEntryRequest): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                ApiClient.api().updateFoodEntry(id, request)
+                Unit
+            }
+        }
+
+    suspend fun deleteEntry(id: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().deleteFoodEntry(id)
+            Unit
+        }
+    }
+
+    suspend fun updateGoal(goal: String, split: String) = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().updateNutritionGoal(
+                br.com.nexshape.academia.data.api.UpdateNutritionGoalRequest(goal, split),
+            ).data
+        }
+    }
+
+    suspend fun mealTemplates() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().mealTemplates().data.templates }
+    }
+
+    suspend fun applyMealTemplate(id: Int, date: LocalDate = LocalDate.now()): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                ApiClient.api().applyMealTemplate(
+                    id,
+                    br.com.nexshape.academia.data.api.ApplyMealTemplateRequest(date.toString()),
+                )
+                Unit
+            }
+        }
+
+    suspend fun hydrationStatus(date: LocalDate = LocalDate.now()) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().hydrationStatus(date.toString()).data }
+    }
+
+    suspend fun addWater(amountMl: Int, date: LocalDate = LocalDate.now()): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                ApiClient.api().createHydrationEntry(
+                    br.com.nexshape.academia.data.api.CreateHydrationEntryRequest(
+                        amountMl = amountMl,
+                        entryDate = date.toString(),
+                    ),
+                )
+                Unit
+            }
+        }
+
+    suspend fun deleteWaterEntry(id: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().deleteHydrationEntry(id)
+            Unit
+        }
+    }
 }
 
 class ChatRepository {
@@ -57,6 +174,12 @@ class ChatRepository {
 
     suspend fun send(message: String) = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().chatSend(br.com.nexshape.academia.data.api.ChatSendRequest(message)).data.message }
+    }
+}
+
+class AiCreditsRepository {
+    suspend fun balance() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().aiCredits().data }
     }
 }
 
@@ -88,6 +211,10 @@ class OfflineSyncRepository(context: Context) {
 class EvolutionRepository {
     suspend fun assessments() = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().assessments().data.assessments }
+    }
+
+    suspend fun assessmentSummary() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().assessmentSummary().data }
     }
 
     suspend fun createAssessment(request: br.com.nexshape.academia.data.api.CreateAssessmentRequest) =
@@ -129,6 +256,20 @@ class SubscriptionRepository {
             ).data
         }
     }
+
+    suspend fun current() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().currentSubscription().data }
+    }
+
+    suspend fun cancel() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().cancelSubscription() }
+    }
+}
+
+class NotificationsRepository {
+    suspend fun unreadCounts() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().notificationCounts().data }
+    }
 }
 
 class AgendaRepository {
@@ -148,11 +289,51 @@ class AgendaRepository {
         withContext(Dispatchers.IO) {
             runCatching { ApiClient.api().createAppointment(request).data }
         }
+
+    suspend fun joinWaitlist(professionalId: Int, date: String) = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().joinAppointmentWaitlist(
+                br.com.nexshape.academia.data.api.AppointmentWaitlistRequest(professionalId, date),
+            ).data
+        }
+    }
+
+    suspend fun updateLinkPermissions(linkId: Int, permissions: Map<String, Boolean>) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().updateLinkPermissions(linkId, br.com.nexshape.academia.data.api.UpdatePermissionsRequest(permissions)) }
+    }
+
+    suspend fun revokeLink(linkId: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().revokeLink(linkId) }
+    }
+
+    suspend fun searchProfessionals(query: String? = null, specialty: String? = null, serviceType: String? = null) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().searchProfessionals(query, specialty, serviceType).data.professionals }
+    }
+
+    suspend fun studentRequests() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().studentRequests().data.requests }
+    }
+
+    suspend fun createStudentRequest(professionalId: Int, message: String? = null) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().createStudentRequest(br.com.nexshape.academia.data.api.RequestConnectionRequest(professionalId, message)).data }
+    }
 }
 
 class ProfessionalRepository {
     suspend fun dashboard() = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().professionalDashboard().data.stats }
+    }
+
+    suspend fun requests() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().professionalRequests().data.requests }
+    }
+
+    suspend fun approveRequest(id: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().approveProfessionalRequest(id) }
+    }
+
+    suspend fun rejectRequest(id: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().rejectProfessionalRequest(id) }
     }
 
     suspend fun patients(search: String? = null) = withContext(Dispatchers.IO) {
@@ -219,5 +400,69 @@ class ProfessionalRepository {
         weight: okhttp3.RequestBody? = null,
     ) = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().uploadPatientEvolutionPhoto(patientId, photoPart, type, date, weight).data }
+    }
+}
+
+class MedicalDocumentsRepository {
+    suspend fun getDocuments() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().studentMedicalDocuments().data }
+    }
+
+    suspend fun downloadReport(id: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().downloadReportPdf(id) }
+    }
+
+    suspend fun downloadPrescription(id: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().downloadPrescriptionPdf(id) }
+    }
+
+    suspend fun downloadCertificate(id: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().downloadCertificatePdf(id) }
+    }
+}
+
+class CommunityRepository {
+    suspend fun posts() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().communityPosts().data.posts }
+    }
+
+    suspend fun createPost(content: String, visibility: String = "public") = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().createCommunityPost(
+                br.com.nexshape.academia.data.api.CreateCommunityPostRequest(content, visibility),
+            ).data.post
+        }
+    }
+
+    suspend fun createComment(postId: Int, content: String) = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().createCommunityComment(
+                postId,
+                br.com.nexshape.academia.data.api.CreateCommunityCommentRequest(content),
+            ).data.comment
+        }
+    }
+}
+
+class InternalMessagesRepository {
+    suspend fun conversations() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().conversations().data.conversations }
+    }
+
+    suspend fun startSupport() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().startSupportConversation().data.conversation }
+    }
+
+    suspend fun messages(conversationId: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().conversationMessages(conversationId).data }
+    }
+
+    suspend fun send(conversationId: Int, content: String) = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().sendInternalMessage(
+                conversationId,
+                br.com.nexshape.academia.data.api.SendInternalMessageRequest(content),
+            ).data.message
+        }
     }
 }

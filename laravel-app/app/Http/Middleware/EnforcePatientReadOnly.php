@@ -43,6 +43,12 @@ class EnforcePatientReadOnly
                 'clinic.selector',
                 'clinic.select',
                 'messages.*',
+                'patient.my-professionals.update-permissions',
+                'patient.my-professionals.revoke',
+                'patient.professionals.schedule',
+                'patient.professionals.request-link',
+                'patient.mood.store',
+                'patient.mood.destroy',
             ];
 
             if ($request->routeIs($allowedRoutes)) {

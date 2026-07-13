@@ -54,7 +54,8 @@ class MenuService
                     'progression.plans', 'diary', 'assessments', 'calendar', 'plano',
                     'export', 'messages', 'presence', 'nutrition', 'weight',
                     'hydration', 'chat', 'leaderboard', 'active-rest', 'exercise', 'evolution', 
-                    'trophies', 'body-analysis', 'patient.professionals.search', 'report', 'community', 'health-metrics'
+                    'trophies', 'body-analysis', 'patient.professionals.search', 'report', 'community', 'health-metrics',
+                    'ai_credits'
                 ],
                 'paciente' => [
                     'patient.unified.dashboard', 'patient.portal', 'plano', 'report'
@@ -381,6 +382,7 @@ class MenuService
                     ['name' => 'leaderboard', 'label' => 'Ranking Global', 'route' => 'leaderboard.index', 'icon' => 'award'],
                     ['name' => 'trophies', 'label' => 'Conquistas', 'route' => 'trophies.index', 'icon' => 'trophy', 'premium' => true],
                     ['name' => 'plano', 'label' => 'Central Financeira', 'route' => 'patient.subscription.index', 'icon' => 'credit-card'],
+                    ['name' => 'ai_credits', 'label' => 'Créditos de IA', 'route' => 'ai-credits.dashboard', 'icon' => 'coins'],
                     ['name' => 'report', 'label' => 'Relatórios PDF', 'route' => 'report', 'icon' => 'file-text', 'premium' => true],
                     ['name' => 'active-rest', 'label' => 'Descanso Ativo', 'route' => 'active-rest.index', 'icon' => 'refresh-cw'],
                     ['name' => 'academia', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'play-circle'],
@@ -396,27 +398,20 @@ class MenuService
                 ]);
             }
 
+            $hasVinculo = $user->professionals()->wherePivot('status', 'Sim')->exists();
+            if ($hasVinculo) {
+                array_splice($athleteItems, -1, 0, [
+                    ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'file-text'],
+                    ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'file-input'],
+                    ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'calendar-check'],
+                ]);
+            }
+
             $groups[] = [
                 'id' => 'athlete',
                 'label' => 'Painel do Aluno',
                 'icon' => 'dumbbell',
                 'items' => $this->prepareItems($user, $athleteItems, $isPremium),
-            ];
-        }
-
-        // 5. Painel do Paciente (Paciente ou admin explorando)
-        if (($user->hasRole('paciente') && (!$activeRole || $activeRole === 'paciente')) || ($isAdmin && $activeRole === 'paciente')) {
-            $groups[] = [
-                'id' => 'patient',
-                'label' => 'Painel do Paciente',
-                'icon' => 'user-minus',
-                'items' => $this->prepareItems($user, [
-                    ['name' => 'patient_dashboard', 'label' => 'Visão Geral', 'route' => 'patient.unified.dashboard', 'icon' => 'user-round'],
-                    ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'file-text'],
-                    ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'file-input'],
-                    ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'calendar-check'],
-                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check'],
-                ], $isPremium),
             ];
         }
 

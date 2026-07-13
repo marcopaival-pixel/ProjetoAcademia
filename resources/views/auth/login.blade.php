@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Acesso Restrito — Academia Digital')
+@section('title', 'Entrar — NexShape')
 
 @section('content')
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 
-<div class="min-h-screen flex bg-zinc-950 font-['Outfit'] selection:bg-emerald-500/30 overflow-hidden">
+<div class="min-h-screen flex bg-zinc-950 font-['Manrope'] selection:bg-emerald-500/30 overflow-hidden">
     <!-- Lado Esquerdo: Formulário -->
     <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 py-8 relative z-10 bg-zinc-950">
         <!-- Ambient Background Glows -->
@@ -17,15 +17,14 @@
 
         <div class="max-w-md w-full mx-auto relative">
             <!-- Header -->
-            <div class="mb-6 text-left animate-fade-in-up">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <i data-lucide="dumbbell" class="text-white w-6 h-6"></i>
+            <div class="mb-8 text-center animate-fade-in-up">
+                <div class="flex flex-col items-center gap-3 mb-5">
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl shadow-emerald-500/20 overflow-hidden">
+                        <img src="{{ asset('images/nexshape-icon.svg') }}" alt="NexShape" class="w-full h-full object-cover">
                     </div>
-                    <span class="text-2xl font-extrabold text-white tracking-tighter uppercase">NEX<span class="text-emerald-500">SHAPE</span></span>
+                    <span class="text-3xl font-semibold text-white tracking-tight">NexShape</span>
                 </div>
-                <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2 leading-tight">Transforme seu corpo com inteligência.</h1>
-                <p class="text-zinc-500 text-base">Acesse sua plataforma personalizada de treino e nutrição.</p>
+                <p class="text-zinc-400 text-sm font-medium">Saúde • Performance • IA</p>
             </div>
 
             <!-- Status Messages -->
@@ -54,7 +53,7 @@
                 @csrf
                 
                 <div class="space-y-3 group">
-                    <label for="email" class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2 transition-colors group-focus-within:text-emerald-500 italic">Identificação Neural</label>
+                    <label for="email" class="text-xs font-semibold text-zinc-500 ml-2 transition-colors group-focus-within:text-emerald-500">E-mail</label>
                     <div class="flex items-center gap-4">
                         <div class="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-700 transition-all group-focus-within:text-emerald-500 group-focus-within:border-emerald-500/30 group-focus-within:shadow-[0_0_15px_rgba(16,185,129,0.1)] shadow-inner">
                             <i data-lucide="mail" class="w-6 h-6"></i>
@@ -69,8 +68,8 @@
 
                 <div class="space-y-3 group">
                     <div class="flex items-center justify-between px-2">
-                        <label for="password" class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] transition-colors group-focus-within:text-emerald-500 italic">Chave de Acesso</label>
-                        <a href="{{ route('password.request') }}" class="text-[10px] font-black text-emerald-500 hover:text-emerald-400 transition-colors uppercase tracking-widest">Esqueceu?</a>
+                        <label for="password" class="text-xs font-semibold text-zinc-500 transition-colors group-focus-within:text-emerald-500">Senha</label>
+                        <a href="{{ route('password.request') }}" class="text-xs font-semibold text-emerald-500 hover:text-emerald-400 transition-colors">Esqueceu?</a>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-700 transition-all group-focus-within:text-emerald-500 group-focus-within:border-emerald-500/30 group-focus-within:shadow-[0_0_15px_rgba(16,185,129,0.1)] shadow-inner">
@@ -98,8 +97,8 @@
                     </label>
                 </div>
 
-                <button type="submit" id="submitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold py-3.5 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2 group">
-                    <span id="btnText">ENTRAR NA PLATAFORMA</span>
+                <button type="submit" id="submitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2 group">
+                    <span id="btnText">Entrar</span>
                     <i data-lucide="arrow-right" class="w-5 h-5 transition-transform group-hover:translate-x-1"></i>
                     <div id="btnLoader" class="hidden animate-spin w-5 h-5 border-2 border-zinc-950 border-t-transparent rounded-full"></div>
                 </button>
@@ -110,21 +109,21 @@
                 <div class="relative mb-4">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-zinc-800"></div></div>
                     <div class="relative flex justify-center text-xs uppercase font-bold tracking-widest">
-                        <span class="bg-zinc-950 px-4 text-zinc-600">Acesso Rápido</span>
+                        <span class="bg-zinc-950 px-4 text-zinc-600">ou</span>
                     </div>
                 </div>
 
                 <a href="{{ route('auth.google') }}" class="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl hover:bg-zinc-800 transition-all group active:scale-[0.98]">
                     <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-5 h-5" alt="Google">
-                    <span class="text-sm font-bold text-zinc-400 group-hover:text-white transition-colors">Continuar com Google</span>
+                    <span class="text-sm font-semibold text-zinc-400 group-hover:text-white transition-colors">Entrar com Google</span>
                 </a>
             </div>
 
             <!-- Footer Link -->
             <div class="mt-8 text-center animate-fade-in-up" style="animation-delay: 0.3s">
                 <p class="text-zinc-500 text-sm font-medium">
-                    Ainda não faz parte? 
-                    <a href="{{ route('register') }}" class="text-emerald-500 hover:text-emerald-400 font-bold ml-1 transition-colors">Comece agora &rarr;</a>
+                    Ainda não tem conta?
+                    <a href="{{ route('register') }}" class="text-emerald-500 hover:text-emerald-400 font-semibold ml-1 transition-colors">Criar conta</a>
                 </p>
             </div>
         </div>
@@ -220,7 +219,7 @@
                     <i data-lucide="award" class="text-white w-4 h-4"></i>
                 </div>
                 <div class="text-right flex flex-col items-end opacity-20">
-                    <span class="text-white font-black text-sm tracking-tighter uppercase italic">NEXSHAPE</span>
+                    <span class="text-white font-semibold text-sm tracking-tight">NexShape</span>
                 </div>
             </div>
         </div>

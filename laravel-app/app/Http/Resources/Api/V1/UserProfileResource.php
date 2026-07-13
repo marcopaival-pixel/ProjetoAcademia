@@ -38,13 +38,31 @@ class UserProfileResource extends JsonResource
              * Roles normalizadas para o novo ecossistema.
              * O array é garantido mesmo que o usuário não tenha roles.
              */
-            'roles' => $this->getRoleNames(),
+            'roles' => collect($this->getRoleNames())->map(function($role) {
+                if (in_array($role, ['aluno', 'athlete', 'paciente'])) {
+                    return 'student';
+                }
+                return $role;
+            })->unique()->values()->all(),
 
             'is_premium' => (bool) $this->hasPremiumAccess(),
 
             'is_student' => $this->hasRole(['aluno', 'paciente']),
 
-            'is_professional' => $this->isProfessional(),
+            'is_professional' => $this->isProfessional() || $this->isAdministrator() || $this->hasRole(['admin', 'clinic_admin']),
+
+            'vinculos' => $this->professionals()
+                ->wherePivot('status', 'Sim')
+                ->get()
+                ->map(fn($via) => [
+                    'id' => $via->id,
+                    'name' => $via->name,
+                    'specialty' => $via->professionalProfile?->especialidade?->nome ?? 'Profissional',
+                ]),
+
+            'student_status' => $this->professionals()->wherePivot('status', 'Sim')->exists() ? 'vinculado' : 'independente',
+
+            'access_contexts' => $this->resolveAccessContexts(),
 
             'panels' => $panels,
 
@@ -75,6 +93,8 @@ class UserProfileResource extends JsonResource
                     ];
                 })->values()->all();
             }),
+
+            'profile' => $this->resolveProfileData(),
 
         ];
 
@@ -170,5 +190,67 @@ class UserProfileResource extends JsonResource
 
         return $defaults;
 
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveProfileData(): array
+    {
+        $profile = $this->profile;
+        $latestWeight = $this->weightEntries()
+            ->orderByDesc('weighed_at')
+            ->first();
+
+        return [
+            'birth_date' => $profile?->birth_date?->format('Y-m-d'),
+            'sex' => $profile?->sex,
+            'height_cm' => $profile?->height_cm,
+            'current_weight_kg' => $latestWeight ? (float) $latestWeight->weight_kg : null,
+            'target_weight_kg' => $profile?->target_weight_kg !== null ? (float) $profile->target_weight_kg : null,
+            'activity_level' => $profile?->activity_level,
+            'climate' => $profile?->climate,
+            'goal' => $profile?->goal,
+            'daily_calorie_target' => $profile?->daily_calorie_target,
+            'water_target_ml' => $profile?->water_target_ml,
+            'is_water_target_auto' => (bool) ($profile?->is_water_target_auto ?? false),
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function resolveAccessContexts(): array
+    {
+        $contexts = [];
+
+        if ($this->hasRole(['aluno', 'paciente'])) {
+            if ($this->hasRole('aluno')) {
+                $contexts[] = [
+                    'type' => 'personal',
+                    'id' => 'personal',
+                    'label' => 'Meu painel',
+                ];
+            }
+
+            $linkedProfessionals = $this->professionals()->wherePivot('status', 'Sim')->get();
+            foreach ($linkedProfessionals as $prof) {
+                $contexts[] = [
+                    'type' => 'professional',
+                    'id' => (string) $prof->id,
+                    'label' => 'Acompanhamento com ' . $prof->name,
+                ];
+            }
+
+            foreach ($this->organizations as $org) {
+                $contexts[] = [
+                    'type' => 'clinic',
+                    'id' => (string) $org->id,
+                    'label' => $org->name,
+                ];
+            }
+        }
+
+        return $contexts;
     }
 }

@@ -45,11 +45,26 @@ class HomeController extends Controller
             ->take(5)
             ->get();
 
+        $activeClinics = \App\Models\Clinic::with('academyCompany')
+            ->where('is_active', true)
+            ->where('show_on_home', true)
+            ->latest()
+            ->take(8)
+            ->get();
+
+        $testimonials = \App\Models\Testimonial::approved()
+            ->public()
+            ->orderBy('featured', 'desc')
+            ->latest()
+            ->get();
+
         return view('home', [
             'summaryPlans' => $summaryPlans,
             'preferredType' => $preferredType,
             'user' => $user,
-            'communityPosts' => $communityPosts
+            'communityPosts' => $communityPosts,
+            'activeClinics' => $activeClinics,
+            'testimonials' => $testimonials,
         ]);
     }
 }

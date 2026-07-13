@@ -76,6 +76,23 @@ Especificação OpenAPI: [openapi-v1.yaml](./openapi-v1.yaml)
 | POST | `/professional/patients/{id}/evolution-photos` | Upload de foto (multipart) |
 | GET | `/payments/status` | Gateway ativo |
 
+### Complementos mobile de treino, evolucao e nutricao
+
+Endpoints adicionados para paridade do app Android com as telas Web:
+
+| Metodo | Path | Descricao |
+|--------|------|-----------|
+| POST | `/load-logs` | Registrar carga/repeticoes de exercicio do plano |
+| GET | `/nutrition/meal-templates` | Modelos de refeicao prescritos/disponiveis |
+| POST | `/nutrition/meal-templates/{id}/apply` | Aplicar modelo de refeicao ao diario |
+| GET | `/hydration/status?date=` | Progresso de hidratacao do dia |
+| POST | `/hydration/entries` | Registrar consumo de agua |
+| DELETE | `/hydration/entries/{id}` | Remover registro de agua |
+| GET | `/workout-sessions/active` | Sessao de treino ativa |
+| POST | `/workout-sessions/start` | Iniciar sessao de treino |
+| PATCH | `/workout-sessions/{id}` | Atualizar estado/progresso da sessao |
+| GET | `/assessments/summary` | Resumo corporal, metas e deltas |
+
 ## POST /auth/token
 
 ```json

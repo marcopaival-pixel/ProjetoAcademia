@@ -46,7 +46,7 @@
                class="relative flex items-center gap-3 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 hover:border-emerald-500/40 rounded-2xl transition-all group">
                 <i class="fas fa-shopping-cart text-emerald-400 group-hover:scale-110 transition-transform"></i>
                 <span class="text-white font-bold text-sm">Carrinho</span>
-                @if(($cartSummary['cart']->items->count() ?? 0) > 0)
+                @if(isset($cartSummary['cart']) && $cartSummary['cart'] && ($cartSummary['cart']->items->count() ?? 0) > 0)
                     <span class="absolute -top-2 -right-2 w-5 h-5 bg-emerald-500 text-zinc-950 text-xs font-black rounded-full flex items-center justify-center">
                         {{ $cartSummary['cart']->totalItems() }}
                     </span>

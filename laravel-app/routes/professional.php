@@ -60,25 +60,70 @@ Route::middleware(['auth', 'professional.panel', 'panel.isolation', 'patient_lin
                 Route::post('/', [MedicalRecordController::class, 'storeEvolution'])->name('store');
             });
 
+            Route::prefix('session-notes')->name('session-notes.')->group(function () {
+                Route::get('/', [MedicalRecordController::class, 'sessionNotes'])->name('index');
+                Route::post('/', [MedicalRecordController::class, 'storeSessionNote'])->name('store');
+            });
+
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/', [MedicalRecordController::class, 'reports'])->name('index');
                 Route::post('/', [MedicalRecordController::class, 'storeReport'])->name('store');
+                Route::put('/{report}', [MedicalRecordController::class, 'updateReport'])->name('update');
+                Route::delete('/{report}', [MedicalRecordController::class, 'destroyReport'])->name('destroy');
                 Route::get('/{report}/download', [MedicalRecordController::class, 'downloadReport'])->name('download');
             });
 
             Route::prefix('prescriptions')->name('prescriptions.')->group(function () {
                 Route::get('/', [MedicalRecordController::class, 'prescriptions'])->name('index');
                 Route::post('/', [MedicalRecordController::class, 'storePrescription'])->name('store');
+                Route::put('/{prescription}', [MedicalRecordController::class, 'updatePrescription'])->name('update');
+                Route::delete('/{prescription}', [MedicalRecordController::class, 'destroyPrescription'])->name('destroy');
             });
 
             Route::prefix('certificates')->name('certificates.')->group(function () {
                 Route::get('/', [MedicalRecordController::class, 'certificates'])->name('index');
                 Route::post('/', [MedicalRecordController::class, 'storeCertificate'])->name('store');
+                Route::put('/{certificate}', [MedicalRecordController::class, 'updateCertificate'])->name('update');
+                Route::delete('/{certificate}', [MedicalRecordController::class, 'destroyCertificate'])->name('destroy');
                 Route::get('/{certificate}/download', [MedicalRecordController::class, 'downloadCertificate'])->name('download');
             });
 
             Route::get('/documents', [MedicalRecordController::class, 'documents'])->name('documents');
             Route::get('/history', [MedicalRecordController::class, 'history'])->name('history');
+
+            Route::prefix('assessments')->name('assessments.')->group(function () {
+                Route::get('/', [MedicalRecordController::class, 'assessments'])->name('index');
+                Route::post('/', [MedicalRecordController::class, 'storeAssessment'])->name('store');
+                Route::put('/{assessment}', [MedicalRecordController::class, 'updateAssessment'])->name('update');
+                Route::delete('/{assessment}', [MedicalRecordController::class, 'destroyAssessment'])->name('destroy');
+            });
+
+            Route::prefix('photos')->name('photos.')->group(function () {
+                Route::get('/', [MedicalRecordController::class, 'photos'])->name('index');
+                Route::post('/', [MedicalRecordController::class, 'storePhoto'])->name('store');
+                Route::put('/{photo}', [MedicalRecordController::class, 'updatePhoto'])->name('update');
+                Route::delete('/{photo}', [MedicalRecordController::class, 'destroyPhoto'])->name('destroy');
+            });
+
+            Route::prefix('pain')->name('pain.')->group(function () {
+                Route::get('/', [MedicalRecordController::class, 'pain'])->name('index');
+                Route::post('/', [MedicalRecordController::class, 'storePain'])->name('store');
+                Route::put('/{painRecord}', [MedicalRecordController::class, 'updatePain'])->name('update');
+                Route::delete('/{painRecord}', [MedicalRecordController::class, 'destroyPain'])->name('destroy');
+            });
+
+            Route::prefix('protocols')->name('protocols.')->group(function () {
+                Route::get('/', [MedicalRecordController::class, 'protocols'])->name('index');
+                Route::post('/{protocol}/apply', [MedicalRecordController::class, 'applyProtocol'])->name('apply');
+            });
+
+            Route::prefix('nutrition')->name('nutrition.')->group(function () {
+                Route::get('/', [MedicalRecordController::class, 'nutrition'])->name('index');
+                Route::post('/treatment-plan', [MedicalRecordController::class, 'storeNutritionPlan'])->name('treatment-plan.store');
+                Route::post('/meal-template', [MedicalRecordController::class, 'storeMealTemplate'])->name('meal-template.store');
+                Route::put('/meal-template/{mealTemplate}', [MedicalRecordController::class, 'updateMealTemplate'])->name('meal-template.update');
+                Route::delete('/meal-template/{mealTemplate}', [MedicalRecordController::class, 'destroyMealTemplate'])->name('meal-template.destroy');
+            });
         });
 
         // Gerenciamento de Treinos do Paciente

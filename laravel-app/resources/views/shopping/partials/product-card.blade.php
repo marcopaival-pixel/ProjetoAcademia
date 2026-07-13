@@ -44,7 +44,7 @@
 
         {{-- Wishlist button --}}
         <button
-            onclick="shopStore().toggleWishlist({{ $product->id }}, this)"
+            onclick="{{ auth()->check() ? 'shopStore().toggleWishlist('.$product->id.', this)' : 'window.location.href=\''.route('login').'\'' }}"
             class="absolute bottom-3 right-3 w-8 h-8 rounded-xl bg-zinc-900/80 backdrop-blur border border-zinc-700 flex items-center justify-center transition-all hover:border-rose-500/50 {{ $inWish ? 'text-rose-400' : 'text-zinc-400' }}">
             <i class="{{ $inWish ? 'fas' : 'far' }} fa-heart text-xs"></i>
         </button>
@@ -76,14 +76,21 @@
 
             {{-- Botão adicionar --}}
             @if($product->isInStock())
-            <form action="{{ route('shopping.cart.add') }}" method="POST">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                <button type="submit"
+                @auth
+                <form action="{{ route('shopping.cart.add') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <button type="submit"
+                        class="w-9 h-9 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-zinc-950 flex items-center justify-center transition-all active:scale-95 group/btn">
+                        <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform duration-200"></i>
+                    </button>
+                </form>
+                @else
+                <a href="{{ route('login') }}"
                     class="w-9 h-9 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-zinc-950 flex items-center justify-center transition-all active:scale-95 group/btn">
                     <i class="fas fa-plus text-xs group-hover/btn:rotate-90 transition-transform duration-200"></i>
-                </button>
-            </form>
+                </a>
+                @endauth
             @else
             <span class="text-[10px] font-black text-rose-400 uppercase tracking-wide px-3 py-2 bg-rose-500/10 border border-rose-500/20 rounded-xl">
                 Esgotado

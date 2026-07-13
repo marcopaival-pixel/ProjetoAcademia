@@ -1,63 +1,89 @@
 @extends('layouts.app')
 
-@section('title', 'Meu Prontuário')
+@section('title', 'Meu Prontuario')
 
 @section('content')
+@php
+    $moduleKeys = array_keys($activeModules ?? []);
+    $hasClinicalDocs = in_array('clinical_docs', $moduleKeys, true);
+    $hasPrescriptions = in_array('prescriptions', $moduleKeys, true);
+
+    $cards = [
+        [
+            'route' => 'patient.medical-records.evolutions',
+            'icon' => 'fas fa-notes-medical',
+            'label' => 'Atendimentos',
+            'count' => $evolutions->count(),
+            'suffix' => 'Registros',
+            'classes' => 'text-blue-500 bg-blue-500/10 hover:border-blue-500/50',
+            'enabled' => true,
+        ],
+        [
+            'route' => 'patient.medical-records.reports',
+            'icon' => 'fas fa-file-medical-alt',
+            'label' => 'Laudos',
+            'count' => $reports->count(),
+            'suffix' => 'Arquivos',
+            'classes' => 'text-amber-500 bg-amber-500/10 hover:border-amber-500/50',
+            'enabled' => $hasClinicalDocs,
+        ],
+        [
+            'route' => 'patient.medical-records.prescriptions',
+            'icon' => 'fas fa-prescription-bottle-alt',
+            'label' => 'Receitas',
+            'count' => $prescriptions->count(),
+            'suffix' => 'Itens',
+            'classes' => 'text-emerald-500 bg-emerald-500/10 hover:border-emerald-500/50',
+            'enabled' => $hasPrescriptions,
+        ],
+        [
+            'route' => 'patient.medical-records.certificates',
+            'icon' => 'fas fa-file-contract',
+            'label' => 'Atestados',
+            'count' => $certificates->count(),
+            'suffix' => 'Documentos',
+            'classes' => 'text-purple-500 bg-purple-500/10 hover:border-purple-500/50',
+            'enabled' => $hasClinicalDocs,
+        ],
+    ];
+@endphp
+
 <div class="space-y-6">
-    <!-- Header -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
         <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
             <i class="fas fa-file-medical-alt text-8xl text-blue-500"></i>
         </div>
-        
+
         <div class="relative z-10">
-            <h1 class="text-4xl font-black text-white tracking-tight mb-2">Meu <span class="text-blue-500">Prontuário</span></h1>
-            <p class="text-zinc-400 font-medium max-w-2xl">Acesse seus registros de atendimentos, laudos, receitas e documentos emitidos pelo seu profissional.</p>
+            <h1 class="text-4xl font-black text-white tracking-tight mb-2">Meu <span class="text-blue-500">Prontuario</span></h1>
+            <p class="text-zinc-400 font-medium max-w-2xl">Acesse seus registros de atendimentos, laudos, receitas e documentos conforme os modulos ativos da sua clinica.</p>
         </div>
     </div>
 
-    <!-- Quick Navigation Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <a href="{{ route('patient.medical-records.evolutions') }}" class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem] hover:border-blue-500/50 transition-all group">
-            <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-notes-medical text-xl"></i>
-            </div>
-            <h4 class="text-white font-black text-sm">Atendimentos</h4>
-            <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">{{ $evolutions->count() }} Registros</p>
-        </a>
-
-        <a href="{{ route('patient.medical-records.reports') }}" class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem] hover:border-amber-500/50 transition-all group">
-            <div class="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-file-medical-alt text-xl"></i>
-            </div>
-            <h4 class="text-white font-black text-sm">Laudos</h4>
-            <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">{{ $reports->count() }} Arquivos</p>
-        </a>
-
-        <a href="{{ route('patient.medical-records.prescriptions') }}" class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem] hover:border-emerald-500/50 transition-all group">
-            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-prescription-bottle-alt text-xl"></i>
-            </div>
-            <h4 class="text-white font-black text-sm">Receitas</h4>
-            <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">{{ $prescriptions->count() }} Itens</p>
-        </a>
-
-        <a href="{{ route('patient.medical-records.certificates') }}" class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem] hover:border-purple-500/50 transition-all group">
-            <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500 mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-file-contract text-xl"></i>
-            </div>
-            <h4 class="text-white font-black text-sm">Atestados</h4>
-            <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">{{ $certificates->count() }} Documentos</p>
-        </a>
+        @foreach($cards as $card)
+            @if($card['enabled'])
+                <a href="{{ route($card['route']) }}" class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem] transition-all group {{ $card['classes'] }}">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform {{ $card['classes'] }}">
+                        <i class="{{ $card['icon'] }} text-xl"></i>
+                    </div>
+                    <h4 class="text-white font-black text-sm">{{ $card['label'] }}</h4>
+                    <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">{{ $card['count'] }} {{ $card['suffix'] }}</p>
+                </a>
+            @endif
+        @endforeach
     </div>
 
-    <!-- Recent Activity -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8">
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <h3 class="text-xl font-black text-white flex items-center gap-3">
                 <i class="fas fa-clock text-blue-500"></i>
                 Atividades Recentes
             </h3>
+            <a href="{{ route('patient.my-professionals.index') }}" class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-rose-500/10 text-rose-300 border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all">
+                <i class="fas fa-user-shield"></i>
+                Permissoes sensiveis
+            </a>
         </div>
 
         <div class="space-y-4">
@@ -77,7 +103,7 @@
                         </div>
                         <div>
                             <p class="text-white font-bold text-sm">
-                                @if($item instanceof \App\Models\MedicalEvolution) Atendimento Clinical @endif
+                                @if($item instanceof \App\Models\MedicalEvolution) Atendimento clinico @endif
                                 @if($item instanceof \App\Models\MedicalReport) Laudo: {{ $item->title }} @endif
                                 @if($item instanceof \App\Models\MedicalPrescription) Receita: {{ $item->medicine }} @endif
                                 @if($item instanceof \App\Models\MedicalCertificate) Atestado: {{ $item->reason }} @endif
@@ -85,9 +111,6 @@
                             <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-0.5">{{ $item->date->format('d/m/Y') }}</p>
                         </div>
                     </div>
-                    <button class="text-zinc-500 hover:text-white transition-colors">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
                 </div>
             @empty
                 <p class="text-zinc-500 text-center py-8 italic">Nenhuma atividade recente registrada.</p>

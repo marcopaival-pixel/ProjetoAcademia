@@ -1,12 +1,16 @@
 package br.com.nexshape.academia.ui.profile
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -14,12 +18,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import br.com.nexshape.academia.data.local.AppLockStore
 import br.com.nexshape.academia.security.BiometricHelper
+import br.com.nexshape.academia.ui.components.NexGreen
+import br.com.nexshape.academia.ui.components.NexMuted
+import br.com.nexshape.academia.ui.components.NexNeon
 
 @Composable
 fun AppLockSection(
@@ -33,7 +43,12 @@ fun AppLockSection(
     var showPinDialog by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        Text("Segurança do app", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(
+            "Seguranca do app",
+            color = Color.White,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
 
         SettingRow(
             label = "Bloquear ao sair do app",
@@ -54,7 +69,7 @@ fun AppLockSection(
 
         if (biometricAvailable) {
             SettingRow(
-                label = "Desbloqueio biométrico",
+                label = "Desbloqueio biometrico",
                 checked = biometricEnabled,
                 enabled = lockEnabled,
                 onCheckedChange = { enabled ->
@@ -71,6 +86,7 @@ fun AppLockSection(
             onClick = { showPinDialog = true },
             enabled = lockEnabled,
             modifier = Modifier.padding(top = 4.dp),
+            colors = ButtonDefaults.textButtonColors(contentColor = NexNeon),
         ) {
             Text(if (appLockStore.hasPin()) "Alterar PIN" else "Definir PIN")
         }
@@ -105,15 +121,27 @@ private fun SettingRow(
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Text(label, color = if (enabled) Color.White else NexMuted, modifier = Modifier.weight(1f))
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = NexGreen,
+                uncheckedThumbColor = NexMuted,
+                uncheckedTrackColor = Color(0xFF20262D),
+                disabledCheckedThumbColor = NexMuted,
+                disabledUncheckedThumbColor = NexMuted,
+            ),
+        )
     }
 }
 
@@ -128,10 +156,10 @@ private fun PinSetupDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("PIN de segurança") },
+        title = { Text("PIN de seguranca") },
         text = {
             Column {
-                Text("Use 4 a 6 dígitos. Será pedido ao reabrir o app.")
+                Text("Use 4 a 6 digitos. Sera pedido ao reabrir o app.")
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { pin = it.filter { ch -> ch.isDigit() }.take(6) },
@@ -159,8 +187,8 @@ private fun PinSetupDialog(
             TextButton(
                 onClick = {
                     when {
-                        pin.length < 4 -> error = "PIN deve ter pelo menos 4 dígitos."
-                        pin != confirm -> error = "Os PINs não coincidem."
+                        pin.length < 4 -> error = "PIN deve ter pelo menos 4 digitos."
+                        pin != confirm -> error = "Os PINs nao coincidem."
                         else -> onConfirm(pin)
                     }
                 },

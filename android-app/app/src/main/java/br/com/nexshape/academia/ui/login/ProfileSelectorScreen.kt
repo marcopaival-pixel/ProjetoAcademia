@@ -51,10 +51,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 /**
- * Modelo de dado para um cartão de perfil exibido na tela de seleção.
+ * Modelo de dado para um cartão de perfil/contexto exibido na tela de seleção.
  */
 data class ProfileCardData(
-    val role: String,
+    val id: String,
     val title: String,
     val subtitle: String,
     val features: List<String>,
@@ -66,16 +66,24 @@ data class ProfileCardData(
  * Mapeia uma role string retornada pela API para os dados de exibição do Card.
  */
 fun roleToCardData(role: String): ProfileCardData? = when (role) {
-    "paciente", "athlete" -> ProfileCardData(
-        role = role,
-        title = "Atleta",
-        subtitle = "Sua jornada de performance",
-        features = listOf("Treinos personalizados", "Evolução física", "Metas e conquistas"),
+    "student", "aluno", "athlete" -> ProfileCardData(
+        id = role,
+        title = "Aluno/Atleta",
+        subtitle = "Sua jornada de treino e evolução",
+        features = listOf("Treinos e fichas", "Evolução física", "Metas e conquistas"),
         icon = Icons.Default.FitnessCenter,
         gradient = listOf(Color(0xFF1A73E8), Color(0xFF0D47A1)),
     )
+    "paciente", "patient" -> ProfileCardData(
+        id = role,
+        title = "Paciente",
+        subtitle = "Seu acompanhamento clínico",
+        features = listOf("Prontuário e receitas", "Evolução física", "Documentos"),
+        icon = Icons.Default.MedicalServices,
+        gradient = listOf(Color(0xFF0288D1), Color(0xFF01579B)),
+    )
     "professional", "instructor", "supervisor" -> ProfileCardData(
-        role = role,
+        id = role,
         title = "Profissional",
         subtitle = "Gestão de atletas e prescrições",
         features = listOf("Gerenciar atletas", "Prescrever treinos", "Avaliações físicas"),
@@ -83,7 +91,7 @@ fun roleToCardData(role: String): ProfileCardData? = when (role) {
         gradient = listOf(Color(0xFF2E7D32), Color(0xFF1B5E20)),
     )
     "admin", "clinic_admin" -> ProfileCardData(
-        role = role,
+        id = role,
         title = "Clínica / Academia",
         subtitle = "Administração do centro esportivo",
         features = listOf("Gestão de equipe", "Financeiro", "Relatórios"),
@@ -94,21 +102,20 @@ fun roleToCardData(role: String): ProfileCardData? = when (role) {
 }
 
 /**
- * Tela de Seleção de Perfil — exibida quando o usuário possui múltiplos papéis.
+ * Tela de Seleção de Perfil ou Contexto.
  *
  * @param userName Nome de exibição do usuário logado.
- * @param availableRoles Lista de roles disponíveis (ex: ["paciente", "professional"]).
- * @param onRoleSelected Callback disparado quando o usuário escolhe um papel.
+ * @param titleText Texto principal de instrução (ex: "Como deseja acessar o NexShape hoje?").
+ * @param cards Lista de opções para seleção.
+ * @param onCardSelected Callback disparado ao selecionar uma opção.
  */
 @Composable
 fun ProfileSelectorScreen(
     userName: String,
-    availableRoles: List<String>,
-    onRoleSelected: (role: String) -> Unit,
+    titleText: String = "Como deseja acessar o NexShape hoje?",
+    cards: List<ProfileCardData>,
+    onCardSelected: (card: ProfileCardData) -> Unit,
 ) {
-    // Filtra apenas as roles que têm representação visual
-    val cards = availableRoles.mapNotNull { roleToCardData(it) }
-
     // Controle de animação de entrada
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -148,7 +155,7 @@ fun ProfileSelectorScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Como deseja acessar o NexShape hoje?",
+                        text = titleText,
                         color = Color(0xFF9CA3AF),
                         fontSize = 15.sp,
                         textAlign = TextAlign.Center,
@@ -170,7 +177,7 @@ fun ProfileSelectorScreen(
                         initialOffsetY = { 80 * (index + 1) },
                     ),
                 ) {
-                    ProfileCard(card = card, onSelect = { onRoleSelected(card.role) })
+                    ProfileCard(card = card, onSelect = { onCardSelected(card) })
                 }
                 Spacer(Modifier.height(16.dp))
             }
@@ -183,8 +190,6 @@ private fun ProfileCard(
     card: ProfileCardData,
     onSelect: () -> Unit,
 ) {
-    var isPressed by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -231,26 +236,27 @@ private fun ProfileCard(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            // Features do perfil
-            card.features.forEach { feature ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 3.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(card.gradient.first()),
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = feature,
-                        color = Color(0xFFD1D5DB),
-                        fontSize = 13.sp,
-                    )
+            if (card.features.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                // Features do perfil
+                card.features.forEach { feature ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 3.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(card.gradient.first()),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = feature,
+                            color = Color(0xFFD1D5DB),
+                            fontSize = 13.sp,
+                        )
+                    }
                 }
             }
 
@@ -266,7 +272,7 @@ private fun ProfileCard(
                 ),
             ) {
                 Text(
-                    text = "Entrar como ${card.title}",
+                    text = "Acessar",
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(vertical = 4.dp),
                 )

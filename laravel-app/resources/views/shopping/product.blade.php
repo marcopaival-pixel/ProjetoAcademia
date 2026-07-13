@@ -123,41 +123,58 @@
 
             {{-- Ações --}}
             @if($product->isInStock())
-            <form action="{{ route('shopping.cart.add') }}" method="POST" class="space-y-4">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                @auth
+                <form action="{{ route('shopping.cart.add') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-                @if($product->isPhysical())
-                <div class="flex items-center gap-4">
-                    <label class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Quantidade</label>
-                    <div class="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-2xl overflow-hidden">
-                        <button type="button" @click="qty = Math.max(1, qty - 1)"
-                            class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all">
-                            <i class="fas fa-minus text-xs"></i>
+                    @if($product->isPhysical())
+                    <div class="flex items-center gap-4">
+                        <label class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Quantidade</label>
+                        <div class="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-2xl overflow-hidden">
+                            <button type="button" @click="qty = Math.max(1, qty - 1)"
+                                class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all">
+                                <i class="fas fa-minus text-xs"></i>
+                            </button>
+                            <span x-text="qty" class="w-8 text-center text-white font-black text-sm"></span>
+                            <input type="hidden" name="quantity" :value="qty">
+                            <button type="button" @click="qty = Math.min(99, qty + 1)"
+                                class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all">
+                                <i class="fas fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    @endif
+
+                    <div class="flex gap-3">
+                        <button type="submit"
+                            class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl transition-all active:scale-95 shadow-xl shadow-emerald-500/10 flex items-center justify-center gap-3 uppercase tracking-widest text-sm">
+                            <i class="fas fa-cart-plus"></i>
+                            Adicionar ao Carrinho
                         </button>
-                        <span x-text="qty" class="w-8 text-center text-white font-black text-sm"></span>
-                        <input type="hidden" name="quantity" :value="qty">
-                        <button type="button" @click="qty = Math.min(99, qty + 1)"
-                            class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all">
-                            <i class="fas fa-plus text-xs"></i>
+
+                        <button type="button" onclick="shopStore().toggleWishlist({{ $product->id }}, this)"
+                            class="w-14 h-14 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-rose-500/40 flex items-center justify-center transition-all active:scale-95 {{ $inWishlist ? 'text-rose-400' : 'text-zinc-400' }}">
+                            <i class="{{ $inWishlist ? 'fas' : 'far' }} fa-heart"></i>
                         </button>
                     </div>
-                </div>
-                @endif
+                </form>
+                @else
+                <div class="space-y-4">
+                    <div class="flex gap-3">
+                        <a href="{{ route('login') }}"
+                            class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl transition-all active:scale-95 shadow-xl shadow-emerald-500/10 flex items-center justify-center gap-3 uppercase tracking-widest text-sm">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Entrar para Comprar
+                        </a>
 
-                <div class="flex gap-3">
-                    <button type="submit"
-                        class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl transition-all active:scale-95 shadow-xl shadow-emerald-500/10 flex items-center justify-center gap-3 uppercase tracking-widest text-sm">
-                        <i class="fas fa-cart-plus"></i>
-                        Adicionar ao Carrinho
-                    </button>
-
-                    <button type="button" onclick="shopStore().toggleWishlist({{ $product->id }}, this)"
-                        class="w-14 h-14 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-rose-500/40 flex items-center justify-center transition-all active:scale-95 {{ $inWishlist ? 'text-rose-400' : 'text-zinc-400' }}">
-                        <i class="{{ $inWishlist ? 'fas' : 'far' }} fa-heart"></i>
-                    </button>
+                        <a href="{{ route('login') }}"
+                            class="w-14 h-14 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-rose-500/40 flex items-center justify-center transition-all active:scale-95 text-zinc-400">
+                            <i class="far fa-heart"></i>
+                        </a>
+                    </div>
                 </div>
-            </form>
+                @endauth
             @else
             <div class="py-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-center">
                 <p class="text-rose-400 font-black uppercase tracking-widest text-sm">Produto Esgotado</p>
@@ -192,6 +209,65 @@
         </div>
     </div>
     @endif
+
+    {{-- ── Avaliações / Reviews ─────────────────────────────────────────── --}}
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 mb-10 space-y-6">
+        <h2 class="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
+            <div class="w-1 h-5 bg-yellow-400 rounded-full"></div>
+            Avaliações do Produto ({{ $product->reviews->count() }})
+        </h2>
+
+        @auth
+        <form action="{{ route('shopping.product.review.store', $product) }}" method="POST" class="bg-zinc-850 p-6 rounded-2xl border border-zinc-800/80 space-y-4">
+            @csrf
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Deixe sua avaliação</h3>
+            
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Nota:</span>
+                <div class="flex gap-2" x-data="{ rating: 5 }">
+                    <template x-for="i in 5">
+                        <button type="button" @click="rating = i" class="text-xl transition-colors" :class="rating >= i ? 'text-yellow-400' : 'text-zinc-600'">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </template>
+                    <input type="hidden" name="rating" :value="rating">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label for="comment" class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Comentário:</label>
+                <textarea name="comment" id="comment" rows="3" placeholder="O que você achou deste produto?" class="w-full bg-zinc-800/60 border border-zinc-700 text-white placeholder-zinc-500 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500/50 transition-colors text-sm"></textarea>
+            </div>
+
+            <button type="submit" class="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black rounded-2xl text-xs uppercase tracking-widest transition-all">
+                Enviar Avaliação
+            </button>
+        </form>
+        @endauth
+
+        <div class="space-y-4 divide-y divide-zinc-800/60">
+            @forelse($product->reviews as $review)
+                <div class="pt-4 first:pt-0 space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-sm font-bold text-white">{{ $review->user->name }}</span>
+                            <span class="text-xs text-zinc-500 ml-2">{{ $review->created_at->diffForHumans() }}</span>
+                        </div>
+                        <div class="flex text-yellow-400 text-xs">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="{{ $review->rating >= $i ? 'fas' : 'far' }} fa-star"></i>
+                            @endfor
+                        </div>
+                    </div>
+                    @if($review->comment)
+                        <p class="text-sm text-zinc-400 leading-relaxed">{{ $review->comment }}</p>
+                    @endif
+                </div>
+            @empty
+                <p class="text-sm text-zinc-500 py-4">Nenhuma avaliação para este produto ainda.</p>
+            @endforelse
+        </div>
+    </div>
 
     {{-- ── Produtos relacionados ─────────────────────────────────────── --}}
     @if($related->isNotEmpty())

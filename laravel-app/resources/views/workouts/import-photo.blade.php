@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    @monetizationGate('workout_import_photo')
+    @if($access['allowed'])
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             <!-- Left: Controls & History (4 cols) -->
             <div class="lg:col-span-4 space-y-8">
@@ -260,7 +260,63 @@
                 </div>
             </div>
         </div>
-    @endMonetizationGate
+    @else
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div class="lg:col-span-5 space-y-8">
+                <x-plan-lock>
+                    {{ $access['message'] ?? 'Importar treino por foto e IA faz parte do plano Premium.' }}
+                </x-plan-lock>
+
+                <div class="bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[3rem] p-10 space-y-6">
+                    <h3 class="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] italic">O que será liberado</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                <i data-lucide="camera" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-white font-black uppercase tracking-widest">Foto ou galeria</p>
+                                <p class="text-xs text-zinc-500 mt-1">Tire foto da ficha ou selecione uma imagem salva.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-white font-black uppercase tracking-widest">Leitura com IA</p>
+                                <p class="text-xs text-zinc-500 mt-1">Extração de exercícios, séries, repetições e carga.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                <i data-lucide="list-checks" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-white font-black uppercase tracking-widest">Revisão antes de salvar</p>
+                                <p class="text-xs text-zinc-500 mt-1">Edite os dados detectados antes de incorporar ao sistema.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7">
+                <div class="relative bg-zinc-950 border border-white/5 rounded-[4rem] aspect-video flex items-center justify-center overflow-hidden shadow-inner opacity-70">
+                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.10),_transparent_55%)]"></div>
+                    <div class="relative flex flex-col items-center gap-6 text-center px-8">
+                        <div class="w-24 h-24 rounded-full border-4 border-dashed border-zinc-800 flex items-center justify-center text-zinc-700">
+                            <i data-lucide="scan" class="w-10 h-10"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.5em] italic text-zinc-600">Preview do Importador IA</p>
+                            <p class="text-xs text-zinc-500 mt-3 max-w-md">A área de captura, processamento e revisão aparecerá aqui quando o recurso estiver liberado para o plano.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
 <style>

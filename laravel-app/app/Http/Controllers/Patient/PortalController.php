@@ -10,6 +10,7 @@ use App\Models\PatientTreatmentPlan;
 use App\Models\PatientDocument;
 use App\Models\BodyAssessment;
 use App\Models\ProfessionalAppointment;
+use App\Services\PatientModuleManager;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -239,12 +240,14 @@ class PortalController extends Controller
         $reports = $patient->medicalReports()->where('professional_id', $activeProfId)->latest('date')->limit(5)->get();
         $prescriptions = $patient->medicalPrescriptions()->where('professional_id', $activeProfId)->latest('date')->limit(5)->get();
         $certificates = $patient->medicalCertificates()->where('professional_id', $activeProfId)->latest('date')->limit(5)->get();
+        $activeModules = app(PatientModuleManager::class)->getActiveModules($patient);
 
         return view('patient.medical-records.index', array_merge($context, [
             'evolutions' => $evolutions,
             'reports' => $reports,
             'prescriptions' => $prescriptions,
             'certificates' => $certificates,
+            'activeModules' => $activeModules,
         ]));
     }
 
@@ -386,18 +389,34 @@ class PortalController extends Controller
     {
         $this->authorize('view', $report);
         $patient = Auth::user();
+        $this->logMedicalDocumentDownload($patient, 'PATIENT_DOWNLOAD_MEDICAL_REPORT', 'medical_report', $report->id, [
+            'professional_id' => $report->professional_id ?? null,
+        ]);
         
         $html = view('professional.medical-records.reports.pdf', compact('patient', 'report'))->render();
-        return $pdfService->generate($html, "laudo-{$report->id}.pdf");
+        $binary = $pdfService->render($html);
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="laudo-' . $report->id . '.pdf"',
+        ]);
     }
 
     public function downloadCertificate(\App\Models\MedicalCertificate $certificate, \App\Services\DompdfPdfService $pdfService)
     {
         $this->authorize('view', $certificate);
         $patient = Auth::user();
+        $this->logMedicalDocumentDownload($patient, 'PATIENT_DOWNLOAD_MEDICAL_CERTIFICATE', 'medical_certificate', $certificate->id, [
+            'professional_id' => $certificate->professional_id ?? null,
+        ]);
         
         $html = view('professional.medical-records.certificates.pdf', compact('patient', 'certificate'))->render();
-        return $pdfService->generate($html, "atestado-{$certificate->id}.pdf");
+        $binary = $pdfService->render($html);
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="atestado-' . $certificate->id . '.pdf"',
+        ]);
     }
 
     /**
@@ -444,9 +463,34 @@ class PortalController extends Controller
     {
         $this->authorize('view', $prescription);
         $patient = Auth::user();
+        $this->logMedicalDocumentDownload($patient, 'PATIENT_DOWNLOAD_MEDICAL_PRESCRIPTION', 'medical_prescription', $prescription->id, [
+            'professional_id' => $prescription->professional_id ?? null,
+        ]);
         
         $html = view('professional.medical-records.prescriptions.pdf', compact('patient', 'prescription'))->render();
-        return $pdfService->generate($html, "receita-{$prescription->id}.pdf");
+        $binary = $pdfService->render($html);
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="receita-' . $prescription->id . '.pdf"',
+        ]);
+    }
+
+    private function logMedicalDocumentDownload($patient, string $action, string $documentType, int $documentId, array $extra = []): void
+    {
+        AdminLog::create([
+            'user_id' => $patient->id,
+            'action' => $action,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'payload' => array_merge([
+                'patient_id' => $patient->id,
+                'document_type' => $documentType,
+                'document_id' => $documentId,
+                'timestamp' => now()->toDateTimeString(),
+            ], $extra),
+            'created_at' => now(),
+        ]);
     }
 
     /**

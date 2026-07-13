@@ -5,7 +5,7 @@
         isCollapsed: false,
         openMenus: [
             @if(request()->routeIs('admin.dashboard*', 'admin.executive.*', 'admin.financial.dashboard', 'admin.commercial.dashboard')) 'dashboard', @endif
-            @if(request()->routeIs('admin.kanban.*', 'admin.support.*', 'admin.kb.*')) 'operacoes', @endif
+            @if(request()->routeIs('admin.kanban.*', 'admin.support.*', 'admin.kb.*', 'admin.testimonials.*')) 'operacoes', @endif
             @if(request()->routeIs('admin.users*', 'admin.registrations.pending', 'admin.registrations.index', 'admin.representatives.*')) 'usuarios', @endif
             @if(request()->routeIs('admin.pdf-companies.*', 'admin.clinic-onboarding.*', 'admin.impersonate-clinic.*', 'onboarding-premium.*')) 'clinicas', @endif
             @if(request()->routeIs('admin.plans.*', 'admin.financial.management', 'admin.coupons.*')) 'planos', @endif
@@ -41,16 +41,16 @@
     <!-- Header / Logo -->
     <div class="sidebar-header p-8 border-b border-zinc-900 bg-zinc-950/50 flex items-center justify-between">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-4 group" x-show="!isCollapsed">
-            <div class="w-10 h-10 bg-emerald-500 text-zinc-950 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform group-hover:rotate-12 transition-all duration-500">
-                <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transform group-hover:rotate-12 transition-all duration-500 overflow-hidden">
+                <img src="{{ asset('images/nexshape-icon.svg') }}" alt="NexShape" class="w-full h-full object-cover">
             </div>
             <div class="flex flex-col">
-                <span class="text-lg font-black text-white tracking-tighter uppercase leading-none">NEX<span class="text-emerald-500">SHAPE</span></span>
+                <span class="text-lg font-semibold text-white tracking-tight leading-none">NexShape</span>
                 <span class="text-[7px] font-black text-zinc-700 uppercase tracking-[0.4em] mt-1 italic">ADMIN CORE</span>
             </div>
         </a>
-        <div class="w-10 h-10 bg-emerald-500 text-zinc-950 rounded-xl flex items-center justify-center shadow-lg" x-show="isCollapsed">
-            <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden" x-show="isCollapsed">
+            <img src="{{ asset('images/nexshape-icon.svg') }}" alt="NexShape" class="w-full h-full object-cover">
         </div>
         <button @click="isCollapsed = !isCollapsed" class="text-zinc-600 hover:text-white transition-colors">
             <i :data-lucide="isCollapsed ? 'panel-left-open' : 'panel-left-close'" class="w-5 h-5"></i>
@@ -187,6 +187,7 @@
                 <li x-show="isVisible('Suporte')"><a href="{{ route('admin.support.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.support.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Chamados de Suporte</a></li>
                 <li x-show="isVisible('Base de Conhecimento')"><a href="{{ route('admin.kb.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.kb.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Base de Conhecimento</a></li>
                 <li x-show="isVisible('Avisos')"><a href="{{ route('admin.announcements') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.announcements') ? 'active' : 'text-zinc-600 hover:text-white' }}">Avisos do Sistema</a></li>
+                <li x-show="isVisible('Depoimentos')"><a href="{{ route('admin.testimonials.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.testimonials.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Depoimentos (Prova Social)</a></li>
             </ul>
         </div>
 
@@ -551,4 +552,3 @@
         </div>
     </div>
 </aside>
-

@@ -134,3 +134,12 @@ composer phpstan
 
 CI: `.github/workflows/laravel-tests.yml`, `.github/workflows/deploy-nexshape.yml`.
 
+## Matriz de Controle de Acesso (ACL) - Perfis & Endpoints
+
+| Perfil / Função | Endpoints Disponíveis | Regras de Negócio / Acesso |
+|---|---|---|
+| **Público** | `/leads`, `/health`, `/auth/token`, `/auth/register`, `/auth/forgot-password`, `/referral/verify` | Sem autenticação requerida. |
+| **Autenticado (Comum)** | `/me`, `/organizations`, `/devices`, `/payments/status`, `/media/{type}/{id}`, `/chat/*`, `/ai/orchestrator` | Requer token Bearer válido. |
+| **Aluno / Paciente** | `/training-plans`, `/exercise-catalog`, `/exercise-logs`, `/load-logs`, `/nutrition/diary`, `/nutrition/meal-templates`, `/hydration/*`, `/workout-sessions`, `/assessments`, `/evolution-photos`, `/uploads/*`, `/subscriptions/*`, `/student/*` | Acesso restrito a si próprio. Alunos vinculados podem herdar treinos criados por profissionais. |
+| **Profissional / Instrutor / Supervisor** | `/professional/dashboard`, `/professional/patients`, `/professional/patients/requests`, `/professional/appointments`, `/professional/protocols`, `/professional/patients/{patient}/*`, `/professional/alerts` | Acesso gerencial para pacientes vinculados e solicitações recebidas. |
+

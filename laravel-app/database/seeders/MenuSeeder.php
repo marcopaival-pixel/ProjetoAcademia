@@ -28,6 +28,7 @@ class MenuSeeder extends Seeder
             ['name' => 'report', 'label' => 'Relatórios', 'route' => 'report', 'icon' => 'file-text', 'order' => 12, 'is_required' => false],
             ['name' => 'profile', 'label' => 'Perfil', 'route' => 'profile', 'icon' => 'user', 'order' => 13, 'is_required' => true],
             ['name' => 'plano', 'label' => 'Pagamentos', 'route' => 'plano', 'icon' => 'credit-card', 'order' => 14, 'is_required' => false],
+            ['name' => 'ai_credits', 'label' => 'Créditos de IA', 'route' => 'ai-credits.dashboard', 'icon' => 'coins', 'order' => 15, 'is_required' => false],
 
             // Professional Menus
             ['name' => 'patients', 'label' => 'Pacientes', 'route' => 'professional.patients.index', 'icon' => 'users', 'order' => 20, 'is_required' => false],

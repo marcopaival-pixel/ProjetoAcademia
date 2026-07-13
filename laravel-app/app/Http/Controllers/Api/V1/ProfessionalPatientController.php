@@ -69,6 +69,81 @@ class ProfessionalPatientController extends Controller
         ]);
     }
 
+    public function requests(Request $request): JsonResponse
+    {
+        $requests = $request->user()->receivedRequests()
+            ->with('patient')
+            ->where('status', 'pending')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (\App\Models\ProfessionalPatientRequest $req) {
+                return [
+                    'id' => $req->id,
+                    'patient_id' => $req->patient_id,
+                    'patient_name' => $req->patient?->name,
+                    'patient_email' => $req->patient?->email,
+                    'message' => $req->message,
+                    'status' => $req->status,
+                    'created_at' => $req->created_at?->toIso8601String(),
+                ];
+            });
+
+        return $this->success(['requests' => $requests]);
+    }
+
+    public function approveRequest(Request $request, int $id): JsonResponse
+    {
+        $linkRequest = \App\Models\ProfessionalPatientRequest::where('professional_id', $request->user()->id)
+            ->where('status', 'pending')
+            ->findOrFail($id);
+
+        $professional = $request->user();
+        
+        $currentPatientsCount = $professional->patients()->count();
+        $maxPatients = $professional->professionalPlan ? $professional->professionalPlan->max_patients : 50;
+
+        if ($maxPatients !== -1 && $currentPatientsCount >= $maxPatients) {
+            return $this->error('Limite de pacientes atingido para o seu plano atual.', 422, 'limit_exceeded');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function() use ($linkRequest, $professional) {
+            $linkRequest->update(['status' => 'approved']);
+
+            if ($linkRequest->message === 'Transferência') {
+                \App\Models\ProfessionalPatient::where('user_id', $linkRequest->patient_id)
+                    ->where('professional_id', '!=', $professional->id)
+                    ->update(['status' => 'Não']);
+            }
+
+            $professional->patients()->syncWithoutDetaching([
+                $linkRequest->patient_id => [
+                    'status' => 'Sim',
+                    'data_cadastro' => now(),
+                    'empresa_id' => $professional->academy_company_id
+                ]
+            ]);
+
+            $linkRequest->patient->notify(new \App\Notifications\PatientProfessionalLinkNotification($professional->name, 'new'));
+        });
+
+        return $this->success([
+            'message' => 'Solicitação aprovada e paciente vinculado com sucesso.'
+        ]);
+    }
+
+    public function rejectRequest(Request $request, int $id): JsonResponse
+    {
+        $linkRequest = \App\Models\ProfessionalPatientRequest::where('professional_id', $request->user()->id)
+            ->where('status', 'pending')
+            ->findOrFail($id);
+
+        $linkRequest->update(['status' => 'rejected']);
+
+        return $this->success([
+            'message' => 'Solicitação rejeitada com sucesso.'
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */

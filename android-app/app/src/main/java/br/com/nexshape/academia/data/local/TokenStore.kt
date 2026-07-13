@@ -43,6 +43,17 @@ class TokenStore(context: Context) {
         }.apply()
     }
 
+    fun saveDefaultActiveRole(role: String?) {
+        saveActiveRole(role)
+        setActiveRoleConfirmed(false)
+    }
+
+    fun setActiveRoleConfirmed(confirmed: Boolean) {
+        prefs.edit().putBoolean(KEY_ACTIVE_ROLE_CONFIRMED, confirmed).apply()
+    }
+
+    fun isActiveRoleConfirmed(): Boolean = prefs.getBoolean(KEY_ACTIVE_ROLE_CONFIRMED, false)
+
     fun getActiveRole(): String? = prefs.getString(KEY_ACTIVE_ROLE, null)
 
     fun saveAvailableRoles(roles: List<String>) {
@@ -67,12 +78,26 @@ class TokenStore(context: Context) {
 
     fun getActiveTenant(): String? = prefs.getString(KEY_ACTIVE_TENANT, null)
 
+    fun saveActiveContextId(contextId: String?) {
+        prefs.edit().apply {
+            if (contextId.isNullOrBlank()) {
+                remove(KEY_ACTIVE_CONTEXT_ID)
+            } else {
+                putString(KEY_ACTIVE_CONTEXT_ID, contextId)
+            }
+        }.apply()
+    }
+
+    fun getActiveContextId(): String? = prefs.getString(KEY_ACTIVE_CONTEXT_ID, null)
+
     companion object {
         private const val KEY_TOKEN = "access_token"
         private const val KEY_EMAIL = "user_email"
         private const val KEY_NAME = "user_name"
         private const val KEY_ACTIVE_ROLE = "active_role"
+        private const val KEY_ACTIVE_ROLE_CONFIRMED = "active_role_confirmed"
         private const val KEY_AVAILABLE_ROLES = "available_roles"
         private const val KEY_ACTIVE_TENANT = "active_tenant"
+        private const val KEY_ACTIVE_CONTEXT_ID = "active_context_id"
     }
 }

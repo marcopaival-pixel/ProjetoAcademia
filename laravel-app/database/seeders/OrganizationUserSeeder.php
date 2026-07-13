@@ -27,7 +27,7 @@ class OrganizationUserSeeder extends Seeder
 
                 if (!$org) continue;
 
-                $role = $user->hasRole(['professional', 'instructor', 'supervisor']) ? 'professional' : 'paciente';
+                $role = $user->hasRole(['professional', 'instructor', 'supervisor']) ? 'professional' : 'aluno';
 
                 DB::table('organization_user')->updateOrInsert(
                     ['user_id' => $user->id, 'organization_id' => $org->id, 'role' => $role],
@@ -43,7 +43,7 @@ class OrganizationUserSeeder extends Seeder
 
                 if (!$org) continue;
 
-                $role = $user->hasRole(['professional', 'instructor', 'supervisor']) ? 'professional' : 'paciente';
+                $role = $user->hasRole(['professional', 'instructor', 'supervisor']) ? 'professional' : 'aluno';
 
                 DB::table('organization_user')->updateOrInsert(
                     ['user_id' => $user->id, 'organization_id' => $org->id, 'role' => $role],

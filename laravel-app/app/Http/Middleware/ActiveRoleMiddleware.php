@@ -32,7 +32,27 @@ class ActiveRoleMiddleware
         }
 
         $activeRole = $request->header('X-Active-Role');
+        if ($activeRole === 'paciente') {
+            $activeRole = 'aluno';
+        }
         $activeTenantId = $request->header('X-Active-Tenant');
+        $activeContextId = $request->header('X-Active-Context-ID');
+
+        if ($activeContextId) {
+            if (str_starts_with($activeContextId, 'professional:')) {
+                $profId = (int) substr($activeContextId, 13);
+                $request->attributes->set('active_professional_id', $profId);
+                session(['active_professional_id' => $profId]);
+            } elseif (str_starts_with($activeContextId, 'clinic:')) {
+                $clinicId = (int) substr($activeContextId, 7);
+                $request->attributes->set('active_clinic_id', $clinicId);
+                session(['active_clinic_id' => $clinicId]);
+            } elseif ($activeContextId === 'personal') {
+                $request->attributes->set('active_personal_context', true);
+                session(['active_personal_context' => true]);
+                session()->forget(['active_professional_id', 'active_clinic_id']);
+            }
+        }
 
         $tenant = null;
 
@@ -59,13 +79,7 @@ class ActiveRoleMiddleware
             } else {
                 // Se não passou tenant, valida se o usuário tem a role global (Spatie Permission/Roles ou nossa base legada)
                 if (! $user->hasRole($activeRole)) {
-                    // Fallback para caso seja 'paciente' e esteja salvo de outra forma
-                    if ($activeRole === 'paciente' && ! $user->hasRole('paciente')) {
-                        return response()->json(['error' => 'Unauthorized role context'], 403);
-                    }
-                    if ($activeRole !== 'paciente') {
-                        return response()->json(['error' => 'Unauthorized role context'], 403);
-                    }
+                    return response()->json(['error' => 'Unauthorized role context'], 403);
                 }
             }
         }

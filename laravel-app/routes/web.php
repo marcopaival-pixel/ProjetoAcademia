@@ -171,6 +171,9 @@ Route::middleware('throttle:marketing-tracking')->group(function () {
     Route::post('/api/marketing/app-banner/metric', [App\Http\Controllers\Admin\AppBannerController::class, 'trackMetric'])->name('api.marketing.app-banner.metric');
 });
 
+// Módulo Shopping Fitness (Público/Misto)
+require __DIR__.'/shopping.php';
+
 // 6. App Core (Rotas Autenticadas Comuns)
 Route::middleware(['auth', 'active_patient', 'panel.isolation'])->group(function () {
 
@@ -304,10 +307,8 @@ Route::middleware(['auth', 'active_patient', 'panel.isolation'])->group(function
     Route::get('/system/status', [SystemStatusController::class, 'index'])->name('system.status');
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
 
-    require __DIR__.'/features.php';
 
-    // Módulo Shopping Fitness
-    require __DIR__.'/shopping.php';
+    require __DIR__.'/features.php';
 
 
     
