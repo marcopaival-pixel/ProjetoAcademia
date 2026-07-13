@@ -20,6 +20,9 @@ interface NexShapeApi {
     @POST("auth/token")
     suspend fun login(@Body body: LoginRequest): AuthTokenResponse
 
+    @POST("auth/google")
+    suspend fun googleLogin(@Body body: GoogleLoginRequest): AuthTokenResponse
+
     @POST("auth/register")
     suspend fun register(@Body body: RegisterRequest): RegisterResponse
 
@@ -62,6 +65,15 @@ interface NexShapeApi {
     @GET("exercise-catalog")
     suspend fun exerciseCatalog(@Query("search") search: String? = null): ApiSuccessResponse<ExerciseCatalogData>
 
+    @Multipart
+    @POST("workout-import/process")
+    suspend fun processWorkoutImport(
+        @Part photo: MultipartBody.Part,
+    ): ApiSuccessResponse<WorkoutImportData>
+
+    @POST("workout-import/save")
+    suspend fun saveWorkoutImport(@Body body: SaveWorkoutImportRequest): ApiSuccessResponse<SaveWorkoutImportData>
+
     @GET("nutrition/diary")
     suspend fun nutritionDiary(@Query("date") date: String? = null): ApiSuccessResponse<NutritionDiaryData>
 
@@ -103,6 +115,9 @@ interface NexShapeApi {
 
     @POST("chat/send")
     suspend fun chatSend(@Body body: ChatSendRequest): ApiSuccessResponse<ChatSendData>
+
+    @GET("ai/credits")
+    suspend fun aiCredits(): ApiSuccessResponse<AiCreditBalanceDto>
 
     @POST("exercise-logs/sync")
     suspend fun syncExercise(@Body body: ExerciseSyncRequest): ApiSuccessResponse<ExerciseSyncData>
@@ -332,4 +347,31 @@ interface NexShapeApi {
 
     @POST("student/active-rest/{id}/log")
     suspend fun storeActiveRestLog(@Path("id") id: Int, @Body body: ActiveRestLogRequest): ApiSuccessResponse<Map<String, Any?>>
+
+    @GET("community/posts")
+    suspend fun communityPosts(): ApiSuccessResponse<CommunityPostsData>
+
+    @POST("community/posts")
+    suspend fun createCommunityPost(@Body body: CreateCommunityPostRequest): ApiSuccessResponse<CommunityPostCreatedData>
+
+    @POST("community/posts/{id}/comments")
+    suspend fun createCommunityComment(
+        @Path("id") id: Int,
+        @Body body: CreateCommunityCommentRequest,
+    ): ApiSuccessResponse<CommunityCommentCreatedData>
+
+    @GET("messages/conversations")
+    suspend fun conversations(): ApiSuccessResponse<ConversationsData>
+
+    @POST("messages/conversations/support")
+    suspend fun startSupportConversation(): ApiSuccessResponse<SupportConversationData>
+
+    @GET("messages/conversations/{id}")
+    suspend fun conversationMessages(@Path("id") id: Int): ApiSuccessResponse<ConversationMessagesData>
+
+    @POST("messages/conversations/{id}")
+    suspend fun sendInternalMessage(
+        @Path("id") id: Int,
+        @Body body: SendInternalMessageRequest,
+    ): ApiSuccessResponse<InternalMessageCreatedData>
 }

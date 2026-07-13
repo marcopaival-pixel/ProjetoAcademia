@@ -13,9 +13,11 @@ import br.com.nexshape.academia.data.api.TrainingPlanDetailDto
 import br.com.nexshape.academia.data.api.TrainingPlanSummaryDto
 import br.com.nexshape.academia.data.api.TrainingPlansResponse
 import br.com.nexshape.academia.data.api.StartWorkoutSessionRequest
+import br.com.nexshape.academia.data.api.SaveWorkoutImportRequest
 import br.com.nexshape.academia.data.api.UpdateWorkoutSessionRequest
 import br.com.nexshape.academia.data.api.UpdateAppointmentStatusRequest
 import br.com.nexshape.academia.data.api.WorkoutSessionRequest
+import br.com.nexshape.academia.data.api.WorkoutImportData
 import br.com.nexshape.academia.data.local.AppDatabase
 import br.com.nexshape.academia.data.local.PendingSyncEntity
 import com.squareup.moshi.Moshi
@@ -54,6 +56,14 @@ class TrainingRepository {
 
     suspend fun exerciseCatalog(search: String? = null): Result<List<ExerciseCatalogDto>> = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().exerciseCatalog(search).data.exercises }
+    }
+
+    suspend fun processWorkoutImport(photoPart: okhttp3.MultipartBody.Part): Result<WorkoutImportData> = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().processWorkoutImport(photoPart).data }
+    }
+
+    suspend fun saveWorkoutImport(request: SaveWorkoutImportRequest) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().saveWorkoutImport(request).data }
     }
 
     suspend fun sessions(limit: Int = 10) = withContext(Dispatchers.IO) {
@@ -164,6 +174,12 @@ class ChatRepository {
 
     suspend fun send(message: String) = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().chatSend(br.com.nexshape.academia.data.api.ChatSendRequest(message)).data.message }
+    }
+}
+
+class AiCreditsRepository {
+    suspend fun balance() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().aiCredits().data }
     }
 }
 
@@ -402,5 +418,51 @@ class MedicalDocumentsRepository {
 
     suspend fun downloadCertificate(id: Int) = withContext(Dispatchers.IO) {
         runCatching { ApiClient.api().downloadCertificatePdf(id) }
+    }
+}
+
+class CommunityRepository {
+    suspend fun posts() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().communityPosts().data.posts }
+    }
+
+    suspend fun createPost(content: String, visibility: String = "public") = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().createCommunityPost(
+                br.com.nexshape.academia.data.api.CreateCommunityPostRequest(content, visibility),
+            ).data.post
+        }
+    }
+
+    suspend fun createComment(postId: Int, content: String) = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().createCommunityComment(
+                postId,
+                br.com.nexshape.academia.data.api.CreateCommunityCommentRequest(content),
+            ).data.comment
+        }
+    }
+}
+
+class InternalMessagesRepository {
+    suspend fun conversations() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().conversations().data.conversations }
+    }
+
+    suspend fun startSupport() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().startSupportConversation().data.conversation }
+    }
+
+    suspend fun messages(conversationId: Int) = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().conversationMessages(conversationId).data }
+    }
+
+    suspend fun send(conversationId: Int, content: String) = withContext(Dispatchers.IO) {
+        runCatching {
+            ApiClient.api().sendInternalMessage(
+                conversationId,
+                br.com.nexshape.academia.data.api.SendInternalMessageRequest(content),
+            ).data.message
+        }
     }
 }

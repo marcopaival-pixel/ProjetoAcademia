@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import br.com.nexshape.academia.data.api.ApiClient
 import br.com.nexshape.academia.data.api.ProfileDto
 import br.com.nexshape.academia.data.repository.AgendaRepository
+import br.com.nexshape.academia.data.repository.AiCreditsRepository
 import br.com.nexshape.academia.data.repository.AuthRepository
 import br.com.nexshape.academia.data.repository.EvolutionRepository
 import br.com.nexshape.academia.data.repository.NutritionRepository
@@ -73,20 +75,29 @@ fun HomeScreen(
     onOpenDocuments: () -> Unit,
     onOpenGamification: () -> Unit,
     onOpenActiveRest: () -> Unit,
+    onOpenCommunity: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onOpenClinical: () -> Unit,
+    onOpenExamsMeasures: () -> Unit,
     onOpenNotifications: () -> Unit,
 ) {
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var summary by remember { mutableStateOf(HomeSummary()) }
+    var aiCredits by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val trainingRepository = remember { TrainingRepository() }
     val nutritionRepository = remember { NutritionRepository() }
     val evolutionRepository = remember { EvolutionRepository() }
     val agendaRepository = remember { AgendaRepository() }
+    val aiCreditsRepository = remember { AiCreditsRepository() }
 
     LaunchedEffect(Unit) {
         authRepository.loadProfile()
             .onSuccess { profile = it }
             .onFailure { error = it.message }
+
+        aiCreditsRepository.balance()
+            .onSuccess { aiCredits = it.balance }
 
         val trainingResponse = trainingRepository.getPlansResponse().getOrNull()
         val trainingCount = trainingResponse?.data?.size
@@ -120,6 +131,7 @@ fun HomeScreen(
             profile != null -> HomeContent(
                 profile = profile!!,
                 summary = summary,
+                aiCredits = aiCredits,
                 onOpenTraining = onOpenTraining,
                 onOpenEvolution = onOpenEvolution,
                 onOpenAgenda = onOpenAgenda,
@@ -130,6 +142,10 @@ fun HomeScreen(
                 onOpenDocuments = { onOpenDocuments() },
                 onOpenGamification = { onOpenGamification() },
                 onOpenActiveRest = { onOpenActiveRest() },
+                onOpenCommunity = { onOpenCommunity() },
+                onOpenMessages = { onOpenMessages() },
+                onOpenClinical = { onOpenClinical() },
+                onOpenExamsMeasures = { onOpenExamsMeasures() },
                 onOpenNotifications = { onOpenNotifications() },
             )
             error != null -> Text(
@@ -149,6 +165,7 @@ fun HomeScreen(
 private fun HomeContent(
     profile: ProfileDto,
     summary: HomeSummary,
+    aiCredits: Int?,
     onOpenTraining: () -> Unit,
     onOpenEvolution: () -> Unit,
     onOpenAgenda: () -> Unit,
@@ -159,6 +176,10 @@ private fun HomeContent(
     onOpenDocuments: () -> Unit,
     onOpenGamification: () -> Unit,
     onOpenActiveRest: () -> Unit,
+    onOpenCommunity: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onOpenClinical: () -> Unit,
+    onOpenExamsMeasures: () -> Unit,
     onOpenNotifications: () -> Unit,
 ) {
     val activeRole = remember { ApiClient.tokenStore().getActiveRole() }
@@ -191,19 +212,25 @@ private fun HomeContent(
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF10B981)),
-                contentAlignment = Alignment.Center,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = profile.name.trim().firstOrNull()?.uppercase() ?: "N",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black,
-                )
+                HomeAiCreditsPill(aiCredits)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF10B981)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = profile.name.trim().firstOrNull()?.uppercase() ?: "N",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
             }
         }
 
@@ -347,11 +374,32 @@ private fun HomeContent(
 
         if (isPatient) {
             ModuleCard(
+                title = "Conduta clinica",
+                description = "Resumo clinico, agenda e documentos do acompanhamento.",
+                icon = Icons.Filled.MedicalServices,
+                status = "Disponivel",
+                onClick = onOpenClinical,
+            )
+            ModuleCard(
+                title = "Exames e medidas",
+                description = "Medidas corporais, laudos, receitas e atestados.",
+                icon = Icons.Filled.MonitorHeart,
+                status = "Disponivel",
+                onClick = onOpenExamsMeasures,
+            )
+            ModuleCard(
                 title = "Relatorios e documentos",
                 description = "Visualizar laudos, receitas e atestados emitidos.",
                 icon = Icons.Filled.Description,
                 status = "Disponivel",
                 onClick = onOpenDocuments,
+            )
+            ModuleCard(
+                title = "Mensagens",
+                description = "Conversas internas com suporte e profissionais.",
+                icon = Icons.AutoMirrored.Filled.Chat,
+                status = "Disponivel",
+                onClick = onOpenMessages,
             )
             ModuleCard(
                 title = "Notificacoes",
@@ -374,6 +422,34 @@ private fun HomeContent(
                 icon = Icons.AutoMirrored.Filled.Chat,
                 status = if (profile.isPremium) "VIP" else "Free limitado",
                 onClick = onOpenChat,
+            )
+            ModuleCard(
+                title = "Comunidade NexShape",
+                description = "Feed social, comentarios e evolucao compartilhada.",
+                icon = Icons.Filled.Groups,
+                status = "Disponivel",
+                onClick = onOpenCommunity,
+            )
+            ModuleCard(
+                title = "Mensagens",
+                description = "Conversas internas com suporte e profissionais.",
+                icon = Icons.AutoMirrored.Filled.Chat,
+                status = "Disponivel",
+                onClick = onOpenMessages,
+            )
+            ModuleCard(
+                title = "Conduta clinica",
+                description = "Resumo clinico, agenda e documentos do acompanhamento.",
+                icon = Icons.Filled.MedicalServices,
+                status = "Disponivel",
+                onClick = onOpenClinical,
+            )
+            ModuleCard(
+                title = "Exames e medidas",
+                description = "Medidas corporais, laudos, receitas e atestados.",
+                icon = Icons.Filled.MonitorHeart,
+                status = "Disponivel",
+                onClick = onOpenExamsMeasures,
             )
             ModuleCard(
                 title = "Assinatura",
@@ -471,6 +547,38 @@ private fun HighlightCard(
             color = Color(0xFFA3AAB5),
             fontSize = 14.sp,
             lineHeight = 20.sp,
+        )
+    }
+}
+
+@Composable
+private fun HomeAiCreditsPill(credits: Int?) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color(0xFF071B16).copy(alpha = 0.94f))
+            .border(1.dp, Color(0xFF19F5A6).copy(alpha = 0.36f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "IA",
+            color = Color(0xFF19F5A6),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            text = credits?.toString() ?: "--",
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            text = "creditos",
+            color = Color(0xFFA3AAB5),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
         )
     }
 }

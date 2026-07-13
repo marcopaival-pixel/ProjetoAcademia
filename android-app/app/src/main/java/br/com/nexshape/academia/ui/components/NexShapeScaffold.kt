@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -26,6 +27,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.nexshape.academia.data.repository.AiCreditsRepository
 
 val NexGreen = Color(0xFF10B981)
 val NexNeon = Color(0xFF19F5A6)
@@ -51,6 +58,14 @@ fun NexShapeScreen(
     action: (@Composable () -> Unit)? = null,
     content: @Composable PaddingValues.() -> Unit,
 ) {
+    val creditsRepository = remember { AiCreditsRepository() }
+    var aiCredits by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(title) {
+        creditsRepository.balance()
+            .onSuccess { aiCredits = it.balance }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -85,11 +100,50 @@ fun NexShapeScreen(
                         )
                     }
                 }
-                action?.invoke()
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.widthIn(min = 92.dp),
+                ) {
+                    AiCreditsPill(aiCredits)
+                    action?.invoke()
+                }
             }
             Spacer(Modifier.height(18.dp))
             PaddingValues().content()
         }
+    }
+}
+
+@Composable
+private fun AiCreditsPill(credits: Int?) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color(0xFF071B16).copy(alpha = 0.94f))
+            .border(1.dp, NexNeon.copy(alpha = 0.36f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = "IA",
+            color = NexNeon,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            text = credits?.toString() ?: "--",
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            text = "creditos",
+            color = NexMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

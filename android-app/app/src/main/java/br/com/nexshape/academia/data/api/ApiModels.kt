@@ -45,6 +45,12 @@ data class LoginRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class GoogleLoginRequest(
+    @Json(name = "id_token") val idToken: String,
+    @Json(name = "device_name") val deviceName: String = "nexshape-android-google",
+)
+
+@JsonClass(generateAdapter = true)
 data class ForgotPasswordRequest(
     val email: String,
 )
@@ -153,7 +159,16 @@ data class ProfileDto(
     val status: String? = null,
     val branding: BrandingDto? = null,
     val organizations: List<OrganizationDto>? = null,
+    val vinculos: List<VinculoDto>? = null,
+    @Json(name = "student_status") val studentStatus: String? = null,
     val profile: ProfileDetailsDto? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class VinculoDto(
+    val id: Int,
+    val name: String,
+    val specialty: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -277,6 +292,33 @@ data class ExerciseCatalogDto(
     val equipment: String? = null,
     val difficulty: String? = null,
     val muscles: List<String> = emptyList(),
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkoutImportExerciseDto(
+    @Json(name = "nome_exercicio") val nomeExercicio: String,
+    val series: String? = null,
+    val repeticoes: String? = null,
+    val carga: String? = null,
+    val observacoes: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class WorkoutImportData(
+    val exercises: List<WorkoutImportExerciseDto>,
+    @Json(name = "log_id") val logId: Int? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class SaveWorkoutImportRequest(
+    @Json(name = "workout_name") val workoutName: String,
+    val exercises: List<WorkoutImportExerciseDto>,
+)
+
+@JsonClass(generateAdapter = true)
+data class SaveWorkoutImportData(
+    val message: String,
+    @Json(name = "plan_id") val planId: Int,
 )
 
 @JsonClass(generateAdapter = true)
@@ -490,6 +532,15 @@ data class ChatSendRequest(
 data class ChatSendData(
     val message: String,
     val source: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class AiCreditBalanceDto(
+    val balance: Int,
+    @Json(name = "monthly_allowance") val monthlyAllowance: Int = 0,
+    @Json(name = "extra_credits") val extraCredits: Int = 0,
+    @Json(name = "renewal_date") val renewalDate: String? = null,
+    @Json(name = "expires_at") val expiresAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -919,6 +970,99 @@ data class MedicalDocumentDto(
 data class CurrentSubscriptionData(
     val subscription: SubscriptionDto? = null,
     @Json(name = "is_premium") val isPremium: Boolean = false,
+)
+
+@JsonClass(generateAdapter = true)
+data class CommunityPostsData(
+    val posts: List<CommunityPostDto>,
+)
+
+@JsonClass(generateAdapter = true)
+data class CommunityPostDto(
+    val id: Int,
+    @Json(name = "author_name") val authorName: String? = null,
+    val content: String,
+    val visibility: String? = null,
+    val status: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "reactions_count") val reactionsCount: Int = 0,
+    @Json(name = "comments_count") val commentsCount: Int = 0,
+    val comments: List<CommunityCommentDto> = emptyList(),
+)
+
+@JsonClass(generateAdapter = true)
+data class CommunityCommentDto(
+    val id: Int,
+    @Json(name = "author_name") val authorName: String? = null,
+    val content: String,
+    @Json(name = "created_at") val createdAt: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class CreateCommunityPostRequest(
+    val content: String,
+    val visibility: String = "public",
+)
+
+@JsonClass(generateAdapter = true)
+data class CreateCommunityCommentRequest(
+    val content: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class CommunityPostCreatedData(
+    val post: CommunityPostDto,
+)
+
+@JsonClass(generateAdapter = true)
+data class CommunityCommentCreatedData(
+    val comment: CommunityCommentDto,
+)
+
+@JsonClass(generateAdapter = true)
+data class ConversationsData(
+    val conversations: List<ConversationDto>,
+)
+
+@JsonClass(generateAdapter = true)
+data class ConversationDto(
+    val id: Int,
+    val type: String? = null,
+    val status: String? = null,
+    @Json(name = "other_user_name") val otherUserName: String? = null,
+    @Json(name = "last_message") val lastMessage: String? = null,
+    @Json(name = "last_message_at") val lastMessageAt: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ConversationMessagesData(
+    val conversation: ConversationDto,
+    val messages: List<InternalMessageDto>,
+)
+
+@JsonClass(generateAdapter = true)
+data class InternalMessageDto(
+    val id: Int,
+    @Json(name = "sender_name") val senderName: String? = null,
+    val content: String,
+    @Json(name = "is_mine") val isMine: Boolean = false,
+    @Json(name = "is_read") val isRead: Boolean = false,
+    @Json(name = "created_at") val createdAt: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class SendInternalMessageRequest(
+    val content: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class InternalMessageCreatedData(
+    val message: InternalMessageDto,
+)
+
+@JsonClass(generateAdapter = true)
+data class SupportConversationData(
+    val conversation: ConversationDto,
 )
 
 @JsonClass(generateAdapter = true)

@@ -3,6 +3,7 @@ package br.com.nexshape.academia.data.repository
 import android.content.Context
 import br.com.nexshape.academia.data.api.ApiClient
 import br.com.nexshape.academia.data.api.ForgotPasswordRequest
+import br.com.nexshape.academia.data.api.GoogleLoginRequest
 import br.com.nexshape.academia.data.api.LoginRequest
 import br.com.nexshape.academia.data.api.OnboardingProfileRequest
 import br.com.nexshape.academia.data.api.ProfileDto
@@ -25,9 +26,27 @@ class AuthRepository(
             tokenStore.saveToken(response.accessToken, response.user.email, response.user.name)
             val profile = ApiClient.api().profile().data
 
-            val availableRoles = profile.roles ?: emptyList()
+            val availableRoles = resolveAvailableRoles(profile)
             tokenStore.saveAvailableRoles(availableRoles)
 
+            tokenStore.saveDefaultActiveRole(resolveDefaultActiveRole(availableRoles))
+            tokenStore.saveActiveTenant(null)
+
+            appContext?.let { PushTokenManager.registerIfAvailable(it) }
+            profile
+        }.recoverCatching { error ->
+            throw mapError(error)
+        }
+    }
+
+    suspend fun loginWithGoogle(idToken: String): Result<ProfileDto> = withContext(Dispatchers.IO) {
+        runCatching {
+            val response = ApiClient.api().googleLogin(GoogleLoginRequest(idToken))
+            tokenStore.saveToken(response.accessToken, response.user.email, response.user.name)
+            val profile = ApiClient.api().profile().data
+
+            val availableRoles = resolveAvailableRoles(profile)
+            tokenStore.saveAvailableRoles(availableRoles)
             tokenStore.saveDefaultActiveRole(resolveDefaultActiveRole(availableRoles))
             tokenStore.saveActiveTenant(null)
 
@@ -199,4 +218,14 @@ class AuthRepository(
             "admin" in roles -> "admin"
             else -> roles.firstOrNull()
         }
+
+    private fun resolveAvailableRoles(profile: ProfileDto): List<String> {
+        val roles = profile.roles?.toMutableList() ?: mutableListOf()
+        if ((roles.contains("student") || roles.contains("aluno") || roles.contains("athlete")) && profile.studentStatus == "vinculado") {
+            if (!roles.contains("paciente")) {
+                roles.add("paciente")
+            }
+        }
+        return roles
+    }
 }

@@ -1,5 +1,7 @@
 package br.com.nexshape.academia.ui.login
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,9 +64,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import br.com.nexshape.academia.BuildConfig
 import br.com.nexshape.academia.data.api.OnboardingProfileRequest
 import br.com.nexshape.academia.data.repository.AuthRepository
 import br.com.nexshape.academia.security.BiometricHelper
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.launch
 
 @Composable
@@ -86,6 +92,45 @@ fun LoginScreen(
     val biometricLoginAvailable = activity != null &&
         BiometricHelper.canAuthenticate(activity) &&
         authRepository.hasSavedToken()
+    val googleClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+    val googleSignInClient = remember(googleClientId) {
+        if (googleClientId.isNotBlank()) {
+            GoogleSignIn.getClient(
+                context,
+                GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .requestIdToken(googleClientId)
+                    .build(),
+            )
+        } else {
+            null
+        }
+    }
+    val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        runCatching { task.getResult(ApiException::class.java) }
+            .onSuccess { account ->
+                val idToken = account.idToken
+                if (idToken.isNullOrBlank()) {
+                    error = "Nao foi possivel obter o token do Google."
+                    loading = false
+                    return@onSuccess
+                }
+                loading = true
+                error = null
+                notice = null
+                scope.launch {
+                    authRepository.loginWithGoogle(idToken)
+                        .onSuccess { onLoggedIn() }
+                        .onFailure { error = it.message }
+                    loading = false
+                }
+            }
+            .onFailure {
+                loading = false
+                error = "Login com Google cancelado ou indisponivel."
+            }
+    }
 
     val brandGreen = Color(0xFF10B981)
     val neonGreen = Color(0xFF19F5A6)
@@ -345,6 +390,41 @@ fun LoginScreen(
                             fontWeight = FontWeight.Black,
                         )
                     }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                Button(
+                    onClick = {
+                        val client = googleSignInClient
+                        if (client == null) {
+                            error = "Google Login nao configurado neste build."
+                            return@Button
+                        }
+                        loading = true
+                        error = null
+                        notice = null
+                        client.signOut().addOnCompleteListener {
+                            googleLauncher.launch(client.signInIntent)
+                        }
+                    },
+                    enabled = !loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF111820),
+                        disabledContainerColor = Color(0xFF1A2229),
+                        disabledContentColor = Color(0xFF68717D),
+                    ),
+                ) {
+                    Text(
+                        text = "ENTRAR COM GOOGLE",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                    )
                 }
 
                 Spacer(Modifier.height(10.dp))
@@ -799,7 +879,7 @@ private fun RegisterScreen(
                                     onboarding = onboarding,
                                 ).onSuccess { loggedIn ->
                                     if (!loggedIn) {
-                                        onBackToLogin("Conta criada. Verifique seu e-mail antes de entrar.")
+                                        onBackToLogin("Seu cadastro sera efetuado apos a confirmacao pelo e-mail enviado.")
                                         return@onSuccess
                                     }
                                     onRegisteredAndLoggedIn()

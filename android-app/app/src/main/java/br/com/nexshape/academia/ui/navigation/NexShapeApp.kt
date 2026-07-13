@@ -59,7 +59,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import br.com.nexshape.academia.ui.agenda.AgendaScreen
 import br.com.nexshape.academia.ui.chat.ChatScreen
+import br.com.nexshape.academia.ui.clinical.ClinicalConductScreen
+import br.com.nexshape.academia.ui.community.CommunityScreen
 import br.com.nexshape.academia.ui.evolution.EvolutionScreen
+import br.com.nexshape.academia.ui.health.ExamsMeasuresScreen
 import br.com.nexshape.academia.ui.home.HomeScreen
 import br.com.nexshape.academia.ui.login.LoginScreen
 import br.com.nexshape.academia.ui.login.ProfileSelectorScreen
@@ -81,6 +84,7 @@ import br.com.nexshape.academia.ui.training.TrainingScreen
 import br.com.nexshape.academia.ui.documents.DocumentsScreen
 import br.com.nexshape.academia.ui.gamification.GamificationScreen
 import br.com.nexshape.academia.ui.activerest.ActiveRestScreen
+import br.com.nexshape.academia.ui.messages.MessagesScreen
 
 private enum class StudentTab(val label: String) {
     Home("Início"),
@@ -94,6 +98,10 @@ private enum class StudentTab(val label: String) {
     Documents("Documentos"),
     Gamification("Conquistas e rankings"),
     ActiveRest("Descanso ativo"),
+    Community("Comunidade"),
+    Messages("Mensagens"),
+    Clinical("Clinico"),
+    ExamsMeasures("Exames"),
     Notifications("Notificacoes"),
 }
 
@@ -251,6 +259,15 @@ fun NexShapeApp() {
                 .onSuccess { loaded ->
                     profile = loaded
                     error = null
+                    
+                    val freshRoles = loaded.roles?.toMutableList() ?: mutableListOf()
+                    if ((freshRoles.contains("student") || freshRoles.contains("aluno") || freshRoles.contains("athlete")) && loaded.studentStatus == "vinculado") {
+                        if (!freshRoles.contains("paciente")) {
+                            freshRoles.add("paciente")
+                        }
+                    }
+                    ApiClient.tokenStore().saveAvailableRoles(freshRoles)
+                    
                     val availableRoles = ApiClient.tokenStore().getAvailableRoles()
                     val selectableCards = availableRoles.mapNotNull { roleToCardData(it) }
 
@@ -444,6 +461,10 @@ private fun StudentShell(
                                     StudentTab.Documents -> Icons.Default.Description
                                     StudentTab.Gamification -> Icons.Default.EmojiEvents
                                     StudentTab.ActiveRest -> Icons.Default.SelfImprovement
+                                    StudentTab.Community -> Icons.Default.Group
+                                    StudentTab.Messages -> Icons.AutoMirrored.Filled.Chat
+                                    StudentTab.Clinical -> Icons.Default.MedicalServices
+                                    StudentTab.ExamsMeasures -> Icons.Default.Description
                                     StudentTab.Notifications -> Icons.Default.Notifications
                                 },
                                 contentDescription = tab.label,
@@ -469,6 +490,10 @@ private fun StudentShell(
                 onOpenDocuments = { selectedTab = StudentTab.Documents },
                 onOpenGamification = { selectedTab = StudentTab.Gamification },
                 onOpenActiveRest = { selectedTab = StudentTab.ActiveRest },
+                onOpenCommunity = { selectedTab = StudentTab.Community },
+                onOpenMessages = { selectedTab = StudentTab.Messages },
+                onOpenClinical = { selectedTab = StudentTab.Clinical },
+                onOpenExamsMeasures = { selectedTab = StudentTab.ExamsMeasures },
                 onOpenNotifications = { selectedTab = StudentTab.Notifications },
             )
             StudentTab.Training -> TrainingScreen(
@@ -491,6 +516,10 @@ private fun StudentShell(
             StudentTab.Documents -> DocumentsScreen(modifier = Modifier.padding(padding))
             StudentTab.Gamification -> GamificationScreen(modifier = Modifier.padding(padding))
             StudentTab.ActiveRest -> ActiveRestScreen(modifier = Modifier.padding(padding))
+            StudentTab.Community -> CommunityScreen(modifier = Modifier.padding(padding))
+            StudentTab.Messages -> MessagesScreen(modifier = Modifier.padding(padding))
+            StudentTab.Clinical -> ClinicalConductScreen(modifier = Modifier.padding(padding))
+            StudentTab.ExamsMeasures -> ExamsMeasuresScreen(modifier = Modifier.padding(padding))
             StudentTab.Notifications -> NotificationsScreen(modifier = Modifier.padding(padding))
         }
     }

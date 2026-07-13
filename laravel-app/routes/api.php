@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\ReferralCodeController;
+use App\Http\Controllers\Api\V1\AiCreditBalanceController;
 use App\Http\Controllers\Api\V1\AssessmentController;
 use App\Http\Controllers\Api\V1\AuthTokenController;
 use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\ClientErrorController;
+use App\Http\Controllers\Api\V1\CommunityController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EvolutionPhotoController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\Api\V1\LoadLogController;
 use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\MealTemplateController;
 use App\Http\Controllers\Api\V1\MediaUploadController;
+use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\NutritionDiaryController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrchestratorController;
@@ -39,6 +42,7 @@ use App\Http\Controllers\Api\V1\StudentGamificationController;
 use App\Http\Controllers\Api\V1\StudentActiveRestController;
 use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
 use App\Http\Controllers\Api\V1\TrainingPlanController;
+use App\Http\Controllers\Api\V1\WorkoutImportController;
 use App\Http\Controllers\Api\V1\WorkoutSessionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Middleware\SetApiTenantContext;
@@ -67,6 +71,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('/auth/token', [AuthTokenController::class, 'store'])
         ->middleware('throttle:10,1')
         ->name('auth.token');
+
+    Route::post('/auth/google', [AuthTokenController::class, 'google'])
+        ->middleware('throttle:10,1')
+        ->name('auth.google');
 
     Route::post('/auth/register', [RegisterController::class, 'store'])
         ->middleware('throttle:10,1')
@@ -113,6 +121,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::post('/ai/orchestrator', [OrchestratorController::class, 'process'])->name('ai.orchestrator');
         Route::get('/ai/orchestrator/status/{jobKey}', [OrchestratorController::class, 'status'])->name('ai.orchestrator.status');
+        Route::get('/ai/credits', [AiCreditBalanceController::class, 'show'])->name('ai.credits.show');
+
+        Route::get('/community/posts', [CommunityController::class, 'index'])->name('community.posts.index');
+        Route::post('/community/posts', [CommunityController::class, 'store'])->name('community.posts.store');
+        Route::post('/community/posts/{post}/comments', [CommunityController::class, 'comment'])->name('community.posts.comments.store');
+
+        Route::get('/messages/conversations', [MessageController::class, 'index'])->name('messages.conversations.index');
+        Route::post('/messages/conversations/support', [MessageController::class, 'startSupport'])->name('messages.conversations.support');
+        Route::get('/messages/conversations/{conversation}', [MessageController::class, 'show'])->name('messages.conversations.show');
+        Route::post('/messages/conversations/{conversation}', [MessageController::class, 'store'])->name('messages.conversations.store');
 
         Route::middleware('api.role:aluno,paciente')->group(function () {
             Route::get('/training-plans', [TrainingPlanController::class, 'index'])->name('training-plans.index');
@@ -120,6 +138,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/training-plans/{training_plan}', [TrainingPlanController::class, 'show'])->name('training-plans.show');
             Route::put('/training-plans/{training_plan}', [TrainingPlanController::class, 'update'])->name('training-plans.update');
             Route::delete('/training-plans/{training_plan}', [TrainingPlanController::class, 'destroy'])->name('training-plans.destroy');
+            Route::post('/workout-import/process', [WorkoutImportController::class, 'process'])->name('workout-import.process');
+            Route::post('/workout-import/save', [WorkoutImportController::class, 'save'])->name('workout-import.save');
             Route::get('/exercise-catalog', [ExerciseCatalogController::class, 'index'])->name('exercise-catalog.index');
 
             Route::get('/exercise-logs', [ExerciseLogController::class, 'index'])->name('exercise-logs.index');

@@ -1,11 +1,19 @@
 package br.com.nexshape.academia.ui.training
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,11 +53,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import br.com.nexshape.academia.R
 import br.com.nexshape.academia.data.api.CreateTrainingExerciseRequest
 import br.com.nexshape.academia.data.api.CreateTrainingPlanRequest
 import br.com.nexshape.academia.data.api.CreateTrainingSetRequest
@@ -58,11 +75,13 @@ import br.com.nexshape.academia.data.api.ExerciseCatalogDto
 import br.com.nexshape.academia.data.api.ExerciseSetDto
 import br.com.nexshape.academia.data.api.ExerciseSyncRequest
 import br.com.nexshape.academia.data.api.ApiClient
+import br.com.nexshape.academia.data.api.SaveWorkoutImportRequest
 import br.com.nexshape.academia.data.api.TrainingExerciseDto
 import br.com.nexshape.academia.data.api.TrainingPlanDetailDto
 import br.com.nexshape.academia.data.api.TrainingPlanSummaryDto
 import br.com.nexshape.academia.data.api.TrainingPlansResponse
 import br.com.nexshape.academia.data.api.UpdateWorkoutSessionRequest
+import br.com.nexshape.academia.data.api.WorkoutImportExerciseDto
 import br.com.nexshape.academia.data.api.WorkoutSessionDto
 import br.com.nexshape.academia.data.api.WorkoutSessionRequest
 import br.com.nexshape.academia.data.local.ActiveWorkoutDraft
@@ -85,6 +104,10 @@ import br.com.nexshape.academia.ui.components.NexShapeScreen
 import br.com.nexshape.academia.ui.components.friendlyError
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import java.io.File
 import java.time.LocalDate
 
 @Composable
@@ -114,9 +137,14 @@ fun TrainingScreen(
     var hasProfessionalLink by remember { mutableStateOf(false) }
     var canCreateOwnWorkout by remember { mutableStateOf(false) }
     var showCreatePlanDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
     var showEditPlanDialog by remember { mutableStateOf(false) }
     var showDeletePlanDialog by remember { mutableStateOf(false) }
     var actionError by remember { mutableStateOf<String?>(null) }
+    var importExercises by remember { mutableStateOf<List<WorkoutImportExerciseDto>>(emptyList()) }
+    var importWorkoutName by remember { mutableStateOf("") }
+    var importBusy by remember { mutableStateOf(false) }
+    var importError by remember { mutableStateOf<String?>(null) }
 
     fun refreshPending() {
         scope.launch { pendingSync = AppDatabase.get(context).pendingSyncDao().pendingCount() }
@@ -169,6 +197,34 @@ fun TrainingScreen(
     }
 
     LaunchedEffect(Unit) { reload() }
+
+    val importPhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        scope.launch {
+            importBusy = true
+            importError = null
+            runCatching {
+                val temp = File.createTempFile("workout_import_", ".jpg", context.cacheDir)
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    temp.outputStream().use { output -> input.copyTo(output) }
+                }
+                val part = MultipartBody.Part.createFormData(
+                    "photo",
+                    temp.name,
+                    temp.asRequestBody("image/jpeg".toMediaTypeOrNull()),
+                )
+                repository.processWorkoutImport(part).getOrThrow()
+            }.onSuccess { data ->
+                importExercises = data.exercises
+                importWorkoutName = "Treino IA - ${LocalDate.now()}"
+                showImportDialog = true
+            }.onFailure {
+                importError = friendlyError(it)
+                showImportDialog = true
+            }
+            importBusy = false
+        }
+    }
 
     LaunchedEffect(restSecondsRemaining) {
         if (restSecondsRemaining > 0) {
@@ -327,6 +383,15 @@ fun TrainingScreen(
                                 ) {
                                     Text("Criar minha ficha de treino", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                OutlinedButton(
+                                    onClick = { importPhotoPicker.launch("image/*") },
+                                    enabled = !importBusy,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = NexNeon),
+                                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                                ) {
+                                    Text(if (importBusy) "Lendo imagem..." else "Importar treino por foto IA", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
                             }
 
                             if (showChatButton) {
@@ -349,6 +414,9 @@ fun TrainingScreen(
                 plans = plans,
                 sessions = sessions,
                 activeWorkout = activeWorkout,
+                importBusy = importBusy,
+                onCreatePlan = { showCreatePlanDialog = true },
+                onImportPhoto = { importPhotoPicker.launch("image/*") },
                 onOpenPlan = { plan ->
                     scope.launch {
                         val detailResult = if (activePatientId != null) {
@@ -429,6 +497,44 @@ fun TrainingScreen(
                     }.onFailure {
                         error = friendlyError(it)
                     }
+                }
+            },
+        )
+    }
+
+    if (showImportDialog) {
+        WorkoutImportDialog(
+            workoutName = importWorkoutName,
+            onWorkoutNameChange = { importWorkoutName = it.take(100) },
+            exercises = importExercises,
+            error = importError,
+            busy = importBusy,
+            onDismiss = { showImportDialog = false },
+            onPickAnother = { importPhotoPicker.launch("image/*") },
+            onExerciseChange = { index, exercise ->
+                importExercises = importExercises.mapIndexed { i, current -> if (i == index) exercise else current }
+            },
+            onRemoveExercise = { index ->
+                importExercises = importExercises.filterIndexed { i, _ -> i != index }
+            },
+            onSave = {
+                scope.launch {
+                    importBusy = true
+                    importError = null
+                    repository.saveWorkoutImport(
+                        SaveWorkoutImportRequest(
+                            workoutName = importWorkoutName.ifBlank { "Treino IA - ${LocalDate.now()}" },
+                            exercises = importExercises,
+                        ),
+                    ).onSuccess { saved ->
+                        showImportDialog = false
+                        importExercises = emptyList()
+                        reload()
+                        repository.planDetail(saved.planId)
+                            .onSuccess { selected = it }
+                            .onFailure { error = friendlyError(it) }
+                    }.onFailure { importError = friendlyError(it) }
+                    importBusy = false
                 }
             },
         )
@@ -552,6 +658,8 @@ private fun CreateTrainingPlanDialog(
     var catalog by remember { mutableStateOf<List<ExerciseCatalogDto>>(emptyList()) }
     var catalogSearch by remember { mutableStateOf("") }
     var loadingCatalog by remember { mutableStateOf(false) }
+    var targetSearch by remember { mutableStateOf("") }
+    var selectedTargetAreas by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedExercises by remember {
         mutableStateOf(initialPlan?.exercises.orEmpty().map { WorkoutBuilderExercise.fromPlanExercise(it) })
     }
@@ -562,6 +670,7 @@ private fun CreateTrainingPlanDialog(
     fun loadCatalog(search: String? = null) {
         scope.launch {
             loadingCatalog = true
+            validation = null
             repository.exerciseCatalog(search?.takeIf { it.isNotBlank() })
                 .onSuccess { catalog = it }
                 .onFailure { validation = friendlyError(it) }
@@ -597,9 +706,9 @@ private fun CreateTrainingPlanDialog(
         title = {
             Column {
                 Text(title)
-                Text("Etapa $step de 5: ${workoutBuilderStepTitle(step)}", color = NexMuted, fontSize = 12.sp)
+                Text("Etapa $step de 6: ${workoutBuilderStepTitle(step)}", color = NexMuted, fontSize = 12.sp)
                 LinearProgressIndicator(
-                    progress = { step / 5f },
+                    progress = { step / 6f },
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     color = NexNeon,
                     trackColor = Color(0x22FFFFFF),
@@ -613,6 +722,27 @@ private fun CreateTrainingPlanDialog(
                 }
                 when (step) {
                     1 -> item {
+                        BuilderTargetAreasStep(
+                            selectedAreas = selectedTargetAreas,
+                            search = targetSearch,
+                            onSearchChange = { targetSearch = it.take(40) },
+                            onToggleArea = { area ->
+                                selectedTargetAreas = if (selectedTargetAreas.contains(area)) {
+                                    selectedTargetAreas - area
+                                } else {
+                                    selectedTargetAreas + area
+                                }
+                            },
+                            onAddCustomArea = {
+                                val area = targetSearch.trim()
+                                if (area.isNotBlank() && !selectedTargetAreas.contains(area)) {
+                                    selectedTargetAreas = selectedTargetAreas + area
+                                }
+                                targetSearch = ""
+                            },
+                        )
+                    }
+                    2 -> item {
                         BuilderStepBasics(
                             name = name,
                             onNameChange = { name = it.take(100) },
@@ -643,7 +773,7 @@ private fun CreateTrainingPlanDialog(
                             },
                         )
                     }
-                    2 -> {
+                    3 -> {
                         item {
                             OutlinedTextField(
                                 value = catalogSearch,
@@ -655,9 +785,19 @@ private fun CreateTrainingPlanDialog(
                             )
                             TextButton(
                                 onClick = { loadCatalog(catalogSearch) },
+                                enabled = !loadingCatalog,
                                 colors = ButtonDefaults.textButtonColors(contentColor = NexNeon),
                             ) {
                                 Text(if (loadingCatalog) "Buscando..." else "Buscar no catalogo")
+                            }
+                        }
+                        if (!loadingCatalog && catalog.isEmpty()) {
+                            item {
+                                Text(
+                                    "Nenhum exercicio encontrado no catalogo.",
+                                    color = NexMuted,
+                                    fontSize = 12.sp,
+                                )
                             }
                         }
                         items(catalog, key = { it.id }) { exercise ->
@@ -687,7 +827,7 @@ private fun CreateTrainingPlanDialog(
                             }
                         }
                     }
-                    3 -> {
+                    4 -> {
                         if (selectedExercises.isEmpty()) {
                             item { Text("Selecione pelo menos um exercicio na etapa anterior.", color = NexMuted) }
                         }
@@ -703,7 +843,7 @@ private fun CreateTrainingPlanDialog(
                             )
                         }
                     }
-                    4 -> item {
+                    5 -> item {
                         BuilderReviewCard(
                             name = name,
                             goal = goal,
@@ -711,9 +851,10 @@ private fun CreateTrainingPlanDialog(
                             duration = estimatedDuration(),
                             totalVolume = totalVolume(),
                             exercises = selectedExercises,
+                            targetAreas = selectedTargetAreas,
                         )
                     }
-                    5 -> item {
+                    6 -> item {
                         NexCard {
                             Text("Tudo pronto", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
                             Text("Salve a ficha completa com dados, exercicios, series e revisao.", color = NexMuted, modifier = Modifier.padding(top = 6.dp))
@@ -728,19 +869,23 @@ private fun CreateTrainingPlanDialog(
         },
         confirmButton = {
             TextButton(
-                enabled = name.isNotBlank(),
+                enabled = step == 1 || name.isNotBlank(),
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = NexNeon,
                     disabledContentColor = Color(0xFF7D8594),
                 ),
                 onClick = {
                     validation = null
-                    if (step < 5) {
-                        if (step == 1 && name.isBlank()) {
+                    if (step < 6) {
+                        if (step == 1 && selectedTargetAreas.isEmpty()) {
+                            validation = "Selecione pelo menos uma area de treino."
+                            return@TextButton
+                        }
+                        if (step == 2 && name.isBlank()) {
                             validation = "Informe o titulo do treino."
                             return@TextButton
                         }
-                        if (step == 2 && selectedExercises.isEmpty()) {
+                        if (step == 3 && selectedExercises.isEmpty()) {
                             validation = "Adicione pelo menos um exercicio."
                             return@TextButton
                         }
@@ -750,7 +895,7 @@ private fun CreateTrainingPlanDialog(
 
                     if (selectedExercises.isEmpty()) {
                         validation = "Adicione exercicios antes de salvar."
-                        step = 2
+                        step = 3
                         return@TextButton
                     }
 
@@ -768,7 +913,7 @@ private fun CreateTrainingPlanDialog(
                             status = status.ifBlank { "Ativo" },
                             daysOfWeek = selectedDays,
                             totalVolume = totalVolume(),
-                            musclesWorked = musclesWorked(),
+                            musclesWorked = (selectedTargetAreas + musclesWorked()).distinct(),
                             isTemplate = isTemplate,
                             exercises = selectedExercises.map { exercise ->
                                 CreateTrainingExerciseRequest(
@@ -789,7 +934,7 @@ private fun CreateTrainingPlanDialog(
                         ),
                     )
                 },
-            ) { Text(if (step < 5) "Continuar" else "Salvar") }
+            ) { Text(if (step < 6) "Continuar" else "Salvar") }
         },
         dismissButton = {
             TextButton(
@@ -871,11 +1016,290 @@ private fun workoutTextFieldColors() = OutlinedTextFieldDefaults.colors(
 )
 
 private fun workoutBuilderStepTitle(step: Int): String = when (step) {
-    1 -> "Dados"
-    2 -> "Exercicios"
-    3 -> "Series"
-    4 -> "Revisao"
+    1 -> "Areas"
+    2 -> "Dados"
+    3 -> "Exercicios"
+    4 -> "Series"
+    5 -> "Revisao"
     else -> "Finalizar"
+}
+
+@Composable
+private fun BuilderTargetAreasStep(
+    selectedAreas: List<String>,
+    search: String,
+    onSearchChange: (String) -> Unit,
+    onToggleArea: (String) -> Unit,
+    onAddCustomArea: () -> Unit,
+) {
+    val areas = listOf(
+        "Peitoral",
+        "Costas",
+        "Ombros",
+        "Biceps",
+        "Triceps",
+        "Abdomen",
+        "Quadriceps",
+        "Posterior de coxa",
+        "Gluteos",
+        "Panturrilhas",
+    )
+    var bodySide by remember { mutableStateOf(BodySide.Front) }
+    var lastTouchedArea by remember { mutableStateOf<String?>(null) }
+    var zoom by remember { mutableStateOf(1f) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Selecione as areas de treino", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
+        Text("Use o corpo para escolher o foco e ajuste pela lista quando preferir.", color = NexMuted, fontSize = 12.sp)
+        BodyAreaPicker(
+            side = bodySide,
+            selectedAreas = selectedAreas,
+            lastTouchedArea = lastTouchedArea,
+            zoom = zoom,
+            onSideChange = { bodySide = it },
+            onZoomChange = { zoom = it.coerceIn(1f, 1.8f) },
+            onAreaTap = { area ->
+                lastTouchedArea = area
+                onToggleArea(area)
+            },
+        )
+        Text("Selecionar por lista", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        areas.chunked(2).forEach { rowAreas ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                rowAreas.forEach { area ->
+                    val selected = selectedAreas.contains(area)
+                    AssistChip(
+                        onClick = { onToggleArea(area) },
+                        label = { Text(area, color = if (selected) NexNeon else Color.White) },
+                        leadingIcon = if (selected) {
+                            { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NexNeon) }
+                        } else {
+                            null
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowAreas.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+        if (selectedAreas.isNotEmpty()) {
+            Text("Escolhidas", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            selectedAreas.chunked(2).forEach { rowAreas ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    rowAreas.forEach { area ->
+                        AssistChip(
+                            onClick = { onToggleArea(area) },
+                            label = { Text(area, color = NexNeon) },
+                            leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NexNeon) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (rowAreas.size == 1) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        OutlinedTextField(
+            value = search,
+            onValueChange = onSearchChange,
+            label = { Text("Adicionar outra area") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = workoutTextFieldColors(),
+        )
+        TextButton(
+            onClick = onAddCustomArea,
+            colors = ButtonDefaults.textButtonColors(contentColor = NexNeon),
+        ) {
+            Text("Adicionar area digitada")
+        }
+    }
+}
+
+private enum class BodySide {
+    Front,
+    Back,
+}
+
+private data class BodyHitArea(
+    val name: String,
+    val side: BodySide,
+    val centerX: Float,
+    val centerY: Float,
+    val width: Float,
+    val height: Float,
+)
+
+private val workoutBodyAreas = listOf(
+    BodyHitArea("Ombros", BodySide.Front, 0.34f, 0.23f, 0.18f, 0.13f),
+    BodyHitArea("Ombros", BodySide.Front, 0.66f, 0.23f, 0.18f, 0.13f),
+    BodyHitArea("Peitoral", BodySide.Front, 0.50f, 0.29f, 0.30f, 0.17f),
+    BodyHitArea("Biceps", BodySide.Front, 0.25f, 0.39f, 0.15f, 0.22f),
+    BodyHitArea("Biceps", BodySide.Front, 0.75f, 0.39f, 0.15f, 0.22f),
+    BodyHitArea("Abdomen", BodySide.Front, 0.50f, 0.46f, 0.24f, 0.24f),
+    BodyHitArea("Quadriceps", BodySide.Front, 0.40f, 0.68f, 0.17f, 0.26f),
+    BodyHitArea("Quadriceps", BodySide.Front, 0.60f, 0.68f, 0.17f, 0.26f),
+    BodyHitArea("Panturrilhas", BodySide.Front, 0.41f, 0.89f, 0.13f, 0.18f),
+    BodyHitArea("Panturrilhas", BodySide.Front, 0.59f, 0.89f, 0.13f, 0.18f),
+    BodyHitArea("Costas", BodySide.Back, 0.50f, 0.31f, 0.34f, 0.24f),
+    BodyHitArea("Ombros", BodySide.Back, 0.34f, 0.23f, 0.18f, 0.13f),
+    BodyHitArea("Ombros", BodySide.Back, 0.66f, 0.23f, 0.18f, 0.13f),
+    BodyHitArea("Triceps", BodySide.Back, 0.25f, 0.39f, 0.15f, 0.23f),
+    BodyHitArea("Triceps", BodySide.Back, 0.75f, 0.39f, 0.15f, 0.23f),
+    BodyHitArea("Gluteos", BodySide.Back, 0.50f, 0.57f, 0.25f, 0.15f),
+    BodyHitArea("Posterior de coxa", BodySide.Back, 0.40f, 0.72f, 0.17f, 0.27f),
+    BodyHitArea("Posterior de coxa", BodySide.Back, 0.60f, 0.72f, 0.17f, 0.27f),
+    BodyHitArea("Panturrilhas", BodySide.Back, 0.41f, 0.89f, 0.13f, 0.18f),
+    BodyHitArea("Panturrilhas", BodySide.Back, 0.59f, 0.89f, 0.13f, 0.18f),
+)
+
+@Composable
+private fun BodyAreaPicker(
+    side: BodySide,
+    selectedAreas: List<String>,
+    lastTouchedArea: String?,
+    zoom: Float,
+    onSideChange: (BodySide) -> Unit,
+    onZoomChange: (Float) -> Unit,
+    onAreaTap: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFF243244), MaterialTheme.shapes.medium)
+            .background(Color(0xFF08111D), MaterialTheme.shapes.medium)
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            BodySideButton("Frente", side == BodySide.Front, Modifier.weight(1f)) { onSideChange(BodySide.Front) }
+            BodySideButton("Costas", side == BodySide.Back, Modifier.weight(1f)) { onSideChange(BodySide.Back) }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OutlinedButton(
+                onClick = { onZoomChange(zoom - 0.15f) },
+                enabled = zoom > 1f,
+                modifier = Modifier.weight(1f).height(38.dp),
+            ) {
+                Text("-", fontWeight = FontWeight.Black)
+            }
+            Text(
+                text = "Zoom ${(zoom * 100).toInt()}%",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1.4f),
+            )
+            OutlinedButton(
+                onClick = { onZoomChange(zoom + 0.15f) },
+                enabled = zoom < 1.8f,
+                modifier = Modifier.weight(1f).height(38.dp),
+            ) {
+                Text("+", fontWeight = FontWeight.Black)
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.68f)
+                .background(Color.Black, MaterialTheme.shapes.medium)
+                .pointerInput(side, selectedAreas, zoom) {
+                    detectTapGestures { offset ->
+                        val tappedX = offset.x / size.width
+                        val tappedY = offset.y / size.height
+                        val x = ((tappedX - 0.5f) / zoom) + 0.5f
+                        val y = ((tappedY - 0.5f) / zoom) + 0.5f
+                        workoutBodyAreas
+                            .filter { it.side == side && x in (it.centerX - it.width / 2)..(it.centerX + it.width / 2) && y in (it.centerY - it.height / 2)..(it.centerY + it.height / 2) }
+                            .minByOrNull { kotlin.math.abs(x - it.centerX) + kotlin.math.abs(y - it.centerY) }
+                            ?.let { onAreaTap(it.name) }
+                    }
+                },
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(scaleX = zoom, scaleY = zoom),
+            ) {
+                Image(
+                    painter = painterResource(
+                        id = if (side == BodySide.Front) R.drawable.body_male_front else R.drawable.body_male_back,
+                    ),
+                    contentDescription = if (side == BodySide.Front) "Corpo visto de frente" else "Corpo visto de costas",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val lineColor = Color(0xFF5EEAD4)
+                    val selectedColor = NexNeon.copy(alpha = 0.34f)
+                    val activeColor = Color(0xFF7CA7FF).copy(alpha = 0.24f)
+
+                    workoutBodyAreas.filter { it.side == side }.forEach { area ->
+                        val selected = selectedAreas.contains(area.name)
+                        val touched = lastTouchedArea == area.name
+                        if (!selected && !touched) {
+                            return@forEach
+                        }
+                        val fill = when {
+                            selected -> selectedColor
+                            touched -> activeColor
+                            else -> Color.Transparent
+                        }
+                        drawRoundRect(
+                            color = fill,
+                            topLeft = Offset(size.width * (area.centerX - area.width / 2), size.height * (area.centerY - area.height / 2)),
+                            size = Size(size.width * area.width, size.height * area.height),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(26f, 26f),
+                        )
+                        drawRoundRect(
+                            color = if (selected) NexNeon else lineColor.copy(alpha = 0.75f),
+                            topLeft = Offset(size.width * (area.centerX - area.width / 2), size.height * (area.centerY - area.height / 2)),
+                            size = Size(size.width * area.width, size.height * area.height),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(26f, 26f),
+                            style = Stroke(width = if (selected) 3f else 1.5f),
+                        )
+                    }
+                }
+            }
+            Text(
+                text = lastTouchedArea ?: "Toque em uma regiao",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .background(Color(0xCC050A12), MaterialTheme.shapes.small)
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun BodySideButton(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(40.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) NexNeon else Color(0xFF111827),
+            contentColor = if (selected) Color.Black else Color.White,
+        ),
+    ) {
+        Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+    }
 }
 
 @Composable
@@ -1057,6 +1481,7 @@ private fun BuilderReviewCard(
     duration: Int,
     totalVolume: Double,
     exercises: List<WorkoutBuilderExercise>,
+    targetAreas: List<String>,
 ) {
     NexCard {
         Text("Ficha de revisao", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
@@ -1064,6 +1489,9 @@ private fun BuilderReviewCard(
         Text("Objetivo: ${goal.ifBlank { "Geral" }}", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
         Text("Frequencia: ${frequency ?: 0}x/semana • Duracao: ${duration} min", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
         Text("Volume estimado: ${totalVolume.toInt()} kg", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+        if (targetAreas.isNotEmpty()) {
+            Text("Areas: ${targetAreas.joinToString(", ")}", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+        }
         Spacer(Modifier.height(12.dp))
         exercises.forEachIndexed { index, exercise ->
             Text("${index + 1}. ${exercise.name} • ${exercise.sets.size} series", color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
@@ -1072,10 +1500,137 @@ private fun BuilderReviewCard(
 }
 
 @Composable
+private fun WorkoutImportDialog(
+    workoutName: String,
+    onWorkoutNameChange: (String) -> Unit,
+    exercises: List<WorkoutImportExerciseDto>,
+    error: String?,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onPickAnother: () -> Unit,
+    onExerciseChange: (Int, WorkoutImportExerciseDto) -> Unit,
+    onRemoveExercise: (Int) -> Unit,
+    onSave: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0B1117),
+        titleContentColor = Color.White,
+        textContentColor = NexMuted,
+        title = {
+            Column {
+                Text("Importar treino por foto")
+                Text("Revise os dados extraidos pela IA", color = NexMuted, fontSize = 12.sp)
+            }
+        },
+        text = {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                error?.let { message ->
+                    item { Text(message, color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                }
+                item {
+                    OutlinedTextField(
+                        value = workoutName,
+                        onValueChange = onWorkoutNameChange,
+                        label = { Text("Nome do treino") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = workoutTextFieldColors(),
+                    )
+                }
+                if (exercises.isEmpty()) {
+                    item {
+                        Text(
+                            "Selecione uma foto legivel da ficha para extrair exercicios, series, repeticoes e carga.",
+                            color = NexMuted,
+                            fontSize = 12.sp,
+                        )
+                    }
+                }
+                items(exercises.size, key = { it }) { index ->
+                    val exercise = exercises[index]
+                    NexCard {
+                        OutlinedTextField(
+                            value = exercise.nomeExercicio,
+                            onValueChange = { onExerciseChange(index, exercise.copy(nomeExercicio = it.take(120))) },
+                            label = { Text("Exercicio") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = workoutTextFieldColors(),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                            OutlinedTextField(
+                                value = exercise.series.orEmpty(),
+                                onValueChange = { onExerciseChange(index, exercise.copy(series = onlyDigits(it).take(2))) },
+                                label = { Text("Series") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                colors = workoutTextFieldColors(),
+                            )
+                            OutlinedTextField(
+                                value = exercise.repeticoes.orEmpty(),
+                                onValueChange = { onExerciseChange(index, exercise.copy(repeticoes = it.take(20))) },
+                                label = { Text("Reps") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                colors = workoutTextFieldColors(),
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                            OutlinedTextField(
+                                value = exercise.carga.orEmpty(),
+                                onValueChange = { onExerciseChange(index, exercise.copy(carga = it.take(20))) },
+                                label = { Text("Carga") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                colors = workoutTextFieldColors(),
+                            )
+                            TextButton(
+                                onClick = { onRemoveExercise(index) },
+                                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF8A8A)),
+                                modifier = Modifier.weight(1f),
+                            ) { Text("Remover") }
+                        }
+                        OutlinedTextField(
+                            value = exercise.observacoes.orEmpty(),
+                            onValueChange = { onExerciseChange(index, exercise.copy(observacoes = it.take(500))) },
+                            label = { Text("Observacoes") },
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            colors = workoutTextFieldColors(),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !busy && workoutName.isNotBlank() && exercises.isNotEmpty(),
+                onClick = onSave,
+                colors = ButtonDefaults.textButtonColors(contentColor = NexNeon),
+            ) { Text(if (busy) "Salvando..." else "Salvar treino") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onPickAnother, enabled = !busy, colors = ButtonDefaults.textButtonColors(contentColor = NexNeon)) {
+                    Text("Selecionar foto")
+                }
+                TextButton(onClick = onDismiss, enabled = !busy, colors = ButtonDefaults.textButtonColors(contentColor = NexNeon)) {
+                    Text("Cancelar")
+                }
+            }
+        },
+    )
+}
+
+@Composable
 private fun TrainingList(
     plans: List<TrainingPlanSummaryDto>,
     sessions: List<WorkoutSessionDto>,
     activeWorkout: ActiveWorkoutDraft?,
+    importBusy: Boolean,
+    onCreatePlan: () -> Unit,
+    onImportPhoto: () -> Unit,
     onOpenPlan: (TrainingPlanSummaryDto) -> Unit,
 ) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1093,6 +1648,24 @@ private fun TrainingList(
                     icon = Icons.Default.History,
                     modifier = Modifier.weight(1f),
                 )
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = onCreatePlan,
+                    colors = ButtonDefaults.buttonColors(containerColor = NexNeon),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Criar", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
+                    onClick = onImportPhoto,
+                    enabled = !importBusy,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(if (importBusy) "Lendo..." else "Importar IA")
+                }
             }
         }
         if (sessions.isNotEmpty()) {
