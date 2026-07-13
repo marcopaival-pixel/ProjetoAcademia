@@ -82,6 +82,61 @@
     </div>
     @endif
 
+    <!-- Vínculo Selector (Somente Alunos) -->
+    @php
+        $isAluno = ($user && $user->hasRole('aluno') && (!$activeRole || $activeRole === 'aluno')) || (session('active_role') === 'aluno');
+    @endphp
+    @if($isAluno)
+        @php
+            $vias = $user->professionals()->wherePivot('status', 'Sim')->get();
+            $activeVinculoId = session('active_professional_id');
+            if (!$activeVinculoId && $vias->isNotEmpty()) {
+                $activeVinculoId = $vias->first()->id;
+                session(['active_professional_id' => $activeVinculoId]);
+            }
+        @endphp
+        <div class="px-6 mb-6">
+            <div class="p-4 rounded-2xl bg-zinc-900/50 border border-white/5 space-y-3">
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                    <span class="text-[9px] font-black uppercase tracking-widest">Contexto de Vínculo</span>
+                </div>
+                
+                @if($vias->isEmpty())
+                    <div class="flex items-center gap-2 text-emerald-500">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-[10px] font-black uppercase tracking-widest font-bold">Aluno Independente</span>
+                    </div>
+                @elseif($vias->count() === 1)
+                    <div class="text-xs font-bold text-white truncate">
+                        {{ $vias->first()->name }}
+                    </div>
+                    <div class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">
+                        {{ $vias->first()->professionalProfile?->especialidade?->nome ?? 'Profissional' }}
+                    </div>
+                @else
+                    <form action="{{ route('patient.professional.select') }}" method="POST" id="vinculoSelectorForm">
+                        @csrf
+                        <div class="relative">
+                            <select name="professional_id" 
+                                    onchange="document.getElementById('vinculoSelectorForm').submit()"
+                                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none pr-8">
+                                @foreach($vias as $via)
+                                    <option value="{{ $via->id }}" {{ $activeVinculoId == $via->id ? 'selected' : '' }}>
+                                        {{ $via->name }} ({{ $via->professionalProfile?->especialidade?->nome ?? 'Profissional' }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-zinc-500">
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                            </div>
+                        </div>
+                    </form>
+                @endif
+            </div>
+        </div>
+    @endif
+
     <!-- Navigation Scroll Area -->
     <div class="sidebar-content flex-1 overflow-y-auto px-4 custom-scrollbar">
 

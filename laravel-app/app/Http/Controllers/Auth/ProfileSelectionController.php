@@ -77,11 +77,7 @@ class ProfileSelectionController extends Controller
             return redirect()->route('professional.dashboard');
         }
 
-        if ($roleName === 'paciente') {
-            return redirect()->route('patient.portal');
-        }
-
-        if ($roleName === 'aluno') {
+        if ($roleName === 'paciente' || $roleName === 'aluno') {
             return redirect()->route('dashboard');
         }
 

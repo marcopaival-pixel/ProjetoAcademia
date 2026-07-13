@@ -52,6 +52,9 @@ class ProfileSelectionController extends Controller
         }
 
         session(['active_role' => $roleName]);
+        if ($roleName !== 'paciente') {
+            session()->forget('active_professional_id');
+        }
 
         return $this->redirectBasedOnRole($roleName);
     }
@@ -62,6 +65,9 @@ class ProfileSelectionController extends Controller
     private function redirectBasedOnRole(string $roleName): RedirectResponse
     {
         session(['active_role' => $roleName]);
+        if ($roleName !== 'paciente') {
+            session()->forget('active_professional_id');
+        }
 
         if ($roleName === 'admin') {
             return redirect()->route('admin.dashboard');
@@ -72,7 +78,7 @@ class ProfileSelectionController extends Controller
         }
 
         if ($roleName === 'paciente') {
-            return redirect()->route('patient.portal');
+            return redirect()->route('patient.professional.selection');
         }
 
         if ($roleName === 'all') {

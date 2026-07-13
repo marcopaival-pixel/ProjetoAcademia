@@ -39,11 +39,8 @@ class UserProfileResource extends JsonResource
              * O array é garantido mesmo que o usuário não tenha roles.
              */
             'roles' => collect($this->getRoleNames())->map(function($role) {
-                if (in_array($role, ['aluno', 'athlete'])) {
+                if (in_array($role, ['aluno', 'athlete', 'paciente'])) {
                     return 'student';
-                }
-                if ($role === 'paciente') {
-                    return 'patient';
                 }
                 return $role;
             })->unique()->values()->all(),
@@ -53,6 +50,17 @@ class UserProfileResource extends JsonResource
             'is_student' => $this->hasRole(['aluno', 'paciente']),
 
             'is_professional' => $this->isProfessional() || $this->isAdministrator() || $this->hasRole(['admin', 'clinic_admin']),
+
+            'vinculos' => $this->professionals()
+                ->wherePivot('status', 'Sim')
+                ->get()
+                ->map(fn($via) => [
+                    'id' => $via->id,
+                    'name' => $via->name,
+                    'specialty' => $via->professionalProfile?->especialidade?->nome ?? 'Profissional',
+                ]),
+
+            'student_status' => $this->professionals()->wherePivot('status', 'Sim')->exists() ? 'vinculado' : 'independente',
 
             'access_contexts' => $this->resolveAccessContexts(),
 

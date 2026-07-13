@@ -120,7 +120,7 @@
                     </div>
 
                     <!-- CPF -->
-                    <div class="md:col-span-1.5 space-y-3">
+                    <div class="md:col-span-1 space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">CPF (Identificador)</label>
                         <input name="cpf" type="text" required value="{{ old('cpf', $patient->cpf) }}"
                             {{ $patient->cpf ? 'readonly' : '' }}
@@ -129,7 +129,7 @@
                     </div>
 
                     <!-- Telefone -->
-                    <div class="md:col-span-1.5 space-y-3">
+                    <div class="md:col-span-2 space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Telefone / WhatsApp</label>
                         <input name="phone" type="text" required value="{{ old('phone', $patient->phone) }}"
                             class="premium-input" 

@@ -33,6 +33,10 @@ class WorkoutPhotoImportController extends Controller
         // Verifica acesso premium
         $access = $this->monetization->checkAccess($user, 'workout_import_photo');
         
+        if ($user->isAdministrator() || $user->hasPremiumAccess()) {
+            $access = ['allowed' => true];
+        }
+
         $history = WorkoutImportLog::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -57,6 +61,9 @@ class WorkoutPhotoImportController extends Controller
         
         // Validação extra de segurança para Premium
         $access = $this->monetization->checkAccess($user, 'workout_import_photo');
+        if ($user->isAdministrator() || $user->hasPremiumAccess()) {
+            $access = ['allowed' => true];
+        }
         if (!$access['allowed']) {
             return response()->json(['error' => 'Esta funcionalidade está disponível apenas para usuários Premium.'], 403);
         }

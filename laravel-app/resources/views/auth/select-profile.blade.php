@@ -26,7 +26,7 @@
             @csrf
             
             <div class="space-y-6">
-                @foreach($roles as $role)
+                @foreach($roles->filter(fn($r) => in_array($r->name, ['aluno', 'paciente'])) as $role)
                     @php
                         $icon = 'fa-user';
                         if($role->name === 'admin') $icon = 'fa-user-crown';
@@ -45,29 +45,12 @@
                                 <h3 class="text-xl font-black text-white uppercase italic tracking-tight">Somente Painel do {{ $role->label }}</h3>
                                 <p class="text-zinc-500 text-sm font-medium">Acessar apenas as funcionalidades exclusivas deste perfil.</p>
                             </div>
-                            <div class="w-6 h-6 rounded-full border-2 border-zinc-700 peer-checked:border-blue-500 peer-checked:bg-blue-500 flex items-center justify-center transition-all">
-                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                            <div class="radio-circle w-6 h-6 rounded-full border-2 border-zinc-700 flex items-center justify-center transition-all">
+                                <div class="radio-circle-dot w-2 h-2 rounded-full bg-white opacity-0 transition-opacity"></div>
                             </div>
                         </div>
                     </label>
                 @endforeach
-
-                <!-- Opção Mostrar Todos -->
-                <label class="relative block group cursor-pointer">
-                    <input type="radio" name="role" value="all" class="peer hidden">
-                    <div class="glass-card rounded-3xl p-6 border border-white/5 peer-checked:border-emerald-500/50 peer-checked:bg-emerald-500/5 transition-all duration-300 flex items-center gap-6 group-hover:bg-white/[0.03]">
-                        <div class="w-16 h-16 rounded-2xl bg-zinc-900 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-500">
-                            <i class="fas fa-th-large text-emerald-500"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-black text-white uppercase italic tracking-tight">Mostrar todos os painéis disponíveis</h3>
-                            <p class="text-zinc-500 text-sm font-medium">Combinar todas as funcionalidades em uma visão unificada.</p>
-                        </div>
-                        <div class="w-6 h-6 rounded-full border-2 border-zinc-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 flex items-center justify-center transition-all">
-                            <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                        </div>
-                    </div>
-                </label>
 
                 <!-- Lembrar escolha -->
                 <div class="pt-6 flex flex-col items-center gap-6">
@@ -97,6 +80,14 @@
 </script>
 
 <style>
+    input[type="radio"]:checked ~ .glass-card .radio-circle {
+        border-color: #3b82f6 !important;
+        background-color: #3b82f6 !important;
+    }
+    input[type="radio"]:checked ~ .glass-card .radio-circle-dot {
+        opacity: 1 !important;
+    }
+
     .glass-card {
         background: rgba(20, 22, 28, 0.7);
         backdrop-filter: blur(25px);

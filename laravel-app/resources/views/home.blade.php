@@ -335,9 +335,9 @@
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-6 grid-rows-2 gap-6 h-auto md:h-[800px]">
+        <div class="grid grid-cols-1 md:grid-cols-12 grid-rows-2 gap-6 h-auto md:h-[800px]">
             <!-- IA Neural: Large Main Card -->
-            <div class="md:col-span-3 md:row-span-2 bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3.5rem] border border-white/5 flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-700 overflow-hidden relative">
+            <div class="md:col-span-6 md:row-span-2 bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3.5rem] border border-white/5 flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-700 overflow-hidden relative">
                 <div class="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full group-hover:scale-150 transition-transform duration-1000"></div>
                 
                 <div class="space-y-6 relative z-10">
@@ -365,7 +365,7 @@
             </div>
 
             <!-- CRM & Patients -->
-            <div class="md:col-span-3 bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 flex flex-col justify-between group hover:border-blue-500/20 transition-all duration-700">
+            <div class="md:col-span-6 bg-zinc-900/30 backdrop-blur-3xl p-10 rounded-[3.5rem] border border-white/5 flex flex-col justify-between group hover:border-blue-500/20 transition-all duration-700">
                 <div class="flex items-start justify-between">
                     <div class="space-y-4">
                         <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500">
@@ -383,7 +383,7 @@
             </div>
 
             <!-- Bio-Tracking -->
-            <div class="md:col-span-1.5 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6 group hover:border-emerald-500/20 transition-all">
+            <div class="md:col-span-3 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6 group hover:border-emerald-500/20 transition-all">
                 <div class="w-12 h-12 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-emerald-500">
                     <i data-lucide="activity" class="w-6 h-6"></i>
                 </div>
@@ -394,7 +394,7 @@
             </div>
 
             <!-- Precision Nutrition -->
-            <div class="md:col-span-1.5 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6 group hover:border-amber-500/20 transition-all">
+            <div class="md:col-span-3 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex flex-col gap-6 group hover:border-amber-500/20 transition-all">
                 <div class="w-12 h-12 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-center text-amber-500">
                     <i data-lucide="utensils" class="w-6 h-6"></i>
                 </div>
@@ -405,7 +405,7 @@
             </div>
 
             <!-- PDF Reports -->
-            <div class="md:col-span-3 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex items-center gap-8 group hover:border-indigo-500/20 transition-all">
+            <div class="md:col-span-6 bg-zinc-900/30 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 flex items-center gap-8 group hover:border-indigo-500/20 transition-all">
                 <div class="w-20 h-20 bg-indigo-500/10 rounded-[2rem] flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
                     <i data-lucide="file-text" class="w-10 h-10"></i>
                 </div>

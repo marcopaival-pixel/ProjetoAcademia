@@ -32,6 +32,9 @@ class ActiveRoleMiddleware
         }
 
         $activeRole = $request->header('X-Active-Role');
+        if ($activeRole === 'paciente') {
+            $activeRole = 'aluno';
+        }
         $activeTenantId = $request->header('X-Active-Tenant');
         $activeContextId = $request->header('X-Active-Context-ID');
 
@@ -76,13 +79,7 @@ class ActiveRoleMiddleware
             } else {
                 // Se não passou tenant, valida se o usuário tem a role global (Spatie Permission/Roles ou nossa base legada)
                 if (! $user->hasRole($activeRole)) {
-                    // Fallback para caso seja 'paciente' e esteja salvo de outra forma
-                    if ($activeRole === 'paciente' && ! $user->hasRole('paciente')) {
-                        return response()->json(['error' => 'Unauthorized role context'], 403);
-                    }
-                    if ($activeRole !== 'paciente') {
-                        return response()->json(['error' => 'Unauthorized role context'], 403);
-                    }
+                    return response()->json(['error' => 'Unauthorized role context'], 403);
                 }
             }
         }

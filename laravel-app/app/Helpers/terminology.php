@@ -13,43 +13,52 @@ if (! function_exists('__t')) {
     {
         $termLower = strtolower($term);
         $user = Auth::user();
-        
-        // Se não houver usuário ou se não for profissional, retorna o padrão
-        if (!$user || !$user->hasRole('professional')) {
-            if ($termLower === 'paciente' || $termLower === 'aluno') {
-                // Tenta pegar o termo da clínica caso exista, mas o default seguro é Paciente
-                return 'Paciente';
+        $isUppercase = (ucfirst($term) === $term);
+        $activeRole = session('active_role');
+
+        if (in_array($termLower, ['paciente', 'aluno', 'pacientes', 'alunos'])) {
+            if ($activeRole === 'aluno') {
+                $result = in_array($termLower, ['paciente', 'aluno']) ? 'aluno assistido' : 'alunos assistidos';
+                return $isUppercase ? mb_convert_case($result, MB_CASE_TITLE, "UTF-8") : $result;
             }
-            return ucfirst($term);
-        }
 
-        // Obtém a especialidade do contexto da sessão (para profissionais com múltiplas)
-        $activeSpecialtyId = session('active_specialty_id');
-        $specialty = null;
+            // Se não houver usuário ou se não for profissional, retorna o padrão
+            if (!$user || !$user->hasRole('professional')) {
+                $result = in_array($termLower, ['paciente', 'aluno']) ? 'paciente' : 'pacientes';
+                return $isUppercase ? mb_convert_case($result, MB_CASE_TITLE, "UTF-8") : $result;
+            }
 
-        if ($activeSpecialtyId) {
-            $specialty = \App\Models\Especialidade::find($activeSpecialtyId);
-        }
+            // Obtém a especialidade do contexto da sessão (para profissionais com múltiplas)
+            $activeSpecialtyId = session('active_specialty_id');
+            $specialty = null;
 
-        // Se não tem na sessão, pega a principal do profile
-        if (!$specialty && $user->professionalProfile) {
-            /** @var \App\Models\ProfessionalProfile|null $profile */
-            $profile = $user->professionalProfile;
-            $specialty = $profile ? $profile->especialidade : null;
-        }
+            if ($activeSpecialtyId) {
+                $specialty = \App\Models\Especialidade::find($activeSpecialtyId);
+            }
 
-        if ($termLower === 'paciente' || $termLower === 'aluno') {
+            // Se não tem na sessão, pega a principal do profile
+            if (!$specialty && $user->professionalProfile) {
+                /** @var \App\Models\ProfessionalProfile|null $profile */
+                $profile = $user->professionalProfile;
+                $specialty = $profile ? $profile->especialidade : null;
+            }
+
             if ($specialty instanceof \App\Models\Especialidade && $specialty->client_term) {
-                return $specialty->client_term;
+                $result = strtolower($specialty->client_term);
+                if (in_array($termLower, ['pacientes', 'alunos'])) {
+                    if (!str_ends_with($result, 's')) {
+                        $result .= 's';
+                    }
+                }
+            } else {
+                $result = in_array($termLower, ['paciente', 'aluno']) ? 'paciente' : 'pacientes';
             }
 
-            return 'Paciente';
+            return $isUppercase ? mb_convert_case($result, MB_CASE_TITLE, "UTF-8") : $result;
         }
 
-        // Adicionar outros mapeamentos aqui (ex: 'prontuário' vs 'anamnese')
-        
         // Se for string com a primeira maiúscula, mantém
-        if (ucfirst($term) === $term) {
+        if ($isUppercase) {
             return ucfirst($termLower);
         }
 

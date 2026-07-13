@@ -84,6 +84,7 @@ class User extends Authenticatable
         'profile_id', // Mantido temporariamente para compatibilidade legada se necessário
         'plan_id',
         'status',
+        'remember_profile',
         'email_verified',
         'professional_code',
         'qr_code_path',

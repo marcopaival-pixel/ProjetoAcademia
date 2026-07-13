@@ -25,6 +25,7 @@ class RoleMenuPermissionDefaultsSeeder extends Seeder
                 'export', 'messages', 'presence', 'dashboard', 'nutrition', 'weight',
                 'hydration', 'chat', 'leaderboard', 'active-rest', 'evolution',
                 'progression.charts', 'trophies', 'body-analysis', 'exercise', 'report',
+                'ai_credits',
             ],
             'receptionist' => ['dashboard', 'user_registration', 'presence', 'plano', 'profile'],
             'finance' => ['dashboard', 'billing', 'financial_reports', 'plano', 'profile'],

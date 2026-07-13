@@ -154,12 +154,6 @@ class RolesAndPermissionsSeeder extends Seeder
                 ])->pluck('id'),
             ],
             [
-                'name' => 'paciente',
-                'label' => 'Paciente',
-                'description' => 'Acesso ao portal do paciente e acompanhamento',
-                'permissions' => Permission::whereIn('name', ['portal.access'])->pluck('id'),
-            ],
-            [
                 'name' => 'des',
                 'label' => 'DES',
                 'description' => 'Perfil de Desenvolvedor / Suporte Técnico',

@@ -42,12 +42,12 @@ class TenantSecurityTestSeeder extends Seeder
             [
                 'email' => 'pac@test.com',
                 'name' => 'Maria Souza (Multi-Clínica)',
-                'role' => 'paciente',
+                'role' => 'aluno',
             ],
             [
                 'email' => 'jose@test.com',
                 'name' => 'José Santos (Apenas Alpha)',
-                'role' => 'paciente',
+                'role' => 'aluno',
             ],
             [
                 'email' => 'aluno@test.com',
