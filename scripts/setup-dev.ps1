@@ -1,4 +1,4 @@
-# Setup local — ProjetoAcademia
+# Setup local — NexShape
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 

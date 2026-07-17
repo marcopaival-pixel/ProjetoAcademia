@@ -1,8 +1,8 @@
 # Runbook de deploy — NexShape (Laravel)
 
-Documento operacional para publicar e manter a aplicação em `laravel-app/`. Alinhado a `deploy.bat`, `optimize_server.sh` e auditoria 360° (maio/2026).
+Documento operacional para publicar e manter a aplicação em `backend/`. Alinhado a `deploy.bat`, `optimize_server.sh` e auditoria 360° (maio/2026).
 
-**Go-live (fases A–D):** ver `laravel-app/docs/GO_LIVE_CHECKLIST.md`. Staging automatizado (Windows): `laravel-app/scripts/staging-release.ps1`.
+**Go-live (fases A–D):** ver `backend/docs/GO_LIVE_CHECKLIST.md`. Staging automatizado (Windows): `backend/scripts/staging-release.ps1`.
 
 ---
 
@@ -22,7 +22,7 @@ Documento operacional para publicar e manter a aplicação em `laravel-app/`. Al
 
 ## 1. Build local (Windows / CI)
 
-Na pasta `laravel-app/`:
+Na pasta `backend/`:
 
 ```powershell
 composer install --no-dev --optimize-autoloader
@@ -82,7 +82,7 @@ REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 ```
 
-Referência completa: `laravel-app/.env.example` e [AUDITORIA_360_2026-05-21.md](./AUDITORIA_360_2026-05-21.md).
+Referência completa: `backend/.env.example` e [AUDITORIA_360_2026-05-21.md](./AUDITORIA_360_2026-05-21.md).
 
 ### Checklist de secrets (produção)
 
@@ -155,6 +155,27 @@ php artisan queue:work --sleep=3 --tries=3 --max-time=3600
 **Produção:** usar Supervisor — exemplo em [supervisor-nexshape.conf.example](./supervisor-nexshape.conf.example).
 
 Sem worker ativo, jobs (PDF, Omni, e-mail assíncrono) ficam na tabela `jobs`.
+
+### Relatório de evolução por IA
+
+O fluxo `POST /api/v1/evolution-reports` gera relatórios de evolução corporal por fila. Sem worker ativo, o app fica consultando um relatório em `pending`.
+
+Variáveis opcionais para comparação/auditoria externa:
+
+```env
+AI_EVOLUTION_PROVIDER=local   # local | openai
+OPENAI_COMPARISON_MODEL=gpt-4o
+OPENAI_AUDIT_MODEL=gpt-4o
+OPENAI_EVOLUTION_STORE=false
+```
+
+Validação operacional:
+
+```bash
+php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+php artisan evolution:prune-reports --days=180 --force
+php artisan evolution:prune-photos --days=730 --force
+```
 
 ### Redis (opcional, recomendado)
 
@@ -248,7 +269,7 @@ Supervisor: ver `docs/supervisor-nexshape.conf.example` (workers `queue:work` + 
 
 ## 13. XAMPP (desenvolvimento local)
 
-- Document root: `laravel-app/public/`
+- Document root: `backend/public/`
 - `APP_URL` = URL real usada no browser
 - MySQL: `DB_HOST=127.0.0.1`, `DB_PORT=3306`
 - Filas: `QUEUE_CONNECTION=sync` ou `database` + `php artisan queue:listen`
@@ -259,7 +280,7 @@ Ver também `AGENTS.md` (secção Ambiente XAMPP).
 
 ## API v1 (opcional)
 
-Integrações externas podem usar tokens Sanctum. Ver [laravel-app/docs/API_V1.md](../laravel-app/docs/API_V1.md).
+Integrações externas podem usar tokens Sanctum. Ver [backend/docs/API_V1.md](../backend/docs/API_V1.md).
 
 ```bash
 php artisan migrate   # personal_access_tokens
@@ -277,6 +298,6 @@ composer phpstan-baseline # só após alterações grandes no legado
 
 - [AUDITORIA_360_2026-05-21.md](./AUDITORIA_360_2026-05-21.md)
 - [MONITORAMENTO.md](./MONITORAMENTO.md)
-- [API_V1.md](../laravel-app/docs/API_V1.md)
-- [dicionario_dados_suplemento_2026-05.md](../laravel-app/docs/dicionario_dados_suplemento_2026-05.md)
-- `laravel-app/deploy.bat`, `laravel-app/optimize_server.sh`
+- [API_V1.md](../backend/docs/API_V1.md)
+- [dicionario_dados_suplemento_2026-05.md](../backend/docs/dicionario_dados_suplemento_2026-05.md)
+- `backend/deploy.bat`, `backend/optimize_server.sh`

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReportAudit",
+  "type": "object",
+  "required": ["approved", "claims"],
+  "additionalProperties": false,
+  "properties": {
+    "approved": { "type": "boolean" },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "decision", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": { "type": "string", "minLength": 1 },
+          "decision": { "type": "string", "enum": ["approve", "rewrite", "reject"] },
+          "safe_text": { "type": ["string", "null"] },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

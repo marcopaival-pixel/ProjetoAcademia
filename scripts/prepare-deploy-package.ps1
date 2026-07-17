@@ -6,13 +6,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$Laravel = Join-Path $Root "laravel-app"
+$Laravel = Join-Path $Root "backend"
 $Stamp = Get-Date -Format "yyyyMMdd-HHmm"
 $ZipName = "nexshape-deploy-$Stamp.zip"
 $OutPath = Join-Path $Root $OutputDir
 
 if (-not (Test-Path $Laravel)) {
-    Write-Error "Pasta laravel-app nao encontrada em $Root"
+    Write-Error "Pasta backend nao encontrada em $Root"
 }
 
 Push-Location $Laravel

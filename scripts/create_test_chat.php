@@ -1,6 +1,6 @@
 <?php
-require 'laravel-app/vendor/autoload.php';
-$app = require_once 'laravel-app/bootstrap/app.php';
+require 'backend/vendor/autoload.php';
+$app = require_once 'backend/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->handle(Illuminate\Http\Request::capture());
 

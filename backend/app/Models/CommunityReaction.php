@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+
+class CommunityReaction extends Model
+{
+    use Traits\BelongsToUserCompany;
+    protected $fillable = [
+        'reactable_type',
+        'reactable_id',
+        'user_id',
+        'visitor_key',
+        'emoji',
+    ];
+
+    public function reactable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}

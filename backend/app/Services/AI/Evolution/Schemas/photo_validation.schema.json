@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PhotoValidation",
+  "type": "object",
+  "required": ["approved", "photos", "blocking_reasons"],
+  "additionalProperties": false,
+  "properties": {
+    "approved": { "type": "boolean" },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["photo_id", "expected_angle", "detected_angle", "contains_person", "full_body_visible", "lighting_acceptable", "quality_score", "problems", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "photo_id": { "type": "integer" },
+          "expected_angle": { "type": "string" },
+          "detected_angle": { "type": "string" },
+          "contains_person": { "type": "boolean" },
+          "full_body_visible": { "type": "boolean" },
+          "lighting_acceptable": { "type": "boolean" },
+          "quality_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "problems": { "type": "array", "items": { "type": "string" } },
+          "action": { "type": "string", "enum": ["accept", "retake", "reject"] }
+        }
+      }
+    },
+    "blocking_reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -142,7 +142,7 @@ UPTIME_MONITOR_URL=https://www.seudominio.com.br/up
 
 ## 10. Observabilidade avançada (implementado — maio/2026)
 
-Config central: `laravel-app/config/observability.php` (variáveis em `.env.example`).
+Config central: `backend/config/observability.php` (variáveis em `.env.example`).
 
 | Recurso | Rota admin | Tabela / origem |
 |---------|------------|-----------------|
@@ -178,5 +178,5 @@ Proteger `/horizon` — apenas administradores (`AppServiceProvider` registra `H
 ## Referências
 
 - `config/monitoring.php` — URLs e flags documentadas
-- `laravel-app/tests/Feature/HealthEndpointsTest.php`
-- `laravel-app/tests/Feature/SecurityHeadersTest.php`
+- `backend/tests/Feature/HealthEndpointsTest.php`
+- `backend/tests/Feature/SecurityHeadersTest.php`

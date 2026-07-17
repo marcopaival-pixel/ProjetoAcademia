@@ -152,7 +152,7 @@ Para regenerar o dicionário completo no futuro, correlacionar:
 
 ```bash
 # Listar creates em migrações (referência dev)
-rg "Schema::create\('" laravel-app/database/migrations -o
+rg "Schema::create\('" backend/database/migrations -o
 ```
 
 Documento principal: `dicionario_dados.md` — atualizar quando possível fundindo este suplemento.

@@ -1,6 +1,6 @@
 # DPIA — Tratamento de dados de saúde e IA (template)
 
-**Sistema:** NexShape / ProjetoAcademia  
+**Sistema:** NexShape / NexShape  
 **Versão:** 1.0 (template — revisão jurídica obrigatória)  
 **Data:** maio/2026  
 
@@ -89,4 +89,4 @@
 
 `body_analyses`, `body_assessments`, `medical_*`, `ai_orchestrator_logs`, `ai_vision_logs`, `workout_import_logs`, `user_consents`, `patient_documents`
 
-Ver `laravel-app/docs/dicionario_dados.md` e suplementos.
+Ver `backend/docs/dicionario_dados.md` e suplementos.

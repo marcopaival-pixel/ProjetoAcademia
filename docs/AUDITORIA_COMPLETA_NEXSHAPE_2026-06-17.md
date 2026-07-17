@@ -1,6 +1,6 @@
 # Auditoria Completa — NexShape (Financeiro e Segurança)
 
-**Repositório:** `c:\Projetos\ProjetoAcademia\laravel-app`  
+**Repositório:** `c:\Projetos\NexShape\backend`  
 **Data:** 17 de junho de 2026  
 **Modo:** auditoria estática (código, rotas, migrações, policies, serviços); produção não validada nesta sessão.  
 **Escopo:** todos os painéis (Admin, Profissional, Paciente, Representante, Financeiro), APIs, BD e integrações externas.  
@@ -450,7 +450,7 @@ Possui: receita diária/mensal, inadimplência, ticket, LTV/CAC estimados, recon
 
 ## Referências de código (achados críticos)
 
-```89:97:laravel-app/app/Support/PatientAccessGuard.php
+```89:97:backend/app/Support/PatientAccessGuard.php
     public static function canAccessStudentData(User $user, int $studentId): bool
     {
         if ((int) $user->id === $studentId) {
@@ -462,7 +462,7 @@ Possui: receita diária/mensal, inadimplência, ticket, LTV/CAC estimados, recon
         }
 ```
 
-```19:27:laravel-app/app/Policies/ProfessionalPatientPolicy.php
+```19:27:backend/app/Policies/ProfessionalPatientPolicy.php
     public function view(User $professional, User $patient): bool
     {
         if ($professional->isAdministrator()) {

@@ -1,56 +1,29 @@
-# Pacote `governanca-ia`
+# NexShape
 
-Pasta **única** com governança de IA para projetos PHP/Laravel: `AGENTS.md`, manuais, regras Cursor (`.cursor/rules`), Copilot (`.github`) e documentação opcional.
+Monorepo do ecossistema NexShape.
 
-## O que está aqui
+## Estrutura
 
-| Conteúdo | Descrição |
-|----------|-----------|
-| `AGENTS.md` | Núcleo do agente (regras, agentes PHP integrados, stack). |
-| `GEMINI.md` | Extensão Antigravity. |
-| `MANUAL_*.md` | Instalação e modelos de pedidos. |
-| `.cursor/rules/*.mdc` | Regras Cursor (governança + agentes PHP + Laravel). |
-| `.github/copilot-instructions.md` | Instruções Copilot. |
-| `docs/HISTORICO_DECISOES_IA.md` | Template opcional de decisões. |
-| `scripts/aplicar-na-raiz.ps1` | Copia este pacote para a **raiz** do projeto. |
-| `scripts/copiar-governancia.ps1` | Copia este pacote para **outra** pasta/projeto. |
-
-## Usar noutro projeto
-
-1. Copie a pasta **`governanca-ia`** inteira para dentro do repositório destino (ex.: `MeuApp/governanca-ia/`).
-2. Na **raiz** do projeto destino, execute no PowerShell:
-
-```powershell
-Set-Location "C:\caminho\para\MeuApp"
-.\governanca-ia\scripts\aplicar-na-raiz.ps1
+```text
+NexShape/
+├── backend/          # API e painel Laravel
+├── android/          # App Android Kotlin/Jetpack Compose
+├── ios/              # Reservado para app iOS
+├── ai-orchestrator/  # Reservado para orquestracao de IA fora do Laravel
+├── ai-agents/        # Prompts e definicoes dos agentes de IA
+├── docs/             # Documentacao tecnica e operacional
+├── docker/           # Compose e artefatos Docker
+└── scripts/          # Scripts auxiliares do monorepo
 ```
 
-Isto cria/atualiza na raiz: `AGENTS.md`, `GEMINI.md`, manuais, `.cursor/rules/`, `.github/copilot-instructions.md`, `docs/HISTORICO_DECISOES_IA.md`.
-
-**Porquê:** o Cursor lê `.cursor/rules` na **raiz do workspace**, não dentro de `governanca-ia/`. O pacote é a fonte; `aplicar-na-raiz.ps1` mantém a raiz sincronizada.
-
-## Copiar só o pacote para outro disco/projeto
+## Backend
 
 ```powershell
-Set-Location "c:\caminho\para\MeuApp\governanca-ia\scripts"
-.\copiar-governancia.ps1 -Destino "C:\src\OutroRepo"
+cd backend
+composer install
+php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-A origem por omissão é a pasta **`governanca-ia`** (pai deste `scripts`).
+## Android
 
-## Manutenção
-
-- Edite os ficheiros **dentro de `governanca-ia/`**.
-- Volte a correr **`aplicar-na-raiz.ps1`** no projeto onde usa o Cursor, para refletir alterações na raiz.
-
-## Resolução rápida
-
-| Situação | O que fazer |
-|----------|-------------|
-| Cursor **não** carrega regras | Confirme que existe **`.cursor/rules/` na raiz do workspace** (não só dentro de `governanca-ia/`). Corra **`aplicar-na-raiz.ps1`**. |
-| Abriu só a subpasta `governanca-ia` como workspace | Abra a **raiz** do repositório da aplicação ou aplique o script na raiz correta. |
-| Copiou o pacote mas falta `AGENTS.md` na raiz | Idem: **`aplicar-na-raiz.ps1`**. |
-
-## Nome
-
-**governanca-ia** — governança + uso de IA no desenvolvimento; fácil de reconhecer e de copiar como um bloco só.
+Abra a pasta `android/` no Android Studio. Em desenvolvimento local, a API padrao fica em `http://<ip-do-pc>:8000/api/v1/`.
