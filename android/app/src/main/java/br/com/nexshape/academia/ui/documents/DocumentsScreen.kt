@@ -86,7 +86,7 @@ fun DocumentsScreen(
     }
 
     NexShapeScreen(
-        title = "Relatorios e documentos",
+        title = "Relatórios e documentos",
         modifier = modifier,
         action = {
             IconButton(onClick = ::load) {
@@ -120,7 +120,7 @@ fun DocumentsScreen(
                     val reports = data!!.reports
                     if (reports.isNotEmpty()) {
                         item {
-                            SectionHeader(title = "Laudos Clinicos")
+                            SectionHeader(title = "Laudos clínicos")
                         }
                         items(reports) { document ->
                             DocumentItem(
@@ -146,7 +146,7 @@ fun DocumentsScreen(
                     val prescriptions = data!!.prescriptions
                     if (prescriptions.isNotEmpty()) {
                         item {
-                            SectionHeader(title = "Receitas Medicas")
+                            SectionHeader(title = "Receitas médicas")
                         }
                         items(prescriptions) { document ->
                             DocumentItem(

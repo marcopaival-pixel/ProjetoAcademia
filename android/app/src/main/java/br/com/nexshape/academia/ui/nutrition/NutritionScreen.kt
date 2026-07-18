@@ -60,10 +60,12 @@ import br.com.nexshape.academia.data.api.AnalyzeMealData
 import br.com.nexshape.academia.data.api.FoodEntryDto
 import br.com.nexshape.academia.data.api.HydrationEntryDto
 import br.com.nexshape.academia.data.api.HydrationStatusData
+import br.com.nexshape.academia.data.api.MealSuggestionData
 import br.com.nexshape.academia.data.api.MealTemplateDto
 import br.com.nexshape.academia.data.api.NutritionDiaryData
 import br.com.nexshape.academia.data.api.NutritionTargetsDto
 import br.com.nexshape.academia.data.api.NutritionTotalsDto
+import br.com.nexshape.academia.data.api.WeeklyAuditData
 import br.com.nexshape.academia.data.repository.AiCreditsRepository
 import br.com.nexshape.academia.data.repository.NutritionRepository
 import br.com.nexshape.academia.ui.components.NexCard
@@ -149,6 +151,10 @@ fun NutritionScreen(modifier: Modifier = Modifier) {
     var processingPhoto by remember { mutableStateOf(false) }
     var analyzedMeal by remember { mutableStateOf<AnalyzeMealData?>(null) }
     var aiFeedback by remember { mutableStateOf<String?>(null) }
+    var nutritionAiLoading by remember { mutableStateOf(false) }
+    var mealSuggestion by remember { mutableStateOf<MealSuggestionData?>(null) }
+    var weeklyAudit by remember { mutableStateOf<WeeklyAuditData?>(null) }
+    var nutritionAiFeedback by remember { mutableStateOf<String?>(null) }
 
     fun applyAnalyzedMeal(result: AnalyzeMealData, feedback: String) {
         analyzedMeal = result
@@ -279,6 +285,10 @@ fun NutritionScreen(modifier: Modifier = Modifier) {
                 analyzingMeal = analyzingMeal || processingPhoto,
                 analyzedMeal = analyzedMeal,
                 aiFeedback = aiFeedback,
+                nutritionAiLoading = nutritionAiLoading,
+                mealSuggestion = mealSuggestion,
+                weeklyAudit = weeklyAudit,
+                nutritionAiFeedback = nutritionAiFeedback,
                 onFoodName = { foodName = it },
                 onCalories = { calories = onlyDecimal(it) },
                 onProtein = { protein = onlyDecimal(it) },
@@ -357,6 +367,34 @@ fun NutritionScreen(modifier: Modifier = Modifier) {
                             reload()
                         }.onFailure { error = friendlyError(it) }
                         saving = false
+                    }
+                },
+                onSuggestMeal = {
+                    scope.launch {
+                        nutritionAiLoading = true
+                        nutritionAiFeedback = null
+                        repository.suggestMeal()
+                            .onSuccess {
+                                mealSuggestion = it
+                                weeklyAudit = null
+                            }
+                            .onFailure { nutritionAiFeedback = friendlyError(it) }
+                        aiCreditsRepository.balance().onSuccess { aiCredits = it.balance }
+                        nutritionAiLoading = false
+                    }
+                },
+                onWeeklyAudit = {
+                    scope.launch {
+                        nutritionAiLoading = true
+                        nutritionAiFeedback = null
+                        repository.weeklyAudit()
+                            .onSuccess {
+                                weeklyAudit = it
+                                mealSuggestion = null
+                            }
+                            .onFailure { nutritionAiFeedback = friendlyError(it) }
+                        aiCreditsRepository.balance().onSuccess { aiCredits = it.balance }
+                        nutritionAiLoading = false
                     }
                 },
                 editing = editingEntryId != null,
@@ -491,6 +529,10 @@ private fun NutritionContent(
     analyzingMeal: Boolean,
     analyzedMeal: AnalyzeMealData?,
     aiFeedback: String?,
+    nutritionAiLoading: Boolean,
+    mealSuggestion: MealSuggestionData?,
+    weeklyAudit: WeeklyAuditData?,
+    nutritionAiFeedback: String?,
     onFoodName: (String) -> Unit,
     onCalories: (String) -> Unit,
     onProtein: (String) -> Unit,
@@ -509,6 +551,8 @@ private fun NutritionContent(
     onAiDescription: (String) -> Unit,
     onAnalyzeMeal: () -> Unit,
     onSaveAnalyzedMeal: () -> Unit,
+    onSuggestMeal: () -> Unit,
+    onWeeklyAudit: () -> Unit,
     editing: Boolean,
     onEdit: (FoodEntryDto) -> Unit,
     onDelete: (FoodEntryDto) -> Unit,
@@ -560,6 +604,17 @@ private fun NutritionContent(
                 onSaveAnalyzedMeal = onSaveAnalyzedMeal,
             )
             }
+        }
+        item {
+            NutritionAiCard(
+                aiCredits = aiCredits,
+                loading = nutritionAiLoading,
+                mealSuggestion = mealSuggestion,
+                weeklyAudit = weeklyAudit,
+                feedback = nutritionAiFeedback,
+                onSuggestMeal = onSuggestMeal,
+                onWeeklyAudit = onWeeklyAudit,
+            )
         }
         item {
             NutritionGoalCard(
@@ -625,6 +680,72 @@ private fun NutritionContent(
                 onSave = onSave,
             )
             }
+        }
+    }
+}
+
+@Composable
+private fun NutritionAiCard(
+    aiCredits: Int?,
+    loading: Boolean,
+    mealSuggestion: MealSuggestionData?,
+    weeklyAudit: WeeklyAuditData?,
+    feedback: String?,
+    onSuggestMeal: () -> Unit,
+    onWeeklyAudit: () -> Unit,
+) {
+    NexCard {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Nutricao IA", color = Color.White, fontWeight = FontWeight.Black)
+                Text(creditText(aiCredits), color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+            }
+            Icon(Icons.Default.SmartToy, contentDescription = null, tint = NexNeon)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+            TextButton(
+                onClick = onSuggestMeal,
+                enabled = !loading,
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = NexNeon.copy(alpha = 0.14f),
+                    contentColor = Color.White,
+                ),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(if (loading) "Aguarde..." else "Sugerir refeicao")
+            }
+            TextButton(
+                onClick = onWeeklyAudit,
+                enabled = !loading,
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = Color.Black.copy(alpha = 0.35f),
+                    contentColor = Color.White,
+                ),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(if (loading) "Aguarde..." else "Auditoria semanal")
+            }
+        }
+        mealSuggestion?.let { suggestion ->
+            Column(modifier = Modifier.padding(top = 12.dp)) {
+                Text("Sugestao de refeicao", color = NexNeon, fontWeight = FontWeight.Bold)
+                Text(
+                    "Restam ${suggestion.remaining.remainingKcal.toInt()} kcal | P ${suggestion.remaining.remainingProteinG.toInt()}g",
+                    color = NexMuted,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Text(suggestion.suggestion, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+            }
+        }
+        weeklyAudit?.let { audit ->
+            Column(modifier = Modifier.padding(top = 12.dp)) {
+                Text("Auditoria nutricional", color = NexNeon, fontWeight = FontWeight.Bold)
+                Text("${audit.daysAnalyzed} dia(s) analisados", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+                Text(audit.audit, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+            }
+        }
+        feedback?.let {
+            Text(it, color = NexNeon, modifier = Modifier.padding(top = 10.dp))
         }
     }
 }

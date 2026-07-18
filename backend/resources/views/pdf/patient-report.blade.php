@@ -32,8 +32,10 @@
             background: #f8fafc; 
             border: 1px solid #e2e8f0; 
             border-radius: 15px; 
-            padding: 20px; 
+            min-height: 118px;
             margin-bottom: 35px; 
+            padding: 20px 155px 20px 20px;
+            position: relative;
         }
         .section-header { margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
         .section-title { font-size: 9px; font-weight: 900; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; }
@@ -44,7 +46,7 @@
         .value { color: #0f172a; font-weight: 900; font-size: 11px; }
 
         /* QR Section */
-        .qr-section { float: right; text-align: center; width: 120px; margin-top: -120px; }
+        .qr-section { position: absolute; right: 18px; text-align: center; top: 20px; width: 120px; }
         .qr-box { background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
         .qr-image { width: 85px; height: 85px; }
         .qr-text { font-size: 7px; color: #94a3b8; margin-top: 8px; text-transform: uppercase; font-weight: 800; }
@@ -88,13 +90,6 @@
             <p class="pro-meta">Responsável Técnico • CRM/CREF: {{ $professional->profile->professional_id ?? 'Não Informado' }}</p>
         </div>
 
-        <div class="qr-section">
-            <div class="qr-box">
-                <img src="{{ $qrCode }}" class="qr-image" alt="QR Code Verification">
-            </div>
-            <div class="qr-text">Validar Autenticidade</div>
-        </div>
-
         <div class="patient-card">
             <div class="section-header"><div class="section-title">Informações do Prontuário</div></div>
             <table class="data-grid">
@@ -117,6 +112,13 @@
                     <td class="value">#{{ str_pad($patient->id, 8, '0', STR_PAD_LEFT) }}</td>
                 </tr>
             </table>
+
+            <div class="qr-section">
+                <div class="qr-box">
+                    <img src="{{ $qrCode }}" class="qr-image" alt="QR Code Verification">
+                </div>
+                <div class="qr-text">Validar Autenticidade</div>
+            </div>
         </div>
 
         <div class="section-header"><div class="section-title">Evolução Ponderal Recente</div></div>

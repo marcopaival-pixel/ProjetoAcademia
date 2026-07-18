@@ -147,6 +147,12 @@ interface NexShapeApi {
         @Part("meal_type") mealType: RequestBody,
     ): ApiSuccessResponse<AnalyzeMealData>
 
+    @POST("nutrition/suggest-meal")
+    suspend fun suggestMeal(): ApiSuccessResponse<MealSuggestionData>
+
+    @POST("nutrition/weekly-audit")
+    suspend fun weeklyAudit(): ApiSuccessResponse<WeeklyAuditData>
+
     @PUT("nutrition/diary/{id}")
     suspend fun updateFoodEntry(
         @Path("id") id: Int,

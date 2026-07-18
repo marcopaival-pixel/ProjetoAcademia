@@ -14,7 +14,8 @@ class ChatController extends Controller
 {
     public function __construct(
         private \App\Services\AI\OrchestratorService $orchestrator,
-        private \App\Services\AgentActionDispatcher $actionDispatcher
+        private \App\Services\AgentActionDispatcher $actionDispatcher,
+        private \App\Services\AiCreditService $aiCredits
     ) {}
     
     /**
@@ -56,6 +57,15 @@ class ChatController extends Controller
             }
         }
 
+        if (! $this->aiCredits->hasCredits($user, 'chat_response')) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para conversar com o NexBot.',
+                'plano_url' => route('plano'),
+            ], 402);
+        }
+
         // Salvar mensagem do usuário no histórico
         $conversationHistory = $this->conversationHistory($user->id);
         $userMetrics = $this->getUserMetrics($user->id);
@@ -94,6 +104,18 @@ class ChatController extends Controller
 
         $assistantMessage = $result['message'];
         $action = $result['action'] ?? null;
+
+        if (! $this->aiCredits->consume($user, 'chat_response', [
+            'source' => 'chat_page',
+            'message_chars' => mb_strlen($validated['message']),
+        ])) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para registrar esta resposta.',
+                'plano_url' => route('plano'),
+            ], 402);
+        }
 
         // Salvar resposta da IA no histórico do usuário
         AIChat::create([

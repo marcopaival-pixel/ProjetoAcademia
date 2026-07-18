@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -15,6 +20,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.MonitorHeart
@@ -23,6 +29,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.LocalMall
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -106,6 +113,7 @@ private enum class StudentTab(val label: String) {
     ExamsMeasures("Exames"),
     Notifications("Notificacoes"),
     FitnessStore("Shopping"),
+    Hydration("Hidratação"),
 }
 
 private enum class ProTab(val label: String) {
@@ -380,6 +388,7 @@ fun NexShapeApp() {
             onLogout = handleLogout,
         )
         canUseStudent -> StudentShell(
+            profile = profile,
             authRepository = authRepository,
             appLockStore = appLockStore,
             canSwitchToPro = canUsePro,
@@ -403,6 +412,7 @@ fun NexShapeApp() {
 
 @Composable
 private fun StudentShell(
+    profile: ProfileDto?,
     authRepository: AuthRepository,
     appLockStore: AppLockStore,
     canSwitchToPro: Boolean,
@@ -413,27 +423,50 @@ private fun StudentShell(
     val isPatient = activeRole == "patient" || activeRole == "paciente"
 
     var selectedTab by remember(activeRole) { mutableStateOf(StudentTab.Home) }
-    val bottomTabs = remember(isPatient) {
-        if (isPatient) {
-            listOf(
-                StudentTab.Home,
-                StudentTab.Evolution,
-                StudentTab.Agenda,
-                StudentTab.Documents,
-                StudentTab.Profile,
-            )
+    
+    val bottomTabs = remember(profile?.modules, isPatient) {
+        val fixedStart = StudentTab.Home
+        val fixedEnd = listOf(StudentTab.Messages, StudentTab.Profile)
+        
+        val dynamicTabs = mutableListOf<StudentTab>()
+        val modules = profile?.modules
+        
+        if (modules != null) {
+            // Usa as permissões do backend, com ordem de prioridade
+            if (modules.contains("training")) dynamicTabs.add(StudentTab.Training)
+            if (modules.contains("clinical")) dynamicTabs.add(StudentTab.Clinical)
+            if (modules.contains("nutrition")) dynamicTabs.add(StudentTab.Nutrition)
+            if (modules.contains("evolution")) dynamicTabs.add(StudentTab.Evolution)
+            if (modules.contains("agenda")) dynamicTabs.add(StudentTab.Agenda)
         } else {
-            listOf(
-                StudentTab.Home,
-                StudentTab.Training,
-                StudentTab.Evolution,
-                StudentTab.Nutrition,
-                StudentTab.Profile,
-            )
+            // Fallback baseado no papel
+            if (isPatient) {
+                dynamicTabs.add(StudentTab.Clinical)
+                dynamicTabs.add(StudentTab.Evolution)
+            } else {
+                dynamicTabs.add(StudentTab.Training)
+                dynamicTabs.add(StudentTab.Nutrition)
+            }
         }
+        
+        val centralSlots = dynamicTabs.take(2)
+        listOf(fixedStart) + centralSlots + fixedEnd
     }
 
+    var showAssistenteSheet by remember { mutableStateOf(false) }
+
     Scaffold(
+        floatingActionButton = {
+            androidx.compose.material3.FloatingActionButton(
+                onClick = { showAssistenteSheet = true },
+                containerColor = br.com.nexshape.academia.ui.components.NexNeon,
+                contentColor = Color.Black,
+                shape = androidx.compose.foundation.shape.CircleShape,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Assistente NexShape")
+            }
+        },
         bottomBar = {
             NavigationBar(
                 containerColor = Color(0xFF080C10),
@@ -470,6 +503,7 @@ private fun StudentShell(
                                     StudentTab.ExamsMeasures -> Icons.Default.Description
                                     StudentTab.Notifications -> Icons.Default.Notifications
                                     StudentTab.FitnessStore -> Icons.Default.LocalMall
+                                    StudentTab.Hydration -> Icons.Default.WaterDrop
                                 },
                                 contentDescription = tab.label,
                             )
@@ -500,6 +534,7 @@ private fun StudentShell(
                 onOpenExamsMeasures = { selectedTab = StudentTab.ExamsMeasures },
                 onOpenNotifications = { selectedTab = StudentTab.Notifications },
                 onOpenFitnessStore = { selectedTab = StudentTab.FitnessStore },
+                onOpenHydration = { selectedTab = StudentTab.Hydration },
             )
             StudentTab.Training -> TrainingScreen(
                 modifier = Modifier.padding(padding),
@@ -527,7 +562,26 @@ private fun StudentShell(
             StudentTab.ExamsMeasures -> ExamsMeasuresScreen(modifier = Modifier.padding(padding))
             StudentTab.Notifications -> NotificationsScreen(modifier = Modifier.padding(padding))
             StudentTab.FitnessStore -> FitnessStoreScreen(modifier = Modifier.padding(padding))
+            StudentTab.Hydration -> br.com.nexshape.academia.ui.nutrition.HydrationScreen(modifier = Modifier.padding(padding))
         }
+    }
+
+    if (showAssistenteSheet) {
+        AssistenteNexShapeSheet(
+            onDismiss = { showAssistenteSheet = false },
+            onAction = { action ->
+                showAssistenteSheet = false
+                when (action) {
+                    "treino" -> selectedTab = StudentTab.Training
+                    "nutricao" -> selectedTab = StudentTab.Nutrition
+                    "evolucao" -> selectedTab = StudentTab.Evolution
+                    "hidratacao" -> selectedTab = StudentTab.Hydration
+                    "agenda" -> selectedTab = StudentTab.Agenda
+                    "profissional" -> selectedTab = StudentTab.Messages
+                    "suporte" -> selectedTab = StudentTab.Chat
+                }
+            }
+        )
     }
 }
 
@@ -617,6 +671,59 @@ private fun ProShell(
                 onSwitchToStudent = onSwitchMode,
                 onLogout = onLogout,
             )
+        }
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun AssistenteNexShapeSheet(
+    onDismiss: () -> Unit,
+    onAction: (String) -> Unit
+) {
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0D141C)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = br.com.nexshape.academia.ui.components.NexNeon)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Assistente NexShape", color = Color.White, fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            }
+            Text("O que você deseja?", color = br.com.nexshape.academia.ui.components.NexMuted, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
+
+            val items = listOf(
+                Triple("treino", "Treino", Icons.Default.FitnessCenter),
+                Triple("nutricao", "Nutrição", Icons.Default.Restaurant),
+                Triple("evolucao", "Evolução", Icons.Default.MonitorHeart),
+                Triple("hidratacao", "Hidratação", Icons.Default.WaterDrop),
+                Triple("agenda", "Agenda", Icons.Default.CalendarMonth),
+                Triple("profissional", "Conversar com meu profissional", Icons.AutoMirrored.Filled.Chat),
+                Triple("suporte", "Suporte / NexBot", Icons.Default.HelpOutline)
+            )
+
+            items.forEach { (action, label, icon) ->
+                androidx.compose.material3.TextButton(
+                    onClick = { onAction(action) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(label, color = Color.White, fontSize = 16.sp)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

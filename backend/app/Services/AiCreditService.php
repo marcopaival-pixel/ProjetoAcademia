@@ -48,6 +48,10 @@ class AiCreditService
      */
     public function hasCredits(User $user, string $featureCode): bool
     {
+        if ($user->isAdministrator()) {
+            return true;
+        }
+
         $cost = AiFeatureCost::where('feature_code', $featureCode)->where('is_active', true)->first();
         if (!$cost) {
             return true; // Se não configurado, assume grátis ou erro de config

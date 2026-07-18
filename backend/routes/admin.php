@@ -423,6 +423,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [TrainingController::class, 'index'])->name('index');
             Route::post('/modules', [TrainingController::class, 'storeModule'])->name('modules.store');
             Route::post('/lessons', [TrainingController::class, 'storeLesson'])->name('lessons.store');
+            Route::post('/lessons/{lesson}/update', [TrainingController::class, 'updateLesson'])->name('lessons.update');
             Route::delete('/modules/{module}', [TrainingController::class, 'destroyModule'])->name('modules.destroy');
             Route::delete('/lessons/{lesson}', [TrainingController::class, 'destroyLesson'])->name('lessons.destroy');
         });

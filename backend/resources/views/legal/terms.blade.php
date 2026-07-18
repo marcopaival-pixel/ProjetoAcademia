@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->check() && auth()->user()->hasAdminPanelAccess() && (session('active_role') === 'admin' || request()->is('admin*')) ? 'layouts.admin' : 'layouts.app')
 
 @section('title', 'Central Jurídica & Privacidade — NexShape')
 
@@ -303,8 +303,10 @@
 <style>
     [x-cloak] { display: none !important; }
     
-    /* Hide Global UI Elements */
+    @guest
+    /* Hide Global UI Elements on public legal pages only */
     .site-header, .site-footer, .topbar, .app-container > aside { display: none !important; }
+    @endguest
     
     /* Ensure page takes full space */
     #main.shell.main-content { 

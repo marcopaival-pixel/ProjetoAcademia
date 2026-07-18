@@ -88,10 +88,19 @@ class SmartStackController extends Controller
         return back()->with('success', 'Suplemento adicionado ao stack!');
     }
 
-    /**
     public function suggest(Request $request)
     {
         $user = auth()->user();
+        $aiCredits = app(\App\Services\AiCreditService::class);
+
+        if (! $aiCredits->hasCredits($user, 'supplement_suggestion')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para gerar sugestao de suplementacao.',
+            ], 402);
+        }
+
         $result = $this->orchestrator->run($user, "Sugira um Smart Stack para: " . ($request->goal ?? 'geral'), [
             'intent' => 'nutrition',
             'type' => 'supplement_suggestion',
@@ -99,6 +108,10 @@ class SmartStackController extends Controller
         ]);
 
         if ($result['status'] === 'success') {
+            $aiCredits->consume($user, 'supplement_suggestion', [
+                'goal' => $request->goal ?? 'geral',
+            ]);
+
             return response()->json(['success' => true, 'suggestion' => $result['message']]);
         }
 

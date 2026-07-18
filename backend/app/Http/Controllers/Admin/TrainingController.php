@@ -63,6 +63,27 @@ class TrainingController extends Controller
     }
 
     /**
+     * Update an existing lesson.
+     */
+    public function updateLesson(Request $request, TrainingLesson $lesson)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'video_url' => 'nullable|url',
+            'content' => 'nullable|string',
+        ]);
+
+        $lesson->update([
+            'title' => $request->title,
+            'slug' => Str::slug($request->title),
+            'video_url' => $request->video_url,
+            'content' => $request->content,
+        ]);
+
+        return back()->with('success', 'Aula atualizada com sucesso!');
+    }
+
+    /**
      * Delete a module.
      */
     public function destroyModule(TrainingModule $module)

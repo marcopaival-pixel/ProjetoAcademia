@@ -32,15 +32,23 @@ class HealthMetricController extends Controller
             'recovery' => $user->healthMetrics()->where('type', 'recovery_score')->latest('recorded_at')->first(),
             'resting_hr' => $user->healthMetrics()->where('type', 'resting_hr')->latest('recorded_at')->first(),
         ];
+        $recordDays = $history->flatten()
+            ->pluck('recorded_at')
+            ->map(fn ($date) => \Illuminate\Support\Carbon::parse($date)->toDateString())
+            ->unique()
+            ->count();
+        $hasEnoughDataForAi = $recordDays >= 3;
 
         if (request()->wantsJson()) {
             return response()->json([
                 'history' => $history,
-                'latest' => $latest
+                'latest' => $latest,
+                'record_days' => $recordDays,
+                'has_enough_data_for_ai' => $hasEnoughDataForAi,
             ]);
         }
 
-        return view('health-metrics.index', compact('history', 'latest'));
+        return view('health-metrics.index', compact('history', 'latest', 'recordDays', 'hasEnoughDataForAi'));
     }
 
     /**
@@ -58,6 +66,12 @@ class HealthMetricController extends Controller
         ]);
 
         $metric = Auth::user()->healthMetrics()->create($validated);
+
+        if (! $request->wantsJson()) {
+            return redirect()
+                ->route('health-metrics.index')
+                ->with('success', 'Sinal vital registrado com sucesso.');
+        }
 
         return response()->json([
             'message' => 'Métrica registrada com sucesso!',

@@ -197,6 +197,7 @@ class NutritionController extends Controller
     {
         $user = $request->user();
         $profile = UserProfile::where('user_id', $user->id)->first();
+        $aiCredits = app(\App\Services\AiCreditService::class);
         
         $history = FoodEntry::where('user_id', $user->id)
             ->where('entry_date', '>=', now()->subDays(7)->format('Y-m-d'))
@@ -210,6 +211,14 @@ class NutritionController extends Controller
                 'success' => false,
                 'error' => 'Você precisa registrar pelo menos alguns dias de alimentação para uma auditoria.'
             ], 400);
+        }
+
+        if (! $aiCredits->hasCredits($user, 'diet_audit')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para gerar a auditoria nutricional.',
+            ], 402);
         }
 
         $summary = $history->map(fn($d) => [
@@ -228,6 +237,10 @@ class NutritionController extends Controller
         ]);
 
         if ($result['status'] === 'success') {
+            $aiCredits->consume($user, 'diet_audit', [
+                'days_analyzed' => $history->count(),
+            ]);
+
             return response()->json([
                 'success' => true,
                 'audit' => $result['message']
@@ -241,6 +254,7 @@ class NutritionController extends Controller
     {
         $user = $request->user();
         $profile = UserProfile::where('user_id', $user->id)->first();
+        $aiCredits = app(\App\Services\AiCreditService::class);
         
         $targetKcal = $profile->daily_calorie_target ?? 2000;
         $macroTargets = Nutrition::macroTargetsForDisplay($user->hasPremiumAccess(), $profile->toArray());
@@ -257,6 +271,14 @@ class NutritionController extends Controller
             'remaining_f' => max(($macroTargets['f'] ?? 0) - ($todaySums->f ?? 0), 0),
         ];
 
+        if (! $aiCredits->hasCredits($user, 'meal_suggestion')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para gerar sugestao de refeicao.',
+            ], 402);
+        }
+
         $prompt = "Sugira UMA refeição baseada nos meus macros restantes: " . json_encode($remaining);
 
         $result = $orchestrator->run($user, $prompt, [
@@ -267,6 +289,10 @@ class NutritionController extends Controller
         ]);
 
         if ($result['status'] === 'success') {
+            $aiCredits->consume($user, 'meal_suggestion', [
+                'remaining' => $remaining,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'suggestion' => $result['message'],

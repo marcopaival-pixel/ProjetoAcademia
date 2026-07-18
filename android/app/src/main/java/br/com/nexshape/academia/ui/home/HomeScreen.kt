@@ -86,6 +86,7 @@ fun HomeScreen(
     onOpenExamsMeasures: () -> Unit,
     onOpenNotifications: () -> Unit,
     onOpenFitnessStore: () -> Unit,
+    onOpenHydration: () -> Unit,
 ) {
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var summary by remember { mutableStateOf(HomeSummary()) }
@@ -154,6 +155,7 @@ fun HomeScreen(
                 onOpenExamsMeasures = { onOpenExamsMeasures() },
                 onOpenNotifications = { onOpenNotifications() },
                 onOpenFitnessStore = { onOpenFitnessStore() },
+                onOpenHydration = { onOpenHydration() },
             )
             error != null -> Text(
                 text = error!!,
@@ -189,6 +191,7 @@ private fun HomeContent(
     onOpenExamsMeasures: () -> Unit,
     onOpenNotifications: () -> Unit,
     onOpenFitnessStore: () -> Unit,
+    onOpenHydration: () -> Unit,
 ) {
     val activeRole = remember { ApiClient.tokenStore().getActiveRole() }
     val isPatient = activeRole == "patient" || activeRole == "paciente"
@@ -270,30 +273,17 @@ private fun HomeContent(
 
         Spacer(Modifier.height(18.dp))
 
-        if (isPatient) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                QuickMetricCard(
-                    title = "Agenda",
-                    value = "${summary.appointments ?: 0} consultas",
-                    icon = Icons.Filled.CalendarMonth,
-                    onClick = onOpenAgenda,
-                    modifier = Modifier.weight(1f),
-                )
-                QuickMetricCard(
-                    title = "Evolucao",
-                    value = summary.latestWeightKg?.let { "${it} kg" }
-                        ?: "${summary.assessments ?: 0} avaliacoes",
-                    icon = Icons.Filled.MonitorHeart,
-                    onClick = onOpenEvolution,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            QuickMetricCard(
+                title = "Agenda",
+                value = "${summary.appointments ?: 0} consultas",
+                icon = Icons.Filled.CalendarMonth,
+                onClick = onOpenAgenda,
+                modifier = Modifier.weight(1f),
+            )
             QuickMetricCard(
                 title = "Mentores",
                 value = if ((summary.professionals ?: 0) > 0) {
@@ -303,65 +293,8 @@ private fun HomeContent(
                 },
                 icon = Icons.Filled.Groups,
                 onClick = onOpenProfessionals,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.weight(1f),
             )
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                QuickMetricCard(
-                    title = "Treino",
-                    value = summary.trainingPlans?.let { "$it planos" } ?: "Planos",
-                    icon = Icons.Filled.FitnessCenter,
-                    onClick = onOpenTraining,
-                    modifier = Modifier.weight(1f),
-                )
-                QuickMetricCard(
-                    title = "Agenda",
-                    value = "${summary.appointments ?: 0} consultas",
-                    icon = Icons.Filled.CalendarMonth,
-                    onClick = onOpenAgenda,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            QuickMetricCard(
-                title = "Nutricao",
-                value = summary.nutritionCalories?.let { "$it kcal hoje" } ?: "Diario alimentar",
-                icon = Icons.Filled.Restaurant,
-                onClick = onOpenNutrition,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                QuickMetricCard(
-                    title = "Evolucao",
-                    value = summary.latestWeightKg?.let { "${it} kg" }
-                        ?: "${summary.assessments ?: 0} avaliacoes",
-                    icon = Icons.Filled.MonitorHeart,
-                    onClick = onOpenEvolution,
-                    modifier = Modifier.weight(1f),
-                )
-                QuickMetricCard(
-                    title = "Mentores",
-                    value = if ((summary.professionals ?: 0) > 0) {
-                        "${summary.professionals} vinculados"
-                    } else {
-                        "Independente"
-                    },
-                    icon = Icons.Filled.Groups,
-                    onClick = onOpenProfessionals,
-                    modifier = Modifier.weight(1f),
-                )
-            }
         }
 
         Spacer(Modifier.height(26.dp))
@@ -396,7 +329,7 @@ private fun HomeContent(
                 onClick = onOpenExamsMeasures,
             )
             ModuleCard(
-                title = "Relatorios e documentos",
+                title = "Relatórios e documentos",
                 description = "Visualizar laudos, receitas e atestados emitidos.",
                 icon = Icons.Filled.Description,
                 status = "Disponivel",
@@ -423,35 +356,14 @@ private fun HomeContent(
                 status = "Em breve",
                 onClick = onOpenFitnessStore,
             )
-            ModuleCard(
-                title = "Assinatura",
-                description = "Planos, upgrade e checkout mobile.",
-                icon = Icons.Filled.Lock,
-                status = "Disponivel",
-                onClick = onOpenProfile,
-            )
+
         } else {
-            ModuleCard(
-                title = "Assistente IA",
-                description = "Seu treinador inteligente.",
-                icon = Icons.AutoMirrored.Filled.Chat,
-                status = if (profile.isPremium) "Premium" else "Requer assinatura",
-                premium = true,
-                onClick = onOpenChat,
-            )
             ModuleCard(
                 title = "Comunidade",
                 description = "Compartilhe sua evolucao.",
                 icon = Icons.Filled.Groups,
                 status = "Disponivel",
                 onClick = onOpenCommunity,
-            )
-            ModuleCard(
-                title = "Chat",
-                description = "Converse com profissionais.",
-                icon = Icons.AutoMirrored.Filled.Chat,
-                status = "Disponivel",
-                onClick = onOpenMessages,
             )
             ModuleCard(
                 title = "Acompanhamento",
@@ -474,19 +386,13 @@ private fun HomeContent(
                 status = "Em breve",
                 onClick = onOpenFitnessStore,
             )
-            ModuleCard(
-                title = "Assinatura",
-                description = "Planos, upgrade e checkout mobile.",
-                icon = Icons.Filled.Lock,
-                status = "Disponivel",
-                onClick = onOpenProfile,
-            )
+
             ModuleCard(
                 title = "Hidratacao",
                 description = "Nex Hydra - Acompanhe seu consumo diario de agua.",
                 icon = Icons.Filled.WaterDrop,
                 status = "Disponivel",
-                onClick = onOpenNutrition,
+                onClick = onOpenHydration,
             )
             ModuleCard(
                 title = "Ranking e trofeus",
@@ -505,7 +411,7 @@ private fun HomeContent(
                 onClick = onOpenActiveRest,
             )
             ModuleCard(
-                title = "Relatorios e documentos",
+                title = "Relatórios e documentos",
                 description = "Visualizar laudos, receitas e atestados emitidos.",
                 icon = Icons.Filled.Description,
                 status = "Disponivel",

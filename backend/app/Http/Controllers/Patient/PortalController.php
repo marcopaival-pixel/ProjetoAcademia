@@ -11,6 +11,7 @@ use App\Models\PatientDocument;
 use App\Models\BodyAssessment;
 use App\Models\ProfessionalAppointment;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 
@@ -68,12 +69,16 @@ class PortalController extends Controller
     /**
      * Dashboard Principal (Resumo)
      */
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
         $patient = Auth::user();
         $context = $this->getPatientContext($patient);
 
         if (!$context['primaryLink']) {
+            if ($patient->hasRole('aluno')) {
+                return redirect()->route('dashboard');
+            }
+
             return view('patient.no-link');
         }
 
@@ -215,13 +220,43 @@ class PortalController extends Controller
     {
         $patient = Auth::user();
         $context = $this->getPatientContext($patient);
+        $activeProfId = session('active_professional_id') ?? ($context['primaryLink']->profissional_id ?? null);
         
-        $appointments = ProfessionalAppointment::where('patient_id', $patient->id)
+        $appointmentsQuery = ProfessionalAppointment::where('patient_id', $patient->id)
             ->with('professional')
+            ->when($activeProfId, fn ($query) => $query->where('professional_id', $activeProfId));
+
+        $appointments = (clone $appointmentsQuery)
             ->orderBy('appointment_at', 'desc')
             ->get();
 
-        return view('patient.agenda', array_merge($context, ['appointments' => $appointments]));
+        $todayAppointments = (clone $appointmentsQuery)
+            ->whereDate('appointment_at', today())
+            ->orderBy('appointment_at')
+            ->get();
+
+        $nextAppointment = (clone $appointmentsQuery)
+            ->where('appointment_at', '>=', now())
+            ->orderBy('appointment_at')
+            ->first();
+
+        $agendaFocus = [
+            'today_appointments_count' => $todayAppointments->count(),
+            'next_appointment' => $nextAppointment,
+            'active_training_count' => $patient->trainingPlans()
+                ->when($activeProfId, fn ($query) => $query->where('professional_id', $activeProfId))
+                ->where('is_active', true)
+                ->count(),
+            'has_recent_body_analysis' => \App\Models\BodyAnalysis::where('user_id', $patient->id)
+                ->where('created_at', '>=', now()->subDays(30))
+                ->exists(),
+        ];
+
+        return view('patient.agenda', array_merge($context, [
+            'appointments' => $appointments,
+            'todayAppointments' => $todayAppointments,
+            'agendaFocus' => $agendaFocus,
+        ]));
     }
 
     /**

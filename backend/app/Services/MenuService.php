@@ -262,7 +262,7 @@ class MenuService
                     ['name' => 'report', 'label' => 'Relatórios PDF', 'route' => 'report', 'icon' => 'file-text', 'premium' => true],
                     ['name' => 'active-rest', 'label' => 'Descanso Ativo', 'route' => 'active-rest.index', 'icon' => 'refresh-cw'],
                     ['name' => 'academia', 'label' => 'Academia NexShape', 'route' => 'training.index', 'icon' => 'play-circle'],
-                    ['name' => 'health-metrics', 'label' => 'Saúde (Wearables)', 'route' => 'health-metrics.index', 'icon' => 'heart', 'premium' => true],
+                    ['name' => 'health-metrics', 'label' => 'Saúde e Recuperação', 'route' => 'health-metrics.index', 'icon' => 'heart', 'premium' => true],
                     ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check', 'premium' => true],
                 ], $isPremium),
             ];

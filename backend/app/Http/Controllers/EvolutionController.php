@@ -202,11 +202,19 @@ class EvolutionController extends Controller
         if (!$user->hasPremiumAccess()) {
             return response()->json(['error' => 'Funcionalidade exclusiva para membros Premium.'], 403);
         }
+        $aiCredits = app(\App\Services\AiCreditService::class);
 
         $request->validate([
             'photo_id_1' => 'required|exists:evolution_photos,id',
             'photo_id_2' => 'required|exists:evolution_photos,id',
         ]);
+
+        if (! $aiCredits->hasCredits($user, 'evolution_photo_comparison')) {
+            return response()->json([
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para analisar a evolucao.',
+            ], 402);
+        }
 
         $photo1 = EvolutionPhoto::where('user_id', $user->id)->findOrFail($request->photo_id_1);
         $photo2 = EvolutionPhoto::where('user_id', $user->id)->findOrFail($request->photo_id_2);
@@ -222,6 +230,11 @@ class EvolutionController extends Controller
         ]);
 
         if ($result['status'] === 'success') {
+            $aiCredits->consume($user, 'evolution_photo_comparison', [
+                'photo_id_1' => $photo1->id,
+                'photo_id_2' => $photo2->id,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'analysis' => $result['message']
@@ -237,6 +250,7 @@ class EvolutionController extends Controller
         if (!$user->hasPremiumAccess()) {
             return response()->json(['error' => 'Funcionalidade exclusiva para membros Premium.'], 403);
         }
+        $aiCredits = app(\App\Services\AiCreditService::class);
 
         $validated = $request->validate([
             'date' => 'required|date',
@@ -269,6 +283,13 @@ class EvolutionController extends Controller
             ]);
         }
 
+        if (! $aiCredits->hasCredits($user, 'evolution_session_analysis')) {
+            return response()->json([
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para analisar esta sessao de fotos.',
+            ], 402);
+        }
+
         $images = $photos->map(fn ($photo) => [
             'path' => storage_path('app/public/' . $photo->photo_path),
             'day' => $photo->type,
@@ -294,6 +315,11 @@ class EvolutionController extends Controller
             'model_name' => $result['model'] ?? null,
             'total_tokens' => $result['tokens'] ?? 0,
             'cost_usd' => $result['cost'] ?? 0,
+        ]);
+
+        $aiCredits->consume($user, 'evolution_session_analysis', [
+            'session_date' => $validated['date'],
+            'photos_count' => $photos->count(),
         ]);
 
         return response()->json([
@@ -335,13 +361,24 @@ class EvolutionController extends Controller
         if (!$user->hasPremiumAccess()) {
             return back()->with('error', 'Relatório Inteligente exclusivo para membros Premium.');
         }
+        $aiCredits = app(\App\Services\AiCreditService::class);
 
         $cacheKey = "user_{$user->id}_evolution_visual_report_v1";
+        $wasCached = \Illuminate\Support\Facades\Cache::has($cacheKey);
+
+        if (! $wasCached && ! $aiCredits->hasCredits($user, 'evolution_ai_report')) {
+            return back()->with('error', 'Creditos de IA insuficientes para gerar o relatorio de evolucao.');
+        }
 
         try {
             $reportData = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addDays(7), function () use ($orchestrator, $user) {
                 return $orchestrator->generate($user);
             });
+            if (! $wasCached) {
+                $aiCredits->consume($user, 'evolution_ai_report', [
+                    'source' => 'web_ai_report',
+                ]);
+            }
         } catch (\Exception $e) {
             // Remove do cache caso tenha dado erro antes de salvar, por garantia
             \Illuminate\Support\Facades\Cache::forget($cacheKey);

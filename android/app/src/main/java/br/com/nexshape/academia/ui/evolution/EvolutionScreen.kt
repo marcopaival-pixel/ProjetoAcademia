@@ -92,7 +92,7 @@ import java.time.LocalDate
 private enum class EvolutionTab(val label: String) {
     Measures("Medidas"),
     Photos("Fotos"),
-    BodyAnalysis("Analise IA"),
+    BodyAnalysis("Análise IA"),
 }
 
 @Composable
@@ -117,10 +117,10 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
     var showMeasureDialog by remember { mutableStateOf(false) }
     var showPhotoTypeDialog by remember { mutableStateOf(false) }
     var selectedPhotoType by remember { mutableStateOf("front") }
-    var photoValidationTitle by remember { mutableStateOf("Foto nao aprovada") }
+    var photoValidationTitle by remember { mutableStateOf("Foto não aprovada") }
     var photoValidationMessage by remember { mutableStateOf<String?>(null) }
     var reportLoading by remember { mutableStateOf(false) }
-    var reportStatusMessage by remember { mutableStateOf("Gerando relatorio...") }
+    var reportStatusMessage by remember { mutableStateOf("Gerando relatório...") }
     var reportData by remember { mutableStateOf<EvolutionReportDto?>(null) }
     var reportError by remember { mutableStateOf<String?>(null) }
     var pendingConsent by remember { mutableStateOf<EvolutionReportConsentDto?>(null) }
@@ -128,7 +128,7 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
     fun startReport(acceptConsent: Boolean = false) {
         scope.launch {
             reportLoading = true
-            reportStatusMessage = "Preparando relatorio..."
+            reportStatusMessage = "Preparando relatório..."
             reportError = null
             reportData = null
             repository.report(acceptConsent = acceptConsent) { status ->
@@ -199,7 +199,7 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
                     photoValidationTitle = if (message.contains("credito", ignoreCase = true)) {
                         "Credito insuficiente"
                     } else {
-                        "Foto nao aprovada"
+                        "Foto não aprovada"
                     }
                     photoValidationMessage = if (message.contains("credito", ignoreCase = true)) {
                         message
@@ -247,8 +247,8 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
     }
 
     NexShapeScreen(
-        title = "Evolucao",
-        subtitle = "Novo registro, fotos de hoje, relatorio IA e historico de evolucao.",
+        title = "Evolução",
+        subtitle = "Novo registro, fotos de hoje, relatório IA e histórico de evolução.",
         modifier = modifier,
         action = {
             ExtendedFloatingActionButton(
@@ -268,7 +268,7 @@ fun EvolutionScreen(modifier: Modifier = Modifier) {
         }
 
         when {
-            loading -> NexLoadingState("Carregando sua evolucao...")
+            loading -> NexLoadingState("Carregando sua evolução...")
             error != null -> NexErrorState(error.orEmpty(), onRetry = { reload() })
             EvolutionTab.entries[selectedTab] == EvolutionTab.Measures -> MeasuresContent(assessments, summary)
             EvolutionTab.entries[selectedTab] == EvolutionTab.Photos -> PhotosContent(
@@ -472,7 +472,7 @@ private fun EvolutionChartCard(assessments: List<BodyAssessmentDto>) {
     val fat = ordered.mapNotNull { it.bfPercent }
 
     NexCard {
-        Text("Grafico de evolucao", color = Color.White, fontWeight = FontWeight.Black)
+        Text("Gráfico de evolução", color = Color.White, fontWeight = FontWeight.Black)
         Text("Peso e gordura conforme avaliacoes da API", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
         Canvas(
             modifier = Modifier
@@ -539,7 +539,7 @@ private fun BodyAnalysisContent(
             NexCard {
                 Text("Cyber-Fit Body Analysis", color = Color.White, fontWeight = FontWeight.Black)
                 Text(
-                    "Analise postural por foto com o mesmo motor usado na web.",
+                    "Análise postural por foto com o mesmo motor usado na web.",
                     color = NexMuted,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -623,7 +623,7 @@ private fun BodyAnalysisResultCard(analysis: BodyAnalysisDto) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Resultado ${bodyViewLabel(analysis.viewType)}", color = Color.White, fontWeight = FontWeight.Black)
-                Text(analysis.createdAt?.take(10) ?: "Analise salva", color = NexMuted, modifier = Modifier.padding(top = 2.dp))
+                Text(analysis.createdAt?.take(10) ?: "Análise salva", color = NexMuted, modifier = Modifier.padding(top = 2.dp))
             }
             analysis.visionConfidence?.let {
                 AssistChip(onClick = {}, label = { Text("IA ${(it * 100).toInt()}%") })
@@ -644,14 +644,14 @@ private fun BodyAnalysisResultCard(analysis: BodyAnalysisDto) {
             )
         }
 
-        Text(analysis.summary ?: "Analise concluida.", color = Color.White, modifier = Modifier.padding(top = 12.dp))
+        Text(analysis.summary ?: "Análise concluída.", color = Color.White, modifier = Modifier.padding(top = 12.dp))
         analysis.visionSummary?.takeIf { it.isNotBlank() }?.let {
             Text(it, color = NexMuted, modifier = Modifier.padding(top = 6.dp))
         }
 
         BodyMetricRow(analysis.metrics)
         BodyAnalysisListSection("Pontos de atencao", analysis.attentionPoints)
-        BodyAnalysisListSection("Limitacoes", analysis.limitations)
+        BodyAnalysisListSection("Limitações", analysis.limitations)
         BodyAnalysisListSection("Exercicios sugeridos", analysis.exercises)
 
         analysis.workout?.takeIf { it.isNotBlank() }?.let {
@@ -672,7 +672,7 @@ private fun BodyMetricRow(metrics: Map<String, Double?>) {
         "asymmetry_shoulders" to "Ombros",
         "asymmetry_hips" to "Quadril",
         "head_forward_score" to "Cabeca",
-        "landmark_confidence" to "Confianca",
+        "landmark_confidence" to "Confiança",
     ).mapNotNull { (key, label) -> metrics[key]?.let { label to it } }
 
     if (chips.isEmpty()) return
@@ -711,7 +711,7 @@ private fun BodyAnalysisHistoryCard(
         Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("${bodyViewLabel(analysis.viewType)} - ${analysis.createdAt?.take(10) ?: "-"}", color = Color.White, fontWeight = FontWeight.Black)
-                Text(analysis.summary?.take(90) ?: "Analise salva.", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+                Text(analysis.summary?.take(90) ?: "Análise salva.", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
             }
             Text(if (selected) "Aberta" else "Ver", color = if (selected) NexNeon else NexMuted, fontWeight = FontWeight.Bold)
         }
@@ -814,12 +814,12 @@ private fun PhotosContent(
             NexCard {
                 Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Relatorio IA", color = Color.White, fontWeight = FontWeight.Black)
+                        Text("Relatório de evolução visual", color = Color.White, fontWeight = FontWeight.Black)
                         Text(
                             if (hasCompleteRecord) {
-                                "Relatorio inteligente de evolucao visual com auditoria anti-alucinacao."
+                                "Análise conservadora baseada apenas nas fotos e medidas disponíveis."
                             } else {
-                                "Complete um registro para gerar o relatorio."
+                                "Complete frente, costas e laterais para gerar um relatório confiável."
                             },
                             color = NexMuted,
                             modifier = Modifier.padding(top = 4.dp),
@@ -840,7 +840,7 @@ private fun PhotosContent(
                 NexCard {
                     Text("Sem registros", color = Color.White, fontWeight = FontWeight.Black)
                     Text(
-                        "Voce ainda nao criou um registro de evolucao. Comece com fotos de frente, costas e laterais.",
+                        "Você ainda não criou um registro de evolução. Comece com fotos de frente, costas e laterais.",
                         color = NexMuted,
                         modifier = Modifier.padding(top = 6.dp),
                     )
@@ -856,7 +856,7 @@ private fun PhotosContent(
             return@LazyColumn
         }
         item {
-            Text("Historico de evolucao", color = Color.White, fontWeight = FontWeight.Black)
+            Text("Histórico de evolução", color = Color.White, fontWeight = FontWeight.Black)
             Text("Registros anteriores agrupados por data.", color = NexMuted, modifier = Modifier.padding(top = 2.dp))
         }
         items(sessions.entries.toList(), key = { it.key }) { entry ->
@@ -880,7 +880,7 @@ private fun TodayPhotoProgressCard(
 
     NexCard {
         Text("Fotos de hoje", color = Color.White, fontWeight = FontWeight.Black)
-        Text("Complete os angulos para formar um registro completo.", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+        Text("Complete os ângulos para formar um registro completo.", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
             angles.forEach { (type, label) ->
                 val done = byType[type]?.isNotEmpty() == true || (type.endsWith("side") && byType["side"]?.isNotEmpty() == true)
@@ -893,7 +893,7 @@ private fun TodayPhotoProgressCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(label, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(if (done) "concluido" else "pendente", color = if (done) NexNeon else NexMuted)
+                    Text(if (done) "concluído" else "pendente", color = if (done) NexNeon else NexMuted)
                 }
             }
         }
@@ -923,7 +923,7 @@ private fun EvolutionSessionCard(
         Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(date, color = Color.White, fontWeight = FontWeight.Black)
-                Text("$completion/4 angulos capturados", color = NexMuted)
+                Text("$completion/4 ângulos capturados", color = NexMuted)
             }
             TextButton(
                 enabled = completion >= 4 && !loading,
@@ -939,12 +939,12 @@ private fun EvolutionSessionCard(
                 },
                 colors = ButtonDefaults.textButtonColors(contentColor = NexNeon, disabledContentColor = NexMuted),
             ) {
-                Text(if (loading) "Analisando..." else "Relatorio IA")
+                Text(if (loading) "Analisando..." else "Relatório IA")
             }
         }
         if (completion < 4) {
             Text(
-                "Complete um registro para gerar o relatorio.",
+                "Complete um registro para gerar o relatório.",
                 color = NexMuted,
                 modifier = Modifier.padding(top = 8.dp),
             )
@@ -956,9 +956,9 @@ private fun EvolutionSessionCard(
             }
         }
         analysis?.let {
-            Text(it.summary ?: it.message ?: "Analise concluida.", color = Color.White, modifier = Modifier.padding(top = 10.dp))
+            Text(it.summary ?: it.message ?: "Análise concluída.", color = Color.White, modifier = Modifier.padding(top = 10.dp))
             it.nextRecommendations.takeIf { list -> list.isNotEmpty() }?.let { recs ->
-                Text(recs.joinToString(prefix = "Recomendacoes: ", separator = " • "), color = NexMuted, modifier = Modifier.padding(top = 6.dp))
+                Text(recs.joinToString(prefix = "Recomendações: ", separator = " • "), color = NexMuted, modifier = Modifier.padding(top = 6.dp))
             }
         }
         error?.let { Text(it, color = Color(0xFFF59E0B), modifier = Modifier.padding(top = 10.dp)) }
@@ -1033,7 +1033,7 @@ private fun EvolutionReportDialog(
         containerColor = Color(0xFF0B1117),
         titleContentColor = Color.White,
         textContentColor = NexMuted,
-        title = { Text("Relatorio inteligente de evolucao visual", fontWeight = FontWeight.Black) },
+        title = { Text("Relatório de evolução visual", fontWeight = FontWeight.Black) },
         text = {
             when {
                 loading -> NexLoadingState(loadingMessage)
@@ -1041,12 +1041,18 @@ private fun EvolutionReportDialog(
                 report != null -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.height(420.dp)) {
                     item {
                         val confidence = (report.generalConfidence * 100).toInt()
-                        Text(report.status.replace('_', ' '), color = NexNeon, fontWeight = FontWeight.Black)
-                        Text("Confianca geral: $confidence%", color = Color.White, modifier = Modifier.padding(top = 4.dp))
+                        Text("Resumo do relatório", color = Color.White, fontWeight = FontWeight.Black)
+                        Text(reportStatusLabel(report.status), color = NexNeon, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 6.dp))
+                        Text("Confiança geral: $confidence%", color = Color.White, modifier = Modifier.padding(top = 4.dp))
                         Text(
-                            "Atual: ${report.comparedPeriod?.currentRecord ?: "-"} | Anterior: ${report.comparedPeriod?.previousRecord ?: "nao disponivel"}",
+                            "Atual: ${report.comparedPeriod?.currentRecord ?: "sem registro"} | Anterior: ${report.comparedPeriod?.previousRecord ?: "não disponível"}",
                             color = NexMuted,
                             modifier = Modifier.padding(top = 4.dp),
+                        )
+                        Text(
+                            "A IA interpreta somente dados existentes e declara limitações quando não há evidência suficiente.",
+                            color = Color(0xFF6F7782),
+                            modifier = Modifier.padding(top = 8.dp),
                         )
                     }
                     if (report.alertas.isNotEmpty()) {
@@ -1056,28 +1062,40 @@ private fun EvolutionReportDialog(
                         Text("Dados confirmados", color = Color.White, fontWeight = FontWeight.Black)
                     }
                     if (report.confirmedData.isEmpty()) {
-                        item { Text("Nenhum dado objetivo disponivel para calculo.", color = NexMuted) }
+                        item {
+                            EmptyReportBlock(
+                                title = "Sem dados objetivos",
+                                message = "Não há medidas ou registros suficientes para calcular variações com segurança.",
+                            )
+                        }
                     } else {
                         items(report.confirmedData) { item ->
-                            Text(
-                                "${item.metrica}: atual ${item.atual ?: "-"}" +
-                                    (item.absoluteVariation?.let { " | variacao $it" } ?: "") +
-                                    (item.percentVariation?.let { " ($it%)" } ?: ""),
-                                color = NexMuted,
+                            ConfirmedMetricRow(
+                                label = item.metrica,
+                                current = item.atual?.toString() ?: "--",
+                                previous = item.anterior?.toString(),
+                                variation = item.absoluteVariation?.toString(),
+                                percent = item.percentVariation?.toString(),
+                                source = item.fonte,
                             )
                         }
                     }
                     item {
-                        Text("Comparacao visual", color = Color.White, fontWeight = FontWeight.Black)
+                        Text("Comparação visual", color = Color.White, fontWeight = FontWeight.Black)
                     }
                     if (report.visualObservations.isEmpty()) {
-                        item { Text("Nao foi possivel confirmar mudanca visual com as evidencias atuais.", color = NexMuted) }
+                        item {
+                            EmptyReportBlock(
+                                title = "Sem mudança visual confirmada",
+                                message = "Não foi possível confirmar mudança visual com as evidências atuais.",
+                            )
+                        }
                     } else {
                         items(report.visualObservations) { item ->
                             Column {
                                 Text(item.texto, color = NexMuted)
                                 Text(
-                                    "Fonte: ${item.fonte ?: "-"} | confianca ${((item.confianca ?: 0.0) * 100).toInt()}%",
+                                    "Fonte: ${item.fonte ?: "-"} | confiança ${((item.confianca ?: 0.0) * 100).toInt()}%",
                                     color = Color(0xFF6F7782),
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
@@ -1085,10 +1103,10 @@ private fun EvolutionReportDialog(
                             }
                         }
                     }
-                    item { ReportSection("Limitacoes", report.limitacoes) }
-                    item { ReportSection("Orientacoes", report.recomendacoes) }
+                    item { ReportSection("Limitações", report.limitacoes, emptyMessage = "Nenhuma limitação declarada.") }
+                    item { ReportSection("Orientações", report.recomendacoes, emptyMessage = "Sem recomendações adicionais.") }
                     item {
-                        Text("Auditoria anti-alucinacao", color = Color.White, fontWeight = FontWeight.Black)
+                        Text("Auditoria anti-alucinação", color = Color.White, fontWeight = FontWeight.Black)
                         Text(
                             if (report.auditApproved) "Auditoria aprovada" else "Auditoria reprovada ou limitada",
                             color = if (report.auditApproved) NexNeon else Color(0xFFF59E0B),
@@ -1118,14 +1136,14 @@ private fun EvolutionConsentDialog(
         containerColor = Color(0xFF0B1117),
         titleContentColor = Color.White,
         textContentColor = NexMuted,
-        title = { Text(consent.copy?.title ?: "Analise de fotos corporais por IA", fontWeight = FontWeight.Black) },
+        title = { Text(consent.copy?.title ?: "Análise de fotos corporais por IA", fontWeight = FontWeight.Black) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     consent.copy?.summary
                         ?: "Usaremos suas fotos apenas para gerar comparacoes visuais conservadoras. Nao fazemos diagnostico, reconhecimento biometrico ou estimativa de percentual de gordura por imagem.",
                 )
-                Text("Voce pode solicitar exclusao dos seus dados conforme a politica de privacidade.", color = Color(0xFF6F7782))
+                Text("Você pode solicitar exclusão dos seus dados conforme a política de privacidade.", color = Color(0xFF6F7782))
             }
         },
         confirmButton = {
@@ -1142,17 +1160,60 @@ private fun EvolutionConsentDialog(
 }
 
 @Composable
-private fun ReportSection(title: String, items: List<String>) {
+private fun ConfirmedMetricRow(
+    label: String,
+    current: String,
+    previous: String?,
+    variation: String?,
+    percent: String?,
+    source: String?,
+) {
+    Column {
+        Text(label, color = Color.White, fontWeight = FontWeight.Bold)
+        Text(
+            buildString {
+                append("Atual: $current")
+                previous?.let { append(" | Anterior: $it") }
+                variation?.let { append(" | Variação: $it") }
+                percent?.let { append(" ($it%)") }
+            },
+            color = NexMuted,
+            modifier = Modifier.padding(top = 3.dp),
+        )
+        source?.takeIf { it.isNotBlank() }?.let {
+            Text("Fonte: $it", color = Color(0xFF6F7782), modifier = Modifier.padding(top = 2.dp))
+        }
+    }
+}
+
+@Composable
+private fun EmptyReportBlock(title: String, message: String) {
+    Column {
+        Text(title, color = Color.White, fontWeight = FontWeight.Bold)
+        Text(message, color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+@Composable
+private fun ReportSection(title: String, items: List<String>, emptyMessage: String = "Sem dados neste período.") {
     Column {
         Text(title, color = Color.White, fontWeight = FontWeight.Black)
         if (items.isEmpty()) {
-            Text("-", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
+            Text(emptyMessage, color = NexMuted, modifier = Modifier.padding(top = 4.dp))
         } else {
             items.forEach {
                 Text("- $it", color = NexMuted, modifier = Modifier.padding(top = 4.dp))
             }
         }
     }
+}
+
+private fun reportStatusLabel(status: String): String = when (status) {
+    "completed" -> "Relatório concluído"
+    "completed_with_limitations" -> "Relatório concluído com limitações"
+    "insufficient_data" -> "Dados insuficientes"
+    "failed" -> "Falha na geração"
+    else -> status.replace('_', ' ')
 }
 
 private fun photoTypeLabel(type: String): String = when (type) {

@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\FoodEntry;
+use App\Models\UserProfile;
+use App\Services\AI\OrchestratorService;
+use App\Services\AiCreditService;
+use App\Services\Nutrition;
 use App\Services\Nutrition\NutritionAIEngine;
 use App\Services\NutritionMealAnalysisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class NutritionDiaryController extends Controller
 {
@@ -121,6 +126,139 @@ class NutritionDiaryController extends Controller
         ]);
     }
 
+    public function suggestMeal(Request $request, OrchestratorService $orchestrator, AiCreditService $credits): JsonResponse
+    {
+        $user = $request->user();
+        $profile = UserProfile::query()->where('user_id', $user->id)->first();
+
+        if (! $credits->hasCredits($user, 'meal_suggestion')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para gerar sugestao de refeicao.',
+            ], 402);
+        }
+
+        $targetKcal = (int) ($profile?->daily_calorie_target ?: 2000);
+        $macroTargets = Nutrition::macroTargetsForDisplay($user->hasPremiumAccess(), $profile?->toArray() ?? []);
+
+        $todaySums = FoodEntry::query()
+            ->where('user_id', $user->id)
+            ->whereDate('entry_date', now()->toDateString())
+            ->selectRaw('SUM(calories) as cal, SUM(protein_g) as p, SUM(carbs_g) as c, SUM(fat_g) as f')
+            ->first();
+
+        $remaining = [
+            'remaining_kcal' => max($targetKcal - (float) ($todaySums->cal ?? 0), 0),
+            'remaining_p' => max((float) ($macroTargets['p'] ?? 0) - (float) ($todaySums->p ?? 0), 0),
+            'remaining_c' => max((float) ($macroTargets['c'] ?? 0) - (float) ($todaySums->c ?? 0), 0),
+            'remaining_f' => max((float) ($macroTargets['f'] ?? 0) - (float) ($todaySums->f ?? 0), 0),
+        ];
+
+        $prompt = implode("\n", [
+            'Sugira uma refeicao para o usuario com base no contexto nutricional abaixo.',
+            'Nao contrarie plano prescrito por nutricionista quando houver sinais de prescricao.',
+            'Responda em portugues do Brasil, com 2 ou 3 opcoes praticas e macros aproximados.',
+            'Contexto: '.json_encode([
+                'goal' => $profile?->goal ?? 'maintain',
+                'remaining' => $remaining,
+            ], JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'nutrition',
+            'type' => 'meal_suggestion',
+            'clinicId' => $user->academy_company_id,
+            'remaining' => $remaining,
+        ]);
+
+        if (($result['status'] ?? null) !== 'success') {
+            return response()->json([
+                'success' => false,
+                'error' => $result['error'] ?? 'Nao foi possivel gerar a sugestao.',
+            ], 500);
+        }
+
+        $credits->consume($user, 'meal_suggestion', ['remaining' => $remaining]);
+
+        return response()->json([
+            'data' => [
+                'suggestion' => $result['message'] ?? '',
+                'remaining' => $remaining,
+            ],
+        ]);
+    }
+
+    public function weeklyAudit(Request $request, OrchestratorService $orchestrator, AiCreditService $credits): JsonResponse
+    {
+        $user = $request->user();
+        $profile = UserProfile::query()->where('user_id', $user->id)->first();
+
+        $history = FoodEntry::query()
+            ->where('user_id', $user->id)
+            ->whereDate('entry_date', '>=', now()->subDays(7)->toDateString())
+            ->selectRaw('entry_date, SUM(calories) as cal, SUM(protein_g) as p, SUM(carbs_g) as c, SUM(fat_g) as f, GROUP_CONCAT(food_name) as foods')
+            ->groupBy('entry_date')
+            ->orderByDesc('entry_date')
+            ->get();
+
+        if ($history->count() < 2) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Ainda nao ha dados suficientes para uma auditoria semanal. Registre pelo menos 2 dias de alimentacao.',
+            ], 422);
+        }
+
+        if (! $credits->hasCredits($user, 'diet_audit')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para gerar a auditoria nutricional.',
+            ], 402);
+        }
+
+        $summary = $history->map(fn ($day) => [
+            'date' => $day->entry_date,
+            'kcal' => (int) $day->cal,
+            'protein_g' => round((float) $day->p, 1),
+            'carbs_g' => round((float) $day->c, 1),
+            'fat_g' => round((float) $day->f, 1),
+            'foods' => $day->foods,
+        ])->values()->all();
+
+        $prompt = implode("\n", [
+            'Audite os ultimos 7 dias de alimentacao do usuario.',
+            'Se os dados forem incompletos, deixe isso claro e evite conclusoes fortes.',
+            'Inclua dias registrados, media calorica, macros, pontos de atencao e recomendacoes simples.',
+            'Contexto: '.json_encode([
+                'goal' => $profile?->goal ?? 'maintain',
+                'days' => $summary,
+            ], JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $result = $orchestrator->run($user, $prompt, [
+            'intent' => 'nutrition',
+            'type' => 'weekly_audit',
+            'clinicId' => $user->academy_company_id,
+        ]);
+
+        if (($result['status'] ?? null) !== 'success') {
+            return response()->json([
+                'success' => false,
+                'error' => $result['error'] ?? 'Falha na auditoria.',
+            ], 500);
+        }
+
+        $credits->consume($user, 'diet_audit', ['days_analyzed' => $history->count()]);
+
+        return response()->json([
+            'data' => [
+                'audit' => $result['message'] ?? '',
+                'days_analyzed' => $history->count(),
+            ],
+        ]);
+    }
+
     private function validatedEntry(Request $request): array
     {
         return $request->validate([
@@ -163,5 +301,23 @@ class NutritionDiaryController extends Controller
             'carbs_g' => null,
             'fat_g' => null,
         ];
+    }
+
+    public function uploadPhoto(Request $request): JsonResponse
+    {
+        $request->validate([
+            'photo' => ['required', 'image', 'max:5120'],
+        ]);
+
+        $user = $request->user();
+        $path = $request->file('photo')->store('nutrition_photos/' . $user->id, 'public');
+
+        return response()->json([
+            'message' => 'Foto enviada com sucesso.',
+            'data' => [
+                'path' => $path,
+                'url' => Storage::disk('public')->url($path),
+            ]
+        ], 201);
     }
 }

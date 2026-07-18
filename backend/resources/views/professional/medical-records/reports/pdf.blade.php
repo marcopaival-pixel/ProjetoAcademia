@@ -18,7 +18,6 @@
         .footer { text-align: center; margin-top: 60px; font-size: 12px; color: #9ca3af; }
         .signature { margin-top: 60px; text-align: center; }
         .signature-line { width: 300px; border-top: 1px solid #000; margin: 0 auto; padding-top: 5px; }
-        .qr-code { float: right; margin-top: -100px; }
     </style>
 </head>
 <body>

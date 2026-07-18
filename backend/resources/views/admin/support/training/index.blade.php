@@ -52,12 +52,41 @@
                         <span class="text-xs font-bold text-zinc-400">{{ $lesson->title }}</span>
                     </div>
                     <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="document.getElementById('modal-edit-lesson-{{ $lesson->id }}').classList.remove('hidden')" class="text-[10px] text-zinc-600 hover:text-blue-500 font-black uppercase">Editar</button>
                          <form action="{{ route('admin.training.lessons.destroy', $lesson) }}" method="POST"
                          data-confirm-delete
                          data-confirm-title="Excluir aula"
                          data-confirm-message="Excluir esta aula? Esta ação não pode ser desfeita.">
                             @csrf @method('DELETE')
                             <button type="submit" class="text-[10px] text-zinc-600 hover:text-red-500 font-black uppercase">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div id="modal-edit-lesson-{{ $lesson->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div class="bg-zinc-900 border border-white/10 rounded-[2.5rem] w-full max-w-2xl p-10 animate-scale-up">
+                        <h3 class="text-xl font-black text-white mb-2">Editar Aula</h3>
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-8">{{ $module->title }}</p>
+
+                        <form action="{{ route('admin.training.lessons.update', $lesson) }}" method="POST" class="space-y-6">
+                            @csrf
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="col-span-2">
+                                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">TÃ­tulo da Aula</label>
+                                    <input type="text" name="title" required value="{{ old('title', $lesson->title) }}" class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-blue-500/50 transition-all outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">URL do VÃ­deo (YouTube/Vimeo)</label>
+                                    <input type="url" name="video_url" value="{{ old('video_url', $lesson->video_url) }}" class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-blue-500/50 transition-all outline-none" placeholder="https://www.youtube.com/watch?v=...">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">ConteÃºdo / DescriÃ§Ã£o</label>
+                                    <textarea name="content" rows="6" class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-blue-500/50 transition-all outline-none">{{ old('content', $lesson->content) }}</textarea>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-end gap-4 pt-4">
+                                <button type="button" onclick="document.getElementById('modal-edit-lesson-{{ $lesson->id }}').classList.add('hidden')" class="px-6 py-4 text-[10px] font-black uppercase text-zinc-500">Cancelar</button>
+                                <button type="submit" class="px-10 py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">Salvar Aula</button>
+                            </div>
                         </form>
                     </div>
                 </div>

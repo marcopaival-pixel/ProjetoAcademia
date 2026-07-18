@@ -189,6 +189,14 @@ class NutritionRepository {
         runCatching { ApiClient.api().analyzeNutritionPhoto(photoPart, mealType.formPart()).data }
     }
 
+    suspend fun suggestMeal() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().suggestMeal().data }
+    }
+
+    suspend fun weeklyAudit() = withContext(Dispatchers.IO) {
+        runCatching { ApiClient.api().weeklyAudit().data }
+    }
+
     suspend fun updateEntry(id: Int, request: br.com.nexshape.academia.data.api.CreateFoodEntryRequest): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -323,10 +331,10 @@ class EvolutionRepository {
             val api = ApiClient.api()
             val consent = runCatching { api.evolutionReportConsent().data }.getOrNull()
             if (consent?.accepted == false && !acceptConsent) {
-                throw IllegalStateException(consent.copy?.summary ?: "Aceite a analise de fotos corporais por IA para gerar o relatorio.")
+                throw IllegalStateException(consent.copy?.summary ?: "Aceite a análise de fotos corporais por IA para gerar o relatório.")
             }
 
-            onStatus?.invoke("Solicitando relatorio...")
+            onStatus?.invoke("Solicitando relatório...")
             val request = api.requestEvolutionReport(
                 EvolutionReportRequest(acceptAiBodyPhotoAnalysis = consent?.accepted != true && acceptConsent),
             ).data
@@ -339,26 +347,26 @@ class EvolutionRepository {
                         return@runCatching status.finalReport ?: api.evolutionReport().data
                     }
                     "failed" -> {
-                        throw IllegalStateException(status.failureReason ?: "Falha ao gerar relatorio de evolucao.")
+                        throw IllegalStateException(status.failureReason ?: "Falha ao gerar relatório de evolução.")
                     }
                 }
 
                 delay(2_000)
             }
 
-            throw IllegalStateException("O relatorio ainda esta sendo preparado. Tente novamente em instantes.")
+            throw IllegalStateException("O relatório ainda está sendo preparado. Tente novamente em instantes.")
         }.recoverCatching {
-            onStatus?.invoke("Carregando relatorio anterior...")
+            onStatus?.invoke("Carregando relatório anterior...")
             ApiClient.api().evolutionReport().data
         }
     }
 
     private fun reportStatusLabel(status: String): String = when (status) {
-        "pending" -> "Relatorio na fila..."
+        "pending" -> "Relatório na fila..."
         "processing" -> "Analisando fotos e metricas..."
-        "completed", "completed_with_limitations" -> "Relatorio concluido."
-        "failed" -> "Falha ao gerar relatorio."
-        else -> "Preparando relatorio..."
+        "completed", "completed_with_limitations" -> "Relatório concluído."
+        "failed" -> "Falha ao gerar relatório."
+        else -> "Preparando relatório..."
     }
 
     suspend fun uploadPhoto(

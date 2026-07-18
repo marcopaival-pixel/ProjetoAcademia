@@ -37,14 +37,20 @@
         .report-title { font-size: 24px; font-weight: 900; margin: 0; color: #09090b; text-transform: uppercase; }
         
         /* Box de Informações */
-        .user-box { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 15px; padding: 20px; margin-top: 25px; }
-        .user-table { width: 100%; border: 0; }
-        .user-table td { padding: 4px 0; border: 0; }
-        .label { color: #71717a; font-weight: 700; font-size: 8px; text-transform: uppercase; width: 90px; }
-        .value { color: #09090b; font-weight: 800; font-size: 10px; }
+        .user-box { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 15px; margin-top: 25px; padding: 16px 18px; }
+        .info-layout { width: 100%; border: 0; border-collapse: collapse; table-layout: fixed; }
+        .info-layout td { border: 0; vertical-align: middle; }
+        .info-left { width: 43%; padding-right: 18px; }
+        .info-mid { width: 31%; padding-right: 16px; }
+        .info-qr { width: 126px; text-align: center; }
+        .field { margin-bottom: 14px; }
+        .field:last-child { margin-bottom: 0; }
+        .label { color: #71717a; display: block; font-weight: 700; font-size: 8px; text-transform: uppercase; margin-bottom: 4px; }
+        .value { color: #09090b; display: block; font-weight: 800; font-size: 10px; line-height: 1.35; }
+        .document-id { font-size: 9px; word-break: break-all; }
 
         /* QR Code & Validação */
-        .qr-section { float: right; text-align: center; width: 120px; margin-top: -110px; }
+        .qr-section { text-align: center; width: 120px; }
         .qr-box { background: white; border: 1px solid #e4e4e7; padding: 10px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
         .qr-image { width: 85px; height: 85px; }
         .qr-text { font-size: 7px; color: #71717a; margin-top: 8px; text-transform: uppercase; font-weight: 800; }
@@ -103,27 +109,38 @@
             </div>
 
             <div class="user-box">
-                <table class="user-table">
+                <table class="info-layout">
                     <tr>
-                        <td class="label">Atleta/Paciente</td>
-                        <td class="value">{{ $user->name }}</td>
-                        <td class="label">Período Fiscal</td>
-                        <td class="value">{{ $rangeLabel }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Certificação</td>
-                        <td class="value">#{{ str_pad($reportRecord->document_id, 10, '0', STR_PAD_LEFT) }}</td>
-                        <td class="label">Versão</td>
-                        <td class="value">{{ $reportRecord->version }}.0.0 - Premium</td>
+                        <td class="info-left">
+                            <div class="field">
+                                <span class="label">Atleta/Paciente</span>
+                                <span class="value">{{ $user->name }}</span>
+                            </div>
+                            <div class="field">
+                                <span class="label">Certificação</span>
+                                <span class="value document-id">#{{ $reportRecord->document_id }}</span>
+                            </div>
+                        </td>
+                        <td class="info-mid">
+                            <div class="field">
+                                <span class="label">Período fiscal</span>
+                                <span class="value">{{ $rangeLabel }}</span>
+                            </div>
+                            <div class="field">
+                                <span class="label">Versão</span>
+                                <span class="value">{{ $reportRecord->version }}.0.0 - Premium</span>
+                            </div>
+                        </td>
+                        <td class="info-qr">
+                            <div class="qr-section">
+                                <div class="qr-box">
+                                    <img src="{{ $qrCode }}" class="qr-image" alt="QR Validation">
+                                </div>
+                                <div class="qr-text">Certificado NexShape</div>
+                            </div>
+                        </td>
                     </tr>
                 </table>
-            </div>
-
-            <div class="qr-section">
-                <div class="qr-box">
-                    <img src="{{ $qrCode }}" class="qr-image" alt="QR Validation">
-                </div>
-                <div class="qr-text">Certificado NexShape</div>
             </div>
         </div>
 

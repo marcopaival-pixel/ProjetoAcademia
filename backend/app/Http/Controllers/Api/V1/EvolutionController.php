@@ -13,6 +13,7 @@ use App\Services\EvolutionReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EvolutionController extends Controller
 {
@@ -92,6 +93,7 @@ class EvolutionController extends Controller
         if (!$user->hasPremiumAccess()) {
             return response()->json(['error' => ['message' => 'Funcionalidade exclusiva para membros Premium.']], 403);
         }
+        $aiCredits = app(\App\Services\AiCreditService::class);
 
         $validated = $request->validate(['date' => 'required|date']);
         $photos = EvolutionPhoto::where('user_id', $user->id)
@@ -112,6 +114,15 @@ class EvolutionController extends Controller
 
         if ($cached) {
             return response()->json(['data' => ['analysis' => $cached->analysis, 'cached' => true]]);
+        }
+
+        if (! $aiCredits->hasCredits($user, 'evolution_session_analysis')) {
+            return response()->json([
+                'error' => [
+                    'code' => 'credits_exceeded',
+                    'message' => 'Creditos de IA insuficientes para analisar esta sessao de fotos.',
+                ],
+            ], 402);
         }
 
         $result = $visionAgent->execute($user, 'Analise esta sessão de fotos corporais do mesmo dia. Retorne JSON com summary e next_recommendations. Não faça diagnóstico médico, não estime percentual de gordura e não identifique a pessoa.', [
@@ -136,6 +147,12 @@ class EvolutionController extends Controller
             'cost_usd' => $result['cost'] ?? 0,
         ]);
 
+        $aiCredits->consume($user, 'evolution_session_analysis', [
+            'source' => 'api_v1',
+            'session_date' => $validated['date'],
+            'photos_count' => $photos->count(),
+        ]);
+
         return response()->json(['data' => ['analysis' => $analysis, 'cached' => false]]);
     }
 
@@ -146,7 +163,22 @@ class EvolutionController extends Controller
             return response()->json(['error' => ['message' => 'Relatório inteligente exclusivo para membros Premium.']], 403);
         }
 
-        return response()->json(['data' => $orchestrator->generate($user)]);
+        $aiCredits = app(\App\Services\AiCreditService::class);
+        if (! $aiCredits->hasCredits($user, 'evolution_ai_report')) {
+            return response()->json([
+                'error' => [
+                    'code' => 'credits_exceeded',
+                    'message' => 'Creditos de IA insuficientes para gerar o relatorio de evolucao.',
+                ],
+            ], 402);
+        }
+
+        $report = $orchestrator->generate($user);
+        $aiCredits->consume($user, 'evolution_ai_report', [
+            'source' => 'api_v1_direct_report',
+        ]);
+
+        return response()->json(['data' => $report]);
     }
 
     public function requestReport(Request $request, EvolutionReportService $service): JsonResponse
@@ -160,7 +192,21 @@ class EvolutionController extends Controller
             'accept_ai_body_photo_analysis' => ['sometimes', 'boolean'],
         ]);
 
+        $aiCredits = app(\App\Services\AiCreditService::class);
+        if (! $aiCredits->hasCredits($user, 'evolution_ai_report')) {
+            return response()->json([
+                'error' => [
+                    'code' => 'credits_exceeded',
+                    'message' => 'Creditos de IA insuficientes para solicitar o relatorio de evolucao.',
+                ],
+            ], 402);
+        }
+
         $report = $service->createRequest($user, $request);
+        $aiCredits->consume($user, 'evolution_ai_report', [
+            'source' => 'api_v1_report_request',
+            'report_id' => $report->id,
+        ]);
 
         return response()->json([
             'data' => [
@@ -223,5 +269,34 @@ class EvolutionController extends Controller
             'media_url' => asset('storage/' . $photo->photo_path),
             'created_at' => $photo->created_at?->toIso8601String(),
         ];
+    }
+
+    public function downloadPdf(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        $report = EvolutionReport::where('user_id', $request->user()->id)->find($id);
+
+        if (! $report) {
+            return response()->json(['message' => 'Relatório de evolução não encontrado.'], 404);
+        }
+
+        if (empty($report->pdf_path)) {
+            return response()->json(['message' => 'Nenhum PDF associado a este relatório de evolução.'], 404);
+        }
+
+        $disk = config('filesystems.default', 'local');
+        if (! Storage::disk($disk)->exists($report->pdf_path)) {
+            $diskHistorico = config('pdf.historico_disk', 'local');
+            if (Storage::disk($diskHistorico)->exists($report->pdf_path)) {
+                $disk = $diskHistorico;
+            } else {
+                return response()->json(['message' => 'Arquivo PDF físico não encontrado no servidor.'], 404);
+            }
+        }
+
+        $filename = basename($report->pdf_path);
+
+        return Storage::disk($disk)->download($report->pdf_path, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 }

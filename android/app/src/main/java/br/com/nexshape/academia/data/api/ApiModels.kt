@@ -153,6 +153,7 @@ data class ProfileDto(
     @Json(name = "is_student") val isStudent: Boolean = false,
     @Json(name = "is_professional") val isProfessional: Boolean = false,
     val panels: List<String>? = null,
+    val modules: List<String>? = null,
     @Json(name = "active_patient_id") val activePatientId: Int? = null,
     @Json(name = "clinic_id") val clinicId: Int? = null,
     @Json(name = "academy_company_id") val academyCompanyId: Int? = null,
@@ -491,6 +492,26 @@ data class AnalyzeMealData(
     val confidence: Double,
     val notes: String? = null,
     val source: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class MealSuggestionData(
+    val suggestion: String,
+    val remaining: NutritionRemainingDto,
+)
+
+@JsonClass(generateAdapter = true)
+data class NutritionRemainingDto(
+    @Json(name = "remaining_kcal") val remainingKcal: Double,
+    @Json(name = "remaining_p") val remainingProteinG: Double,
+    @Json(name = "remaining_c") val remainingCarbsG: Double,
+    @Json(name = "remaining_f") val remainingFatG: Double,
+)
+
+@JsonClass(generateAdapter = true)
+data class WeeklyAuditData(
+    val audit: String,
+    @Json(name = "days_analyzed") val daysAnalyzed: Int,
 )
 
 @JsonClass(generateAdapter = true)

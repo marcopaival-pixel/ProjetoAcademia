@@ -1,6 +1,6 @@
 ﻿@extends('layouts.app')
 
-@section('title', 'NexBot AI Coach â€” Performance Elite')
+@section('title', 'NexBot IA - Coach de Performance')
 
 @section('content')
 @if(auth()->user()->hasPremiumAccess())
@@ -10,18 +10,18 @@
         <div class="space-y-3">
             <div class="flex items-center gap-3">
                 <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-inner">Rede Neural Ativa</span>
-                <span class="text-zinc-700">â€¢</span>
-                <span class="text-zinc-500 text-xs font-black italic uppercase tracking-tighter text-emerald-500/50">Performance Coach</span>
+                <span class="text-zinc-700">|</span>
+                <span class="text-zinc-500 text-xs font-black italic uppercase tracking-tighter text-emerald-500/50">Coach de Performance</span>
             </div>
             <h1 class="text-5xl font-black text-white tracking-tighter flex items-center gap-4 italic uppercase">
-                <span class="text-emerald-500">NEX</span>BOT <span class="text-zinc-700 not-italic font-light tracking-widest">AI</span>
+                <span class="text-emerald-500">NexBot</span> <span class="text-zinc-500 not-italic font-light tracking-widest">IA</span>
             </h1>
-            <p class="text-zinc-500 font-medium text-sm">Sincronizado com o seu ecossistema de Bio-Performance em tempo real.</p>
+            <p class="text-zinc-500 font-medium text-sm">Sincronizado com seus dados de treino, nutricao e evolucao.</p>
         </div>
 
         <div class="flex items-center gap-6 bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-md">
              <div class="text-right">
-                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Status de ConexÃ£o</p>
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Status de Conexao</p>
                 <div class="flex items-center gap-2 justify-end">
                     <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                     <span class="text-xs text-white font-black uppercase tracking-widest italic">Otimizado</span>
@@ -39,7 +39,7 @@
         <div class="hidden lg:flex flex-col gap-6">
             <div class="p-8 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
                 <div class="absolute -right-10 -top-10 w-24 h-24 bg-emerald-500/5 blur-3xl rounded-full"></div>
-                <p class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-6">SessÃ£o Bio-Data</p>
+                <p class="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-6">Sessao Bio-Data</p>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center group/item">
                         <span class="text-[10px] text-zinc-500 font-black uppercase group-hover:text-zinc-300 transition-colors">Objetivo</span>
@@ -58,7 +58,7 @@
                     <i data-lucide="sparkles" class="w-4 h-4 text-emerald-500"></i>
                     <p class="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em]">NexPoints Elite</p>
                 </div>
-                <p class="text-[11px] text-zinc-500 leading-relaxed italic font-medium">"O NexBot analisa o volume de treino da semana para calibrar suas sugestÃµes de recuperaÃ§Ã£o."</p>
+                <p class="text-[11px] text-zinc-500 leading-relaxed italic font-medium">"O NexBot analisa seu contexto para apoiar treino, recuperacao e evolucao."</p>
             </div>
         </div>
 
@@ -80,8 +80,8 @@
                         <i data-lucide="bot" class="w-6 h-6"></i>
                     </div>
                     <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] rounded-tl-none p-8 text-zinc-300 text-sm leading-relaxed max-w-[90%] shadow-inner relative">
-                        <p class="font-medium">ðŸ‘‹ OlÃ¡, <span class="text-white font-black">{{ explode(' ', auth()->user()->name)[0] }}</span>. Sou o <span class="text-emerald-500 font-black">NexBot</span>, seu nÃºcleo de inteligÃªncia para alta performance.</p>
-                        <p class="mt-4 opacity-70">Seus dados biomÃ©tricos e registros de treino do dia jÃ¡ foram processados. Como posso otimizar sua evoluÃ§Ã£o agora?</p>
+                        <p class="font-medium">Ola, <span class="text-white font-black">{{ explode(' ', auth()->user()->name)[0] }}</span>. Sou o <span class="text-emerald-500 font-black">NexBot</span>, seu assistente de IA para treino, nutricao e evolucao.</p>
+                        <p class="mt-4 opacity-70">Posso ajudar a interpretar seus dados, tirar duvidas e sugerir proximos passos com seguranca.</p>
                     </div>
                 </div>
 
@@ -104,14 +104,14 @@
                                         <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
                                             <i data-lucide="zap" class="w-4 h-4 text-emerald-500"></i>
                                         </div>
-                                        <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">AÃ§Ã£o Sugerida: <span x-text="actionLabel(msg.action.acao)"></span></p>
+                                        <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Acao sugerida: <span x-text="actionLabel(msg.action.acao)"></span></p>
                                     </div>
                                     <button 
                                         @click="executeAgentAction(msg)" 
                                         class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-lg shadow-emerald-500/10 active:scale-95"
                                         :disabled="msg.executed"
                                     >
-                                        <span x-text="msg.executed ? 'EXECUTADO' : 'CONFIRMAR OPERAÃ‡ÃƒO'"></span>
+                                        <span x-text="msg.executed ? 'EXECUTADO' : 'CONFIRMAR OPERACAO'"></span>
                                     </button>
                                 </div>
                             </template>
@@ -119,7 +119,7 @@
                     </div>
                 </template>
 
-                <!-- Indicador de DigitaÃ§Ã£o -->
+                <!-- Indicador de digitacao -->
                 <div class="flex gap-6" x-show="loading">
                     <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-zinc-950 flex items-center justify-center shrink-0 shadow-lg">
                         <i data-lucide="bot" class="w-6 h-6"></i>
@@ -132,9 +132,9 @@
                 </div>
             </div>
 
-            <!-- SugestÃµes de Perguntas -->
+            <!-- Sugestoes de Perguntas -->
             <div class="px-12 pb-6 flex flex-wrap gap-3">
-                <template x-for="suggestion in ['Consumo de calorias hoje?', 'AnÃ¡lise do Ãºltimo treino', 'SugestÃ£o de refeiÃ§Ã£o pÃ³s-treino']">
+                <template x-for="suggestion in ['Consumo de calorias hoje?', 'Analise do ultimo treino', 'Sugestao de refeicao pos-treino']">
                     <button @click="suggestQuestion(suggestion)" class="px-6 py-2.5 bg-zinc-900 hover:bg-emerald-500/10 border border-zinc-800 hover:border-emerald-500/30 rounded-full text-[10px] text-zinc-600 hover:text-emerald-400 transition-all font-black uppercase tracking-widest shadow-inner">
                         <span x-text="suggestion"></span>
                     </button>
@@ -162,7 +162,7 @@
         </div>
     </div>
 
-    <!-- Modal de ConfirmaÃ§Ã£o de ExclusÃ£o -->
+    <!-- Modal de Confirmacao de Exclusao -->
     <div x-show="deleteModalOpen" 
          x-cloak
          x-transition:enter="transition ease-out duration-300"
@@ -183,16 +183,16 @@
                 </div>
                 
                 <div class="space-y-3">
-                    <h3 class="text-3xl font-black text-white tracking-tighter uppercase italic">Limpar HistÃ³rico?</h3>
+                    <h3 class="text-3xl font-black text-white tracking-tighter uppercase italic">Limpar Historico?</h3>
                     <p class="text-zinc-500 text-sm leading-relaxed font-medium">
-                        Esta aÃ§Ã£o irÃ¡ limpar permanentemente todo o histÃ³rico de conversas do NexBot. Esta operaÃ§Ã£o Ã© irreversÃ­vel.
+                        Esta acao ira limpar permanentemente todo o historico de conversas do NexBot. Esta operacao e irreversivel.
                     </p>
                 </div>
                 
                 <div class="grid grid-cols-1 gap-4 pt-4">
                     <button @click="clearHistory()" 
                             class="px-8 py-5 bg-rose-500 hover:bg-rose-400 text-zinc-950 font-black rounded-3xl transition-all uppercase tracking-widest text-xs shadow-xl shadow-rose-500/20">
-                        LIMPAR HISTÃ“RICO
+                        LIMPAR HISTORICO
                     </button>
                     <button @click="deleteModalOpen = false" 
                             class="px-8 py-4 bg-zinc-950 border border-zinc-800 text-zinc-600 hover:text-white font-black rounded-3xl transition-all uppercase tracking-widest text-[10px]">
@@ -371,10 +371,10 @@ function nexBot() {
                         message: 'Concluido: ' + d.message 
                     });
                 } else {
-                    alert('Erro ao executar aÃ§Ã£o: ' + d.error);
+                    alert('Erro ao executar acao: ' + d.error);
                 }
             } catch (e) {
-                alert('Erro de conexÃ£o ao executar aÃ§Ã£o.');
+                alert('Erro de conexao ao executar acao.');
             } finally {
                 this.scrollToBottom();
                 this.$nextTick(() => { lucide.createIcons(); });
@@ -410,8 +410,8 @@ function nexBot() {
     <div class="mb-12 inline-flex items-center justify-center w-28 h-28 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 shadow-3xl shadow-emerald-500/20 transform -rotate-12">
         <i data-lucide="bot" class="w-12 h-12"></i>
     </div>
-    <h1 class="text-5xl md:text-7xl font-black text-white tracking-tighter mb-6 leading-tight uppercase italic">ConheÃ§a o <span class="text-emerald-500">NexBot AI</span></h1>
-    <p class="text-xl text-zinc-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">Eleve sua evoluÃ§Ã£o ao estado da arte com o assistente neural exclusivo para membros <span class="text-emerald-500 font-black italic uppercase">Performance Elite</span>.</p>
+    <h1 class="text-5xl md:text-7xl font-black text-white tracking-tighter mb-6 leading-tight uppercase italic">Conheca o <span class="text-emerald-500">NexBot IA</span></h1>
+    <p class="text-xl text-zinc-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">Eleve sua evolucao com o assistente de IA exclusivo para membros <span class="text-emerald-500 font-black italic uppercase">Performance Elite</span>.</p>
     <a href="{{ route('plano') }}" class="px-12 py-6 bg-emerald-500 text-zinc-950 rounded-3xl font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-emerald-500/20 hover:bg-emerald-400 transition-all active:scale-95">Ativar NexBot Coach</a>
 </div>
 @endif
