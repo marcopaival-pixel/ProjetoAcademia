@@ -27,6 +27,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if(auth()->check())
+    <meta name="session-timeout" content="{{ auth()->user()->isSuperAdmin() ? 15 : (auth()->user()->hasRole(['paciente', 'aluno']) ? 60 : 30) }}">
+    @endif
     <meta name="theme-color" content="#00ACC1">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/nexshape-icon.svg') }}">
@@ -37,6 +40,9 @@
         document.documentElement.setAttribute("data-theme", "dark");
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/sidebar-toggle.js'])
+    @if(auth()->check())
+        @vite(['resources/js/session-timeout.js'])
+    @endif
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -484,8 +490,11 @@
     @if(auth()->check())
         @include('partials.onboarding_modal')
         @include('partials.ai-credits-modal')
-        @include('partials.omnichat-widget')
+        @if(!request()->is('patient*') && !request()->routeIs('patient.*') && session('active_role') !== 'patient' && session('active_role') !== 'paciente')
+            @include('partials.omnichat-widget')
+        @endif
         @include('partials.community-post-modal')
+        <x-session-timeout-modal />
     @endif
     @include('partials.confirm-delete-modal')
     @include('partials.legal-modal')

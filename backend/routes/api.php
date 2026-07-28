@@ -29,6 +29,8 @@ use App\Http\Controllers\Api\V1\TrainingLogController;
 use App\Http\Controllers\Api\V1\TrainingPlanController;
 use App\Http\Controllers\Api\V1\WorkoutImportController;
 use App\Http\Controllers\Api\V1\WorkoutSessionController;
+use App\Http\Controllers\SessionTimeoutController;
+use App\Http\Controllers\DraftController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,7 +52,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [ProfileController::class, 'show'])->name('me');
+        Route::patch('/me', [ProfileController::class, 'update'])->name('me.update');
         Route::delete('/auth/token', [AuthTokenController::class, 'destroy'])->name('auth.token.revoke');
+
+        // Rotas de Sessão e Rascunhos
+        Route::post('/session/ping', [SessionTimeoutController::class, 'ping'])->name('session.ping');
+        Route::post('/session/renew', [SessionTimeoutController::class, 'renew'])->name('session.renew');
+        Route::post('/drafts', [DraftController::class, 'store'])->name('drafts.store');
+        Route::get('/drafts/{identifier}', [DraftController::class, 'show'])->name('drafts.show');
 
         Route::get('/training-plans', [TrainingPlanController::class, 'index'])->name('training-plans.index');
         Route::post('/training-plans', [TrainingPlanController::class, 'store'])->name('training-plans.store');
@@ -161,5 +170,33 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/messages/conversations/support', [MessageController::class, 'startSupport'])->name('messages.conversations.support');
         Route::get('/messages/conversations/{conversation}', [MessageController::class, 'show'])->name('messages.conversations.show');
         Route::post('/messages/conversations/{conversation}', [MessageController::class, 'store'])->name('messages.conversations.store');
+
+        // ==== PACIENTE API ====
+        Route::prefix('patient')->name('patient.')->group(function () {
+            
+            // Contextos e Vínculos
+            Route::get('/contexts', [\App\Http\Controllers\Api\V1\Patient\ContextController::class, 'index'])->name('contexts.index');
+            Route::post('/active-context', [\App\Http\Controllers\Api\V1\Patient\ContextController::class, 'store'])->name('contexts.store');
+            Route::get('/links', [\App\Http\Controllers\Api\V1\Patient\LinkController::class, 'index'])->name('links.index');
+
+            // Endpoints que requerem o contexto ativo (link validado via Header X-Active-Context)
+            Route::middleware('active.patient')->group(function () {
+                Route::get('/dashboard', [\App\Http\Controllers\Api\V1\Patient\DashboardController::class, 'index'])->name('dashboard');
+                
+                Route::get('/messages', [\App\Http\Controllers\Api\V1\Patient\MessageController::class, 'index'])->name('messages.index');
+                Route::post('/messages', [\App\Http\Controllers\Api\V1\Patient\MessageController::class, 'store'])->name('messages.store');
+                
+                Route::get('/medical-records', [\App\Http\Controllers\Api\V1\Patient\MedicalRecordController::class, 'index'])->name('medical-records.index');
+                Route::get('/evolution', [\App\Http\Controllers\Api\V1\Patient\EvolutionController::class, 'index'])->name('evolution.index');
+                
+                Route::prefix('agenda')->name('agenda.')->group(function () {
+                    Route::get('/appointments', [\App\Http\Controllers\Api\V1\Patient\AgendaController::class, 'index'])->name('appointments.index');
+                    Route::get('/slots', [\App\Http\Controllers\Api\V1\Patient\AgendaController::class, 'slots'])->name('slots');
+                    Route::post('/appointments', [\App\Http\Controllers\Api\V1\Patient\AgendaController::class, 'store'])->name('appointments.store');
+                });
+                
+                // Demais rotas (Avaliações, Documentos, etc.) virão aqui
+            });
+        });
     });
 });

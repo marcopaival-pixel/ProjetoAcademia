@@ -9,6 +9,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -30,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsurePasswordIsNotForced::class,
             \App\Http\Middleware\TenantMiddleware::class, // Adicionado aqui para contexto global
             \App\Http\Middleware\ProfileCompletionMiddleware::class,
-            \App\Http\Middleware\UpdateLastActivity::class,
+            \App\Http\Middleware\SessionTimeoutMiddleware::class,
             \App\Http\Middleware\EnsureHasProfessionalLink::class,
             \App\Http\Middleware\CheckRouteMenuAccess::class,
             \App\Http\Middleware\EnforcePatientReadOnly::class,
@@ -39,6 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleClinicImpersonation::class,
             \App\Http\Middleware\RepresentativeTrackingMiddleware::class,
             \App\Http\Middleware\EnsureDemoSafety::class,
+        ]);
+        $middleware->api(append: [
+            \App\Http\Middleware\SessionTimeoutMiddleware::class,
         ]);
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
@@ -51,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'patient_linked' => \App\Http\Middleware\EnsurePatientLinked::class,
             'menu.access' => \App\Http\Middleware\CheckRouteMenuAccess::class,
             'block.demo.prod' => \App\Http\Middleware\BlockDemoInProduction::class,
+            'active.patient' => \App\Http\Middleware\EnsureActivePatientContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

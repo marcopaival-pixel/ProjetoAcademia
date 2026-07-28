@@ -251,6 +251,7 @@ class User extends Authenticatable
         $role = Role::where('name', $roleName)->first();
         if ($role) {
             $this->roles()->syncWithoutDetaching([$role->id]);
+            \Illuminate\Support\Facades\Cache::forget("user_permissions_v2_{$this->id}");
         }
     }
 
@@ -259,6 +260,7 @@ class User extends Authenticatable
         $role = Role::where('name', $roleName)->first();
         if ($role) {
             $this->roles()->detach($role->id);
+            \Illuminate\Support\Facades\Cache::forget("user_permissions_v2_{$this->id}");
         }
     }
 
@@ -422,6 +424,11 @@ class User extends Authenticatable
     public function isAdministrator(): bool
     {
         return (bool) $this->is_admin;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_admin === true;
     }
 
     public function isProfessional(): bool
