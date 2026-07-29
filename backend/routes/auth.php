@@ -11,13 +11,13 @@ use App\Http\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Route;
 
 // Rotas de Verificação de E-mail (Públicas com Token)
+Route::get('/confirmar-email/sucesso', [VerificationController::class, 'success'])->middleware('auth')->name('email-verification.success');
+Route::get('/confirmar-email/erro', [VerificationController::class, 'failed'])->name('email-verification.failed');
+
 Route::withoutMiddleware([EnsureEmailIsVerified::class])->group(function () {
     Route::get('/confirmar-email/{token}', [VerificationController::class, 'verify'])->name('verification.verify');
     Route::get('/verify-email/{token}', [VerificationController::class, 'verify']);
 });
-
-Route::get('/confirmar-email/sucesso', [VerificationController::class, 'success'])->middleware('auth')->name('email-verification.success');
-Route::get('/confirmar-email/erro', [VerificationController::class, 'failed'])->name('email-verification.failed');
 
 // Rotas para Visitantes (Guest)
 Route::middleware('guest')->group(function () {

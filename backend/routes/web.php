@@ -156,10 +156,11 @@ Route::middleware('throttle:marketing-tracking')->group(function () {
 Route::middleware(['auth'])->group(function () {
 
 
-    // Dashboard e Busca
-    // Dashboard e Busca
+    // Dashboard (Global Router)
+    Route::match(['get', 'post'], '/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+
+    // Busca e Funcionalidades do Portal
     Route::middleware('permission:portal.access')->group(function () {
-        Route::match(['get', 'post'], '/dashboard', [DashboardController::class, 'show'])->name('dashboard');
         Route::get('/global-search', [SearchController::class, 'search'])->name('global.search');
         Route::get('/global-search/suggestions', [SearchController::class, 'suggestions'])->name('global.search.suggestions');
         Route::get('/muscles/search', [App\Http\Controllers\TrainingPlanController::class, 'searchMuscles'])->name('muscles.search');
@@ -257,6 +258,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [BodyAnalysisController::class, 'index'])->name('index');
         Route::post('/store', [BodyAnalysisController::class, 'store'])->name('store');
         Route::get('/{analysis}', [BodyAnalysisController::class, 'show'])->name('show')->whereNumber('analysis');
+        Route::patch('/{analysis}/share', [BodyAnalysisController::class, 'updateShareOptions'])->name('share')->whereNumber('analysis');
         Route::get('/compare', [BodyAnalysisController::class, 'compare'])->name('compare');
     });
 

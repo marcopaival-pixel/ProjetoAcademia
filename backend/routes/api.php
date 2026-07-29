@@ -53,7 +53,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [ProfileController::class, 'show'])->name('me');
         Route::patch('/me', [ProfileController::class, 'update'])->name('me.update');
+        Route::post('/onboarding/profile', [\App\Http\Controllers\Api\V1\OnboardingController::class, 'storeProfile'])->name('onboarding.profile');
         Route::delete('/auth/token', [AuthTokenController::class, 'destroy'])->name('auth.token.revoke');
+        Route::post('/auth/token/refresh', [AuthTokenController::class, 'refresh'])->name('auth.token.refresh');
 
         // Rotas de Sessão e Rascunhos
         Route::post('/session/ping', [SessionTimeoutController::class, 'ping'])->name('session.ping');
@@ -96,6 +98,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('/nutrition/goal', [NutritionGoalController::class, 'show'])->name('nutrition.goal.show');
         Route::put('/nutrition/goal', [NutritionGoalController::class, 'update'])->name('nutrition.goal.update');
+        Route::post('/nutrition/goal', [NutritionGoalController::class, 'update'])->name('nutrition.goal.store');
 
         Route::get('/nutrition/meal-templates', [MealTemplateController::class, 'index'])->name('nutrition.meal-templates.index');
         Route::post('/nutrition/meal-templates', [MealTemplateController::class, 'store'])->name('nutrition.meal-templates.store');
@@ -123,6 +126,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/evolution-report', [EvolutionController::class, 'report'])->name('evolution-report.show');
         Route::get('/evolution-reports/consent', [EvolutionController::class, 'reportConsent'])->name('evolution-reports.consent');
         Route::post('/evolution-reports', [EvolutionController::class, 'requestReport'])->name('evolution-reports.store');
+        Route::get('/evolution-reports/{report}', [EvolutionController::class, 'showReport'])->name('evolution-reports.show');
         Route::get('/evolution/{report}/comparison', [EvolutionController::class, 'compare'])->name('evolution.compare');
         Route::post('/evolution/batch-analyze', [EvolutionController::class, 'batchAnalyze'])->name('evolution.batch-analyze');
         Route::get('/student/evolution-reports/{id}/pdf', [EvolutionController::class, 'downloadPdf'])->name('student.evolution-reports.pdf');
@@ -146,7 +150,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('/student/professionals', [ProfessionalConnectionController::class, 'index'])->name('student.professionals.index');
         Route::post('/student/professionals/request', [ProfessionalConnectionController::class, 'requestConnection'])->name('student.professionals.request');
+        Route::post('/student/professionals/requests', [ProfessionalConnectionController::class, 'requestConnection'])->name('student.professionals.requests.store');
+        Route::get('/student/professionals/requests', [ProfessionalConnectionController::class, 'studentRequests'])->name('student.professionals.requests.index');
         Route::patch('/student/professionals/{professionalPatient}/permissions', [ProfessionalConnectionController::class, 'updatePermissions'])->name('student.professionals.permissions');
+        Route::post('/student/professionals/links/{professionalPatient}/permissions', [ProfessionalConnectionController::class, 'updatePermissions'])->name('student.professionals.links.permissions');
+        Route::post('/student/professionals/links/{professionalPatient}/revoke', [ProfessionalConnectionController::class, 'revokeLink'])->name('student.professionals.links.revoke');
         Route::get('/student/professionals/search', [AgendaController::class, 'professionals'])->name('student.professionals.search');
         Route::get('/student/appointments', [AgendaController::class, 'index'])->name('student.appointments.index');
         Route::get('/student/appointments/slots', [AgendaController::class, 'slots'])->name('student.appointments.slots');
@@ -155,6 +163,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('/student/medical-documents', [MedicalDocumentController::class, 'index'])->name('medical-documents.index');
         Route::get('/student/medical-documents/{type}/{id}/download', [MedicalDocumentController::class, 'download'])->name('medical-documents.download');
+        Route::get('/student/medical-documents/reports/{id}/download', [MedicalDocumentController::class, 'downloadReport'])->whereNumber('id')->name('medical-documents.reports.download');
+        Route::get('/student/medical-documents/prescriptions/{id}/download', [MedicalDocumentController::class, 'downloadPrescription'])->whereNumber('id')->name('medical-documents.prescriptions.download');
+        Route::get('/student/medical-documents/certificates/{id}/download', [MedicalDocumentController::class, 'downloadCertificate'])->whereNumber('id')->name('medical-documents.certificates.download');
         Route::get('/evolution/history', [EvolutionController::class, 'history'])->name('evolution.history');
         Route::get('/student/gamification', [GamificationController::class, 'show'])->name('student.gamification.show');
         Route::get('/student/active-rest', [ActiveRestController::class, 'index'])->name('student.active-rest.index');
@@ -170,6 +181,27 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/messages/conversations/support', [MessageController::class, 'startSupport'])->name('messages.conversations.support');
         Route::get('/messages/conversations/{conversation}', [MessageController::class, 'show'])->name('messages.conversations.show');
         Route::post('/messages/conversations/{conversation}', [MessageController::class, 'store'])->name('messages.conversations.store');
+
+        Route::middleware('api.professional')->group(function () {
+            Route::get('/dashboard', \App\Http\Controllers\Api\V1\Professional\DashboardController::class)->name('professional.dashboard');
+            Route::get('/professional/patients', [\App\Http\Controllers\Api\V1\Professional\PatientController::class, 'index'])->name('professional.patients.index');
+            Route::get('/professional/patients/{id}', [\App\Http\Controllers\Api\V1\Professional\PatientController::class, 'show'])->whereNumber('id')->name('professional.patients.show');
+            Route::get('/professional/patients/requests', [\App\Http\Controllers\Api\V1\Professional\PatientController::class, 'requests'])->name('professional.patients.requests.index');
+            Route::post('/professional/patients/requests/{id}/approve', [\App\Http\Controllers\Api\V1\Professional\PatientController::class, 'approveRequest'])->whereNumber('id')->name('professional.patients.requests.approve');
+            Route::post('/professional/patients/requests/{id}/reject', [\App\Http\Controllers\Api\V1\Professional\PatientController::class, 'rejectRequest'])->whereNumber('id')->name('professional.patients.requests.reject');
+            Route::get('/professional/appointments', [\App\Http\Controllers\Api\V1\Professional\AppointmentController::class, 'index'])->name('professional.appointments.index');
+            Route::patch('/professional/appointments/{id}/status', [\App\Http\Controllers\Api\V1\Professional\AppointmentController::class, 'updateStatus'])->whereNumber('id')->name('professional.appointments.status');
+            Route::get('/professional/alerts', [\App\Http\Controllers\Api\V1\Professional\AlertController::class, 'index'])->name('professional.alerts.index');
+            Route::patch('/professional/alerts/{id}/read', [\App\Http\Controllers\Api\V1\Professional\AlertController::class, 'markRead'])->whereNumber('id')->name('professional.alerts.read');
+            Route::get('/professional/protocols', [\App\Http\Controllers\Api\V1\Professional\ProtocolController::class, 'index'])->name('professional.protocols.index');
+            Route::get('/professional/patients/{patientId}/training-plans', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'trainingPlans'])->whereNumber('patientId')->name('professional.patients.training-plans.index');
+            Route::get('/professional/patients/{patientId}/training-plans/{planId}', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'trainingPlanDetail'])->whereNumber(['patientId', 'planId'])->name('professional.patients.training-plans.show');
+            Route::post('/professional/patients/{patientId}/training-plans', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'createTrainingPlan'])->whereNumber('patientId')->name('professional.patients.training-plans.store');
+            Route::get('/professional/patients/{patientId}/assessments', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'assessments'])->whereNumber('patientId')->name('professional.patients.assessments.index');
+            Route::post('/professional/patients/{patientId}/assessments', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'storeAssessment'])->whereNumber('patientId')->name('professional.patients.assessments.store');
+            Route::get('/professional/patients/{patientId}/evolution-photos', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'evolutionPhotos'])->whereNumber('patientId')->name('professional.patients.evolution-photos.index');
+            Route::post('/professional/patients/{patientId}/evolution-photos', [\App\Http\Controllers\Api\V1\Professional\PatientCareController::class, 'uploadEvolutionPhoto'])->whereNumber('patientId')->name('professional.patients.evolution-photos.store');
+        });
 
         // ==== PACIENTE API ====
         Route::prefix('patient')->name('patient.')->group(function () {
@@ -187,7 +219,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::post('/messages', [\App\Http\Controllers\Api\V1\Patient\MessageController::class, 'store'])->name('messages.store');
                 
                 Route::get('/medical-records', [\App\Http\Controllers\Api\V1\Patient\MedicalRecordController::class, 'index'])->name('medical-records.index');
+                Route::get('/medical-records/{type}/{id}/download', [\App\Http\Controllers\Api\V1\Patient\MedicalRecordController::class, 'download'])->name('medical-records.download');
                 Route::get('/evolution', [\App\Http\Controllers\Api\V1\Patient\EvolutionController::class, 'index'])->name('evolution.index');
+                Route::get('/assessments', [\App\Http\Controllers\Api\V1\Patient\AssessmentController::class, 'index'])->name('assessments.index');
                 
                 Route::prefix('agenda')->name('agenda.')->group(function () {
                     Route::get('/appointments', [\App\Http\Controllers\Api\V1\Patient\AgendaController::class, 'index'])->name('appointments.index');

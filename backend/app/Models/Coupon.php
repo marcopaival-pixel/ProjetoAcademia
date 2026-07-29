@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Coupon extends Model
 {
@@ -72,14 +73,22 @@ class Coupon extends Model
         return max(0, $price - $this->calculateDiscount($price));
     }
 
-    public function markAsUsed(int $userId): void
+    public function markAsUsed(int $userId): bool
     {
-        $this->increment('used_count');
-        
-        // Optional: track details in a coupon_usages table
-        // For now, just mark the coupon as inactive if it reached max uses
-        if ($this->max_uses > 0 && $this->used_count >= $this->max_uses) {
-            $this->update(['status' => 'expired']);
-        }
+        return DB::transaction(function () use ($userId) {
+            $coupon = self::query()->whereKey($this->getKey())->lockForUpdate()->first();
+
+            if (! $coupon || ! $coupon->isValidForUser($userId)) {
+                return false;
+            }
+
+            $coupon->increment('used_count');
+
+            if ($coupon->max_uses > 0 && $coupon->used_count >= $coupon->max_uses) {
+                $coupon->update(['status' => 'expired']);
+            }
+
+            return true;
+        });
     }
 }

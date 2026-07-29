@@ -7,7 +7,9 @@
      x-data="{ 
         step: 0, 
         tipo_acesso: '{{ old('tipo_acesso', '') }}',
-        professions: @js(\App\Models\Profession::all())
+        professions: @js(\App\Models\Profession::all()),
+        especialidades: @js(\App\Models\Especialidade::active()->get()),
+        selectedProfessionId: '{{ old('profession_id', '') }}'
      }"
      x-init="if(tipo_acesso) step = 1; lucide.createIcons();">
     
@@ -47,8 +49,8 @@
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-[1.5rem] bg-zinc-900 border border-zinc-800 mb-4 shadow-3xl backdrop-blur-xl transform -rotate-6">
                     <i data-lucide="shield-check" class="w-8 h-8 text-emerald-500"></i>
                 </div>
-                <h2 class="text-3xl font-black text-white tracking-tighter uppercase italic">Selecione seu <span class="text-emerald-500">Protocolo</span></h2>
-                <p class="text-zinc-600 font-black uppercase tracking-[0.4em] text-[8px]">Defina seu papel no ecossistema de alta performance</p>
+                <h2 class="text-3xl font-black text-white tracking-tighter uppercase italic">Selecione seu <span class="text-emerald-500">Perfil</span></h2>
+                <p class="text-zinc-600 font-black uppercase tracking-[0.2em] text-[8px] leading-relaxed">Escolha como deseja utilizar o NexShape. Você poderá adicionar novos perfis posteriormente.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -67,7 +69,7 @@
                     </div>
 
                     <p class="text-xs text-zinc-500 leading-relaxed font-medium group-hover:text-zinc-300 transition-colors italic mb-8">
-                        Treine com precisão, acompanhe sua evolução e receba protocolos de elite.
+                        Treinos, nutrição, evolução física e acompanhamento de desempenho.
                     </p>
 
                     <ul class="space-y-4 mt-auto border-t border-zinc-800/50 pt-6">
@@ -101,7 +103,7 @@
                     </div>
 
                     <p class="text-xs text-zinc-500 leading-relaxed font-medium group-hover:text-zinc-300 transition-colors italic mb-8">
-                        Gerencie atletas e prescreva protocolos avançados com autoridade técnica.
+                        Personal Trainer, Nutricionista, Médico Esportivo, Fisioterapeuta e outros profissionais.
                     </p>
 
                     <ul class="space-y-4 mt-auto border-t border-zinc-800/50 pt-6">
@@ -131,25 +133,29 @@
 
                     <div class="space-y-2 mb-6">
                         <span class="text-[9px] text-emerald-500 font-black uppercase tracking-[0.3em]">Institutional Control</span>
-                        <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Sou <span class="text-emerald-500">Clínica</span></h3>
+                        <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Sou <span class="text-emerald-500">Gestor</span></h3>
                     </div>
 
                     <p class="text-xs text-zinc-500 leading-relaxed font-medium group-hover:text-zinc-300 transition-colors italic mb-8">
-                        Centralize o comando da sua unidade e maximize a performance operacional.
+                        Administre academias, clínicas, estúdios ou centros esportivos, gerenciando profissionais, alunos, indicadores e operações.
                     </p>
 
                     <ul class="space-y-4 mt-auto border-t border-zinc-800/50 pt-6">
                         <li class="flex items-center gap-3 text-[10px] text-zinc-600 font-bold uppercase tracking-wider group-hover:text-zinc-400">
                             <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            Gestão Multi-Unidades
+                            Gestão de unidades
                         </li>
                         <li class="flex items-center gap-3 text-[10px] text-zinc-600 font-bold uppercase tracking-wider group-hover:text-zinc-400">
                             <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            BI & Relatórios Centrais
+                            Gestão de profissionais
                         </li>
                         <li class="flex items-center gap-3 text-[10px] text-zinc-600 font-bold uppercase tracking-wider group-hover:text-zinc-400">
                             <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            Controle de Especialistas
+                            BI e relatórios
+                        </li>
+                        <li class="flex items-center gap-3 text-[10px] text-zinc-600 font-bold uppercase tracking-wider group-hover:text-zinc-400">
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
+                            Financeiro e administração
                         </li>
                     </ul>
                 </button>
@@ -265,7 +271,7 @@
                         </div>
 
                         <div class="space-y-3 group">
-                            <label for="phone" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Telefone Sinc</label>
+                            <label for="phone" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Telefone/WhatsApp</label>
                             <input id="phone" name="phone" type="text" value="{{ old('phone') }}"
                                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
                                 placeholder="(00) 00000-0000"
@@ -295,11 +301,11 @@
                          class="space-y-8 pt-10 border-t border-zinc-800 mt-4 bg-emerald-500/[0.02] -mx-16 px-16 pb-10">
                         <div class="space-y-3 group">
                             <label class="text-[10px] text-emerald-500 font-black uppercase tracking-[0.3em] ml-2 transition-colors">Especialidade Principal *</label>
-                            <select name="profession_id" :required="tipo_acesso === 'professional'"
+                            <select name="profession_id" x-model="selectedProfessionId" :required="tipo_acesso === 'professional'"
                                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all shadow-inner">
                                 <option value="" class="bg-zinc-950">SELECIONE SUA PROFISSÃO...</option>
                                 <template x-for="p in professions" :key="p.id">
-                                    <option :value="p.id" x-text="p.name.toUpperCase()" class="bg-zinc-950" :selected="p.id == {{ old('profession_id', 0) }}"></option>
+                                    <option :value="p.id" x-text="p.name.toUpperCase()" class="bg-zinc-950"></option>
                                 </template>
                             </select>
                         </div>
@@ -311,11 +317,17 @@
                                     class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
                                     placeholder="EX: CREF/CRM 0000">
                             </div>
-                            <div class="space-y-3 group">
-                                <label class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Sub-Especialidade</label>
-                                <input name="specialty" type="text" value="{{ old('specialty') }}"
-                                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
-                                    placeholder="EX: MUSCULAÇÃO / NUTRI ESP">
+                        </div>
+                        
+                        <div class="space-y-3 group" x-show="selectedProfessionId">
+                            <label class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 transition-colors">Áreas de Atuação (Opcional)</label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <template x-for="esp in especialidades.filter(e => e.profession_id == selectedProfessionId)" :key="esp.id">
+                                    <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/50 border border-zinc-800 cursor-pointer hover:border-emerald-500/50 transition-all text-left">
+                                        <input type="checkbox" name="specialties[]" :value="esp.id" class="rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500/50">
+                                        <span class="text-[10px] font-bold text-zinc-400" x-text="esp.nome"></span>
+                                    </label>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -326,8 +338,8 @@
                             <label for="password" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Senha</label>
                             <div class="relative">
                                 <input id="password" name="password" type="password" required minlength="8"
-                                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 pr-12 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
-                                    placeholder="••••••••">
+                                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 pr-12 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-700 shadow-inner"
+                                    placeholder="Ex: NexShape@2026">
                                 <button type="button" onclick="toggleRegisterPass('password', 'eye1')" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-emerald-500 transition-colors">
                                     <i data-lucide="eye" id="eye1" class="w-4 h-4"></i>
                                 </button>
@@ -338,8 +350,8 @@
                             <label for="password_confirmation" class="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] ml-2 group-focus-within:text-emerald-500 transition-colors">Confirmar senha</label>
                             <div class="relative">
                                 <input id="password_confirmation" name="password_confirmation" type="password" required minlength="8"
-                                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 pr-12 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-900 shadow-inner"
-                                    placeholder="••••••••">
+                                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-5 py-3 pr-12 text-white text-sm font-bold outline-none focus:border-emerald-500/50 transition-all placeholder:text-zinc-700 shadow-inner"
+                                    placeholder="Ex: NexShape@2026">
                                 <button type="button" onclick="toggleRegisterPass('password_confirmation', 'eye2')" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-emerald-500 transition-colors">
                                     <i data-lucide="eye" id="eye2" class="w-4 h-4"></i>
                                 </button>

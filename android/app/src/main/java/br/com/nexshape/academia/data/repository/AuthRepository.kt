@@ -23,7 +23,7 @@ class AuthRepository(
     suspend fun login(email: String, password: String): Result<ProfileDto> = withContext(Dispatchers.IO) {
         runCatching {
             val response = ApiClient.api().login(LoginRequest(email.trim(), password))
-            tokenStore.saveToken(response.accessToken, response.user.email, response.user.name)
+            tokenStore.saveToken(response.accessToken, response.user.email, response.user.name, response.expiresAt)
             val profile = ApiClient.api().profile().data
 
             val availableRoles = resolveAvailableRoles(profile)
@@ -42,7 +42,7 @@ class AuthRepository(
     suspend fun loginWithGoogle(idToken: String): Result<ProfileDto> = withContext(Dispatchers.IO) {
         runCatching {
             val response = ApiClient.api().googleLogin(GoogleLoginRequest(idToken))
-            tokenStore.saveToken(response.accessToken, response.user.email, response.user.name)
+            tokenStore.saveToken(response.accessToken, response.user.email, response.user.name, response.expiresAt)
             val profile = ApiClient.api().profile().data
 
             val availableRoles = resolveAvailableRoles(profile)

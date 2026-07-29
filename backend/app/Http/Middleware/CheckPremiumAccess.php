@@ -18,7 +18,7 @@ class CheckPremiumAccess
         $user = $request->user();
 
         // Segurança: Admin e Staff Clínico sempre passam
-        if ($user && ($user->isAdministrator() || $user->hasRole(['professional', 'manager', 'instructor', 'supervisor', 'receptionist']))) {
+        if ($user && ($user->isAdministrator() || $user->hasRole(['professional', 'manager', 'instructor', 'supervisor', 'receptionist', 'paciente']))) {
             return $next($request);
         }
 

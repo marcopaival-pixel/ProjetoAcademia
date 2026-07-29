@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Patient;
 use App\Models\User;
+use App\Support\PatientAccessGuard;
 use App\Support\TenantContext;
 
 class PatientPolicy
@@ -17,7 +18,10 @@ class PatientPolicy
     public function view(User $user, Patient $patient): bool
     {
         if ($user->isAdministrator()) {
-            return true;
+            $subjectUser = $patient->user;
+
+            return $subjectUser !== null
+                && PatientAccessGuard::adminCanAccessUserData($user, $subjectUser);
         }
 
         $companyId = TenantContext::getCompanyId() ?? $user->academy_company_id;

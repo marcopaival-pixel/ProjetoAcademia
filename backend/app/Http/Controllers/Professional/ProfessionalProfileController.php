@@ -20,7 +20,9 @@ class ProfessionalProfileController extends Controller
             'profession_id' => 1, // Default or find first
         ]);
 
-        return view('professional.profile.edit', compact('user', 'profile'));
+        $especialidades = \App\Models\Especialidade::active()->get();
+
+        return view('professional.profile.edit', compact('user', 'profile', 'especialidades'));
     }
 
     public function update(Request $request)
@@ -65,8 +67,15 @@ class ProfessionalProfileController extends Controller
             // Perfil Público
             'about' => 'nullable|string',
             'offered_services' => 'nullable|string',
-            'specialty' => 'nullable|string',
+            'specialties' => 'nullable|array',
+            'specialties.*' => 'exists:especialidades,id',
             'professional_photo' => 'nullable|image|max:2048',
+            
+            // Certificações
+            'certifications' => 'nullable|array',
+            'certifications.*.name' => 'required_with:certifications|string|max:255',
+            'certifications.*.year' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
+            'certifications.*.credential_url' => 'nullable|url|max:255',
             
             // Atendimento
             'service_types' => 'nullable|array',
@@ -109,7 +118,7 @@ class ProfessionalProfileController extends Controller
         // Prepare data for profile update
         $profileData = $request->only([
             'experience_years', 'education', 'registration_number', 'council', 
-            'registration_uf', 'about', 'offered_services', 'specialty',
+            'registration_uf', 'about', 'offered_services',
             'service_types', 'consultation_price', 'appointment_duration', 
             'appointment_interval', 'company_name', 'clinic_address', 
             'clinic_city', 'clinic_state', 'work_days', 'work_start_time', 
@@ -123,6 +132,23 @@ class ProfessionalProfileController extends Controller
         }
 
         $profile->update($profileData);
+
+        // Sync Specialties
+        $profile->specialties()->sync($request->input('specialties', []));
+
+        // Manage Certifications
+        $profile->certifications()->delete();
+        if ($request->has('certifications')) {
+            foreach ($request->input('certifications') as $cert) {
+                if (!empty($cert['name'])) {
+                    $profile->certifications()->create([
+                        'name' => $cert['name'],
+                        'year' => $cert['year'] ?? null,
+                        'credential_url' => $cert['credential_url'] ?? null,
+                    ]);
+                }
+            }
+        }
 
         // Sync Agenda (ProfessionalAvailability table)
         if (isset($profileData['work_days']) && $profileData['work_start_time'] && $profileData['work_end_time']) {

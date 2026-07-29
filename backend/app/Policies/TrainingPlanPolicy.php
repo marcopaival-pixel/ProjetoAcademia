@@ -4,10 +4,16 @@ namespace App\Policies;
 
 use App\Models\TrainingPlan;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Support\PatientAccessGuard;
 
 class TrainingPlanPolicy
 {
+    private function adminCanAccessPlan(User $admin, TrainingPlan $trainingPlan): bool
+    {
+        $owner = User::find($trainingPlan->user_id);
+
+        return $owner !== null && PatientAccessGuard::adminCanAccessUserData($admin, $owner);
+    }
     /**
      * Determine whether the user can view any models.
      */
@@ -21,11 +27,12 @@ class TrainingPlanPolicy
      */
     public function view(User $user, TrainingPlan $trainingPlan): bool
     {
-        if ($user->isAdministrator()) return true;
+        if ($user->isAdministrator()) {
+            return $this->adminCanAccessPlan($user, $trainingPlan);
+        }
         if ($user->id === $trainingPlan->user_id) return true;
         if ($user->id === $trainingPlan->creator_id) return true;
 
-        // Verifica se o usuário é o profissional do dono do plano
         return $user->patients()->where('users.id', $trainingPlan->user_id)->exists();
     }
 
@@ -42,7 +49,9 @@ class TrainingPlanPolicy
      */
     public function update(User $user, TrainingPlan $trainingPlan): bool
     {
-        if ($user->isAdministrator()) return true;
+        if ($user->isAdministrator()) {
+            return $this->adminCanAccessPlan($user, $trainingPlan);
+        }
         if ($user->id === $trainingPlan->user_id) return true;
         if ($user->id === $trainingPlan->creator_id) return true;
 
@@ -54,7 +63,9 @@ class TrainingPlanPolicy
      */
     public function delete(User $user, TrainingPlan $trainingPlan): bool
     {
-        if ($user->isAdministrator()) return true;
+        if ($user->isAdministrator()) {
+            return $this->adminCanAccessPlan($user, $trainingPlan);
+        }
         if ($user->id === $trainingPlan->user_id) return true;
         if ($user->id === $trainingPlan->creator_id) return true;
 

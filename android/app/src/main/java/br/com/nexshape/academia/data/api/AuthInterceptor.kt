@@ -31,6 +31,12 @@ class AuthInterceptor(
 
         tokenStore.getActiveContextId()?.let { contextId ->
             requestBuilder.header("X-Active-Context-ID", contextId)
+            requestBuilder.header("X-Active-Context", contextId)
+        }
+
+        sessionPreferences?.getActivePatientContext()?.let { contextId ->
+            requestBuilder.header("X-Active-Context", contextId.toString())
+            requestBuilder.header("X-Active-Context-ID", contextId.toString())
         }
 
         return chain.proceed(requestBuilder.build())

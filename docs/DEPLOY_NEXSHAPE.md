@@ -77,7 +77,12 @@ CACHE_STORE=database       # ou redis
 SESSION_ENCRYPT=true
 SESSION_SECURE_COOKIE=true
 
-# Redis (quando disponível)
+SANCTUM_TOKEN_EXPIRATION_DAYS=30
+
+# Redis (recomendado em produção — cache, sessão e filas)
+QUEUE_CONNECTION=redis
+SESSION_DRIVER=redis
+CACHE_STORE=redis
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 ```
@@ -213,6 +218,7 @@ php artisan backup:list
 | Verificação | Como |
 |-------------|------|
 | App viva | `GET /health` e `GET /up` |
+| API smoke | `php artisan app:api:smoke --url=https://beta.seudominio.com.br` |
 | Erros HTTP | Tabela `system_errors`, `storage/logs/laravel.log` |
 | Pulse | `/pulse` (restringir por IP/auth em produção) |
 | Filas | `php artisan queue:monitor` ou tamanho da tabela `jobs` |

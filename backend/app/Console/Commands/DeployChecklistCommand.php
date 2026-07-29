@@ -58,6 +58,10 @@ class DeployChecklistCommand extends Command
             $this->line('  [ok] Migrations aplicadas');
         }
 
+        if ($targetEnv === 'production') {
+            $this->validateProductionEnvironment($failed);
+        }
+
         if ($targetEnv === 'production' && Schema::hasTable('deploy_releases')) {
             $approved = DeployRelease::query()
                 ->where('environment', DeployRelease::ENV_HOMOLOG)
@@ -94,5 +98,62 @@ class DeployChecklistCommand extends Command
         $this->info('Checklist automático OK.');
 
         return self::SUCCESS;
+    }
+
+    private function validateProductionEnvironment(int &$failed): void
+    {
+        $this->newLine();
+        $this->info('=== Validação ambiente produção ===');
+
+        if (config('app.env') !== 'production') {
+            $this->warn('  [!] APP_ENV não é production (valor atual: '.config('app.env').')');
+            $failed++;
+        } else {
+            $this->line('  [ok] APP_ENV=production');
+        }
+
+        if (config('app.debug')) {
+            $this->error('  [falha] APP_DEBUG=true em produção');
+            $failed++;
+        } else {
+            $this->line('  [ok] APP_DEBUG=false');
+        }
+
+        foreach ([
+            'MP_WEBHOOK_SECRET' => 'Mercado Pago webhook',
+            'OMNI_WEBHOOK_SECRET' => 'Omnichannel webhook',
+        ] as $envKey => $label) {
+            if (blank(env($envKey))) {
+                $this->error("  [falha] {$envKey} ausente ({$label})");
+                $failed++;
+            } else {
+                $this->line("  [ok] {$envKey} definido");
+            }
+        }
+
+        if (! config('session.encrypt')) {
+            $this->warn('  [!] SESSION_ENCRYPT=false — recomendado true em HTTPS');
+            $failed++;
+        } else {
+            $this->line('  [ok] SESSION_ENCRYPT=true');
+        }
+
+        $redisDrivers = ['redis'];
+        foreach ([
+            'CACHE_STORE' => config('cache.default'),
+            'SESSION_DRIVER' => config('session.driver'),
+            'QUEUE_CONNECTION' => config('queue.default'),
+        ] as $label => $driver) {
+            if (! in_array($driver, $redisDrivers, true)) {
+                $this->warn("  [!] {$label}={$driver} — recomendado redis em produção");
+            } else {
+                $this->line("  [ok] {$label} usa redis");
+            }
+        }
+
+        if (in_array(config('logging.default'), ['stack', 'single'], true) && config('logging.channels.single.level') === 'debug') {
+            $this->warn('  [!] LOG_LEVEL=debug em produção');
+            $failed++;
+        }
     }
 }

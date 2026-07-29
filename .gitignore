@@ -56,6 +56,15 @@ brain/
 **/scratch/
 /_archive/
 
+# Scripts de debug local (não publicar)
+backend/scratch_debug.php
+backend/test_api.php
+backend/test_api_auth.php
+backend/test_view.html
+
+# Artefatos locais de debug
+backend/route_tmp.json
+
 # Build artifacts
 *.apk
 *.aab

@@ -40,4 +40,14 @@ class DompdfPdfService
 
         return $output;
     }
+
+    public function generate(string $html, string $filename): \Symfony\Component\HttpFoundation\Response
+    {
+        $binary = $this->render($html);
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
 }

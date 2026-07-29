@@ -147,5 +147,10 @@ class AppServiceProvider extends ServiceProvider
         // Achievements Observers
         \App\Models\WaterEntry::observe(\App\Observers\WaterEntryObserver::class);
         \App\Models\ExerciseEntry::observe(\App\Observers\ExerciseEntryObserver::class);
+
+        $auditObserver = \App\Observers\CriticalModelAuditObserver::class;
+        \App\Models\User::observe($auditObserver);
+        \App\Models\Payment::observe($auditObserver);
+        \App\Models\Clinic::observe($auditObserver);
     }
 }

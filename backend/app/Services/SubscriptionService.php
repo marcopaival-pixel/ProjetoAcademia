@@ -6,7 +6,9 @@ use App\Models\Subscription;
 use App\Models\SubscriptionLog;
 use App\Models\Plan;
 use App\Models\FinancialLog;
+use App\Models\Payment;
 use App\Services\FinancialLogService;
+use App\Services\Payment\PaymentProcessor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -248,6 +250,26 @@ class SubscriptionService
         $this->logEvent($subscription, 'refund', $subscription->status, $subscription->status, $amount, [
             'type' => $full ? 'full' : 'partial'
         ]);
+
+        $payment = Payment::query()
+            ->where('subscription_id', $subscription->id)
+            ->where('status', '!=', 'refunded')
+            ->latest('id')
+            ->first();
+
+        if (! $payment && $subscription->gateway_id && $subscription->gateway_type) {
+            app(PaymentProcessor::class)->processRefund([
+                'gateway' => $subscription->gateway_type,
+                'gateway_id' => (string) $subscription->gateway_id,
+                'reason' => 'subscription_refund',
+            ]);
+        } elseif ($payment) {
+            app(PaymentProcessor::class)->processRefund([
+                'gateway' => $payment->gateway,
+                'gateway_id' => $payment->gateway_id,
+                'reason' => 'subscription_refund',
+            ]);
+        }
 
         return $subscription;
     }

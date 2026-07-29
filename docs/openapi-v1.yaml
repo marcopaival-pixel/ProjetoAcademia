@@ -2,7 +2,14 @@ openapi: 3.0.3
 info:
   title: NexShape API v1
   version: 1.0.0
-  description: API REST autenticada com Laravel Sanctum (Bearer token).
+  description: |
+    API REST autenticada com Laravel Sanctum (Bearer token).
+
+    Tokens expiram após `SANCTUM_TOKEN_EXPIRATION_DAYS` (padrão 30 dias).
+    Renovação: `POST /auth/token/refresh` (revoga o token anterior).
+
+    **Contexto paciente:** endpoints em `/patient/*` (exceto contextos/links) exigem header
+    `X-Active-Context` ou `X-Active-Context-ID` com o ID numérico do vínculo (`professional_patients.id`).
 servers:
   - url: '{baseUrl}/api/v1'
     variables:
@@ -12,12 +19,23 @@ paths:
   /health:
     get:
       summary: Health check público
+      tags: [Sistema]
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  service: { type: string }
+                  timestamp: { type: string, format: date-time }
+
   /auth/token:
     post:
       summary: Emitir token de acesso
+      tags: [Autenticação]
       requestBody:
         required: true
         content:
@@ -27,30 +45,79 @@ paths:
               required: [email, password]
               properties:
                 email: { type: string, format: email }
-                password: { type: string }
-                device_name: { type: string }
+                password: { type: string, format: password }
+                device_name: { type: string, maxLength: 255 }
       responses:
         '200':
           description: Token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '422':
+          description: Credenciais inválidas
+        '429':
+          description: Rate limit (10/min por IP)
+    delete:
+      summary: Revogar token atual
+      tags: [Autenticação]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Token revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Token revogado. }
+
+  /auth/token/refresh:
+    post:
+      summary: Renovar token (revoga o anterior)
+      tags: [Autenticação]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device_name: { type: string, maxLength: 255 }
+      responses:
+        '200':
+          description: Novo token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Token inválido ou expirado
+
   /me:
     get:
       summary: Perfil do utilizador autenticado
+      tags: [Perfil]
       security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: Perfil
         '401':
           description: Não autenticado
+
   /training-plans:
     get:
       summary: Listar planos de treino do utilizador
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: Lista de planos
+
   /training-plans/{id}:
     get:
       summary: Detalhe do plano de treino
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       parameters:
         - name: id
@@ -62,16 +129,20 @@ paths:
           description: Plano com exercícios
         '403':
           description: Bloqueado por limite do plano
+
   /payments/status:
     get:
       summary: Estado dos gateways de pagamento (sem segredos)
+      tags: [Pagamentos]
       security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: Gateways e métodos disponíveis
+
   /nutrition/diary:
     get:
       summary: Diário alimentar por data
+      tags: [Nutrição]
       security: [{ bearerAuth: [] }]
       parameters:
         - name: date
@@ -80,9 +151,11 @@ paths:
       responses:
         '200':
           description: Entradas e totais do dia
+
   /workout-sessions:
     get:
       summary: Listar sessões de treino (RPE)
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       parameters:
         - name: limit
@@ -93,6 +166,7 @@ paths:
           description: Lista de sessões
     post:
       summary: Registar ou atualizar sessão por data
+      tags: [Treino]
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -109,9 +183,352 @@ paths:
       responses:
         '201':
           description: Sessão gravada
+
+  /evolution-reports/{report}:
+    get:
+      summary: Detalhe de relatório de evolução
+      tags: [Evolução]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: report
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Relatório
+        '403':
+          description: Sem acesso ao relatório
+        '404':
+          description: Relatório não encontrado
+
+  /patient/contexts:
+    get:
+      summary: Listar contextos de vínculo paciente-profissional
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Contextos ativos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientContext'
+
+  /patient/links:
+    get:
+      summary: Listar vínculos paciente-profissional
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Vínculos ativos (status Sim)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientLink'
+
+  /patient/active-context:
+    post:
+      summary: Confirmar contexto ativo (validação do vínculo)
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [context_id]
+              properties:
+                context_id: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Contexto confirmado
+        '404':
+          description: Vínculo inexistente ou inativo
+
+  /patient/dashboard:
+    get:
+      summary: Dashboard do paciente no contexto ativo
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Resumo (peso, próxima consulta, plano ativo)
+        '400':
+          description: Header de contexto ausente (MISSING_CONTEXT)
+        '403':
+          description: Vínculo inválido (INVALID_CONTEXT)
+
+  /patient/messages:
+    get:
+      summary: Mensagens com o profissional do contexto
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Lista de mensagens
+    post:
+      summary: Enviar mensagem ao profissional
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string }
+      responses:
+        '201':
+          description: Mensagem enviada
+
+  /patient/medical-records:
+    get:
+      summary: Documentos e registos médicos partilhados
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Lista de documentos
+
+  /patient/medical-records/{type}/{id}/download:
+    get:
+      summary: Download autenticado de documento (PDF)
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [report, prescription, certificate]
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Ficheiro PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Documento não encontrado
+
+  /patient/evolution:
+    get:
+      summary: Evolução corporal no contexto ativo
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Dados de evolução
+
+  /patient/assessments:
+    get:
+      summary: Avaliações físicas aprovadas no contexto
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Lista de avaliações
+
+  /patient/agenda/appointments:
+    get:
+      summary: Consultas agendadas
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Lista de consultas
+    post:
+      summary: Agendar consulta
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '201':
+          description: Consulta criada
+
+  /patient/agenda/slots:
+    get:
+      summary: Horários disponíveis para agendamento
+      tags: [Paciente]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ActivePatientContext'
+      responses:
+        '200':
+          description: Slots disponíveis
+
+  /onboarding/profile:
+    post:
+      summary: Completar perfil inicial (app mobile)
+      tags: [Onboarding]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [birth_date, phone, cpf, sex, height_cm, current_weight_kg, goal, activity_level, accepted_terms]
+              properties:
+                birth_date: { type: string, format: date }
+                phone: { type: string }
+                cpf: { type: string }
+                sex: { type: string }
+                height_cm: { type: integer }
+                current_weight_kg: { type: number }
+                goal: { type: string }
+                activity_level: { type: string }
+                accepted_terms: { type: boolean }
+      responses:
+        '200':
+          description: Onboarding concluído
+
+  /dashboard:
+    get:
+      summary: Dashboard profissional (métricas e agenda)
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Métricas e consultas
+        '403':
+          description: Acesso restrito a profissionais
+
+  /professional/patients:
+    get:
+      summary: Pacientes vinculados
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista de pacientes
+
+  /professional/patients/requests:
+    get:
+      summary: Solicitações de vínculo pendentes
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Solicitações
+
+  /professional/patients/requests/{id}/approve:
+    post:
+      summary: Aprovar solicitação de vínculo
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Vínculo aprovado
+
+  /professional/appointments:
+    get:
+      summary: Agenda do profissional
+      tags: [Profissional]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Consultas
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: Sanctum
+
+  parameters:
+    ActivePatientContext:
+      name: X-Active-Context
+      in: header
+      required: true
+      description: ID do vínculo (`professional_patients.id`). Alternativa: `X-Active-Context-ID`.
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    TokenResponse:
+      type: object
+      required: [token_type, access_token, expires_at, user]
+      properties:
+        token_type:
+          type: string
+          example: Bearer
+        access_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+          description: ISO-8601 (ATOM)
+        user:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string, format: email }
+
+    PatientContext:
+      type: object
+      properties:
+        id: { type: integer }
+        context_id: { type: integer }
+        professional_id: { type: integer }
+        professional_name: { type: string, nullable: true }
+        label: { type: string }
+        type: { type: string, example: clinic }
+
+    PatientLink:
+      type: object
+      properties:
+        id: { type: integer }
+        professional_id: { type: integer }
+        professional_name: { type: string, nullable: true }
+        status: { type: string, example: Sim }
+        linked_at: { type: string, format: date, nullable: true }

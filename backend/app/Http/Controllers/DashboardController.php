@@ -46,6 +46,13 @@ class DashboardController extends Controller
             return redirect()->route('patient.unified.dashboard');
         }
 
+        if (!$user->hasPermission('portal.access')) {
+            if ($user->onboarding_status === 'pending') {
+                return redirect()->route('onboarding.welcome');
+            }
+            abort(403, 'Acesso não autorizado para esta funcionalidade.');
+        }
+
         $uid = (int) $user->id;
         $isPremium = $user->hasPremiumAccess();
         $today = now()->format('Y-m-d');

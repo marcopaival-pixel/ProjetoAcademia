@@ -25,9 +25,8 @@ Especificação OpenAPI: [openapi-v1.yaml](./openapi-v1.yaml)
 | GET | `/health` | Não | Estado do serviço |
 
 | POST | `/auth/token` | Não | Emite token (email + password) |
-
+| POST | `/auth/token/refresh` | Bearer | Renova token (revoga o anterior) |
 | GET | `/me` | Bearer | Perfil do utilizador autenticado |
-
 | DELETE | `/auth/token` | Bearer | Revoga o token atual |
 
 | GET | `/training-plans` | Bearer | Lista planos do utilizador |
@@ -41,6 +40,51 @@ Especificação OpenAPI: [openapi-v1.yaml](./openapi-v1.yaml)
 | GET | `/workout-sessions` | Bearer | Sessões de treino (RPE) |
 
 | POST | `/workout-sessions` | Bearer | Registar/atualizar sessão por data |
+
+### API Paciente (app mobile)
+
+Requer Bearer. Endpoints abaixo (exceto contextos/links) exigem header **`X-Active-Context`** ou **`X-Active-Context-ID`** com o ID do vínculo (`professional_patients.id`, status `Sim`).
+
+| Método | Path | Contexto | Descrição |
+|--------|------|----------|-----------|
+| GET | `/patient/contexts` | Não | Contextos de vínculo ativos |
+| GET | `/patient/links` | Não | Lista vínculos paciente-profissional |
+| POST | `/patient/active-context` | Não | Valida `context_id` do vínculo |
+| GET | `/patient/dashboard` | Sim | Resumo (peso, consulta, plano) |
+| GET/POST | `/patient/messages` | Sim | Mensagens com o profissional |
+| GET | `/patient/medical-records` | Sim | Documentos partilhados |
+| GET | `/patient/medical-records/{type}/{id}/download` | Sim | PDF (`report`, `prescription`, `certificate`) |
+| GET | `/patient/assessments` | Sim | Avaliações físicas aprovadas |
+| GET | `/patient/evolution` | Sim | Evolução corporal |
+| GET/POST | `/patient/agenda/appointments` | Sim | Consultas |
+| GET | `/patient/agenda/slots` | Sim | Horários disponíveis |
+
+### API Profissional (app mobile)
+
+Requer Bearer + role profissional (`api.professional`).
+
+| Método | Path | Descrição |
+|--------|------|-----------|
+| GET | `/dashboard` | Métricas, consultas do dia |
+| GET | `/professional/patients` | Lista pacientes vinculados |
+| GET | `/professional/patients/{id}` | Detalhe do paciente |
+| GET | `/professional/patients/requests` | Solicitações pendentes |
+| POST | `/professional/patients/requests/{id}/approve` | Aprovar vínculo |
+| POST | `/professional/patients/requests/{id}/reject` | Rejeitar vínculo |
+| GET | `/professional/appointments` | Agenda |
+| PATCH | `/professional/appointments/{id}/status` | Atualizar status |
+| GET | `/professional/alerts` | Alertas NexSense |
+| PATCH | `/professional/alerts/{id}/read` | Marcar alerta lido |
+| GET | `/professional/protocols` | Protocolos da clínica |
+| GET/POST | `/professional/patients/{id}/training-plans` | Planos do paciente |
+| GET/POST | `/professional/patients/{id}/assessments` | Avaliações |
+| GET/POST | `/professional/patients/{id}/evolution-photos` | Fotos de evolução |
+
+### Onboarding mobile
+
+| Método | Path | Descrição |
+|--------|------|-----------|
+| POST | `/onboarding/profile` | Completa perfil inicial (Android) |
 
 
 
@@ -70,7 +114,42 @@ Especificação OpenAPI: [openapi-v1.yaml](./openapi-v1.yaml)
 
 **Rate limit:** 10 pedidos/minuto por IP.
 
+**Resposta:** inclui `expires_at` (ISO-8601). TTL padrão: 30 dias (`SANCTUM_TOKEN_EXPIRATION_DAYS`).
 
+## POST /auth/token/refresh
+
+Renova o token atual (Bearer obrigatório). O token anterior é revogado.
+
+**Body (JSON):**
+
+```json
+{
+  "device_name": "app-mobile"
+}
+```
+
+**Resposta:** mesmo formato de `POST /auth/token`.
+
+## Comissões (scheduler)
+
+```bash
+php artisan commissions:release-available
+php artisan commissions:cleanup-orphans --dry-run
+```
+
+Agendados em `routes/console.php` (hourly / daily).
+
+## DELETE /auth/token
+
+Revoga o token Bearer atual.
+
+## Smoke test (homologação)
+
+```bash
+php artisan app:api:smoke --url=https://beta.seudominio.com.br
+```
+
+Opcional (auth + paciente): variáveis `SMOKE_TEST_EMAIL` e `SMOKE_TEST_PASSWORD` no `.env`, ou flags `--email` / `--password`. Com vínculo ativo, valida também `/patient/links` e `/patient/dashboard`.
 
 ## GET /nutrition/diary
 
@@ -132,7 +211,7 @@ composer phpstan
 
 
 
-CI: `.github/workflows/laravel-tests.yml`, `.github/workflows/deploy-nexshape.yml`.
+CI: `.github/workflows/backend-ci.yml`, `.github/workflows/android-ci.yml`.
 
 ## Matriz de Controle de Acesso (ACL) - Perfis & Endpoints
 

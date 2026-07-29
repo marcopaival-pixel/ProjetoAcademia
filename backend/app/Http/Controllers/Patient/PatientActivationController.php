@@ -64,7 +64,9 @@ class PatientActivationController extends Controller
             'sex' => 'required|in:M,F',
             'height_cm' => 'required|integer|min:50|max:250',
             'weight_kg' => 'required|numeric|min:20|max:500',
+            'cep' => 'required|string|max:20',
             'address' => 'required|string|max:255',
+            'neighborhood' => 'required|string|max:255',
             'city' => 'required|string|max:100',
             'state' => 'required|string|size:2',
             'has_disease' => 'required|boolean',
@@ -79,9 +81,19 @@ class PatientActivationController extends Controller
             'goal' => 'required|string',
             'emergency_contact_name' => 'required|string|max:255',
             'emergency_contact_phone' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
             'terms' => 'accepted',
             'truth_confirmation' => 'accepted',
+        ], [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
         ]);
 
         // Verificação de segurança: CPF deve bater com o cadastrado (normalizado)
@@ -108,7 +120,9 @@ class PatientActivationController extends Controller
                 'birth_date' => $request->birth_date,
                 'sex' => $request->sex,
                 'height_cm' => $request->height_cm,
+                'cep' => $request->cep,
                 'address' => $request->address,
+                'neighborhood' => $request->neighborhood,
                 'city' => $request->city,
                 'state' => $request->state,
                 'has_disease' => $request->has_disease,
@@ -174,7 +188,9 @@ class PatientActivationController extends Controller
             'sex' => 'required|in:M,F',
             'height_cm' => 'required|integer|min:50|max:250',
             'weight_kg' => 'required|numeric|min:20|max:500',
+            'cep' => 'required|string|max:20',
             'address' => 'required|string|max:255',
+            'neighborhood' => 'required|string|max:255',
             'city' => 'required|string|max:100',
             'state' => 'required|string|size:2',
             'has_disease' => 'required|boolean',
@@ -195,10 +211,20 @@ class PatientActivationController extends Controller
 
         // Se o usuário não tiver senha definida (ex: vindo de login social), exige senha
         if (!$patient->password_hash) {
-            $rules['password'] = 'required|string|min:8|confirmed';
+            $rules['password'] = [
+                'required', 
+                'string', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ];
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
+        ]);
 
         // Verificação de segurança: CPF deve bater se já estiver cadastrado
         $inputCpf = \App\Support\Cpf::normalize($request->cpf);
@@ -229,7 +255,9 @@ class PatientActivationController extends Controller
                 'birth_date' => $request->birth_date,
                 'sex' => $request->sex,
                 'height_cm' => $request->height_cm,
+                'cep' => $request->cep,
                 'address' => $request->address,
+                'neighborhood' => $request->neighborhood,
                 'city' => $request->city,
                 'state' => $request->state,
                 'has_disease' => $request->has_disease,

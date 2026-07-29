@@ -25,6 +25,12 @@ class Especialidade extends Model
         return $this->belongsTo(Profession::class);
     }
 
+    public function professionalProfiles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(ProfessionalProfile::class, 'especialidade_professional_profile')
+                    ->withTimestamps();
+    }
+
     /**
      * Scope a query to only include active specialties.
      */

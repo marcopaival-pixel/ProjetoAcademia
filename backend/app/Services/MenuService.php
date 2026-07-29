@@ -272,14 +272,16 @@ class MenuService
         if (($user->hasRole('paciente') && (!$activeRole || $activeRole === 'paciente')) || ($isAdmin && $activeRole === 'paciente')) {
             $groups[] = [
                 'id' => 'patient',
-                'label' => 'Painel do Paciente',
+                'label' => 'Meu Painel',
                 'icon' => 'user-minus',
                 'items' => $this->prepareItems($user, [
-                    ['name' => 'patient_dashboard', 'label' => 'Visão Geral', 'route' => 'patient.unified.dashboard', 'icon' => 'user-round'],
-                    ['name' => 'patient_records', 'label' => 'Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'file-text'],
-                    ['name' => 'patient_exams', 'label' => 'Exames & Docs', 'route' => 'patient.documents', 'icon' => 'file-input'],
+                    ['name' => 'patient_dashboard', 'label' => 'Início', 'route' => 'patient.unified.dashboard', 'icon' => 'home'],
+                    ['name' => 'patient_records', 'label' => 'Meu Prontuário', 'route' => 'patient.medical-records.index', 'icon' => 'file-text'],
+                    ['name' => 'patient_exams', 'label' => 'Exames', 'route' => 'patient.documents', 'icon' => 'file-input'],
                     ['name' => 'patient_appointments', 'label' => 'Consultas', 'route' => 'patient.agenda', 'icon' => 'calendar-check'],
-                    ['name' => 'access-logs', 'label' => 'Logs de Acesso (LGPD)', 'route' => 'patient.access-logs', 'icon' => 'shield-check', 'premium' => true],
+                    ['name' => 'patient_prescriptions', 'label' => 'Prescrições', 'route' => 'patient.prescriptions', 'icon' => 'pill'],
+                    ['name' => 'patient_evolution', 'label' => 'Minha Evolução', 'route' => 'patient.evolution', 'icon' => 'trending-up'],
+                    ['name' => 'patient_photos', 'label' => 'Fotos Clínicas', 'route' => 'body-analysis.index', 'icon' => 'camera'],
                 ], $isPremium),
             ];
         }
@@ -300,12 +302,13 @@ class MenuService
         // 7. Atendimento & Ajuda
         $groups[] = [
             'id' => 'support',
-            'label' => 'Suporte e Ajuda',
+            'label' => 'Suporte',
             'icon' => 'help-circle',
             'items' => $this->prepareItems($user, [
-                ['name' => 'support_tech', 'label' => 'Suporte', 'route' => 'support.tickets.index', 'icon' => 'life-buoy'],
-                ['name' => 'kb_index', 'label' => 'Ajuda', 'route' => 'kb.index', 'icon' => 'book-open'],
+                ['name' => 'kb_index', 'label' => 'Central de Ajuda', 'route' => 'kb.index', 'icon' => 'help-circle'],
+                ['name' => 'support_tech', 'label' => 'Falar com a Clínica', 'route' => 'support.tickets.index', 'icon' => 'message-square'],
                 ['name' => 'legal_terms', 'label' => 'Privacidade', 'route' => 'legal.terms', 'icon' => 'shield'],
+                ['name' => 'settings', 'label' => 'Configurações', 'route' => 'profile', 'icon' => 'settings'], // fallback route
             ], $isPremium),
         ];
 

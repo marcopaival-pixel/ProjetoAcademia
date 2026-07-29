@@ -39,14 +39,14 @@ Route::middleware([
     // Portal do Paciente (Somente Leitura)
     Route::get('/portal', [PortalController::class, 'index'])->name('portal');
     Route::get('/plans', [PortalController::class, 'plans'])->name('plans.index');
-    Route::get('/treatment-plan', [PortalController::class, 'treatmentPlan'])->name('treatment-plan')->middleware('premium');
-    Route::get('/evolution', [PortalController::class, 'evolution'])->name('evolution')->middleware('premium');
-    Route::get('/prescriptions', [PortalController::class, 'prescriptions'])->name('prescriptions')->middleware('premium');
-    Route::get('/documents', [PortalController::class, 'documents'])->name('documents')->middleware('premium');
+    Route::get('/treatment-plan', [PortalController::class, 'treatmentPlan'])->name('treatment-plan');
+    Route::get('/evolution', [PortalController::class, 'evolution'])->name('evolution');
+    Route::get('/prescriptions', [PortalController::class, 'prescriptions'])->name('prescriptions');
+    Route::get('/documents', [PortalController::class, 'documents'])->name('documents');
     Route::get('/agenda', [PortalController::class, 'agenda'])->name('agenda');
-    Route::get('/messages', [PortalController::class, 'messages'])->name('messages')->middleware('premium');
+    Route::get('/messages', [PortalController::class, 'messages'])->name('messages');
     
-    Route::prefix('medical-records')->name('medical-records.')->middleware('premium')->group(function() {
+    Route::prefix('medical-records')->name('medical-records.')->group(function() {
         Route::get('/', [PortalController::class, 'medicalRecords'])->name('index');
         Route::get('/evolutions', [PortalController::class, 'medicalEvolutions'])->name('evolutions');
         Route::get('/reports', [PortalController::class, 'medicalReports'])->name('reports');
@@ -57,8 +57,8 @@ Route::middleware([
         Route::get('/certificates/{certificate}/download', [PortalController::class, 'downloadCertificate'])->name('certificates.download');
     });
 
-    Route::get('/export-laudo', [PortalController::class, 'exportLaudo'])->name('export-laudo')->middleware('premium');
-    Route::get('/access-logs', [PortalController::class, 'accessLogs'])->name('access-logs')->middleware('premium');
+    Route::get('/export-laudo', [PortalController::class, 'exportLaudo'])->name('export-laudo');
+    Route::get('/access-logs', [PortalController::class, 'accessLogs'])->name('access-logs');
 
     // Encontrar Profissionais
     Route::prefix('professionals')->name('professionals.')->group(function () {

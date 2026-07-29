@@ -151,18 +151,17 @@
                                 @endphp
 
                                 @if($showLocked)
-                                    <div class="flex items-center gap-2">
-                                        <i data-lucide="lock" class="w-3 h-3 text-zinc-500"></i>
-                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-zinc-950 border border-amber-500/30">
-                                            <i data-lucide="crown" class="w-2.5 h-2.5 fill-current"></i>
-                                            <span class="text-[7px] font-black uppercase tracking-widest">VIP</span>
+                                    <div class="flex items-center gap-2" title="Faça upgrade para visualizar.">
+                                        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
+                                            <i data-lucide="lock" class="w-2.5 h-2.5"></i>
+                                            <span class="text-[7px] font-black uppercase tracking-widest">Premium</span>
                                         </div>
                                     </div>
                                 @endif
                                 @if(!$showLocked && $showPremium)
-                                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
+                                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500" title="Recurso Premium">
                                         <i data-lucide="crown" class="w-2.5 h-2.5 fill-current"></i>
-                                        <span class="text-[7px] font-black uppercase tracking-widest">VIP</span>
+                                        <span class="text-[7px] font-black uppercase tracking-widest">Premium</span>
                                     </div>
                                 @endif
                                 @if(!$showLocked && !$showPremium && $badgeValue)

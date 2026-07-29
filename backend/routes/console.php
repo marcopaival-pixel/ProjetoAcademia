@@ -27,5 +27,6 @@ Schedule::command('evolution:prune-reports --days=180 --force')->weeklyOn(1, '03
 Schedule::command('evolution:prune-photos --days=730 --force')->monthlyOn(1, '04:00');
 
 // System Health Heartbeat
-Schedule::command('pulse:check')->everyMinute();
+Schedule::command('commissions:release-available')->hourly();
+Schedule::command('commissions:cleanup-orphans')->dailyAt('04:15');
 Schedule::command('pulse:work')->everyMinute(); // Garante que o Pulse processe dados se não houver worker dedicado

@@ -135,15 +135,25 @@ class VerificationController extends Controller
         $generic = 'Se existir uma conta pendente de confirmação para este e-mail, enviámos um novo link.';
 
         if (! $user || $user->isAdministrator() || $user->isEmailVerified()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => $generic]);
+            }
             return back()->withInput($request->only('email'))->with('status', $generic);
         }
 
         if (! $this->verificationService->sendVerificationEmail($user)) {
+            $err = 'Limite de reenvios atingido. Tente novamente em até uma hora.';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $err], 429);
+            }
             return back()
                 ->withInput($request->only('email'))
-                ->withErrors(['email' => 'Limite de reenvios atingido. Tente novamente em até uma hora.']);
+                ->withErrors(['email' => $err]);
         }
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $generic]);
+        }
         return back()->withInput($request->only('email'))->with('status', $generic);
     }
 }

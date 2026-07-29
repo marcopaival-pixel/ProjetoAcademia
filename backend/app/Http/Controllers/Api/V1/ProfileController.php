@@ -34,4 +34,22 @@ class ProfileController extends Controller
             ],
         ]);
     }
+
+    public function update(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'water_target_ml' => ['nullable', 'integer'],
+            'is_water_target_auto' => ['nullable', 'boolean'],
+            'goal' => ['nullable', 'string', 'max:100'],
+            'activity_level' => ['nullable', 'string', 'max:50'],
+            'climate' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $user = $request->user();
+        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
+
+        $profile->update($validated);
+
+        return $this->show($request);
+    }
 }

@@ -1302,6 +1302,89 @@ data class InternalMessageCreatedData(
 )
 
 @JsonClass(generateAdapter = true)
+data class PatientMessagesData(
+    @Json(name = "conversation_id") val conversationId: Int,
+    val data: List<InternalMessageDto>,
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientMessageCreatedData(
+    val message: String,
+    val data: InternalMessageDto,
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientDocumentDto(
+    val id: Int,
+    val title: String,
+    val date: String?,
+    val description: String?,
+    @Json(name = "has_pdf") val hasPdf: Boolean? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientLinkDto(
+    val id: Int,
+    @Json(name = "context_id") val contextId: Int? = null,
+    @Json(name = "professional_id") val professionalId: Int? = null,
+    @Json(name = "professional_name") val professionalName: String? = null,
+    val label: String? = null,
+    val type: String? = null,
+    val status: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientMedicalRecordsData(
+    val reports: List<PatientDocumentDto>,
+    val prescriptions: List<PatientDocumentDto>,
+    val certificates: List<PatientDocumentDto>,
+)
+
+@JsonClass(generateAdapter = true)
+data class EvolutionAssessmentDto(
+    val id: Int,
+    @Json(name = "assessment_date") val assessmentDate: String?,
+    @Json(name = "weight_kg") val weightKg: Double?,
+    @Json(name = "bf_percent") val bfPercent: Double?,
+    @Json(name = "delta_weight") val deltaWeight: Double?,
+    @Json(name = "delta_bf") val deltaBf: Double?,
+)
+
+@JsonClass(generateAdapter = true)
+data class EvolutionChartDataDto(
+    val dates: List<String>,
+    val weight: List<Double>,
+    val bf: List<Double>,
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientEvolutionData(
+    val assessments: List<EvolutionAssessmentDto>,
+    val latest: EvolutionAssessmentDto?,
+    @Json(name = "chart_data") val chartData: EvolutionChartDataDto,
+)
+
+
+
+@JsonClass(generateAdapter = true)
+data class PatientAgendaData(
+    val appointments: List<AppointmentDto>
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientDashboardSummaryDto(
+    @Json(name = "weight_kg") val weightKg: Double?,
+    @Json(name = "next_appointment") val nextAppointment: String?,
+    @Json(name = "active_plan") val activePlan: String?,
+    @Json(name = "unread_messages") val unreadMessages: Int
+)
+
+@JsonClass(generateAdapter = true)
+data class PatientDashboardData(
+    val summary: PatientDashboardSummaryDto
+)
+
+@JsonClass(generateAdapter = true)
 data class SupportConversationData(
     val conversation: ConversationDto,
 )

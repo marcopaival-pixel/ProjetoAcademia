@@ -48,7 +48,7 @@
             <div class="space-y-3">
                 <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Senha</label>
                 <input type="password" name="password" x-model="password" required
-                    placeholder="••••••••"
+                    placeholder="Ex: NexShape@2026"
                     class="w-full input-premium">
                 
                 <!-- Força da Senha -->
@@ -62,7 +62,7 @@
             <div class="space-y-3">
                 <label class="block text-sm font-bold text-zinc-500 uppercase tracking-widest ml-1">Confirmar Senha</label>
                 <input type="password" name="password_confirmation" x-model="confirm" required
-                    placeholder="••••••••"
+                    placeholder="Ex: NexShape@2026"
                     class="w-full input-premium"
                     :class="password !== confirm && confirm !== '' ? 'border-red-500/50' : ''">
                 <p x-show="password !== confirm && confirm !== ''" class="text-[10px] text-red-400 px-1 mt-2">As senhas não coincidem.</p>

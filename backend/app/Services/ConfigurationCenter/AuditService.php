@@ -7,11 +7,16 @@ use App\Models\RecordVersion;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Schema;
 
 class AuditService
 {
     public static function log($model, string $action, array $oldValues = null, array $newValues = null)
     {
+        if (! Schema::hasTable('audit_logs')) {
+            return null;
+        }
+
         return AuditLog::create([
             'user_id' => Auth::id(),
             'clinic_id' => TenantContext::get() ?? Auth::user()?->clinic_id,

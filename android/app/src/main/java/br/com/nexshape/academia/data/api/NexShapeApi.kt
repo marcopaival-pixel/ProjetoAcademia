@@ -32,7 +32,7 @@ interface NexShapeApi {
     @POST("onboarding/profile")
     suspend fun completeOnboarding(@Body body: OnboardingProfileRequest): ApiSuccessResponse<OnboardingProfileResponse>
 
-    @POST("auth/refresh")
+    @POST("auth/token/refresh")
     suspend fun refresh(@Body body: RefreshRequest = RefreshRequest()): AuthTokenResponse
 
     @DELETE("auth/token")
@@ -451,6 +451,39 @@ interface NexShapeApi {
     @GET("student/medical-documents/certificates/{id}/download")
     suspend fun downloadCertificatePdf(@Path("id") id: Int): okhttp3.ResponseBody
 
+    // --- API Paciente (Novo App Unificado) ---
+    @GET("patient/dashboard")
+    suspend fun getPatientDashboard(): ApiSuccessResponse<PatientDashboardData>
+
+    @GET("patient/messages")
+    suspend fun getPatientMessages(): ApiSuccessResponse<PatientMessagesData>
+
+    @POST("patient/messages")
+    suspend fun sendPatientMessage(@Body request: SendInternalMessageRequest): ApiSuccessResponse<PatientMessageCreatedData>
+
+    @GET("patient/medical-records")
+    suspend fun getPatientMedicalRecords(): ApiSuccessResponse<PatientMedicalRecordsData>
+
+    @Streaming
+    @GET("patient/medical-records/{type}/{id}/download")
+    suspend fun downloadPatientMedicalRecord(
+        @Path("type") type: String,
+        @Path("id") id: Int,
+    ): okhttp3.ResponseBody
+
+    @GET("patient/links")
+    suspend fun getPatientLinks(): ApiSuccessResponse<List<PatientLinkDto>>
+
+    @GET("patient/contexts")
+    suspend fun getPatientContexts(): ApiSuccessResponse<List<PatientLinkDto>>
+
+    @GET("patient/evolution")
+    suspend fun getPatientEvolution(): ApiSuccessResponse<PatientEvolutionData>
+
+    @GET("patient/agenda/appointments")
+    suspend fun getPatientAppointments(): ApiSuccessResponse<PatientAgendaData>
+
+    // --- Endpoints Adicionais (Gamificação / Exercícios) ---
     @GET("student/gamification")
     suspend fun studentGamification(): ApiSuccessResponse<GamificationData>
 

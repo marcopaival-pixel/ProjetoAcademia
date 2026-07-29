@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ApiAuthGuard;
+use App\Support\ApiTokenIssuer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,24 +29,31 @@ class AuthTokenController extends Controller
             ]);
         }
 
-        if ($user->status === 'inactive' || $user->status === 'blocked') {
-            throw ValidationException::withMessages([
-                'email' => ['Conta inativa ou bloqueada.'],
-            ]);
-        }
+        ApiAuthGuard::assertCanAuthenticate($user);
 
         $tokenName = $validated['device_name'] ?? 'api-v1';
-        $token = $user->createToken($tokenName);
 
-        return response()->json([
-            'token_type' => 'Bearer',
-            'access_token' => $token->plainTextToken,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
+        return response()->json(
+            ApiTokenIssuer::response($user, $tokenName)
+        );
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'device_name' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $user = $request->user();
+        ApiAuthGuard::assertCanAuthenticate($user);
+
+        $request->user()->currentAccessToken()?->delete();
+
+        $tokenName = $validated['device_name'] ?? 'api-v1';
+
+        return response()->json(
+            ApiTokenIssuer::response($user, $tokenName)
+        );
     }
 
     public function destroy(Request $request): JsonResponse

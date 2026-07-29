@@ -138,6 +138,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.crashlytics)
+    
+    // WebSockets via Pusher (Laravel Reverb)
+    implementation("com.pusher:pusher-java-client:2.4.4")
     implementation(libs.play.services.auth)
 
     testImplementation(libs.junit)

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ApiAuthGuard;
+use App\Support\ApiTokenIssuer;
 use Google_Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +25,17 @@ class MobileAuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
+        ], [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
         ]);
 
         DB::beginTransaction();
@@ -42,17 +54,10 @@ class MobileAuthController extends Controller
 
             DB::commit();
 
-            $token = $user->createToken('mobile-auth')->plainTextToken;
-
-            return response()->json([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ],
-            ], 201);
+            return response()->json(
+                ApiTokenIssuer::response($user, 'mobile-auth'),
+                201
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erro ao registrar usuário mobile: ' . $e->getMessage());
@@ -123,18 +128,13 @@ class MobileAuthController extends Controller
             }
         }
 
-        $token = $user->createToken('mobile-google-auth')->plainTextToken;
+        ApiAuthGuard::assertCanAuthenticate($user);
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'avatar' => $user->profile_photo_url,
-            ],
-        ]);
+        return response()->json(
+            ApiTokenIssuer::response($user, 'mobile-google-auth', [
+                'avatar' => $user->profile_photo_url ?? null,
+            ])
+        );
     }
 
     /**
@@ -163,7 +163,17 @@ class MobileAuthController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'confirmed',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
+        ], [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
         ]);
 
         $status = Password::broker()->reset(

@@ -91,4 +91,19 @@ class MedicalDocumentController extends Controller
             'Content-Type' => 'application/pdf',
         ]);
     }
+
+    public function downloadReport(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        return $this->download($request, 'report', $id);
+    }
+
+    public function downloadPrescription(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        return $this->download($request, 'prescription', $id);
+    }
+
+    public function downloadCertificate(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        return $this->download($request, 'certificate', $id);
+    }
 }

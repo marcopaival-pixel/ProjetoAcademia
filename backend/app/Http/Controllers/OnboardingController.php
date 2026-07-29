@@ -202,7 +202,16 @@ class OnboardingController extends Controller
     {
         $request->validate([
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+            'password' => [
+                'required', 
+                'string', 
+                'min:8',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
+        ], [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
         ]);
 
         $data = Session::get('onboarding_data', []);
@@ -241,6 +250,9 @@ class OnboardingController extends Controller
             ]);
             $user->password_hash = Hash::make($data['password']);
             $user->save();
+
+            // Atribuir o perfil de aluno padrão
+            $user->assignRole('aluno');
 
             // Calcular TMB e Meta Calórica usando o Serviço Centralizado (Máxima Eficácia)
             $weight = (float)$data['weight'];

@@ -79,33 +79,22 @@
 
         <!-- Header -->
         <header class="flex flex-col gap-8">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-5">
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-2xl relative border border-white/10 group overflow-hidden">
-                        <i data-lucide="activity" class="w-7 h-7"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-black text-white tracking-tighter leading-none mb-1">
-                            {{ $activeProfessional ? $activeProfessional->name : 'Visão Geral' }}
-                        </h1>
-                        <div class="flex items-center gap-3">
-                            <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
-                                {{ $activeProfessional ? ($activeProfessional->professionalProfile->specialty ?? 'Profissional') : 'Minha Saúde Centralizada' }}
-                            </span>
-                        </div>
-                    </div>
+            <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-home text-8xl text-blue-500"></i>
                 </div>
                 
-                <div class="flex gap-2">
-                    <a href="{{ route('patient.dashboard.choice') }}" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white hover:border-blue-500/50 transition-all gap-2" title="Escolher Dashboard">
-                        <i data-lucide="layout-grid" class="w-5 h-5"></i>
-                    </a>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/50 transition-all" title="Encerrar Sessão">
-                            <i data-lucide="log-out" class="w-5 h-5"></i>
-                        </button>
-                    </form>
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div>
+                        <h1 class="text-4xl font-black text-white tracking-tight mb-2">
+                            {{ $activeProfessional ? $activeProfessional->name : 'Visão Geral' }}
+                        </h1>
+                        <p class="text-zinc-400 font-medium max-w-2xl">
+                            {{ $activeProfessional ? ($activeProfessional->professionalProfile->specialty ?? 'Profissional') : 'Minha Saúde Centralizada' }}
+                        </p>
+                    </div>
+                    
+
                 </div>
             </div>
 

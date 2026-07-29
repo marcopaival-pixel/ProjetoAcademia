@@ -7,6 +7,7 @@ import androidx.security.crypto.MasterKey
 enum class AppMode {
     STUDENT,
     PROFESSIONAL,
+    PATIENT,
 }
 
 class SessionPreferences(context: Context) {
@@ -27,6 +28,7 @@ class SessionPreferences(context: Context) {
         prefs.edit().putString(KEY_APP_MODE, mode.name).apply()
     }
 
+    // Usado pelo Profissional para ver dados de um paciente específico
     fun getActivePatientId(): Int? {
         val value = prefs.getInt(KEY_ACTIVE_PATIENT, -1)
         return if (value > 0) value else null
@@ -60,6 +62,20 @@ class SessionPreferences(context: Context) {
             .apply()
     }
 
+    // Usado pelo Paciente para selecionar o vínculo (clínica/profissional) ativo
+    fun getActivePatientContext(): Int? {
+        val value = prefs.getInt(KEY_ACTIVE_CONTEXT, -1)
+        return if (value > 0) value else null
+    }
+
+    fun setActivePatientContext(contextId: Int?) {
+        if (contextId == null || contextId <= 0) {
+            prefs.edit().remove(KEY_ACTIVE_CONTEXT).apply()
+        } else {
+            prefs.edit().putInt(KEY_ACTIVE_CONTEXT, contextId).apply()
+        }
+    }
+
     fun clear() {
         prefs.edit().clear().apply()
     }
@@ -68,5 +84,6 @@ class SessionPreferences(context: Context) {
         private const val KEY_APP_MODE = "app_mode"
         private const val KEY_ACTIVE_PATIENT = "active_patient_id"
         private const val KEY_ACTIVE_PATIENT_NAME = "active_patient_name"
+        private const val KEY_ACTIVE_CONTEXT = "active_patient_context_id"
     }
 }

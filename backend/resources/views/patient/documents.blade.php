@@ -21,63 +21,71 @@
 @endsection
 
 @section('content')
-<div class="min-h-screen bg-[#06080c] text-white pb-32">
-    <div class="py-10 px-6 max-w-lg mx-auto space-y-10">
-        <!-- Header -->
-        <header class="flex items-center gap-4">
-            <a href="{{ route('patient.portal') }}" class="w-10 h-10 rounded-xl glass-card flex items-center justify-center text-zinc-400">
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
+        <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+            <i class="fas fa-folder-open text-8xl text-blue-500"></i>
+        </div>
+        
+        <div class="relative z-10 flex items-center gap-6">
+            <a href="{{ route('patient.portal') }}" class="w-12 h-12 bg-zinc-800 hover:bg-zinc-700 rounded-2xl flex items-center justify-center text-white transition-colors">
                 <i class="fas fa-chevron-left"></i>
             </a>
             <div>
-                <h1 class="text-xl font-black tracking-tighter uppercase italic">Central de Documentos</h1>
-                <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Exames, Receitas e Laudos</p>
+                <h1 class="text-4xl font-black text-white tracking-tight mb-2">Central de <span class="text-blue-500">Documentos</span></h1>
+                <p class="text-zinc-400 font-medium max-w-2xl">Seus exames, receitas e laudos anexados pelo seu profissional responsável.</p>
             </div>
-        </header>
+        </div>
+    </div>
 
-        <!-- Document List -->
-        <div class="space-y-4">
-            @forelse($documents as $doc)
-            <div class="glass-card p-6 rounded-[2.5rem] flex items-center gap-5 group hover:bg-white/[0.03] transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-blue-400">
-                    @if($doc->category == 'Receita')
-                        <i class="fas fa-prescription-bottle-alt text-lg"></i>
-                    @elseif($doc->category == 'Exame')
-                        <i class="fas fa-microscope text-lg"></i>
-                    @else
-                        <i class="fas fa-file-alt text-lg"></i>
-                    @endif
-                </div>
-                <div class="flex-1">
-                    <span class="text-[8px] font-black text-blue-400/70 uppercase tracking-widest">{{ $doc->category }}</span>
-                    <h4 class="text-xs font-black text-white uppercase tracking-wider mb-0.5">{{ $doc->title }}</h4>
-                    <p class="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Data: {{ $doc->created_at->format('d/m/Y') }}</p>
-                </div>
-                
-                <div class="flex gap-2">
-                    <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white" title="Visualizar">
-                        <i class="fas fa-eye text-xs"></i>
-                    </a>
-                    <a href="{{ asset('storage/' . $doc->file_path) }}" download class="w-10 h-10 rounded-xl bg-[var(--brand-primary)]/10 flex items-center justify-center text-[var(--brand-primary)] hover:scale-105 transition-transform" title="Baixar">
-                        <i class="fas fa-download text-xs"></i>
-                    </a>
-                </div>
+    <!-- Security Note -->
+    <div class="p-6 bg-blue-500/5 border border-blue-500/10 rounded-[2rem] flex gap-4 items-start">
+        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 shrink-0">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div>
+            <h4 class="text-white font-bold mb-1">Proteção e Privacidade</h4>
+            <p class="text-sm text-zinc-400 font-medium">Seus documentos estão criptografados e protegidos. Somente você e seu profissional responsável têm acesso a estes arquivos.</p>
+        </div>
+    </div>
+
+    <!-- Document List -->
+    <div class="space-y-4">
+        @forelse($documents as $doc)
+        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem] flex flex-col md:flex-row md:items-center gap-5 hover:border-blue-500/50 transition-all group">
+            <div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 group-hover:scale-110 transition-transform">
+                @if($doc->category == 'Receita')
+                    <i class="fas fa-prescription-bottle-alt text-2xl"></i>
+                @elseif($doc->category == 'Exame')
+                    <i class="fas fa-microscope text-2xl"></i>
+                @else
+                    <i class="fas fa-file-alt text-2xl"></i>
+                @endif
             </div>
-            @empty
-            <x-patient.empty-state 
-                icon="fas fa-folder-open" 
-                title="Arquivo Vazio" 
-                description="Seus exames, receitas e laudos serão listados aqui assim que forem anexados ao seu prontuário pelo profissional responsável."
-            />
-            @endforelse
+            
+            <div class="flex-1">
+                <span class="inline-block px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-lg mb-2">{{ $doc->category }}</span>
+                <h4 class="text-lg font-black text-white mb-1">{{ $doc->title }}</h4>
+                <p class="text-sm font-medium text-zinc-500"><i class="far fa-calendar-alt mr-2"></i> Anexado em {{ $doc->created_at->format('d/m/Y') }}</p>
+            </div>
+            
+            <div class="flex gap-3 mt-4 md:mt-0">
+                <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" class="flex-1 md:flex-none px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl text-center transition-colors">
+                    <i class="fas fa-eye mr-2"></i> Visualizar
+                </a>
+                <a href="{{ asset('storage/' . $doc->file_path) }}" download class="flex-1 md:flex-none px-6 py-3 bg-[var(--brand-primary)] hover:brightness-110 text-white font-bold rounded-xl text-center transition-all">
+                    <i class="fas fa-download mr-2"></i> Baixar
+                </a>
+            </div>
         </div>
-
-        <!-- Security Note -->
-        <div class="px-6 py-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex gap-4 items-start">
-            <i class="fas fa-shield-alt text-blue-400 mt-0.5"></i>
-            <p class="text-[9px] text-zinc-500 font-bold leading-relaxed">
-                Seus documentos estão protegidos. Somente você e seu profissional responsável têm acesso a estes arquivos.
-            </p>
-        </div>
+        @empty
+        <x-patient.empty-state 
+            icon="fas fa-folder-open" 
+            title="Nenhum Documento" 
+            description="Seus exames, receitas e laudos serão listados aqui assim que forem anexados ao seu prontuário pelo profissional responsável."
+        />
+        @endforelse
     </div>
 </div>
 @endsection

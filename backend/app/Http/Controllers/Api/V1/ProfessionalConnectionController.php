@@ -94,4 +94,35 @@ class ProfessionalConnectionController extends Controller
             ]
         ]);
     }
+
+    public function studentRequests(Request $request): JsonResponse
+    {
+        $requests = ProfessionalPatientRequest::query()
+            ->where('patient_id', $request->user()->id)
+            ->with('professional:id,name')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn (ProfessionalPatientRequest $item) => [
+                'id' => $item->id,
+                'professional_id' => $item->professional_id,
+                'professional_name' => $item->professional?->name,
+                'status' => $item->status,
+                'message' => $item->message,
+                'created_at' => optional($item->created_at)->toIso8601String(),
+            ]);
+
+        return response()->json(['data' => ['requests' => $requests]]);
+    }
+
+    public function revokeLink(Request $request, int $professionalPatient): JsonResponse
+    {
+        $connection = ProfessionalPatient::query()
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($professionalPatient);
+
+        $connection->update(['status' => 'Não']);
+
+        return response()->json(['message' => 'Vínculo revogado com sucesso.']);
+    }
 }

@@ -13,6 +13,7 @@ use App\Models\Payment;
 use App\Models\FinancialLog;
 use App\Models\Commission;
 use App\Services\FinancialLogService;
+use App\Services\Payment\PaymentProcessor;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
@@ -385,6 +386,17 @@ class MercadoPagoService extends BasePaymentGateway implements PaymentGatewayInt
         $cur = isset($payment['currency_id']) ? (string) $payment['currency_id'] : '';
         if ($cur !== '' && $cur !== 'BRL') {
             return ['ok' => false, 'message' => 'Moeda inesperada.'];
+        }
+
+        if (in_array($status, ['refunded', 'charged_back'], true)) {
+            app(PaymentProcessor::class)->processRefund([
+                'gateway' => 'mercadopago',
+                'gateway_id' => $id,
+                'reason' => $status,
+                'payload' => $payment,
+            ]);
+
+            return ['ok' => true, 'message' => 'Reembolso/chargeback processado: '.$status];
         }
 
         $parsed = $this->extractUserAndPlan($payment);

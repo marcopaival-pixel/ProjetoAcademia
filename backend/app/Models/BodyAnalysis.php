@@ -29,6 +29,7 @@ class BodyAnalysis extends Model
         'vision_model',
         'vision_confidence',
         'vision_raw_payload',
+        'shared_options',
     ];
 
     protected $casts = [
@@ -37,6 +38,7 @@ class BodyAnalysis extends Model
         'ai_summary' => 'array',
         'vision_confidence' => 'float',
         'vision_raw_payload' => 'array',
+        'shared_options' => 'array',
         'created_at' => 'datetime',
     ];
 

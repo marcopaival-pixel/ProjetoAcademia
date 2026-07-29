@@ -25,8 +25,8 @@ class TransactionalMailService
         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return 'E-mail do usuário é inválido.';
         }
-        if (! $user->isActive()) {
-            return 'Usuário inativo.';
+        if (! $user->isActive() && ! $user->isPending()) {
+            return 'Usuário inativo ou não elegível para receber e-mail.';
         }
 
         return null;

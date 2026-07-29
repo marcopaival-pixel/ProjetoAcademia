@@ -34,6 +34,8 @@ class UserProfile extends Model
         'target_weight_kg',
         'training_days_per_week',
         'address',
+        'cep',
+        'neighborhood',
         'city',
         'state',
         'has_disease',

@@ -63,43 +63,31 @@
 
     <div class="relative z-10 py-10 px-6 max-w-lg mx-auto space-y-10">
         <!-- Header -->
-        <header class="flex items-center justify-between">
-            <div class="flex items-center gap-5">
-                @if($branding['logo_url'])
-                    <img src="{{ $branding['logo_url'] }}" alt="Logo" class="h-12 w-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                @else
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-2xl relative border border-white/10 group overflow-hidden">
-                        <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <i data-lucide="stethoscope" class="w-7 h-7"></i>
-                    </div>
-                @endif
-                <div>
-                    <h1 class="text-2xl font-black text-white tracking-tighter leading-none mb-1">
-                        {{ $branding['clinic_name'] }}
-                    </h1>
-                    <div class="flex items-center gap-3">
-                        <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Portal Oficial</span>
-                        @if($professional)
-                            <span class="w-1 h-1 rounded-full bg-zinc-800"></span>
-                            <span class="text-[9px] font-bold text-[var(--brand-primary)] uppercase tracking-widest">Atendimento Ativo</span>
-                        @endif
-                    </div>
+        <header class="flex flex-col gap-8">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-home text-8xl text-blue-500"></i>
                 </div>
-            </div>
-            
-            <div class="flex gap-2">
-                @if($links->count() > 1)
-                    <a href="{{ route('patient.professional.selection') }}" class="px-4 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white hover:border-blue-500/50 transition-all gap-2">
-                        <i class="fas fa-exchange-alt text-xs"></i>
-                        <span class="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Trocar</span>
-                    </a>
-                @endif
-                <a href="{{ route('patient.messages') }}" class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-blue-500 transition-all">
-                    <i data-lucide="mail" class="w-5 h-5"></i>
-                </a>
-                <button class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-zinc-400 hover:text-white transition-all">
-                    <i data-lucide="bell" class="w-5 h-5"></i>
-                </button>
+                
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div>
+                        <h1 class="text-4xl font-black text-white tracking-tight mb-2 flex items-center gap-4">
+                            @if($branding['logo_url'])
+                                <img src="{{ $branding['logo_url'] }}" alt="Logo" class="h-10 w-auto">
+                            @endif
+                            {{ $branding['clinic_name'] }}
+                        </h1>
+                        <div class="flex items-center gap-3 mt-1">
+                            <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Portal Oficial</span>
+                            @if($professional)
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+                                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Atendimento Ativo</span>
+                            @endif
+                        </div>
+                    </div>
+                    
+
+                </div>
             </div>
         </header>
 
@@ -175,20 +163,7 @@
             </div>
         </div>
 
-        <!-- Banner Promoção Aluno -->
-        @if(!Auth::user()->hasRole('aluno'))
-        <section class="glass-card rounded-[2.5rem] p-8 border-l-4 border-l-[var(--brand-primary)] bg-gradient-to-r from-[var(--brand-primary-dim)] to-transparent relative overflow-hidden group">
-            <div class="absolute right-0 top-0 w-32 h-32 bg-[var(--brand-primary)] opacity-[0.05] blur-2xl group-hover:scale-150 transition-transform"></div>
-            <div class="relative z-10 space-y-4">
-                <h4 class="text-white font-black text-lg tracking-tight leading-tight">Quer evoluir ainda mais?</h4>
-                <p class="text-zinc-400 text-xs font-medium leading-relaxed">Torne-se aluno e tenha acesso a treinos personalizados e acompanhamento completo.</p>
-                <a href="{{ route('patient.plans.index') }}" class="inline-flex items-center gap-2 px-8 py-4 btn-brand-glow text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-[var(--brand-primary-glow)]">
-                    <i class="fas fa-crown text-[8px]"></i>
-                    Ver Planos
-                </a>
-            </div>
-        </section>
-        @endif
+
 
         <!-- Navigation Menu Grid -->
         <section class="grid grid-cols-2 gap-6">

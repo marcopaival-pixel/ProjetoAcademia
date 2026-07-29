@@ -56,8 +56,8 @@
                         </div>
                         <div class="relative flex-1">
                             <input id="password" name="password" type="password" required
-                                class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 pr-14 text-white placeholder:text-zinc-800 outline-none focus:ring-1 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all shadow-inner font-bold text-sm"
-                                placeholder="Mínimo 8 caracteres">
+                                class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 pr-14 text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all shadow-inner font-bold text-sm"
+                                placeholder="Ex: NexShape@2026">
                             <button type="button" onclick="togglePass('password', 'eye1')" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-white transition-colors focus:outline-none">
                                 <i data-lucide="eye" id="eye1" class="w-5 h-5"></i>
                             </button>
@@ -77,8 +77,8 @@
                         </div>
                         <div class="relative flex-1">
                             <input id="password_confirmation" name="password_confirmation" type="password" required
-                                class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 pr-14 text-white placeholder:text-zinc-800 outline-none focus:ring-1 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all shadow-inner font-bold text-sm"
-                                placeholder="Digite a senha novamente">
+                                class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 pr-14 text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all shadow-inner font-bold text-sm"
+                                placeholder="Ex: NexShape@2026">
                             <button type="button" onclick="togglePass('password_confirmation', 'eye2')" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-white transition-colors focus:outline-none">
                                 <i data-lucide="eye" id="eye2" class="w-5 h-5"></i>
                             </button>

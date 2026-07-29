@@ -32,6 +32,8 @@ class AuditController extends Controller
     public function show($id)
     {
         $log = AuditLog::with('user')->findOrFail($id);
+        $this->assertTenantAccess($log);
+
         return view('admin.configuration-center.audit.show', compact('log'));
     }
 
@@ -59,6 +61,19 @@ class AuditController extends Controller
         $companyId = TenantContext::getCompanyId();
         if ($companyId) {
             $query->where('academy_company_id', $companyId);
+        }
+    }
+
+    private function assertTenantAccess(AuditLog $log): void
+    {
+        $user = Auth::user();
+        if (! $user || ($user->is_admin && ! session()->has('impersonated_clinic_id'))) {
+            return;
+        }
+
+        $companyId = TenantContext::getCompanyId();
+        if ($companyId && (int) ($log->academy_company_id ?? 0) !== (int) $companyId) {
+            abort(403);
         }
     }
 }

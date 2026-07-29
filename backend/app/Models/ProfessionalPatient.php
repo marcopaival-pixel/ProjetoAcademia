@@ -47,6 +47,16 @@ class ProfessionalPatient extends Model
     }
 
     /**
+     * Alias em inglês usado pelos controllers da API mobile.
+     */
+    public function getProfessionalIdAttribute(): ?int
+    {
+        $value = $this->attributes['profissional_id'] ?? null;
+
+        return $value !== null ? (int) $value : null;
+    }
+
+    /**
      * Retorna se o paciente tem permissão para uma funcionalidade específica.
      */
     public function hasPermission(string $permission): bool

@@ -39,8 +39,16 @@ class RegistrationController extends Controller
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
             'cpf' => 'required|string|unique:users,cpf',
-            'password' => 'required|min:8',
+            'password' => [
+                'required', 
+                'min:8',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
             'profession_id' => 'required|exists:professions,id',
+        ], [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
         ]);
 
         try {

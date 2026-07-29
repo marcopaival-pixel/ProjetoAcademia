@@ -119,14 +119,67 @@
                             <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Tempo de Experiência (Anos)</label>
                             <input type="number" name="experience_years" value="{{ old('experience_years', $profile->experience_years) }}" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">
                         </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Especialidade Principal</label>
-                            <input type="text" name="specialty" value="{{ old('specialty', $profile->specialty) }}" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">
+                        <div class="md:col-span-2 space-y-4">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Áreas de Atuação (Especialidades)</label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                @php
+                                    $profileSpecialties = $profile->specialties->pluck('id')->toArray();
+                                    $availableSpecialties = $especialidades->where('profession_id', $profile->profession_id);
+                                @endphp
+                                @foreach($availableSpecialties as $esp)
+                                    <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/50 border border-white/5 cursor-pointer hover:border-indigo-500/50 transition-all">
+                                        <input type="checkbox" name="specialties[]" value="{{ $esp->id }}" {{ in_array($esp->id, old('specialties', $profileSpecialties)) ? 'checked' : '' }} class="rounded border-white/10 bg-zinc-900 text-indigo-500">
+                                        <span class="text-[10px] font-bold text-zinc-300">{{ $esp->nome }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
                         <div class="md:col-span-2 space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Formação Acadêmica</label>
                             <textarea name="education" rows="3" class="w-full bg-zinc-950/50 border border-white/5 rounded-2xl p-4 text-white text-sm font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all">{{ old('education', $profile->education) }}</textarea>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Certificações -->
+                <div class="bg-zinc-900/60 backdrop-blur-2xl border border-white/10 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group" x-data="certificationsApp()">
+                    <h2 class="text-xl font-black text-white mb-8 flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center text-xs">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                        </span>
+                        Certificações e Títulos
+                    </h2>
+
+                    <div class="space-y-4">
+                        <template x-for="(cert, index) in certifications" :key="index">
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-zinc-950/50 p-6 rounded-[2rem] border border-white/5">
+                                <div class="md:col-span-5 space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Nome da Certificação *</label>
+                                    <input type="text" x-model="cert.name" :name="'certifications['+index+'][name]'" required class="w-full bg-zinc-900 border border-white/5 rounded-xl p-3 text-white text-sm focus:ring-2 focus:ring-teal-500/50 outline-none transition-all">
+                                </div>
+                                <div class="md:col-span-2 space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">Ano</label>
+                                    <input type="number" x-model="cert.year" :name="'certifications['+index+'][year]'" class="w-full bg-zinc-900 border border-white/5 rounded-xl p-3 text-white text-sm focus:ring-2 focus:ring-teal-500/50 outline-none transition-all">
+                                </div>
+                                <div class="md:col-span-4 space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-2">URL da Credencial</label>
+                                    <input type="url" x-model="cert.credential_url" :name="'certifications['+index+'][credential_url]'" class="w-full bg-zinc-900 border border-white/5 rounded-xl p-3 text-white text-sm focus:ring-2 focus:ring-teal-500/50 outline-none transition-all" placeholder="https://...">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <button type="button" @click="removeCertification(index)" title="Remover Certificação" class="w-full h-[46px] flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <p x-show="certifications.length === 0" class="text-xs text-zinc-500 font-medium italic text-center py-4">Nenhuma certificação adicionada.</p>
+                    </div>
+
+                    <div class="mt-6 flex justify-center md:justify-start">
+                        <button type="button" @click="addCertification()" class="px-6 py-3 bg-zinc-800 text-teal-400 font-bold text-[10px] uppercase tracking-widest rounded-xl border border-white/5 hover:border-teal-500/30 hover:bg-zinc-700 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Nova Certificação
+                        </button>
                     </div>
                 </div>
 
@@ -311,7 +364,19 @@
             </div>
         </div>
     </form>
-</div>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('certificationsApp', () => ({
+            certifications: @json($profile->certifications->map(fn($c) => ['name' => $c->name, 'year' => $c->year, 'credential_url' => $c->credential_url])->toArray() ?: []),
+            addCertification() {
+                this.certifications.push({ name: '', year: new Date().getFullYear(), credential_url: '' });
+            },
+            removeCertification(index) {
+                this.certifications.splice(index, 1);
+            }
+        }))
+    })
+</script>
 
 <style>
     @keyframes dashboard-entry {

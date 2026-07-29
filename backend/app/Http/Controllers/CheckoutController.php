@@ -58,14 +58,22 @@ class CheckoutController extends Controller
             // Se não estiver logado, validar campos de usuário
             'name' => Auth::check() ? 'nullable' : 'required|string|max:255',
             'email' => Auth::check() ? 'nullable' : 'required|email|unique:users,email',
-            'password' => Auth::check() ? 'nullable' : 'required|min:8',
+            'password' => Auth::check() ? 'nullable' : [
+                'required', 
+                'min:8',
+                'regex:/[A-Z]/', 
+                'regex:/[0-9]/', 
+                'regex:/[!@#$%^&*(),.?":{}|<>]/',
+            ],
         ];
 
         if ($pagamentoAtivo) {
             $rules['payment_method'] = 'required|in:credit_card,pix,boleto';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'password.regex' => 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.',
+        ]);
 
         try {
             return DB::transaction(function () use ($request, $pagamentoAtivo) {

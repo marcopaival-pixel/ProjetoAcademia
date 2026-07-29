@@ -121,7 +121,6 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
                 return ['ok' => false, 'status' => 401];
             }
 
-            // Asaas events: PAYMENT_RECEIVED, PAYMENT_CONFIRMED
             if ($event === 'PAYMENT_RECEIVED' || $event === 'PAYMENT_CONFIRMED') {
                 $payment = $payload['payment'] ?? [];
                 $externalRef = $payment['externalReference'] ?? '';
@@ -151,6 +150,22 @@ class AsaasService extends BasePaymentGateway implements PaymentGatewayInterface
                     $this->logWebhook($request, 200, $res['message'], null, microtime(true) - $start);
                 } else {
                     $this->logWebhook($request, 200, 'Ignored (No User ID)', null, microtime(true) - $start);
+                }
+            } elseif (in_array($event, ['PAYMENT_REFUNDED', 'PAYMENT_DELETED'], true)) {
+                $payment = $payload['payment'] ?? [];
+                $paymentId = $payment['id'] ?? null;
+
+                if ($paymentId) {
+                    $processor = app(PaymentProcessor::class);
+                    $res = $processor->processRefund([
+                        'gateway' => 'asaas',
+                        'gateway_id' => (string) $paymentId,
+                        'reason' => strtolower($event),
+                        'payload' => $payload,
+                    ]);
+                    $this->logWebhook($request, 200, $res['message'], null, microtime(true) - $start);
+                } else {
+                    $this->logWebhook($request, 200, 'Refund ignored (no payment id)', null, microtime(true) - $start);
                 }
             } else {
                 $this->logWebhook($request, 200, "Event {$event} ignored", null, microtime(true) - $start);

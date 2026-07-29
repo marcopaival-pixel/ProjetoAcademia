@@ -11,6 +11,7 @@ use App\Models\AiCreditPackage;
 use App\Models\Commission;
 use App\Services\FinancialLogService;
 use App\Services\AiCreditService;
+use App\Services\Payment\CommissionClawbackService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -44,6 +45,8 @@ class PaymentProcessor
                 ]
             );
 
+            $subscription = null;
+
             // 2. Determine Action
             if (str_starts_with($reference, 'ai_credits:')) {
                 $packageId = (int) str_replace('ai_credits:', '', $reference);
@@ -52,11 +55,15 @@ class PaymentProcessor
                 $compraId = (int) str_replace('credits:', '', $reference);
                 $this->processGeneralCredits($user, $compraId, $gatewayId);
             } else {
-                $this->processSubscription($user, $reference, $gateway, $gatewayId);
+                $subscription = $this->processSubscription($user, $reference, $gateway, $gatewayId);
+            }
+
+            if ($subscription !== null) {
+                $payment->update(['subscription_id' => $subscription->id]);
             }
 
             // 3. Process Commission
-            $this->processCommission($user, $payment);
+            $this->processCommission($user, $payment, $reference);
 
             // 4. Financial Log
             FinancialLogService::log([
@@ -69,6 +76,54 @@ class PaymentProcessor
             ]);
 
             return ['ok' => true, 'message' => 'Pagamento processado com sucesso'];
+        });
+    }
+
+    /**
+     * Processa reembolso/chargeback (idempotente).
+     *
+     * @param  array{gateway: string, gateway_id: string, reason?: string, payload?: array}  $data
+     */
+    public function processRefund(array $data): array
+    {
+        return DB::transaction(function () use ($data) {
+            $payment = Payment::query()
+                ->where('gateway', $data['gateway'])
+                ->where('gateway_id', $data['gateway_id'])
+                ->lockForUpdate()
+                ->first();
+
+            if (! $payment) {
+                return ['ok' => true, 'message' => 'Pagamento não encontrado (ignorado)'];
+            }
+
+            if ($payment->status === 'refunded') {
+                return ['ok' => true, 'message' => 'Reembolso já processado (idempotente)'];
+            }
+
+            $reason = $data['reason'] ?? 'refund';
+
+            $payment->update([
+                'status' => 'refunded',
+                'payload' => array_merge($payment->payload ?? [], [
+                    'refund' => $data['payload'] ?? [],
+                    'refund_reason' => $reason,
+                    'refunded_at' => now()->toIso8601String(),
+                ]),
+            ]);
+
+            app(CommissionClawbackService::class)->reverseForPayment($payment, $reason);
+
+            FinancialLogService::log([
+                'user_id' => $payment->user_id,
+                'action' => 'PAYMENT_REFUNDED',
+                'amount' => $payment->amount,
+                'transaction_id' => $payment->gateway_id,
+                'origin' => $payment->gateway,
+                'payload' => ['reason' => $reason],
+            ]);
+
+            return ['ok' => true, 'message' => 'Reembolso processado'];
         });
     }
 
@@ -98,13 +153,29 @@ class PaymentProcessor
 
     protected function processAiCredits(User $user, int $packageId, string $gatewayId, string $gateway)
     {
+        $existing = \App\Models\AiCreditTransaction::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'purchase')
+            ->where('reference_id', $gatewayId)
+            ->exists();
+
+        if ($existing) {
+            Log::info('Webhook IA ignorado (idempotente)', [
+                'user_id' => $user->id,
+                'gateway_id' => $gatewayId,
+            ]);
+
+            return;
+        }
+
         $package = AiCreditPackage::find($packageId);
         if ($package) {
             app(AiCreditService::class)->addCredits(
-                $user, 
-                $package->credits, 
-                'purchase', 
-                "Compra de créditos IA: {$package->name} (Gateway: {$gateway})"
+                $user,
+                $package->credits,
+                'purchase',
+                "Compra de créditos IA: {$package->name} (Gateway: {$gateway})",
+                $gatewayId
             );
         }
     }
@@ -126,8 +197,12 @@ class PaymentProcessor
         }
     }
 
-    protected function processCommission(User $user, Payment $payment)
+    protected function processCommission(User $user, Payment $payment, string $reference = '')
     {
+        if ($reference !== '' && (str_starts_with($reference, 'ai_credits:') || str_starts_with($reference, 'credits:'))) {
+            return;
+        }
+
         $representativeId = $user->representative_id;
         if (!$representativeId) return;
 

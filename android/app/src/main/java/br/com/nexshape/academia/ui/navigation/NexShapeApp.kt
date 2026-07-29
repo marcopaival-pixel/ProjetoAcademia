@@ -144,6 +144,7 @@ fun NexShapeApp() {
     }
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var appMode by remember { mutableStateOf(sessionPreferences.getAppMode()) }
+    var activePatientContext by remember { mutableStateOf(sessionPreferences.getActivePatientContext()) }
     var showRoleSelector by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -221,6 +222,9 @@ fun NexShapeApp() {
                         appMode = AppMode.STUDENT
                         sessionPreferences.setAppMode(AppMode.STUDENT)
                     }
+                } else if (selectedRole == "paciente" || selectedRole == "patient") {
+                    appMode = AppMode.PATIENT
+                    sessionPreferences.setAppMode(AppMode.PATIENT)
                 } else {
                     appMode = AppMode.PROFESSIONAL
                     sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
@@ -321,6 +325,9 @@ fun NexShapeApp() {
                                 appMode = AppMode.STUDENT
                                 sessionPreferences.setAppMode(AppMode.STUDENT)
                             }
+                        } else if (activeRole == "paciente" || activeRole == "patient") {
+                            appMode = AppMode.PATIENT
+                            sessionPreferences.setAppMode(AppMode.PATIENT)
                         } else {
                             appMode = AppMode.PROFESSIONAL
                             sessionPreferences.setAppMode(AppMode.PROFESSIONAL)
@@ -343,6 +350,18 @@ fun NexShapeApp() {
             isUnlocked = true
             profile = null
         }
+    }
+
+    if (appMode == AppMode.PATIENT && activePatientContext == null) {
+        val userName = ApiClient.tokenStore().getName() ?: "Usuário"
+        br.com.nexshape.academia.ui.login.ContextSelectionScreen(
+            userName = userName,
+            onContextSelected = { contextId ->
+                sessionPreferences.setActivePatientContext(contextId)
+                activePatientContext = contextId
+            }
+        )
+        return
     }
 
     if (profile == null) {
@@ -374,6 +393,22 @@ fun NexShapeApp() {
     }
 
     when {
+        appMode == AppMode.PATIENT -> br.com.nexshape.academia.ui.paciente.PacienteShell(
+            authRepository = authRepository,
+            appLockStore = appLockStore,
+            canSwitchMode = canUseStudent || canUsePro,
+            onSwitchMode = {
+                sessionPreferences.setAppMode(AppMode.STUDENT) // Fallback p/ estudante caso troque
+                ApiClient.tokenStore().saveActiveRole(resolveStudentRole(ApiClient.tokenStore().getAvailableRoles()))
+                ApiClient.tokenStore().setActiveRoleConfirmed(true)
+                appMode = AppMode.STUDENT
+            },
+            onChangeContext = {
+                sessionPreferences.setActivePatientContext(null)
+                activePatientContext = null
+            },
+            onLogout = handleLogout,
+        )
         appMode == AppMode.PROFESSIONAL && canUsePro -> ProShell(
             sessionPreferences = sessionPreferences,
             authRepository = authRepository,
@@ -457,14 +492,16 @@ private fun StudentShell(
 
     Scaffold(
         floatingActionButton = {
-            androidx.compose.material3.FloatingActionButton(
-                onClick = { showAssistenteSheet = true },
-                containerColor = br.com.nexshape.academia.ui.components.NexNeon,
-                contentColor = Color.Black,
-                shape = androidx.compose.foundation.shape.CircleShape,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Assistente NexShape")
+            if (!isPatient) {
+                androidx.compose.material3.FloatingActionButton(
+                    onClick = { showAssistenteSheet = true },
+                    containerColor = br.com.nexshape.academia.ui.components.NexNeon,
+                    contentColor = Color.Black,
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Assistente NexShape")
+                }
             }
         },
         bottomBar = {

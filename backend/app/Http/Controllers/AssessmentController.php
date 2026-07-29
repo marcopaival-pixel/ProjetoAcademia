@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BodyAssessment;
+use App\Support\PatientAccessGuard;
 use App\Services\Nutrition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -220,7 +221,15 @@ class AssessmentController extends Controller
             }
         }
 
-        if ($assessment->user_id !== $user->id && !Auth::user()->hasRole(['professional', 'admin'])) abort(403);
+        if ($assessment->user_id !== $user->id) {
+            if ($user->isAdministrator()) {
+                PatientAccessGuard::assertStudentDataAccess($user, (int) $assessment->user_id);
+            } elseif (! $user->hasRole(['professional', 'admin'])) {
+                abort(403);
+            } elseif (! $user->patients()->where('users.id', $assessment->user_id)->exists()) {
+                abort(403);
+            }
+        }
 
         $motor = app(\App\Services\IntelligenceMotorService::class);
         $owner = \App\Models\User::find($assessment->user_id);

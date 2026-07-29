@@ -13,12 +13,33 @@ class TokenStore(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
     )
 
-    fun saveToken(token: String, email: String, name: String) {
+    fun saveToken(token: String, email: String, name: String, expiresAt: String? = null) {
         prefs.edit()
             .putString(KEY_TOKEN, token)
             .putString(KEY_EMAIL, email)
             .putString(KEY_NAME, name)
+            .apply {
+                if (expiresAt.isNullOrBlank()) {
+                    remove(KEY_EXPIRES_AT)
+                } else {
+                    putString(KEY_EXPIRES_AT, expiresAt)
+                }
+            }
             .apply()
+    }
+
+    fun getExpiresAt(): String? = prefs.getString(KEY_EXPIRES_AT, null)
+
+    /**
+     * Retorna true se o token expirou ou expira dentro de [withinMinutes].
+     */
+    fun isTokenExpiredOrExpiring(withinMinutes: Long = 60): Boolean {
+        val raw = getExpiresAt() ?: return false
+        return runCatching {
+            val expires = java.time.Instant.parse(raw)
+            val threshold = java.time.Instant.now().plusSeconds(withinMinutes * 60)
+            !expires.isAfter(threshold)
+        }.getOrDefault(false)
     }
 
     fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
@@ -99,5 +120,6 @@ class TokenStore(context: Context) {
         private const val KEY_AVAILABLE_ROLES = "available_roles"
         private const val KEY_ACTIVE_TENANT = "active_tenant"
         private const val KEY_ACTIVE_CONTEXT_ID = "active_context_id"
+        private const val KEY_EXPIRES_AT = "token_expires_at"
     }
 }

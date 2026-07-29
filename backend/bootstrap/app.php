@@ -56,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'menu.access' => \App\Http\Middleware\CheckRouteMenuAccess::class,
             'block.demo.prod' => \App\Http\Middleware\BlockDemoInProduction::class,
             'active.patient' => \App\Http\Middleware\EnsureActivePatientContext::class,
+            'api.professional' => \App\Http\Middleware\EnsureApiProfessional::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

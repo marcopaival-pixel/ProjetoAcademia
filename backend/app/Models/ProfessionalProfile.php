@@ -70,6 +70,17 @@ class ProfessionalProfile extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function specialties(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Especialidade::class, 'especialidade_professional_profile')
+                    ->withTimestamps();
+    }
+
+    public function certifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProfessionalCertification::class);
+    }
+
     /**
      * Verifica se o registro profissional está próximo do vencimento.
      * Retorna os dias restantes ou null.

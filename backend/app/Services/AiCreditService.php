@@ -151,11 +151,23 @@ class AiCreditService
     /**
      * Adiciona créditos extras (via compra ou bônus).
      */
-    public function addCredits(User $user, int $amount, string $type = 'purchase', string $description = 'Compra de créditos'): void
+    public function addCredits(User $user, int $amount, string $type = 'purchase', string $description = 'Compra de créditos', ?string $referenceId = null): void
     {
+        if ($referenceId !== null) {
+            $alreadyCredited = AiCreditTransaction::query()
+                ->where('user_id', $user->id)
+                ->where('type', $type)
+                ->where('reference_id', $referenceId)
+                ->exists();
+
+            if ($alreadyCredited) {
+                return;
+            }
+        }
+
         $wallet = $this->getWallet($user);
 
-        DB::transaction(function () use ($user, $wallet, $amount, $type, $description) {
+        DB::transaction(function () use ($user, $wallet, $amount, $type, $description, $referenceId) {
             $balanceBefore = $wallet->balance;
             
             $wallet->increment('extra_credits', $amount);
@@ -168,6 +180,7 @@ class AiCreditService
                 'credits' => $amount,
                 'balance_before' => $balanceBefore,
                 'balance_after' => $wallet->balance,
+                'reference_id' => $referenceId,
                 'description' => $description,
             ]);
         });

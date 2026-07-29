@@ -27,6 +27,9 @@ class EvolutionSessionAnalysisTest extends TestCase
 
         Schema::dropIfExists('evolution_session_analyses');
         Schema::dropIfExists('ai_execution_logs');
+        Schema::dropIfExists('ai_credit_transactions');
+        Schema::dropIfExists('ai_credit_wallets');
+        Schema::dropIfExists('ai_feature_costs');
         Schema::dropIfExists('evolution_reports');
         Schema::dropIfExists('user_consents');
         Schema::dropIfExists('evolution_photos');
@@ -153,6 +156,38 @@ class EvolutionSessionAnalysisTest extends TestCase
         Schema::create('user_roles', function (Blueprint $table) {
             $table->unsignedInteger('user_id');
             $table->unsignedBigInteger('role_id');
+        });
+
+        Schema::create('ai_feature_costs', function (Blueprint $table) {
+            $table->id();
+            $table->string('feature_code')->unique();
+            $table->string('feature_name')->nullable();
+            $table->unsignedInteger('credits_required')->default(0);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
+        Schema::create('ai_credit_wallets', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('user_id');
+            $table->integer('balance')->default(1000);
+            $table->integer('monthly_allowance')->default(0);
+            $table->integer('extra_credits')->default(1000);
+            $table->date('renewal_date')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('ai_credit_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('user_id');
+            $table->string('type');
+            $table->integer('credits');
+            $table->integer('balance_before')->default(0);
+            $table->integer('balance_after')->default(0);
+            $table->string('feature_code')->nullable();
+            $table->string('reference_id')->nullable();
+            $table->string('description')->nullable();
+            $table->timestamps();
         });
     }
 

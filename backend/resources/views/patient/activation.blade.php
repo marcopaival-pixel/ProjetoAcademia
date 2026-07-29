@@ -109,9 +109,9 @@
                     <h3 class="text-2xl font-black text-white uppercase tracking-tight">Dados Pessoais</h3>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <!-- Nome -->
-                    <div class="md:col-span-3 space-y-3">
+                    <div class="md:col-span-2 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Nome Completo</label>
                         <input name="name" type="text" required value="{{ old('name', $patient->name) }}"
                             {{ $patient->name ? 'readonly' : '' }}
@@ -120,7 +120,7 @@
                     </div>
 
                     <!-- CPF -->
-                    <div class="md:col-span-1.5 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">CPF (Identificador)</label>
                         <input name="cpf" type="text" required value="{{ old('cpf', $patient->cpf) }}"
                             {{ $patient->cpf ? 'readonly' : '' }}
@@ -129,7 +129,7 @@
                     </div>
 
                     <!-- Telefone -->
-                    <div class="md:col-span-1.5 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Telefone / WhatsApp</label>
                         <input name="phone" type="text" required value="{{ old('phone', $patient->phone) }}"
                             class="premium-input" 
@@ -137,7 +137,7 @@
                     </div>
 
                     <!-- Sexo -->
-                    <div class="md:col-span-2 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Sexo</label>
                         <select name="sex" required class="premium-input appearance-none">
                             <option value="">Selecione...</option>
@@ -147,49 +147,63 @@
                     </div>
 
                     <!-- Data Nascimento -->
-                    <div class="md:col-span-2 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Data de Nascimento</label>
-                        <input name="birth_date" type="date" required value="{{ old('birth_date', $patient->profile->birth_date ?? '') }}"
+                        <input name="birth_date" type="date" required value="{{ old('birth_date', optional($patient->profile->birth_date ?? null)->format('Y-m-d') ?? '') }}"
                             class="premium-input">
                     </div>
 
                     <!-- Altura -->
-                    <div class="md:col-span-2 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Altura (cm)</label>
                         <input name="height_cm" type="number" required value="{{ old('height_cm', $patient->profile->height_cm ?? '') }}"
                             class="premium-input" placeholder="Ex: 175">
                     </div>
 
                     <!-- Peso -->
-                    <div class="md:col-span-2 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Peso Atual (kg)</label>
                         <input name="weight_kg" type="number" step="0.1" required value="{{ old('weight_kg') }}"
                             class="premium-input" placeholder="Ex: 75.5">
                     </div>
 
+                    <!-- CEP -->
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
+                        <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">CEP</label>
+                        <input name="cep" type="text" required value="{{ old('cep') }}"
+                            class="premium-input" placeholder="00000-000">
+                    </div>
+
                     <!-- Endereço -->
-                    <div class="md:col-span-4 space-y-3">
-                        <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Endereço Residencial</label>
+                    <div class="md:col-span-2 flex flex-col justify-end space-y-3">
+                        <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Endereço Residencial (Rua, Nº)</label>
                         <input name="address" type="text" required value="{{ old('address') }}"
                             class="premium-input" placeholder="Rua, número, complemento">
                     </div>
 
+                    <!-- Bairro -->
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
+                        <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Bairro</label>
+                        <input name="neighborhood" type="text" required value="{{ old('neighborhood') }}"
+                            class="premium-input" placeholder="Bairro">
+                    </div>
+
                     <!-- Cidade -->
-                    <div class="md:col-span-2 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Cidade</label>
                         <input name="city" type="text" required value="{{ old('city') }}"
                             class="premium-input" placeholder="Cidade">
                     </div>
 
                     <!-- Estado -->
-                    <div class="md:col-span-1 space-y-3">
+                    <div class="md:col-span-1 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Estado (UF)</label>
                         <input name="state" type="text" maxlength="2" required value="{{ old('state') }}"
                             class="premium-input uppercase" placeholder="UF">
                     </div>
 
                     <!-- Nível Atividade -->
-                    <div class="md:col-span-3 space-y-3">
+                    <div class="md:col-span-3 flex flex-col justify-end space-y-3">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Nível de Atividade</label>
                         <select name="activity_level" required class="premium-input appearance-none">
                             <option value="">Selecione...</option>
@@ -212,23 +226,28 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    @foreach(['disease' => 'Possui alguma doença?', 'injury' => 'Possui alguma lesão?', 'medication' => 'Usa medicação?', 'allergy' => 'Possui alergia?'] as $key => $label)
+                    @foreach([
+                        ['field' => 'has_disease', 'details' => 'disease_details', 'label' => 'Possui alguma doença?'],
+                        ['field' => 'has_injury', 'details' => 'injury_details', 'label' => 'Possui alguma lesão?'],
+                        ['field' => 'uses_medication', 'details' => 'medication_details', 'label' => 'Usa medicação?'],
+                        ['field' => 'has_allergy', 'details' => 'allergy_details', 'label' => 'Possui alergia?']
+                    ] as $item)
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-2">{{ $label }}</label>
+                            <label class="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-2">{{ $item['label'] }}</label>
                             <div class="flex gap-2 p-1 bg-zinc-950/50 rounded-xl border border-zinc-900 shadow-inner">
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="has_{{ $key }}" value="1" class="hidden peer" {{ old('has_'.$key) == '1' ? 'checked' : '' }} onclick="toggleDetails('{{ $key }}_details_container', true)">
+                                    <input type="radio" name="{{ $item['field'] }}" value="1" class="hidden peer" {{ old($item['field']) == '1' ? 'checked' : '' }} onclick="toggleDetails('{{ $item['details'] }}_container', true)">
                                     <span class="px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-700 peer-checked:bg-emerald-500 peer-checked:text-zinc-950 transition-all block">Sim</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="has_{{ $key }}" value="0" class="hidden peer" {{ old('has_'.$key, '0') == '0' ? 'checked' : '' }} onclick="toggleDetails('{{ $key }}_details_container', false)">
+                                    <input type="radio" name="{{ $item['field'] }}" value="0" class="hidden peer" {{ old($item['field'], '0') == '0' ? 'checked' : '' }} onclick="toggleDetails('{{ $item['details'] }}_container', false)">
                                     <span class="px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-zinc-700 peer-checked:bg-zinc-800 peer-checked:text-white transition-all block">Não</span>
                                 </label>
                             </div>
                         </div>
-                        <div id="{{ $key }}_details_container" class="{{ old('has_'.$key) == '1' ? '' : 'hidden' }}">
-                            <textarea name="{{ $key }}_details" class="premium-input min-h-[100px] resize-none" placeholder="Especifique detalhes importantes para sua segurança...">{{ old($key.'_details') }}</textarea>
+                        <div id="{{ $item['details'] }}_container" class="{{ old($item['field']) == '1' ? '' : 'hidden' }}">
+                            <textarea name="{{ $item['details'] }}" class="premium-input min-h-[100px] resize-none" placeholder="Especifique detalhes importantes para sua segurança...">{{ old($item['details']) }}</textarea>
                         </div>
                     </div>
                     @endforeach
@@ -280,13 +299,25 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-3">
+                    <div class="space-y-3" x-data="{ show: false }">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Sua Senha</label>
-                        <input name="password" type="password" required class="premium-input" placeholder="••••••••">
+                        <div class="relative">
+                            <input name="password" :type="show ? 'text' : 'password'" required class="premium-input pr-10" placeholder="••••••••">
+                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-500 hover:text-emerald-500 transition-colors focus:outline-none cursor-pointer">
+                                <span x-show="!show"><i data-lucide="eye" class="w-5 h-5"></i></span>
+                                <span x-show="show" x-cloak><i data-lucide="eye-off" class="w-5 h-5"></i></span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="space-y-3">
+                    <div class="space-y-3" x-data="{ show: false }">
                         <label class="text-[10px] text-zinc-600 font-black uppercase tracking-widest ml-2">Confirme a Senha</label>
-                        <input name="password_confirmation" type="password" required class="premium-input" placeholder="••••••••">
+                        <div class="relative">
+                            <input name="password_confirmation" :type="show ? 'text' : 'password'" required class="premium-input pr-10" placeholder="••••••••">
+                            <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-500 hover:text-emerald-500 transition-colors focus:outline-none cursor-pointer">
+                                <span x-show="!show"><i data-lucide="eye" class="w-5 h-5"></i></span>
+                                <span x-show="show" x-cloak><i data-lucide="eye-off" class="w-5 h-5"></i></span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

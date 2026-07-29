@@ -74,7 +74,8 @@ class RegisterController extends Controller
             'terms' => ['required', 'accepted'],
             // Campos adicionais Profissional
             'profession_id' => ['required_if:tipo_acesso,professional', 'nullable', 'exists:professions,id'],
-            'specialty' => ['nullable', 'string', 'max:120'],
+            'specialties' => ['nullable', 'array'],
+            'specialties.*' => ['exists:especialidades,id'],
             'registration_number' => ['nullable', 'string', 'max:50'],
             'company_name' => ['nullable', 'string', 'max:120'],
             // Campos opcionais
@@ -171,7 +172,7 @@ class RegisterController extends Controller
 
             // Vincular papel na tabela pivot (Many-to-Many)
             if ($role) {
-                $user->roles()->sync([$role->id]);
+                $user->assignRole($role->name);
             }
             
             // Perfil básico
@@ -181,12 +182,11 @@ class RegisterController extends Controller
                 'sex' => $validated['sex'] ?? '',
             ]);
 
-            // Perfil Profissional se selecionado (campos NOT NULL na BD: preencher com vazio/placeholder até completar no painel)
+            // Perfil Profissional se selecionado
             if ($profileName === 'professional') {
-                \App\Models\ProfessionalProfile::create([
+                $profProfile = \App\Models\ProfessionalProfile::create([
                     'user_id' => $user->id,
                     'profession_id' => $validated['profession_id'],
-                    'specialty' => $validated['specialty'] ?? null,
                     'registration_number' => $validated['registration_number'] ?? '',
                     'council' => $validated['council'] ?? '',
                     'registration_uf' => strtoupper(substr((string) ($validated['registration_uf'] ?? 'NA'), 0, 2)) ?: 'NA',
@@ -195,6 +195,10 @@ class RegisterController extends Controller
                         : now()->addYears(10)->toDateString(),
                     'company_name' => $validated['company_name'] ?? null,
                 ]);
+
+                if (!empty($validated['specialties'])) {
+                    $profProfile->specialties()->sync($validated['specialties']);
+                }
             }
 
             // Registrar Consentimento Inicial (LGPD)
