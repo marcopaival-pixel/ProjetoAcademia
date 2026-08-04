@@ -1,0 +1,92 @@
+name: Bugfix CI
+
+on:
+  push:
+    branches: ['bugfix/**']
+    paths:
+      - 'backend/**'
+      - '.cursor/bug-surgeon/test-plan.json'
+      - '.github/workflows/bugfix-ci.yml'
+  pull_request:
+    branches: [main, homologacao, develop]
+    paths:
+      - 'backend/**'
+      - '.cursor/bug-surgeon/test-plan.json'
+      - '.github/workflows/bugfix-ci.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  bugfix-tests:
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'bugfix/') || startsWith(github.ref_name, 'bugfix/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_sqlite, openssl, curl, fileinfo, zip, xml
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Resolve test filters
+        id: plan
+        working-directory: .
+        run: |
+          FILTERS=""
+          if [ -f .cursor/bug-surgeon/test-plan.json ]; then
+            FILTERS=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path(".cursor/bug-surgeon/test-plan.json")
+          data = json.loads(p.read_text())
+          tests = data.get("tests") or []
+          print("|".join(str(t) for t in tests if t))
+          PY
+          )
+          fi
+          if [ -z "$FILTERS" ]; then
+            FILTERS="BugIncidentServiceTest"
+          fi
+          echo "filters=$FILTERS" >> "$GITHUB_OUTPUT"
+          echo "Using filters: $FILTERS"
+
+      - name: Run directed PHPUnit
+        run: |
+          IFS='|' read -ra PARTS <<< "${{ steps.plan.outputs.filters }}"
+          for f in "${PARTS[@]}"; do
+            echo "=== php artisan test --filter=$f ==="
+            php artisan test --filter="$f"
+          done
+
+      - name: Notify Bug Surgeon — CI passed
+        if: success() && vars.BUG_SURGEON_WEBHOOK_URL != ''
+        env:
+          BUG_SURGEON_WEBHOOK_URL: ${{ vars.BUG_SURGEON_WEBHOOK_URL }}
+          BUG_SURGEON_AGENT_TOKEN: ${{ secrets.BUG_SURGEON_AGENT_TOKEN }}
+          BUGFIX_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          CODE=$(echo "$BUGFIX_BRANCH" | grep -oiE 'bug-[0-9]{4}-[0-9]{5}' | head -1 | tr '[:lower:]' '[:upper:]')
+          if [ -z "$CODE" ]; then
+            echo "No incident code in branch; skipping."
+            exit 0
+          fi
+          echo "Marking CI passed for $CODE"
+          curl -sf -X POST "${BUG_SURGEON_WEBHOOK_URL%/}/admin/bug-surgeon/agent/incidents/by-code/${CODE}/ci-passed" \
+            -H "X-Bug-Surgeon-Token: ${BUG_SURGEON_AGENT_TOKEN}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "{\"branch\":\"${BUGFIX_BRANCH}\",\"run_id\":${{ github.run_id }}}"
+
+      - name: Bug Surgeon deploy gate (homologacao — expect blocked until admin approval)
+        continue-on-error: true
+        env:
+          BUGFIX_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: php artisan bug-surgeon:deploy-gate --target=homologacao --branch="$BUGFIX_BRANCH"

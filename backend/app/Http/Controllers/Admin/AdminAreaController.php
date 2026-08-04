@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Services\SystemErrorFingerprintService;
 use App\Models\Muscle;
 use App\Models\MuscleGroup;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Plan;
 use App\Models\AdminLog;
+use App\Models\BugIncident;
 use App\Models\SystemError;
 use App\Models\AdminSetting;
 use App\Models\ExerciseCatalog;
@@ -420,7 +421,10 @@ class AdminAreaController extends Controller
             if ($key === 'mail_password' && !empty($value)) {
                 $value = Crypt::encryptString($value);
             } elseif ($key === 'mail_password' && empty($value)) {
-                // Se estiver vazia, não sobrescrever a senha existente (manter a atual)
+                continue;
+            }
+
+            if ($key === 'openai_api_key' && empty($value)) {
                 continue;
             }
 
@@ -1236,10 +1240,27 @@ class AdminAreaController extends Controller
         }, $filename, ['Content-Type' => 'application/json']);
     }
 
-    public function systemErrors(): View
+    public function systemErrors(SystemErrorFingerprintService $fingerprints): View
     {
         $systemErrors = SystemError::with('user')->orderBy('created_at', 'desc')->paginate(50);
-        return view('admin.system_errors.index', compact('systemErrors'));
+
+        $fpByError = [];
+        foreach ($systemErrors as $err) {
+            $fpByError[$err->id] = $fingerprints->compute($err);
+        }
+
+        $incidentsByFingerprint = BugIncident::query()
+            ->whereIn('fingerprint', array_values(array_unique($fpByError)))
+            ->whereNull('ignored_at')
+            ->get()
+            ->keyBy('fingerprint');
+
+        $errorIncidents = [];
+        foreach ($fpByError as $errorId => $fp) {
+            $errorIncidents[$errorId] = $incidentsByFingerprint->get($fp);
+        }
+
+        return view('admin.system_errors.index', compact('systemErrors', 'errorIncidents'));
     }
 
     public function clearErrors()

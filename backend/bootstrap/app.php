@@ -57,6 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'block.demo.prod' => \App\Http\Middleware\BlockDemoInProduction::class,
             'active.patient' => \App\Http\Middleware\EnsureActivePatientContext::class,
             'api.professional' => \App\Http\Middleware\EnsureApiProfessional::class,
+            'bug.surgeon.agent' => \App\Http\Middleware\VerifyBugSurgeonAgentToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

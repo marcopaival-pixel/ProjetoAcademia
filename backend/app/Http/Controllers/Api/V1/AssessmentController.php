@@ -84,8 +84,8 @@ class AssessmentController extends Controller
 
         $assessment = BodyAssessment::create($validated + [
             'user_id' => $request->user()->id,
-            'created_by' => $request->user()->id,
-            'status' => 'self_reported',
+            'created_by' => 'patient',
+            'status' => 'approved',
         ]);
 
         return response()->json(['data' => $this->payload($assessment)], 201);
@@ -122,7 +122,7 @@ class AssessmentController extends Controller
 
     public function downloadPdf(Request $request, int $id): StreamedResponse|JsonResponse
     {
-        $assessment = BodyAssessment::where('patient_id', $request->user()->id)->find($id);
+        $assessment = BodyAssessment::where('user_id', $request->user()->id)->find($id);
 
         if (! $assessment) {
             return response()->json(['message' => 'Avaliação não encontrada.'], 404);

@@ -24,6 +24,7 @@ class AiFeatureCostSeeder extends Seeder
 
             // Specific Feature Mappings (Found in Controllers)
             ['feature_code' => 'chat_response', 'feature_name' => 'Chat com NexBot (Sessão)', 'credits_required' => 10],
+            ['feature_code' => 'ai_orchestrator', 'feature_name' => 'Orquestrador de IA (NexShape AI)', 'credits_required' => 15],
             ['feature_code' => 'analyze_body_photo', 'feature_name' => 'Análise de Foto Corporal (Visão computacional)', 'credits_required' => 50],
             ['feature_code' => 'diet_audit', 'feature_name' => 'Auditoria Nutricional Semanal', 'credits_required' => 40],
             ['feature_code' => 'meal_suggestion', 'feature_name' => 'Sugestão de Refeição Inteligente', 'credits_required' => 20],
@@ -40,6 +41,7 @@ class AiFeatureCostSeeder extends Seeder
             
             // Administrative & Support
             ['feature_code' => 'support_ai', 'feature_name' => 'Suporte ao Cliente via IA', 'credits_required' => 5],
+            ['feature_code' => 'bug_surgeon_diagnosis', 'feature_name' => 'Diagnóstico automático de bugs (Bug Surgeon)', 'credits_required' => 25],
         ];
 
         foreach ($costs as $cost) {

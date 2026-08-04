@@ -1,0 +1,40 @@
+{
+  "problem_summary": "Aluno independente não consegue salvar avaliação física.",
+  "diagnosis": "Tentativa de acessar professional->id em aluno sem vínculo.",
+  "root_cause": "O serviço assume que todo aluno possui profissional associado.",
+  "module": "Avaliação física",
+  "affected_role": "aluno_independente",
+  "file_path": "backend/app/Services/StudentAssessmentService.php",
+  "method_name": "createAssessment",
+  "line_start": 87,
+  "line_end": 87,
+  "code_snippet": "$professionalId = $student->professional->id;",
+  "proposed_diff": "- $professionalId = $student->professional->id;\n+ $professionalId = $student->professional?->id;",
+  "confidence": 97,
+  "error_reproduced": true,
+  "risk_level": "low",
+  "evidence": [
+    {"type": "stack_trace", "detail": "StudentAssessmentService.php:87"},
+    {"type": "reproduction", "detail": "Teste Feature reproduziu o cenário"}
+  ],
+  "impact_analysis": {
+    "files_to_change": ["backend/app/Services/StudentAssessmentService.php"],
+    "affected_roles": ["aluno_independente", "aluno_vinculado"],
+    "unaffected_roles": ["paciente", "clinica", "profissional"],
+    "routes_changed": false,
+    "database_changes": false,
+    "permissions_changed": false,
+    "tenancy_preserved": true
+  },
+  "checklist": [
+    {"key": "log", "label": "Log carregado", "done": true},
+    {"key": "stack", "label": "Stack trace identificado", "done": true},
+    {"key": "route", "label": "Rota localizada", "done": true},
+    {"key": "controller", "label": "Controller localizado", "done": true},
+    {"key": "service", "label": "Service analisado", "done": true},
+    {"key": "reproduced", "label": "Erro reproduzido", "done": true},
+    {"key": "root_cause", "label": "Causa raiz encontrada", "done": true},
+    {"key": "impact", "label": "Impacto calculado", "done": true}
+  ],
+  "submit_for_approval": true
+}

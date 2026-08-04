@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\DeployRelease;
+use App\Services\BugSurgeonDeployGateService;
 use App\Support\AppVersion;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,8 @@ class DeployChecklistCommand extends Command
         $targetEnv = (string) $this->option('target');
         $failed = 0;
         $migrator = app('migrator');
+        $gate = app(BugSurgeonDeployGateService::class);
+        $branch = getenv('BUGFIX_BRANCH') ?: $this->detectGitBranch();
 
         $this->info('=== Checklist pré-deploy ===');
         $this->line('Versão: ' . AppVersion::display());
@@ -75,6 +78,20 @@ class DeployChecklistCommand extends Command
             } else {
                 $this->warn('  [!] Registre e aprove homologação em /admin/deploy');
                 $failed++;
+            }
+        }
+
+        if ($gate->isBugfixBranch($branch)) {
+            $this->newLine();
+            $this->info('=== Bug Surgeon gate (branch bugfix) ===');
+            $gateTarget = $targetEnv === 'production' ? 'production' : 'homologacao';
+            $gateErrors = $gate->validateDeploy($gateTarget, $branch);
+            foreach ($gateErrors as $msg) {
+                $this->error('  [falha] ' . $msg);
+                $failed++;
+            }
+            if ($gateErrors === []) {
+                $this->line('  [ok] Aprovações Bug Surgeon para ' . $gateTarget);
             }
         }
 
@@ -155,5 +172,20 @@ class DeployChecklistCommand extends Command
             $this->warn('  [!] LOG_LEVEL=debug em produção');
             $failed++;
         }
+    }
+
+    private function detectGitBranch(): ?string
+    {
+        foreach ([base_path('../.git/HEAD'), base_path('.git/HEAD')] as $head) {
+            if (! is_file($head)) {
+                continue;
+            }
+            $ref = trim((string) file_get_contents($head));
+            if (str_starts_with($ref, 'ref: ')) {
+                return basename(trim(substr($ref, 5)));
+            }
+        }
+
+        return null;
     }
 }

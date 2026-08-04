@@ -1,0 +1,5 @@
+*
+!.gitignore
+!test-plan.example.json
+!agent-report.example.json
+!context_pack.example.json

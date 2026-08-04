@@ -33,6 +33,7 @@ class DeployRelease extends Model
         'impact_level',
         'risk_level',
         'deployed_by',
+        'bug_incident_id',
         'git_branch',
         'git_commit',
         'notes',
@@ -55,6 +56,11 @@ class DeployRelease extends Model
     public function deployer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'deployed_by');
+    }
+
+    public function bugIncident(): BelongsTo
+    {
+        return $this->belongsTo(BugIncident::class);
     }
 
     public function environmentLabel(): string

@@ -37,6 +37,7 @@ class AiGovernanceSeeder extends Seeder
             ['agent_key' => 'evolution_report_comparison', 'name' => 'Comparador visual de evolução', 'model' => config('ai_evolution.openai.comparison_model'), 'prompt_version' => 'evolution-report-orchestrator:v2', 'schema_version' => 'evolution-comparison:v1'],
             ['agent_key' => 'evolution_report_audit', 'name' => 'Auditor anti-alucinação de evolução', 'model' => config('ai_evolution.openai.audit_model'), 'prompt_version' => 'evolution-report-orchestrator:v2', 'schema_version' => 'report-audit:v1'],
             ['agent_key' => 'prescription_safety_auditor', 'name' => 'Auditor de segurança de prescrições', 'model' => config('services.openai.model_fast'), 'prompt_version' => 'prescription-safety:v1', 'schema_version' => 'prescription-safety:v1'],
+            ['agent_key' => 'bug_surgeon', 'name' => 'Bug Surgeon — diagnóstico automático', 'model' => config('services.bug_surgeon.ai_model', config('services.openai.model_fast')), 'prompt_version' => 'bug-surgeon:v1', 'schema_version' => 'bug-surgeon-diagnosis:v1'],
         ];
 
         foreach ($agents as $agent) {
@@ -68,6 +69,7 @@ class AiGovernanceSeeder extends Seeder
             ['feature_key' => 'smart_stack_suggestion', 'entry_agent_key' => 'smart_stack_suggestion', 'requires_audit' => true, 'auditor_agent_key' => 'prescription_safety_auditor'],
             ['feature_key' => 'fitness_training_generation', 'entry_agent_key' => 'fitness_training_generator', 'requires_audit' => true, 'auditor_agent_key' => 'prescription_safety_auditor'],
             ['feature_key' => 'fitness_meal_generation', 'entry_agent_key' => 'fitness_meal_generator', 'requires_audit' => true, 'auditor_agent_key' => 'prescription_safety_auditor'],
+            ['feature_key' => 'bug_surgeon_diagnosis', 'entry_agent_key' => 'bug_surgeon', 'failure_behavior' => 'fail_closed'],
         ];
 
         foreach ($routes as $route) {

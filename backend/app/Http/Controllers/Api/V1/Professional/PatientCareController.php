@@ -131,7 +131,7 @@ class PatientCareController extends Controller
         $assessment = BodyAssessment::create($validated + [
             'user_id' => $patient->id,
             'professional_id' => $request->user()->id,
-            'created_by' => $request->user()->id,
+            'created_by' => 'professional',
             'status' => 'approved',
         ]);
 

@@ -58,6 +58,14 @@ return [
         'model_workout_import' => env('OPENAI_WORKOUT_IMPORT_MODEL', env('OPENAI_MODEL_MAIN', 'gpt-4o')),
     ],
 
+    'ai' => [
+        'log_retention_days' => (int) env('AI_LOG_RETENTION_DAYS', 90),
+        /** Permite execute-action do NexBot (agendar, criar/ajustar treino, etc.). false = IA consultiva only. */
+        'student_module_writes' => filter_var(env('AI_STUDENT_MODULE_WRITES', false), FILTER_VALIDATE_BOOL),
+        /** Impede IA de alterar planos com professional_id ou creator_id != user_id. */
+        'block_ai_modify_prescribed_plans' => filter_var(env('AI_BLOCK_MODIFY_PRESCRIBED_PLANS', true), FILTER_VALIDATE_BOOL),
+    ],
+
     /*
     | Envio de PDF por WhatsApp (opcional). driver: none | http
     | Para http, defina api_url compatível com o seu gateway (contrato pode variar).
@@ -80,6 +88,17 @@ return [
     */
     'google_vision' => [
         'key' => env('GOOGLE_VISION_API_KEY'),
+    ],
+
+    'bug_surgeon' => [
+        'agent_token' => env('BUG_SURGEON_AGENT_TOKEN'),
+        'queue' => env('BUG_SURGEON_QUEUE', 'default'),
+        'context_pack_max_files' => (int) env('BUG_SURGEON_CONTEXT_MAX_FILES', 12),
+        'auto_diagnosis' => filter_var(env('BUG_SURGEON_AUTO_DIAGNOSIS', true), FILTER_VALIDATE_BOOL),
+        'auto_submit_for_approval' => filter_var(env('BUG_SURGEON_AUTO_SUBMIT', true), FILTER_VALIDATE_BOOL),
+        'min_confidence' => (int) env('BUG_SURGEON_MIN_CONFIDENCE', 80),
+        'system_user_id' => env('BUG_SURGEON_SYSTEM_USER_ID'),
+        'ai_model' => env('BUG_SURGEON_AI_MODEL'),
     ],
 
 ];

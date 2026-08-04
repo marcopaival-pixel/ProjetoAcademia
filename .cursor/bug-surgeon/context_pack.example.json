@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "incident_code": "BUG-2026-00001",
+  "generated_at": "2026-08-03T23:30:00-03:00",
+  "primary_frame": {
+    "repo_path": "backend/app/Http/Controllers/Api/V1/AssessmentController.php",
+    "line": 125,
+    "class": "App\\Http\\Controllers\\Api\\V1\\AssessmentController",
+    "method": "downloadPdf",
+    "role": "controller"
+  },
+  "stack_frames_app": [],
+  "related_files": [
+    {
+      "role": "controller",
+      "repo_path": "backend/app/Http/Controllers/Api/V1/AssessmentController.php",
+      "reason": "stack_primary",
+      "line_start": 120,
+      "line_end": 130,
+      "snippet": "..."
+    },
+    {
+      "role": "model",
+      "repo_path": "backend/app/Models/BodyAssessment.php",
+      "reason": "import_primary",
+      "snippet": "..."
+    }
+  ],
+  "route_hint": {
+    "http_method": "GET",
+    "path": "/api/v1/student/assessments/42/pdf",
+    "controller_class": "App\\Http\\Controllers\\Api\\V1\\AssessmentController",
+    "controller_method": "downloadPdf"
+  },
+  "git_suspects": [],
+  "stats": {
+    "files_in_pack": 5,
+    "max_files": 12,
+    "snippet_radius_lines": 45
+  }
+}

@@ -38,6 +38,7 @@ class AdminPortalMenusSeeder extends Seeder
             ['name' => 'admin_nav_backups', 'label' => 'Backup', 'route' => 'admin.backups.*', 'match_mode' => 'pattern', 'order' => 495],
             ['name' => 'admin_nav_deploy', 'label' => 'Deploy', 'route' => 'admin.deploy.*', 'match_mode' => 'pattern', 'order' => 496],
             ['name' => 'admin_nav_system_errors', 'label' => 'Logs de Erros', 'route' => 'admin.system-errors*', 'match_mode' => 'pattern', 'order' => 500],
+            ['name' => 'admin_nav_bug_surgeon', 'label' => 'Bug Surgeon', 'route' => 'admin.bug-surgeon.*', 'match_mode' => 'pattern', 'order' => 505],
             ['name' => 'admin_nav_ai', 'label' => 'Monitoramento IA', 'route' => 'admin.ai.monitoring', 'match_mode' => 'exact', 'order' => 510],
             ['name' => 'admin_nav_lgpd', 'label' => 'Privacidade / LGPD', 'route' => 'admin.lgpd.*', 'match_mode' => 'pattern', 'order' => 520],
             ['name' => 'admin_nav_omnichannel', 'label' => 'OmniChannel', 'route' => 'admin.omnichannel*', 'match_mode' => 'pattern', 'order' => 530],

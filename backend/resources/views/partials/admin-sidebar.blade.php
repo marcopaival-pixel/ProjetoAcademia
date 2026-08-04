@@ -17,7 +17,7 @@
             @if(request()->routeIs('admin.omnichannel*', 'omni.*')) 'chatbot', @endif
             @if(request()->routeIs('admin.settings', 'admin.especialidades.*', 'admin.muscles.*', 'admin.exercises.*', 'admin.training.*')) 'configuracoes', @endif
             @if(request()->routeIs('admin.roles.*', 'admin.lgpd.*', 'admin.security.*')) 'seguranca', @endif
-            @if(request()->routeIs('admin.system-errors', 'admin.settings.email.logs', 'admin.settings.payments.webhooks', 'admin.backups.*', 'admin.deploy.*')) 'logs', @endif
+            @if(request()->routeIs('admin.system-errors', 'admin.bug-surgeon.*', 'admin.settings.email.logs', 'admin.settings.payments.webhooks', 'admin.backups.*', 'admin.deploy.*')) 'logs', @endif
             @if(request()->routeIs('admin.api-integrations.*', 'admin.settings.email.providers', 'admin.settings.email.templates.*')) 'integracoes', @endif
             @if(request()->routeIs('admin.configuration-center.*')) 'sistema_avancado', @endif
         ].filter(Boolean),
@@ -373,7 +373,7 @@
         </div>
 
         <!-- GRUPO: LOGS E AUDITORIA -->
-        <div class="nav-item mb-1" x-show="isGroupVisible(['Logs', 'Auditoria', 'Erros', 'Backup', 'Deploy'])">
+        <div class="nav-item mb-1" x-show="isGroupVisible(['Logs', 'Auditoria', 'Erros', 'Backup', 'Deploy', 'Bug Surgeon'])">
             <button @click="toggleMenu('logs')" class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-zinc-500" :class="{ 'open active': openMenus.includes('logs') }">
                 <div class="flex items-center gap-3">
                     <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -383,6 +383,7 @@
             </button>
             <ul class="submenu list-none p-0 m-0 space-y-1 mt-1 pl-4" x-show="openMenus.includes('logs') && !isCollapsed" x-collapse>
                 <li x-show="isVisible('Logs de Erro')"><a href="{{ route('admin.system-errors') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.system-errors') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de Erro</a></li>
+                <li x-show="isVisible('Bug Surgeon')"><a href="{{ route('admin.bug-surgeon.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.bug-surgeon.*') ? 'active' : 'text-zinc-600 hover:text-white' }}">Bug Surgeon</a></li>
                 <li x-show="isVisible('Logs de E-mail')"><a href="{{ route('admin.settings.email.logs') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.email.logs') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de E-mail</a></li>
                 <li x-show="isVisible('Logs de Pagamento')"><a href="{{ route('admin.settings.payments.webhooks') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.settings.payments.webhooks') ? 'active' : 'text-zinc-600 hover:text-white' }}">Logs de Pagamento</a></li>
                 <li x-show="isVisible('Backup')"><a href="{{ route('admin.backups.index') }}" class="submenu-link flex items-center px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest {{ request()->routeIs('admin.backups.index') ? 'active' : 'text-zinc-600 hover:text-white' }}">Backups do Sistema</a></li>

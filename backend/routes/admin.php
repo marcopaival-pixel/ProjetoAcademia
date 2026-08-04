@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\BugSurgeonAgentController;
+use App\Http\Controllers\Admin\BugSurgeonController;
 use App\Http\Controllers\Admin\AcademyCompanyController;
 use App\Http\Controllers\Admin\AdminAreaController;
 use App\Http\Controllers\Admin\ApiIntegrationController;
@@ -54,6 +56,15 @@ Route::prefix('admin')->group(function () {
         ->middleware('throttle:20,1')
         ->name('admin.login.submit');
     Route::post('/logout', [AdminAreaController::class, 'logout'])->name('admin.logout');
+
+    // Agente Cursor (token BUG_SURGEON_AGENT_TOKEN — sem sessão web)
+    Route::prefix('bug-surgeon/agent')->middleware('bug.surgeon.agent')->name('admin.bug-surgeon.agent.')->group(function () {
+        Route::get('/incidents/by-code/{code}/context', [BugSurgeonAgentController::class, 'contextByCode'])->name('context-by-code');
+        Route::post('/incidents/by-code/{code}/report', [BugSurgeonAgentController::class, 'submitReportByCode'])->name('report-by-code');
+        Route::post('/incidents/by-code/{code}/ci-passed', [BugSurgeonAgentController::class, 'markCiPassedByCode'])->name('ci-passed-by-code');
+        Route::get('/incidents/{incident}/context', [BugSurgeonAgentController::class, 'context'])->name('context');
+        Route::post('/incidents/{incident}/report', [BugSurgeonAgentController::class, 'submitReport'])->name('report');
+    });
 
     // Área Protegida Admin
     Route::middleware(['auth', 'admin'])->group(function () {
@@ -202,6 +213,29 @@ Route::prefix('admin')->group(function () {
         Route::post('/security/change-password', [AdminAreaController::class, 'changeAdminPassword'])->name('admin.security.change-password');
         Route::get('/system-errors', [AdminAreaController::class, 'systemErrors'])->name('admin.system-errors');
         Route::post('/system-errors/clear', [AdminAreaController::class, 'clearErrors'])->name('admin.system-errors.clear');
+
+        Route::prefix('bug-surgeon')->name('admin.bug-surgeon.')->group(function () {
+            Route::get('/', [BugSurgeonController::class, 'index'])->name('index');
+            Route::post('/from-system-error/{systemError}/analyze', [BugSurgeonController::class, 'startAnalysis'])->name('start-analysis');
+            Route::post('/from-system-error/{systemError}/ignore', [BugSurgeonController::class, 'ignore'])->name('ignore');
+            Route::post('/from-system-error/{systemError}', [BugSurgeonController::class, 'storeFromSystemError'])->name('from-system-error');
+            Route::get('/{incident}/summary', [BugSurgeonController::class, 'summary'])->name('summary');
+            Route::get('/{incident}/export/authorization', [BugSurgeonController::class, 'exportAuthorization'])->name('export.authorization');
+            Route::get('/{incident}/export/session', [BugSurgeonController::class, 'exportSession'])->name('export.session');
+            Route::get('/{incident}', [BugSurgeonController::class, 'show'])->name('show');
+            Route::post('/{incident}/analysis', [BugSurgeonController::class, 'updateAnalysis'])->name('analysis');
+            Route::post('/{incident}/approve-patch', [BugSurgeonController::class, 'approvePatch'])->name('approve-patch');
+            Route::post('/{incident}/reject-patch', [BugSurgeonController::class, 'rejectPatch'])->name('reject-patch');
+            Route::post('/{incident}/reanalysis', [BugSurgeonController::class, 'requestReanalysis'])->name('reanalysis');
+            Route::post('/{incident}/approve-staging', [BugSurgeonController::class, 'approveStaging'])->name('approve-staging');
+            Route::post('/{incident}/approve-production', [BugSurgeonController::class, 'approveProduction'])->name('approve-production');
+            Route::post('/{incident}/rollback', [BugSurgeonController::class, 'rollback'])->name('rollback');
+            Route::post('/{incident}/ci-passed', [BugSurgeonController::class, 'markCiPassed'])->name('ci-passed');
+            Route::post('/{incident}/sync-cursor', [BugSurgeonController::class, 'syncCursor'])->name('sync-cursor');
+            Route::post('/{incident}/commit', [BugSurgeonController::class, 'recordCommit'])->name('commit');
+            Route::get('/{incident}/export/authorization', [BugSurgeonController::class, 'exportAuthorization'])->name('export.authorization');
+            Route::get('/{incident}/export/session', [BugSurgeonController::class, 'exportSession'])->name('export.session');
+        });
         
         // Configurações Globais e Monitoramento
         Route::get('/settings', [AdminAreaController::class, 'settings'])->name('admin.settings');

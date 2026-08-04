@@ -1,0 +1,8 @@
+# Copie para .cursor/bug-surgeon/test-plan.json na branch bugfix e ajuste os testes.
+{
+  "incident_id": "BUG-2026-00001",
+  "tests": [
+    "BugIncidentServiceTest",
+    "BugSurgeonDeployGateTest"
+  ]
+}
