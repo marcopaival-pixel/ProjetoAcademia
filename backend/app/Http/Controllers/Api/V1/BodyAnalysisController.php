@@ -15,7 +15,7 @@ class BodyAnalysisController extends Controller
             ->where('user_id', $request->user()->id)
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn (BodyAnalysis $analysis) => $processor->payload($analysis))
+            ->map(fn (BodyAnalysis $analysis) => $processor->payload($analysis, true))
             ->values();
 
         return response()->json([
@@ -41,6 +41,7 @@ class BodyAnalysisController extends Controller
             $request->view_type,
             json_decode($request->landmarks ?: 'null', true),
             json_decode($request->metrics ?: 'null', true),
+            $request,
         );
 
         if (!($result['ok'] ?? false)) {
@@ -50,7 +51,7 @@ class BodyAnalysisController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'analysis' => $processor->payload($result['analysis']),
+                'analysis' => $processor->payload($result['analysis'], true),
             ],
         ]);
     }
@@ -65,9 +66,19 @@ class BodyAnalysisController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'analysis' => $processor->payload($analysis),
+                'analysis' => $processor->payload($analysis, true),
             ],
         ]);
+    }
+
+    public function photo(Request $request, int $analysis, BodyAnalysisProcessingService $processor)
+    {
+        $analysis = BodyAnalysis::withoutGlobalScopes()
+            ->whereKey($analysis)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        return $processor->photoResponse($analysis);
     }
 
     public function compare(Request $request, BodyAnalysisProcessingService $processor)
@@ -89,7 +100,7 @@ class BodyAnalysisController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $processor->comparePayload($first, $second),
+            'data' => $processor->comparePayload($first, $second, true),
         ]);
     }
 }

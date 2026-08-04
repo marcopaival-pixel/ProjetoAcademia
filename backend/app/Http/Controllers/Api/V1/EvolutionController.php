@@ -203,10 +203,6 @@ class EvolutionController extends Controller
         }
 
         $report = $service->createRequest($user, $request);
-        $aiCredits->consume($user, 'evolution_ai_report', [
-            'source' => 'api_v1_report_request',
-            'report_id' => $report->id,
-        ]);
 
         return response()->json([
             'data' => [

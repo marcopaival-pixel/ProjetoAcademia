@@ -187,8 +187,33 @@ class EvolutionSessionAnalysisTest extends TestCase
             $table->string('feature_code')->nullable();
             $table->string('reference_id')->nullable();
             $table->string('description')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
+
+        \App\Models\AiFeatureCost::create([
+            'feature_code' => 'evolution_session_analysis',
+            'feature_name' => 'Analise de Sessao de Evolucao',
+            'credits_required' => 60,
+            'is_active' => true,
+        ]);
+
+        \App\Models\AiFeatureCost::create([
+            'feature_code' => 'evolution_ai_report',
+            'feature_name' => 'Relatorio Inteligente de Evolucao',
+            'credits_required' => 80,
+            'is_active' => true,
+        ]);
+    }
+
+    private function seedWalletFor(User $user, int $balance = 1000): void
+    {
+        \App\Models\AiCreditWallet::create([
+            'user_id' => $user->id,
+            'balance' => $balance,
+            'monthly_allowance' => $balance,
+            'extra_credits' => 0,
+        ]);
     }
 
     public function test_session_analysis_is_cached_by_photo_hash(): void
@@ -199,6 +224,7 @@ class EvolutionSessionAnalysisTest extends TestCase
             'is_premium' => true,
             'premium_expires_at' => now()->addMonth(),
         ]));
+        $this->seedWalletFor($user);
 
         EvolutionPhoto::create([
             'user_id' => $user->id,
@@ -360,6 +386,7 @@ class EvolutionSessionAnalysisTest extends TestCase
             'is_premium' => true,
             'premium_expires_at' => now()->addMonth(),
         ]));
+        $this->seedWalletFor($user);
         Sanctum::actingAs($user);
 
         foreach (['front', 'back', 'right_side', 'left_side'] as $type) {
@@ -409,6 +436,7 @@ class EvolutionSessionAnalysisTest extends TestCase
             'is_premium' => true,
             'premium_expires_at' => now()->addMonth(),
         ]));
+        $this->seedWalletFor($user);
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/evolution-reports')
@@ -424,6 +452,7 @@ class EvolutionSessionAnalysisTest extends TestCase
             'is_premium' => true,
             'premium_expires_at' => now()->addMonth(),
         ]));
+        $this->seedWalletFor($user);
 
         $consentId = \App\Models\UserConsent::create([
             'user_id' => $user->id,
@@ -484,7 +513,10 @@ class EvolutionSessionAnalysisTest extends TestCase
             'schema_version' => 'evolution-report:v1',
         ]);
 
-        (new GenerateEvolutionReport($report->id))->handle(app(\App\Services\AI\EvolutionReportOrchestratorService::class));
+        (new GenerateEvolutionReport($report->id))->handle(
+            app(\App\Services\AI\EvolutionReportOrchestratorService::class),
+            app(\App\Services\AiCreditService::class),
+        );
 
         $report->refresh();
 

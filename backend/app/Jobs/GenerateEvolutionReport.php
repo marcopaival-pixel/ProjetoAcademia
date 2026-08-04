@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\AiExecutionLog;
 use App\Models\EvolutionReport;
 use App\Services\AI\EvolutionReportOrchestratorService;
+use App\Services\AiCreditService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -21,10 +22,11 @@ class GenerateEvolutionReport implements ShouldQueue
 
     public function __construct(private int $reportId) {}
 
-    public function handle(EvolutionReportOrchestratorService $orchestrator): void
+    public function handle(EvolutionReportOrchestratorService $orchestrator, AiCreditService $aiCredits): void
     {
         $report = EvolutionReport::with('user')->findOrFail($this->reportId);
         $startedAt = microtime(true);
+        $referenceId = 'evolution_report_'.$report->id;
 
         $report->update([
             'status' => EvolutionReport::STATUS_PROCESSING,
@@ -53,6 +55,11 @@ class GenerateEvolutionReport implements ShouldQueue
                 'completed_at' => now(),
                 'published_at' => now(),
             ]);
+
+            $aiCredits->consume($report->user, 'evolution_ai_report', [
+                'source' => 'async_evolution_report',
+                'report_id' => $report->id,
+            ], $referenceId);
 
             $this->logExecution($report, 'evolution_report_orchestrator', 'completed', $startedAt);
             $this->logPipelineSteps($report, $finalReport);

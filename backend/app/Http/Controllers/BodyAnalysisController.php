@@ -37,6 +37,7 @@ class BodyAnalysisController extends Controller
             $request->view_type,
             json_decode($request->landmarks ?: 'null', true),
             json_decode($request->metrics ?: 'null', true),
+            $request,
         );
 
         if (!($result['ok'] ?? false)) {
@@ -56,6 +57,16 @@ class BodyAnalysisController extends Controller
             'limitations' => $aiSummary['limitations'] ?? [],
             'vision_summary' => $aiSummary['vision_summary'] ?? null,
         ]);
+    }
+
+    public function photo(Request $request, int $analysis, BodyAnalysisProcessingService $processor)
+    {
+        $analysis = BodyAnalysis::withoutGlobalScopes()
+            ->whereKey($analysis)
+            ->where('user_id', $request->user()?->id)
+            ->firstOrFail();
+
+        return $processor->photoResponse($analysis);
     }
 
     public function show(Request $request, int $analysis, BodyAnalysisProcessingService $processor)

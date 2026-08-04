@@ -101,6 +101,12 @@ class AppServiceProvider extends ServiceProvider
             return \Illuminate\Cache\RateLimiting\Limit::perHour(20)->by($uid > 0 ? 'privacy-u-'.$uid : 'privacy-ip-'.$request->ip());
         });
 
+        \Illuminate\Support\Facades\RateLimiter::for('ai', function (\Illuminate\Http\Request $request) {
+            $uid = (int) ($request->user()?->id ?? 0);
+
+            return \Illuminate\Cache\RateLimiting\Limit::perHour(30)->by($uid > 0 ? 'ai-u-'.$uid : 'ai-ip-'.$request->ip());
+        });
+
         \Illuminate\Support\Facades\RateLimiter::for('marketing-tracking', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by('mkt-ip-'.$request->ip());
         });

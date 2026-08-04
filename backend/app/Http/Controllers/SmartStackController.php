@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\SmartStack;
 use App\Models\Supplement;
 use App\Services\AI\OrchestratorService;
+use App\Services\StudentContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SmartStackController extends Controller
 {
     public function __construct(
-        private OrchestratorService $orchestrator
+        private OrchestratorService $orchestrator,
+        private StudentContextService $studentContext,
     ) {}
 
     public function index()
@@ -101,15 +103,27 @@ class SmartStackController extends Controller
             ], 402);
         }
 
-        $result = $this->orchestrator->run($user, "Sugira um Smart Stack para: " . ($request->goal ?? 'geral'), [
+        $goal = trim((string) ($request->goal ?? 'geral'));
+        $activeSupplements = $this->studentContext->activeSupplementsSummary($user);
+        $prompt = "Sugira um Smart Stack personalizado para o objetivo: {$goal}.";
+        if ($activeSupplements !== '') {
+            $prompt .= " O aluno ja utiliza: {$activeSupplements}. Evite duplicar ou conflitar com esses itens.";
+        }
+        $prompt .= ' Respeite alergias, medicamentos e restricoes de saude informados no perfil.';
+
+        $result = $this->orchestrator->run($user, $prompt, [
             'intent' => 'nutrition',
             'type' => 'supplement_suggestion',
-            'clinicId' => $user->academy_company_id
+            'clinic_id' => $user->clinic_id,
+            'clinicId' => $user->academy_company_id,
+            'user_metrics' => $this->studentContext->metrics($user),
+            'active_supplements' => $activeSupplements,
         ]);
 
         if ($result['status'] === 'success') {
             $aiCredits->consume($user, 'supplement_suggestion', [
-                'goal' => $request->goal ?? 'geral',
+                'goal' => $goal,
+                'had_active_supplements' => $activeSupplements !== '',
             ]);
 
             return response()->json(['success' => true, 'suggestion' => $result['message']]);

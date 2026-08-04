@@ -6,8 +6,6 @@ use App\Models\User;
 use App\Models\AiCreditWallet;
 use App\Models\AiCreditTransaction;
 use App\Models\AiFeatureCost;
-use App\Models\AiCreditPackage;
-use App\Services\FinancialLogService;
 use App\Notifications\LowAiCreditsNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -52,9 +50,9 @@ class AiCreditService
             return true;
         }
 
-        $cost = AiFeatureCost::where('feature_code', $featureCode)->where('is_active', true)->first();
-        if (!$cost) {
-            return true; // Se não configurado, assume grátis ou erro de config
+        $cost = $this->resolveActiveFeatureCost($featureCode);
+        if (! $cost) {
+            return false;
         }
 
         return $this->getBalance($user) >= $cost->credits_required;
@@ -65,27 +63,45 @@ class AiCreditService
      */
     public function consume(User $user, string $featureCode, array $metadata = [], ?string $referenceId = null): bool
     {
-        // Administradores não consomem créditos
         if ($user->isAdministrator()) {
             return true;
         }
 
-        $featureCost = AiFeatureCost::where('feature_code', $featureCode)->where('is_active', true)->first();
-        if (!$featureCost) {
-            return true;
-        }
-
-        $cost = $featureCost->credits_required;
-        $wallet = $this->getWallet($user);
-
-        if ($wallet->balance < $cost) {
+        $featureCost = $this->resolveActiveFeatureCost($featureCode);
+        if (! $featureCost) {
             return false;
         }
 
-        return DB::transaction(function () use ($user, $wallet, $featureCode, $featureCost, $cost, $metadata, $referenceId) {
+        $cost = $featureCost->credits_required;
+
+        return DB::transaction(function () use ($user, $featureCode, $featureCost, $cost, $metadata, $referenceId) {
+            if ($referenceId !== null && $this->hasUsageTransaction($user->id, $featureCode, $referenceId)) {
+                return true;
+            }
+
+            $wallet = AiCreditWallet::query()
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $wallet) {
+                $this->getWallet($user);
+                $wallet = AiCreditWallet::query()
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            }
+
+            if ($referenceId !== null && $this->hasUsageTransaction($user->id, $featureCode, $referenceId)) {
+                return true;
+            }
+
+            if ($wallet->balance < $cost) {
+                return false;
+            }
+
             $balanceBefore = $wallet->balance;
-            
-            // Lógica de consumo: primeiro consome do allowance (mensal), depois dos extras
+
             if ($wallet->monthly_allowance >= $cost) {
                 $wallet->decrement('monthly_allowance', $cost);
             } else {
@@ -97,7 +113,6 @@ class AiCreditService
             $wallet->decrement('balance', $cost);
             $wallet->save();
 
-            // Registrar Transação
             AiCreditTransaction::create([
                 'user_id' => $user->id,
                 'type' => 'usage',
@@ -107,10 +122,69 @@ class AiCreditService
                 'feature_code' => $featureCode,
                 'reference_id' => $referenceId,
                 'description' => "Consumo de IA: {$featureCost->feature_name}",
+                'metadata' => $metadata !== [] ? $metadata : null,
             ]);
 
-            // Notificar se saldo estiver baixo
             $this->checkBalanceAndNotify($user);
+
+            return true;
+        });
+    }
+
+    /**
+     * Refund credits previously consumed for a reference id.
+     */
+    public function refund(User $user, string $featureCode, string $referenceId, string $reason = 'Estorno de creditos de IA'): bool
+    {
+        if ($user->isAdministrator()) {
+            return false;
+        }
+
+        $refundReference = 'refund:'.$referenceId;
+
+        return DB::transaction(function () use ($user, $featureCode, $referenceId, $refundReference, $reason) {
+            if (AiCreditTransaction::query()
+                ->where('user_id', $user->id)
+                ->where('type', 'refund')
+                ->where('reference_id', $refundReference)
+                ->exists()
+            ) {
+                return true;
+            }
+
+            $usage = AiCreditTransaction::query()
+                ->where('user_id', $user->id)
+                ->where('type', 'usage')
+                ->where('feature_code', $featureCode)
+                ->where('reference_id', $referenceId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $usage) {
+                return false;
+            }
+
+            $amount = abs((int) $usage->credits);
+            $wallet = AiCreditWallet::query()
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $balanceBefore = $wallet->balance;
+            $wallet->increment('extra_credits', $amount);
+            $wallet->increment('balance', $amount);
+            $wallet->save();
+
+            AiCreditTransaction::create([
+                'user_id' => $user->id,
+                'type' => 'refund',
+                'credits' => $amount,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $wallet->balance,
+                'feature_code' => $featureCode,
+                'reference_id' => $refundReference,
+                'description' => $reason,
+            ]);
 
             return true;
         });
@@ -122,16 +196,16 @@ class AiCreditService
     public function renewMonthly(User $user): void
     {
         $plan = $user->plan;
-        if (!$plan) return;
+        if (! $plan) {
+            return;
+        }
 
         $allowance = $plan->ai_credits ?? 0;
         $wallet = $this->getWallet($user);
 
         DB::transaction(function () use ($user, $wallet, $allowance) {
             $balanceBefore = $wallet->balance;
-            
-            // Créditos mensais não costumam ser cumulativos em SaaS.
-            // O novo balance será: extra_credits (que sobraram) + novo allowance do plano.
+
             $wallet->monthly_allowance = $allowance;
             $wallet->balance = $wallet->extra_credits + $allowance;
             $wallet->renewal_date = now()->addMonth();
@@ -169,7 +243,7 @@ class AiCreditService
 
         DB::transaction(function () use ($user, $wallet, $amount, $type, $description, $referenceId) {
             $balanceBefore = $wallet->balance;
-            
+
             $wallet->increment('extra_credits', $amount);
             $wallet->increment('balance', $amount);
             $wallet->save();
@@ -195,16 +269,16 @@ class AiCreditService
 
         if ($balance <= 0) {
             $user->notify(new LowAiCreditsNotification(0, true));
+
             return;
         }
 
-        // Se o saldo for menor que 20% do allowance mensal do plano (ou um mínimo de 50)
         $planCredits = $user->plan->ai_credits ?? 100;
         $threshold = max(50, floor($planCredits * 0.2));
 
         if ($balance < $threshold) {
             $cacheKey = "notified_low_credits_{$user->id}_{$balance}";
-            if (!Cache::has($cacheKey)) {
+            if (! Cache::has($cacheKey)) {
                 $user->notify(new LowAiCreditsNotification($balance));
                 Cache::put($cacheKey, true, now()->addDays(1));
             }
@@ -225,5 +299,23 @@ class AiCreditService
     public function cacheResponse(string $cacheKey, string $response, int $ttlSeconds = 86400): void
     {
         Cache::put("ai_response_{$cacheKey}", $response, $ttlSeconds);
+    }
+
+    private function resolveActiveFeatureCost(string $featureCode): ?AiFeatureCost
+    {
+        return AiFeatureCost::query()
+            ->where('feature_code', $featureCode)
+            ->where('is_active', true)
+            ->first();
+    }
+
+    private function hasUsageTransaction(int $userId, string $featureCode, string $referenceId): bool
+    {
+        return AiCreditTransaction::query()
+            ->where('user_id', $userId)
+            ->where('type', 'usage')
+            ->where('feature_code', $featureCode)
+            ->where('reference_id', $referenceId)
+            ->exists();
     }
 }

@@ -17,7 +17,15 @@ class AiCreditTransaction extends Model
         'feature_code',
         'reference_id',
         'description',
+        'metadata',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'metadata' => 'array',
+        ];
+    }
 
     public function user()
     {

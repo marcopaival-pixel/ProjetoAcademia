@@ -5,6 +5,7 @@ namespace App\Services\Nutrition;
 use App\Models\User;
 use App\Services\AI\OrchestratorService;
 use App\Services\AiCreditService;
+use App\Services\SecureFileService;
 use Illuminate\Http\UploadedFile;
 
 class NutritionAIEngine
@@ -12,6 +13,7 @@ class NutritionAIEngine
     public function __construct(
         private OrchestratorService $orchestrator,
         private AiCreditService $credits,
+        private SecureFileService $secureFiles,
     ) {}
 
     public function analyzeText(User $user, string $text): array
@@ -62,36 +64,39 @@ class NutritionAIEngine
             return $this->error('credits_exceeded', 'Creditos de IA insuficientes para analisar a foto da refeicao.');
         }
 
-        $storedPath = $photo->store('nutrition_temp', 'public');
-        $absolutePath = storage_path('app/public/' . $storedPath);
+        $storedPath = $this->secureFiles->storeSensitiveFile($photo, 'nutrition_temp');
+        $absolutePath = $this->secureFiles->path($storedPath);
 
-        $prompt = implode("\n", [
-            'Voce esta em um fluxo interno. Nao converse com o usuario.',
-            'Primeiro confirme se a imagem mostra comida/refeicao.',
-            'Se nao for comida, retorne document_type unknown_document.',
-            'Se for refeicao, identifique alimentos, estime quantidades e macros.',
-            'No agente final, retorne APENAS uma lista JSON no formato:',
-            '[{"name":"Frango grelhado","amount":"150g","kcal":250,"p":35,"c":0,"f":8}]',
-        ]);
-
-        $result = $this->orchestrator->run($user, $prompt, [
-            'intent' => 'nutrition',
-            'type' => 'nutrition_photo_analysis',
-            'input_type' => 'photo',
-            'clinicId' => $user->academy_company_id,
-            'image_path' => $absolutePath,
-            'photo_url' => asset('storage/' . $storedPath),
-        ]);
-
-        $normalized = $this->normalizeOrchestratorResult($result, 'photo');
-        if ($normalized['success']) {
-            $this->credits->consume($user, 'nutrition_photo_analysis', [
-                'input_type' => 'photo',
-                'size' => $photo->getSize(),
+        try {
+            $prompt = implode("\n", [
+                'Voce esta em um fluxo interno. Nao converse com o usuario.',
+                'Primeiro confirme se a imagem mostra comida/refeicao.',
+                'Se nao for comida, retorne document_type unknown_document.',
+                'Se for refeicao, identifique alimentos, estime quantidades e macros.',
+                'No agente final, retorne APENAS uma lista JSON no formato:',
+                '[{"name":"Frango grelhado","amount":"150g","kcal":250,"p":35,"c":0,"f":8}]',
             ]);
-        }
 
-        return $normalized;
+            $result = $this->orchestrator->run($user, $prompt, [
+                'intent' => 'nutrition',
+                'type' => 'nutrition_photo_analysis',
+                'input_type' => 'photo',
+                'clinicId' => $user->academy_company_id,
+                'image_path' => $absolutePath,
+            ]);
+
+            $normalized = $this->normalizeOrchestratorResult($result, 'photo');
+            if ($normalized['success']) {
+                $this->credits->consume($user, 'nutrition_photo_analysis', [
+                    'input_type' => 'photo',
+                    'size' => $photo->getSize(),
+                ], hash('sha256', $user->id.'|'.$storedPath));
+            }
+
+            return $normalized;
+        } finally {
+            $this->secureFiles->delete($storedPath);
+        }
     }
 
     private function normalizeOrchestratorResult(array $result, string $source): array

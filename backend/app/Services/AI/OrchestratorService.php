@@ -14,6 +14,7 @@ use App\Services\AI\Agents\FinanceAgent;
 use App\Services\AI\Agents\SalesAgent;
 use App\Services\AI\Agents\RetentionAgent;
 use App\Services\AI\Agents\VisionAgent;
+use App\Support\AiStudentWriteGuard;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -96,6 +97,10 @@ class OrchestratorService
                 $result = array_merge($result, $this->extractStructuredAction($result['message']));
             }
 
+            if (! AiStudentWriteGuard::writesEnabled()) {
+                unset($result['action']);
+            }
+
             // 4. Registro de Uso de Cota (Monetização)
             $this->monetization->logUsage($user, 'ai_orchestrator');
 
@@ -162,16 +167,11 @@ class OrchestratorService
 
     private function isAllowedAction(array $action): bool
     {
-        $allowed = [
-            'agendar',
-            'cancelar_agendamento',
-            'criar_treino',
-            'ajustar_treino',
-            'criar_dieta',
-            'ajustar_dieta',
-        ];
+        if (! AiStudentWriteGuard::writesEnabled()) {
+            return false;
+        }
 
-        return in_array($action['acao'] ?? null, $allowed, true);
+        return AiStudentWriteGuard::isWriteAction($action['acao'] ?? null);
     }
     /**
      * Registra o acesso negado por falta de créditos ou limites do plano.
@@ -184,7 +184,7 @@ class OrchestratorService
                 'clinic_id' => $clinicId,
                 'agent_name' => $intent,
                 'model_name' => 'none',
-                'user_message' => $message,
+                'user_message' => mb_substr($message, 0, 500),
                 'ai_response' => 'ACCESS_DENIED: ' . $reason,
                 'status' => 'limit_reached',
                 'error_message' => $reason,

@@ -240,7 +240,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/smart-query', [\App\Http\Controllers\SmartQueryController::class, 'query'])->name('smart-query');
     });
 
-    Route::post('/api/ai/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('ai.orchestrator.api');
+    Route::post('/api/ai/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])
+        ->middleware('throttle:ai')
+        ->name('ai.orchestrator.api');
 
     Route::middleware('premium')->group(function () {
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.page');
@@ -257,9 +259,10 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('body-analysis')->name('body-analysis.')->middleware('premium')->group(function () {
         Route::get('/', [BodyAnalysisController::class, 'index'])->name('index');
         Route::post('/store', [BodyAnalysisController::class, 'store'])->name('store');
+        Route::get('/compare', [BodyAnalysisController::class, 'compare'])->name('compare');
+        Route::get('/{analysis}/photo', [BodyAnalysisController::class, 'photo'])->name('photo')->whereNumber('analysis');
         Route::get('/{analysis}', [BodyAnalysisController::class, 'show'])->name('show')->whereNumber('analysis');
         Route::patch('/{analysis}/share', [BodyAnalysisController::class, 'updateShareOptions'])->name('share')->whereNumber('analysis');
-        Route::get('/compare', [BodyAnalysisController::class, 'compare'])->name('compare');
     });
 
     // Módulo de Créditos (Geral)

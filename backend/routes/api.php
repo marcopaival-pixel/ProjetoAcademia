@@ -69,14 +69,37 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/training-plans/{training_plan}', [TrainingPlanController::class, 'show'])->name('training-plans.show');
         Route::put('/training-plans/{training_plan}', [TrainingPlanController::class, 'update'])->name('training-plans.update');
         Route::delete('/training-plans/{training_plan}', [TrainingPlanController::class, 'destroy'])->name('training-plans.destroy');
-        Route::post('/workout-import/validate', [WorkoutImportController::class, 'validatePhoto'])->name('workout-import.validate');
-        Route::post('/workout-import/process', [WorkoutImportController::class, 'process'])->name('workout-import.process');
-        Route::post('/workout-import/orchestrated/initialize', [WorkoutImportController::class, 'orchInitialize'])->name('workout-import.orch-initialize');
-        Route::post('/workout-import/orchestrated/validate/{uuid}', [WorkoutImportController::class, 'orchValidate'])->name('workout-import.orch-validate');
-        Route::post('/workout-import/orchestrated/substitute/{uuid}', [WorkoutImportController::class, 'orchSubstitute'])->name('workout-import.orch-substitute');
-        Route::post('/workout-import/orchestrated/process/{uuid}', [WorkoutImportController::class, 'orchProcess'])->name('workout-import.orch-process');
-        Route::get('/workout-import/orchestrated/status/{uuid}', [WorkoutImportController::class, 'orchStatus'])->name('workout-import.orch-status');
-        Route::post('/workout-import/save', [WorkoutImportController::class, 'save'])->name('workout-import.save');
+
+        Route::middleware(['throttle:ai', 'premium'])->group(function () {
+            Route::post('/body-analysis', [BodyAnalysisController::class, 'store'])->name('body-analysis.store');
+            Route::get('/body-analysis/{analysis}/photo', [BodyAnalysisController::class, 'photo'])->whereNumber('analysis')->name('body-analysis.photo');
+        });
+
+        Route::middleware('throttle:ai')->group(function () {
+            Route::post('/workout-import/validate', [WorkoutImportController::class, 'validatePhoto'])->name('workout-import.validate');
+            Route::post('/workout-import/process', [WorkoutImportController::class, 'process'])->name('workout-import.process');
+            Route::post('/workout-import/orchestrated/initialize', [WorkoutImportController::class, 'orchInitialize'])->name('workout-import.orch-initialize');
+            Route::post('/workout-import/orchestrated/validate/{uuid}', [WorkoutImportController::class, 'orchValidate'])->name('workout-import.orch-validate');
+            Route::post('/workout-import/orchestrated/substitute/{uuid}', [WorkoutImportController::class, 'orchSubstitute'])->name('workout-import.orch-substitute');
+            Route::post('/workout-import/orchestrated/process/{uuid}', [WorkoutImportController::class, 'orchProcess'])->name('workout-import.orch-process');
+            Route::get('/workout-import/orchestrated/status/{uuid}', [WorkoutImportController::class, 'orchStatus'])->name('workout-import.orch-status');
+            Route::post('/workout-import/save', [WorkoutImportController::class, 'save'])->name('workout-import.save');
+
+            Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
+            Route::get('/chat/consent', [ChatController::class, 'consent'])->name('chat.consent');
+
+            Route::post('/nutrition/analyze-meal', [NutritionDiaryController::class, 'analyzeMeal'])->name('nutrition.analyze-meal');
+            Route::post('/nutrition/analyze-photo', [NutritionDiaryController::class, 'analyzePhoto'])->name('nutrition.analyze-photo');
+            Route::post('/nutrition/suggest-meal', [NutritionDiaryController::class, 'suggestMeal'])->name('nutrition.suggest-meal');
+            Route::post('/nutrition/weekly-audit', [NutritionDiaryController::class, 'weeklyAudit'])->name('nutrition.weekly-audit');
+
+            Route::post('/assessments/{assessment}/re-analyze', [AssessmentController::class, 'reAnalyze'])->name('assessments.re-analyze');
+
+            Route::get('/evolution-report', [EvolutionController::class, 'report'])->name('evolution-report.show');
+            Route::post('/evolution-reports', [EvolutionController::class, 'requestReport'])->name('evolution-reports.store');
+            Route::post('/evolution/batch-analyze', [EvolutionController::class, 'batchAnalyze'])->name('evolution.batch-analyze');
+            Route::post('/evolution-photos/analyze-session', [EvolutionController::class, 'analyzeSession'])->name('evolution-photos.analyze-session');
+        });
 
         Route::get('/payments/status', PaymentStatusController::class)->name('payments.status');
         Route::get('/ai/credits', [AiCreditController::class, 'show'])->name('ai.credits.show');
@@ -84,17 +107,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/notifications/unread-counts', [MobileUtilityController::class, 'notificationCounts'])->name('notifications.unread-counts');
         Route::post('/client-errors', [MobileUtilityController::class, 'clientError'])->name('client-errors.store');
         Route::get('/chat/history', [ChatController::class, 'history'])->name('chat.history');
-        Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
 
         Route::get('/nutrition/diary', [NutritionDiaryController::class, 'index'])->name('nutrition.diary');
         Route::post('/nutrition/diary', [NutritionDiaryController::class, 'store'])->name('nutrition.diary.store');
         Route::put('/nutrition/diary/{entry}', [NutritionDiaryController::class, 'update'])->name('nutrition.diary.update');
         Route::delete('/nutrition/diary/{entry}', [NutritionDiaryController::class, 'destroy'])->name('nutrition.diary.destroy');
         Route::post('/uploads/nutrition-photo', [NutritionDiaryController::class, 'uploadPhoto'])->name('uploads.nutrition-photo');
-        Route::post('/nutrition/analyze-meal', [NutritionDiaryController::class, 'analyzeMeal'])->name('nutrition.analyze-meal');
-        Route::post('/nutrition/analyze-photo', [NutritionDiaryController::class, 'analyzePhoto'])->name('nutrition.analyze-photo');
-        Route::post('/nutrition/suggest-meal', [NutritionDiaryController::class, 'suggestMeal'])->name('nutrition.suggest-meal');
-        Route::post('/nutrition/weekly-audit', [NutritionDiaryController::class, 'weeklyAudit'])->name('nutrition.weekly-audit');
 
         Route::get('/nutrition/goal', [NutritionGoalController::class, 'show'])->name('nutrition.goal.show');
         Route::put('/nutrition/goal', [NutritionGoalController::class, 'update'])->name('nutrition.goal.update');
@@ -117,25 +135,19 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/exercise-logs/sync', [TrainingLogController::class, 'sync'])->name('exercise-logs.sync');
 
         Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
-        Route::post('/assessments/{assessment}/re-analyze', [AssessmentController::class, 'reAnalyze'])->name('assessments.re-analyze');
         Route::get('/assessments/summary', [AssessmentController::class, 'summary'])->name('assessments.summary');
         Route::get('/student/assessments/{id}/pdf', [AssessmentController::class, 'downloadPdf'])->name('student.assessments.pdf');
         Route::post('/assessments', [AssessmentController::class, 'store'])->name('assessments.store');
 
         Route::get('/evolution-photos', [EvolutionController::class, 'photos'])->name('evolution-photos.index');
-        Route::get('/evolution-report', [EvolutionController::class, 'report'])->name('evolution-report.show');
         Route::get('/evolution-reports/consent', [EvolutionController::class, 'reportConsent'])->name('evolution-reports.consent');
-        Route::post('/evolution-reports', [EvolutionController::class, 'requestReport'])->name('evolution-reports.store');
         Route::get('/evolution-reports/{report}', [EvolutionController::class, 'showReport'])->name('evolution-reports.show');
         Route::get('/evolution/{report}/comparison', [EvolutionController::class, 'compare'])->name('evolution.compare');
-        Route::post('/evolution/batch-analyze', [EvolutionController::class, 'batchAnalyze'])->name('evolution.batch-analyze');
         Route::get('/student/evolution-reports/{id}/pdf', [EvolutionController::class, 'downloadPdf'])->name('student.evolution-reports.pdf');
-        Route::post('/evolution-photos/analyze-session', [EvolutionController::class, 'analyzeSession'])->name('evolution-photos.analyze-session');
         Route::post('/evolution-photos', [EvolutionController::class, 'uploadPhoto'])->name('evolution-photos.store');
         Route::delete('/evolution-photos/{photo}', [EvolutionController::class, 'deletePhoto'])->name('evolution-photos.destroy');
 
         Route::get('/body-analysis', [BodyAnalysisController::class, 'index'])->name('body-analysis.index');
-        Route::post('/body-analysis', [BodyAnalysisController::class, 'store'])->name('body-analysis.store');
         Route::get('/body-analysis/compare', [BodyAnalysisController::class, 'compare'])->name('body-analysis.compare');
         Route::get('/body-analysis/{analysis}', [BodyAnalysisController::class, 'show'])->whereNumber('analysis')->name('body-analysis.show');
 

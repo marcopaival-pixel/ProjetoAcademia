@@ -10,6 +10,8 @@ use App\Models\ExerciseCatalog;
 use App\Services\AI\OrchestratorService;
 use App\Services\MonetizationService;
 use App\Services\SecureFileService;
+use App\Services\StudentContextService;
+use App\Services\WorkoutImportBillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +24,9 @@ class WorkoutPhotoImportController extends Controller
         private OrchestratorService $orchestrator,
         private MonetizationService $monetization,
         private \App\Services\AI\WorkoutImportOrchestrator $importOrchestrator,
-        private \App\Services\AiCreditService $aiCredits
+        private \App\Services\AiCreditService $aiCredits,
+        private WorkoutImportBillingService $importBilling,
+        private StudentContextService $studentContext,
     ) {}
 
     /**
@@ -281,6 +285,7 @@ class WorkoutPhotoImportController extends Controller
                 'clinic_id' => $user->clinic_id,
                 'clinicId' => $user->academy_company_id,
                 'feature_code' => 'generate_workout',
+                'user_metrics' => $this->studentContext->metrics($user),
             ]);
 
             if ($result['status'] === 'error') {
@@ -298,6 +303,8 @@ class WorkoutPhotoImportController extends Controller
                 'structured_json' => $exercises,
                 'status' => 'completed'
             ]);
+
+            $this->importBilling->chargeOnSuccessfulExtraction($user, $log, 'web_process');
 
             return response()->json([
                 'success' => true,
@@ -372,6 +379,7 @@ class WorkoutPhotoImportController extends Controller
                 'clinic_id' => $user->clinic_id,
                 'clinicId' => $user->academy_company_id,
                 'feature_code' => 'generate_workout',
+                'user_metrics' => $this->studentContext->metrics($user),
             ]);
 
             if ($result['status'] === 'error') {
@@ -389,6 +397,8 @@ class WorkoutPhotoImportController extends Controller
                 'structured_json' => $exercises,
                 'status' => 'completed'
             ]);
+
+            $this->importBilling->chargeOnSuccessfulExtraction($user, $log, 'web_process_photos');
 
             return response()->json([
                 'success' => true,
@@ -482,13 +492,6 @@ class WorkoutPhotoImportController extends Controller
                         ]);
                     }
                 }
-
-                // Consome 1 crédito (50 tokens de IA) do usuário
-                $this->aiCredits->consume($user, 'workout_import_photo', [
-                    'plan_id' => $plan->id,
-                    'plan_name' => $plan->name,
-                    'exercises_count' => count($request->exercises)
-                ]);
 
                 return response()->json([
                     'success' => true,
@@ -598,10 +601,15 @@ class WorkoutPhotoImportController extends Controller
     public function orchProcess(Request $request, $uuid)
     {
         $log = WorkoutImportLog::where('image_path', $uuid)->firstOrFail();
+        $user = Auth::user();
 
         try {
             $this->importOrchestrator->runExtractionAndConsolidation($log);
             $log->refresh();
+
+            if ($log->status === 'WAITING_REVIEW') {
+                $this->importBilling->chargeOnSuccessfulExtraction($user, $log, 'web_orch_process');
+            }
 
             return response()->json([
                 'success' => true,

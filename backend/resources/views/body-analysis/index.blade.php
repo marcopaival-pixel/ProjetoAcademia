@@ -80,7 +80,7 @@
                             $historyTitle = $index === ($history->count() - 1) ? 'Avaliação Inicial' : ($history->count() - 1 - $index) . 'ª Reavaliação';
                         @endphp
                         <div class="history-item glass p-2 mb-2 rounded d-flex align-items-center gap-2" data-analysis-id="{{ $item->id }}" data-shared="{{ json_encode($item->shared_options ?? new \stdClass) }}">
-                            <img src="{{ Storage::url($item->photo_path) }}" class="rounded" width="40" height="40" style="object-fit:cover">
+                            <img src="{{ route('body-analysis.photo', $item->id) }}" class="rounded" width="40" height="40" style="object-fit:cover">
                             <div class="flex-grow-1">
                                 <div class="small fw-bold">{{ $historyTitle }} ({{ $item->created_at->format('d/m/Y') }})</div>
                                 <div class="text-info" style="font-size:0.7rem">{{ $item->view_type }}</div>

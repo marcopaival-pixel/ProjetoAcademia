@@ -195,19 +195,19 @@ class AIProviderService
                 'clinic_id' => $clinicId,
                 'agent_name' => $agentName,
                 'model_name' => $modelName,
-                'user_message' => (function () use ($messages) {
+                'user_message' => $this->sanitizeLogText((function () use ($messages) {
                     $lastUser = collect($messages)->where('role', 'user')->last();
 
                     return is_array($lastUser) ? (string) ($lastUser['content'] ?? 'N/A') : 'N/A';
-                })(),
-                'ai_response' => $responseContent,
+                })()),
+                'ai_response' => $this->sanitizeLogText(is_string($responseContent) ? $responseContent : null),
                 'input_tokens' => $input,
                 'output_tokens' => $output,
                 'total_tokens' => $total,
                 'cost_usd' => $cost,
                 'execution_time_ms' => $time,
                 'status' => $status,
-                'context' => $context,
+                'context' => $this->sanitizeContext($context),
                 'error_message' => $errorMessage
             ]);
         } catch (Exception $e) {
@@ -242,5 +242,49 @@ class AIProviderService
         $outputCost = ($output / 1000000) * $p['output'];
 
         return (float) ($inputCost + $outputCost);
+    }
+
+    private function sanitizeLogText(?string $value, int $maxLength = 500): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $redacted = preg_replace('/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i', '[email]', $value) ?? $value;
+        $redacted = preg_replace('/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/', '[documento]', $redacted) ?? $redacted;
+        $redacted = preg_replace('/sk-[A-Za-z0-9_-]{8,}/', '[api_key]', $redacted) ?? $redacted;
+
+        return mb_substr(trim($redacted), 0, $maxLength);
+    }
+
+    private function sanitizeContext(array $context): array
+    {
+        $blockedKeys = [
+            'image_path',
+            'image_base64',
+            'image_url',
+            'images',
+            'photo_url',
+            'conversation_history',
+            'user_metrics',
+            'vision_data',
+        ];
+
+        $sanitized = collect($context)
+            ->reject(fn ($value, $key) => in_array($key, $blockedKeys, true))
+            ->map(function ($value) {
+                if (is_string($value)) {
+                    return $this->sanitizeLogText($value, 200);
+                }
+
+                if (is_array($value)) {
+                    return '[array]';
+                }
+
+                return $value;
+            })
+            ->all();
+
+        return $sanitized;
     }
 }

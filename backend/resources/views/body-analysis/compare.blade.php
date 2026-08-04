@@ -81,7 +81,7 @@
                     <span class="text-sm font-black text-white ml-1">{{ $analysis->created_at->format('d/m/Y') }}</span>
                 </div>
                 <div class="aspect-[3/4] bg-zinc-950 rounded-2xl overflow-hidden flex items-center justify-center border {{ $border }}">
-                    <img src="{{ Storage::url($analysis->photo_path) }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Analise corporal {{ $analysis->created_at->format('d/m/Y') }}">
+                    <img src="{{ route('body-analysis.photo', $analysis->id) }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Analise corporal {{ $analysis->created_at->format('d/m/Y') }}">
                 </div>
             </div>
         @endforeach

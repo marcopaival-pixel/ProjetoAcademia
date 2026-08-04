@@ -396,7 +396,7 @@
                             <div class="space-y-2 md:col-span-2">
                                 <label class="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-1">Chave de API OpenAI</label>
                                 <div class="relative">
-                                    <input type="password" name="openai_api_key" value="{{ \App\Models\AdminSetting::get('openai_api_key') }}" placeholder="sk-..." 
+                                    <input type="password" name="openai_api_key" value="" placeholder="{{ \App\Models\AdminSetting::get('openai_api_key') ? 'Chave configurada — deixe em branco para manter' : 'sk-...' }}" 
                                         class="w-full bg-zinc-950 border border-white/5 p-4 rounded-2xl text-white text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all pr-12" id="ai-key">
                                     <button type="button" onclick="togglePass('ai-key')" class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
                                         <i data-lucide="eye" class="w-4 h-4"></i>

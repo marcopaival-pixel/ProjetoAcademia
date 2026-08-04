@@ -26,6 +26,7 @@ class BodyAnalysisCreditTest extends TestCase
         Schema::dropIfExists('ai_credit_wallets');
         Schema::dropIfExists('ai_feature_costs');
         Schema::dropIfExists('body_analyses');
+        Schema::dropIfExists('user_consents');
         Schema::dropIfExists('messages');
         Schema::dropIfExists('conversations');
         Schema::dropIfExists('support_tickets');
@@ -69,6 +70,16 @@ class BodyAnalysisCreditTest extends TestCase
             $table->decimal('vision_confidence', 5, 4)->nullable();
             $table->json('vision_raw_payload')->nullable();
             $table->timestamp('created_at')->useCurrent();
+        });
+
+        Schema::create('user_consents', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('user_id');
+            $table->string('consent_type', 50);
+            $table->string('version')->default('1.0');
+            $table->string('ip_address', 45)->nullable();
+            $table->string('user_agent')->nullable();
+            $table->timestamp('created_at')->nullable();
         });
 
         Schema::create('roles', function (Blueprint $table) {
@@ -163,6 +174,7 @@ class BodyAnalysisCreditTest extends TestCase
             $table->string('feature_code')->nullable();
             $table->string('reference_id')->nullable();
             $table->string('description');
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
 
@@ -174,13 +186,24 @@ class BodyAnalysisCreditTest extends TestCase
         ]);
     }
 
+    private function grantBodyPhotoConsent(User $user): void
+    {
+        \App\Models\UserConsent::create([
+            'user_id' => $user->id,
+            'consent_type' => 'ai_body_photo_analysis',
+            'version' => '1.0',
+        ]);
+    }
+
     public function test_rejected_body_analysis_photo_does_not_consume_credits(): void
     {
         $this->withoutMiddleware();
         Notification::fake();
         Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::withoutEvents(fn () => User::factory()->create(['is_premium' => true]));
+        $this->grantBodyPhotoConsent($user);
         AiCreditWallet::create([
             'user_id' => $user->id,
             'balance' => 50,
@@ -214,8 +237,10 @@ class BodyAnalysisCreditTest extends TestCase
         $this->withoutMiddleware();
         Notification::fake();
         Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::withoutEvents(fn () => User::factory()->create(['is_premium' => true]));
+        $this->grantBodyPhotoConsent($user);
         AiCreditWallet::create([
             'user_id' => $user->id,
             'balance' => 50,
@@ -245,7 +270,7 @@ class BodyAnalysisCreditTest extends TestCase
 
         $this->assertNotNull($analysis);
         $this->assertSame('mediapipe_pose_rules_v2', $analysis->analysis_version);
-        Storage::disk('public')->assertExists($analysis->photo_path);
+        Storage::disk('local')->assertExists($analysis->photo_path);
 
         $wallet = AiCreditWallet::first();
         $this->assertSame(0, $wallet->balance);
@@ -262,6 +287,7 @@ class BodyAnalysisCreditTest extends TestCase
         $this->withoutMiddleware();
         Notification::fake();
         Storage::fake('public');
+        Storage::fake('local');
 
         $user = User::withoutEvents(fn () => User::factory()->create(['is_premium' => true]));
         $analysisId = DB::table('body_analyses')->insertGetId([
@@ -348,6 +374,28 @@ class BodyAnalysisCreditTest extends TestCase
                 'id2' => $privateAnalysisId,
             ]))
             ->assertNotFound();
+    }
+
+    public function test_body_analysis_requires_ai_body_photo_consent(): void
+    {
+        $this->withoutMiddleware();
+        Notification::fake();
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $user = User::withoutEvents(fn () => User::factory()->create(['is_premium' => true]));
+        AiCreditWallet::create([
+            'user_id' => $user->id,
+            'balance' => 50,
+            'monthly_allowance' => 50,
+            'extra_credits' => 0,
+        ]);
+
+        $this->actingAs($user)->postJson(route('body-analysis.store'), [
+            'image' => UploadedFile::fake()->image('valid.jpg', 900, 900),
+            'view_type' => 'front',
+        ])->assertStatus(409)
+            ->assertJsonPath('code', 'ai_body_photo_analysis_consent_required');
     }
 
     public function test_body_analysis_index_renders(): void

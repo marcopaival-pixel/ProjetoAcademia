@@ -22,6 +22,7 @@ Schedule::command('app:clean-unverified-users')->hourly();
 
 // Log Maintenance (Manter banco leve - Prioridade 3 da Auditoria)
 Schedule::command('app:purge-old-logs --days=15 --force')->dailyAt('03:00');
+Schedule::command('ai:prune-orchestrator-logs --force')->weeklyOn(1, '03:15');
 Schedule::command('evolution:prune-session-analyses --months=12 --per-user=100 --force')->weeklyOn(1, '03:30');
 Schedule::command('evolution:prune-reports --days=180 --force')->weeklyOn(1, '03:45');
 Schedule::command('evolution:prune-photos --days=730 --force')->monthlyOn(1, '04:00');

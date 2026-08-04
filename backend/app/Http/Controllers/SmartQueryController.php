@@ -3,24 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Services\AI\OrchestratorService;
+use App\Services\AiCreditService;
 use App\Services\IntelligenceLibraryService;
-use Illuminate\Http\Request;
+use App\Services\StudentContextService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SmartQueryController extends Controller
 {
     public function __construct(
         private OrchestratorService $orchestrator,
-        private IntelligenceLibraryService $libraryService
+        private IntelligenceLibraryService $libraryService,
+        private StudentContextService $studentContext,
+        private AiCreditService $aiCredits,
     ) {}
 
     /**
      * Executa uma consulta inteligente: Verifica a biblioteca interna antes de chamar a IA.
      * Grava automaticamente os resultados da IA para uso futuro.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function query(Request $request): JsonResponse
     {
@@ -28,18 +29,18 @@ class SmartQueryController extends Controller
             'pergunta' => 'required|string|max:1000',
             'modulo' => 'nullable|string',
             'categoria' => 'nullable|string',
-            'tipo_item' => 'nullable|string', // ex: PROTOCOLO, STACK, etc
-            'force_ia' => 'nullable|boolean', 
+            'tipo_item' => 'nullable|string',
+            'force_ia' => 'nullable|boolean',
         ]);
 
+        $user = Auth::user();
         $pergunta = $validated['pergunta'];
         $modulo = $validated['modulo'] ?? 'GERAL';
         $categoria = $validated['categoria'] ?? 'GERAL';
         $tipoItem = $validated['tipo_item'] ?? null;
         $forceIa = $validated['force_ia'] ?? false;
 
-        // 1. Verificar biblioteca interna (se não for forçado IA)
-        if (!$forceIa) {
+        if (! $forceIa) {
             $resultadoInterno = $this->libraryService->consultar($pergunta, $modulo, $categoria);
 
             if ($resultadoInterno) {
@@ -55,20 +56,52 @@ class SmartQueryController extends Controller
             }
         }
 
-        // 2. Se não encontrar ou forçado, chamar o Orquestrador
-        $aiResponse = $this->orchestrator->run(Auth::user(), $pergunta, [
+        if (! $this->aiCredits->hasCredits($user, 'ai_orchestrator')) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'credits_exceeded',
+                'error' => 'Creditos de IA insuficientes para consultar a biblioteca inteligente.',
+            ], 402);
+        }
+
+        $intent = $this->studentContext->resolveQueryIntent($modulo, $categoria);
+        $context = [
+            'source' => 'smart_query',
             'modulo' => $modulo,
-            'categoria' => $categoria
-        ]); 
- 
+            'categoria' => $categoria,
+            'clinic_id' => $user->clinic_id,
+            'clinicId' => $user->academy_company_id,
+            'feature_key' => 'ai_orchestrator',
+            'user_metrics' => $this->studentContext->metrics($user),
+        ];
+
+        if ($intent !== null) {
+            $context['intent'] = $intent;
+        }
+
+        $aiResponse = $this->orchestrator->run($user, $pergunta, $context);
+
         if ($aiResponse['status'] !== 'success') {
             return response()->json([
                 'ok' => false,
-                'error' => $aiResponse['error'] ?? 'Erro ao consultar IA',
-            ], 500);
+                'error' => $aiResponse['error'] ?? $aiResponse['message'] ?? 'Erro ao consultar IA',
+            ], ($aiResponse['status'] ?? null) === 'limit_reached' ? 403 : 500);
         }
 
-        // 3. Salvar automaticamente na biblioteca para reutilização
+        $referenceId = hash('sha256', implode('|', [
+            $user->id,
+            mb_strtolower(trim($pergunta)),
+            $modulo,
+            $categoria,
+            now()->format('Y-m-d-H'),
+        ]));
+
+        $this->aiCredits->consume($user, 'ai_orchestrator', [
+            'source' => 'smart_query',
+            'modulo' => $modulo,
+            'categoria' => $categoria,
+        ], $referenceId);
+
         $biblioteca = $this->libraryService->salvarRespostaIA([
             'message' => $aiResponse['message'],
             'titulo' => $this->generateTitle($pergunta),
@@ -85,15 +118,13 @@ class SmartQueryController extends Controller
         ]);
     }
 
-    /**
-     * Gera um título curto baseado na pergunta
-     */
     private function generateTitle(string $pergunta): string
     {
         $titulo = str_replace(['?', '!', '.', ','], '', $pergunta);
         if (strlen($titulo) > 60) {
-            $titulo = substr($titulo, 0, 57) . '...';
+            $titulo = substr($titulo, 0, 57).'...';
         }
+
         return ucwords(mb_strtolower($titulo));
     }
 }

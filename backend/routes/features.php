@@ -226,6 +226,6 @@ Route::prefix('supplements')->name('supplements.')->group(function () {
     Route::delete('/{supplement}', [\App\Http\Controllers\SupplementController::class, 'destroy'])->name('destroy');
 });
 // Orquestrador de IA NexShape
-Route::prefix('api/ai')->name('api.ai.')->group(function () {
+Route::prefix('api/ai')->name('api.ai.')->middleware('throttle:ai')->group(function () {
     Route::post('/orchestrator', [\App\Http\Controllers\AI\OrchestratorController::class, 'process'])->name('orchestrator');
 });

@@ -10,6 +10,7 @@ use App\Services\AiCreditService;
 use App\Services\Nutrition;
 use App\Services\Nutrition\NutritionAIEngine;
 use App\Services\NutritionMealAnalysisService;
+use App\Services\SecureFileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -73,19 +74,42 @@ class NutritionDiaryController extends Controller
         return response()->json(['data' => ['deleted' => true]]);
     }
 
-    public function analyzeMeal(Request $request, NutritionMealAnalysisService $service): JsonResponse
+    public function analyzeMeal(Request $request, NutritionMealAnalysisService $service, AiCreditService $credits): JsonResponse
     {
+        $user = $request->user();
+
         $data = $request->validate([
             'description' => ['required', 'string', 'min:3', 'max:1000'],
             'meal_type' => ['nullable', Rule::in(['breakfast', 'lunch', 'dinner', 'snack', 'other'])],
         ]);
 
-        return response()->json([
-            'data' => $service->analyze(
-                $request->user(),
-                $data['description'],
+        if (! $credits->hasCredits($user, 'nutrition_text_analysis')) {
+            return response()->json([
+                'message' => 'Creditos de IA insuficientes para analisar a refeicao.',
+                'errors' => ['description' => ['Creditos de IA insuficientes.']],
+            ], 402);
+        }
+
+        $result = $service->analyze(
+            $user,
+            $data['description'],
+            $data['meal_type'] ?? 'snack',
+        );
+
+        if (($result['source'] ?? '') === 'ai') {
+            $referenceId = hash('sha256', implode('|', [
+                $user->id,
+                mb_strtolower(trim($data['description'])),
                 $data['meal_type'] ?? 'snack',
-            ),
+            ]));
+
+            $credits->consume($user, 'nutrition_text_analysis', [
+                'source' => 'api_v1_analyze_meal',
+            ], $referenceId);
+        }
+
+        return response()->json([
+            'data' => $result,
         ]);
     }
 
@@ -303,21 +327,20 @@ class NutritionDiaryController extends Controller
         ];
     }
 
-    public function uploadPhoto(Request $request): JsonResponse
+    public function uploadPhoto(Request $request, SecureFileService $secureFiles): JsonResponse
     {
         $request->validate([
             'photo' => ['required', 'image', 'max:5120'],
         ]);
 
         $user = $request->user();
-        $path = $request->file('photo')->store('nutrition_photos/' . $user->id, 'public');
+        $path = $secureFiles->storeSensitiveFile($request->file('photo'), 'nutrition_photos/'.$user->id);
 
         return response()->json([
             'message' => 'Foto enviada com sucesso.',
             'data' => [
                 'path' => $path,
-                'url' => Storage::disk('public')->url($path),
-            ]
+            ],
         ], 201);
     }
 }

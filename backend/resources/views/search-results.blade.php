@@ -63,6 +63,25 @@
         </div>
     </header>
 
+    @if(!empty($aiCreditsNotice))
+        <section class="bg-zinc-900/40 border border-amber-500/20 rounded-[2.5rem] overflow-hidden p-8">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-amber-500/10 rounded-xl border border-amber-500/20 flex items-center justify-center shrink-0">
+                    <i class="fas fa-coins text-amber-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white uppercase tracking-widest mb-2">Interpretacao IA indisponivel</h3>
+                    <p class="text-sm text-zinc-400">{{ $aiCreditsNotice['message'] }}</p>
+                    @if(!empty($aiCreditsNotice['plano_url']))
+                        <a href="{{ $aiCreditsNotice['plano_url'] }}" class="inline-flex mt-4 px-5 py-2.5 bg-amber-500 text-zinc-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">
+                            Ver planos e creditos
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </section>
+    @endif
+
     @if($aiResponse)
         <section class="bg-zinc-900/40 border border-emerald-500/20 rounded-[2.5rem] overflow-hidden p-8 relative group">
             <div class="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-40 transition-opacity">

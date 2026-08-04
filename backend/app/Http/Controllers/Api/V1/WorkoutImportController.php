@@ -2,17 +2,31 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Concerns\GuardsAiCredits;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\WorkoutPhotoImportController;
 use App\Models\WorkoutImportLog;
 use App\Services\AI\WorkoutImportOrchestrator;
+use App\Services\AiCreditService;
+use App\Services\MonetizationService;
+use App\Services\WorkoutImportBillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WorkoutImportController extends Controller
 {
-    public function validatePhoto(Request $request, WorkoutPhotoImportController $controller): JsonResponse
-    {
+    use GuardsAiCredits;
+
+    public function validatePhoto(
+        Request $request,
+        WorkoutPhotoImportController $controller,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $response = $controller->validatePhoto($request);
         $payload = $response->getData(true);
 
@@ -29,8 +43,18 @@ class WorkoutImportController extends Controller
         return response()->json(['data' => $payload], $response->getStatusCode());
     }
 
-    public function process(Request $request, WorkoutPhotoImportController $controller, WorkoutImportOrchestrator $orchestrator): JsonResponse
-    {
+    public function process(
+        Request $request,
+        WorkoutPhotoImportController $controller,
+        WorkoutImportOrchestrator $orchestrator,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+        WorkoutImportBillingService $billing,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $request->validate([
             'photo' => 'required|image|max:10240',
         ]);
@@ -67,6 +91,8 @@ class WorkoutImportController extends Controller
                 ], 422);
             }
 
+            $billing->chargeOnSuccessfulExtraction($request->user(), $log, 'api_v1_process');
+
             return response()->json([
                 'data' => [
                     'exercises' => $this->flattenExercises($log),
@@ -84,8 +110,16 @@ class WorkoutImportController extends Controller
         }
     }
 
-    public function save(Request $request, WorkoutPhotoImportController $controller): JsonResponse
-    {
+    public function save(
+        Request $request,
+        WorkoutPhotoImportController $controller,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $response = $controller->save($request);
         $payload = $response->getData(true);
 
@@ -105,8 +139,16 @@ class WorkoutImportController extends Controller
         ], $response->getStatusCode());
     }
 
-    public function orchInitialize(Request $request, WorkoutImportOrchestrator $orchestrator): JsonResponse
-    {
+    public function orchInitialize(
+        Request $request,
+        WorkoutImportOrchestrator $orchestrator,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $request->validate([
             'photos' => 'required|array|min:1|max:7',
             'photos.*' => 'required|image|max:10240',
@@ -117,8 +159,17 @@ class WorkoutImportController extends Controller
         return response()->json(['data' => $this->sessionPayload($log)]);
     }
 
-    public function orchValidate(Request $request, string $uuid, WorkoutImportOrchestrator $orchestrator): JsonResponse
-    {
+    public function orchValidate(
+        Request $request,
+        string $uuid,
+        WorkoutImportOrchestrator $orchestrator,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $log = WorkoutImportLog::where('image_path', $uuid)->where('user_id', $request->user()->id)->firstOrFail();
         $orchestrator->runValidation($log);
         $log->refresh();
@@ -126,8 +177,17 @@ class WorkoutImportController extends Controller
         return response()->json(['data' => $this->sessionPayload($log)]);
     }
 
-    public function orchSubstitute(Request $request, string $uuid, WorkoutImportOrchestrator $orchestrator): JsonResponse
-    {
+    public function orchSubstitute(
+        Request $request,
+        string $uuid,
+        WorkoutImportOrchestrator $orchestrator,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $request->validate([
             'image_id' => 'required|integer',
             'photo' => 'required|image|max:10240',
@@ -140,12 +200,26 @@ class WorkoutImportController extends Controller
         return response()->json(['data' => $this->sessionPayload($log)]);
     }
 
-    public function orchProcess(Request $request, string $uuid, WorkoutImportOrchestrator $orchestrator): JsonResponse
-    {
+    public function orchProcess(
+        Request $request,
+        string $uuid,
+        WorkoutImportOrchestrator $orchestrator,
+        MonetizationService $monetization,
+        AiCreditService $credits,
+        WorkoutImportBillingService $billing,
+    ): JsonResponse {
+        if ($denied = $this->denyIfWorkoutImportBlocked($request->user(), $monetization, $credits)) {
+            return $denied;
+        }
+
         $log = WorkoutImportLog::where('image_path', $uuid)->where('user_id', $request->user()->id)->firstOrFail();
         try {
             $orchestrator->runExtractionAndConsolidation($log);
             $log->refresh();
+
+            if ($log->status === 'WAITING_REVIEW') {
+                $billing->chargeOnSuccessfulExtraction($request->user(), $log, 'api_v1_orch_process');
+            }
         } catch (\Throwable $e) {
             $message = $this->safeImportErrorMessage($e->getMessage());
 

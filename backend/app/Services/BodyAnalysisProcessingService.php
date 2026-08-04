@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Models\BodyAnalysis;
 use App\Models\User;
 use App\Services\AI\Agents\VisionAgent;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BodyAnalysisProcessingService
 {
@@ -17,11 +19,23 @@ class BodyAnalysisProcessingService
         private readonly AiCreditService $aiCredits,
         private readonly BodyAnalysisInterpretationService $interpreter,
         private readonly VisionAgent $visionAgent,
+        private readonly AiBodyPhotoConsentService $bodyPhotoConsent,
+        private readonly SecureFileService $secureFiles,
     ) {
     }
 
-    public function store(User $user, UploadedFile $photo, string $viewType, ?array $landmarks = null, ?array $metrics = null): array
-    {
+    public function store(
+        User $user,
+        UploadedFile $photo,
+        string $viewType,
+        ?array $landmarks = null,
+        ?array $metrics = null,
+        ?Request $request = null,
+    ): array {
+        if (! $user->isAdministrator()) {
+            $this->bodyPhotoConsent->ensureConsent($user, $request);
+        }
+
         $photoValidation = $this->validator->validate($user, $photo);
 
         if (!($photoValidation['approved'] ?? false)) {
@@ -41,7 +55,7 @@ class BodyAnalysisProcessingService
             return $this->creditError();
         }
 
-        $path = $photo->store('body-analyses', 'public');
+        $path = $this->secureFiles->storeSensitiveFile($photo, 'body-analyses');
         $visionResult = $this->generateVisionAnalysis($user, $path, $metrics, $viewType);
         $aiSummary = $this->interpreter->interpret($metrics, $viewType, $visionResult['analysis'] ?? null);
 
@@ -58,12 +72,12 @@ class BodyAnalysisProcessingService
             'vision_raw_payload' => $visionResult['raw_payload'] ?? null,
         ]);
 
-        if (!$this->aiCredits->consume($user, 'analyze_body_photo', [
+        if (! $this->aiCredits->consume($user, 'analyze_body_photo', [
             'view_type' => $viewType,
             'analysis_id' => $analysis->id,
             'validation_status' => $photoValidation['status'] ?? null,
-        ])) {
-            Storage::disk('public')->delete($path);
+        ], 'analyze_body_photo_'.$analysis->id)) {
+            $this->secureFiles->delete($path);
             $analysis->delete();
 
             return $this->creditError();
@@ -77,13 +91,39 @@ class BodyAnalysisProcessingService
         ];
     }
 
-    public function payload(BodyAnalysis $analysis): array
+    public function photoResponse(BodyAnalysis $analysis): BinaryFileResponse
+    {
+        return response()->file($this->resolvePhotoAbsolutePath($analysis->photo_path));
+    }
+
+    public function photoUrl(BodyAnalysis $analysis, bool $api = false): string
+    {
+        return $api
+            ? route('api.v1.body-analysis.photo', $analysis->id)
+            : route('body-analysis.photo', $analysis->id);
+    }
+
+    public function resolvePhotoAbsolutePath(string $path): string
+    {
+        if ($this->secureFiles->exists($path)) {
+            return $this->secureFiles->path($path);
+        }
+
+        $legacyPublicPath = storage_path('app/public/'.$path);
+        if (is_file($legacyPublicPath)) {
+            return $legacyPublicPath;
+        }
+
+        abort(404);
+    }
+
+    public function payload(BodyAnalysis $analysis, bool $api = false): array
     {
         $summary = $analysis->ai_summary ?? [];
 
         return [
             'id' => $analysis->id,
-            'photo_url' => Storage::url($analysis->photo_path),
+            'photo_url' => $this->photoUrl($analysis, $api),
             'view_type' => $analysis->view_type,
             'landmarks' => $analysis->landmarks ?? [],
             'metrics' => $this->normalizeMetrics($analysis->metrics ?? []),
@@ -101,7 +141,7 @@ class BodyAnalysisProcessingService
         ];
     }
 
-    public function comparePayload(BodyAnalysis $first, BodyAnalysis $second): array
+    public function comparePayload(BodyAnalysis $first, BodyAnalysis $second, bool $api = false): array
     {
         $definitions = [
             ['key' => 'posture_score', 'label' => 'Postura', 'higher_is_better' => true],
@@ -134,8 +174,8 @@ class BodyAnalysisProcessingService
         }, $definitions);
 
         return [
-            'first' => $this->payload($first),
-            'second' => $this->payload($second),
+            'first' => $this->payload($first, $api),
+            'second' => $this->payload($second, $api),
             'metrics' => $metrics,
         ];
     }
@@ -153,7 +193,7 @@ class BodyAnalysisProcessingService
                 : 'Analise esta foto corporal para apoio postural. Retorne JSON com summary, attention_points, limitations, training_notes e confidence.';
 
             $result = $this->visionAgent->execute($user, $prompt, [
-                'image_path' => Storage::disk('public')->path($path),
+                'image_path' => $this->resolvePhotoAbsolutePath($path),
                 'metrics' => $metrics,
                 'view_type' => $viewType,
                 'temperature' => 0.1,

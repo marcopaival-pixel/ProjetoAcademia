@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AIChat;
 use App\Models\User;
-use App\Models\UserProfile;
+use App\Support\AiStudentWriteGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +15,9 @@ class ChatController extends Controller
     public function __construct(
         private \App\Services\AI\OrchestratorService $orchestrator,
         private \App\Services\AgentActionDispatcher $actionDispatcher,
-        private \App\Services\AiCreditService $aiCredits
+        private \App\Services\AiCreditService $aiCredits,
+        private \App\Services\AiChatConsentService $chatConsent,
+        private \App\Services\StudentContextService $studentContext,
     ) {}
     
     /**
@@ -38,7 +40,10 @@ class ChatController extends Controller
 
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
+            'accept_ai_chat_health_data' => ['sometimes', 'boolean'],
         ]);
+
+        $this->chatConsent->ensureConsent($user, $request);
 
         if (! $user->hasPremiumAccess() && ! $user->isAdministrator()) {
             $limit = (int) config('projeto.chat_free_daily_user_messages', 8);
@@ -67,8 +72,8 @@ class ChatController extends Controller
         }
 
         // Salvar mensagem do usuário no histórico
-        $conversationHistory = $this->conversationHistory($user->id);
-        $userMetrics = $this->getUserMetrics($user->id);
+        $conversationHistory = $this->studentContext->conversationHistory($user->id);
+        $userMetrics = $this->studentContext->metrics($user);
 
         AIChat::create([
             'user_id' => $user->id,
@@ -192,9 +197,17 @@ class ChatController extends Controller
 
         $validated = $request->validate([
             'action' => 'required|array',
-            'action.acao' => 'required|string|in:agendar,cancelar_agendamento,criar_treino,ajustar_treino,criar_dieta,ajustar_dieta',
+            'action.acao' => 'required|string|in:'.implode(',', AiStudentWriteGuard::writeActionCodes()),
             'action.dados' => 'nullable|array',
         ]);
+
+        if (! AiStudentWriteGuard::writesEnabled()) {
+            return response()->json([
+                'ok' => false,
+                'code' => 'ai_writes_disabled',
+                'error' => 'Escritas automaticas da IA estao desativadas neste ambiente.',
+            ], 403);
+        }
 
         $result = $this->actionDispatcher->dispatch($user, $validated['action']);
 
@@ -212,51 +225,12 @@ class ChatController extends Controller
 
     /**
      * Obter métricas profundas do usuário para contexto da IA (Nutrição, Treino, Hidratação)
+     *
+     * @deprecated Use StudentContextService::metrics() directly.
      */
     private function getUserMetrics(int $userId): array
     {
-        $user = User::findOrFail($userId);
-        $profile = UserProfile::where('user_id', $userId)->first();
-        
-        // 1. Nutrição (Serviço de Nutrição)
-        $nutritionService = app(\App\Services\Nutrition::class);
-        $dailyTarget = $nutritionService->dailyTargetKcal($user);
-        $nutritionLogs = $nutritionService->getLogs($user, now()->toDateString());
-        
-        // 2. Hidratação
-        $waterTarget = $profile?->water_goal ?? ($user->weight * 35); // Fallback: 35ml/kg
-        $waterConsumed = \App\Models\WaterEntry::where('user_id', $userId)
-            ->whereDate('created_at', now()->toDateString())
-            ->sum('amount_ml');
-
-        // 3. Último Treino
-        $lastWorkout = \App\Models\WorkoutSession::where('user_id', $userId)
-            ->with('trainingPlan')
-            ->latest()
-            ->first();
-
-        $metrics = [
-            'name' => $user->name,
-            'objective' => $profile?->goal ?? 'manter peso',
-            'current_weight' => $user->weight ?? $profile?->weight,
-            'goal_weight' => $profile?->goal_weight ?? null,
-            'biological_sex' => $profile?->biological_sex ?? 'não informado',
-            
-            // Nutrição Real
-            'daily_calories_target' => $dailyTarget,
-            'consumed_calories_today' => $nutritionLogs['consumed']['kcal'] ?? 0,
-            'protein_target' => $nutritionService->dailyTargetMacros($user)['protein'] ?? 0,
-            
-            // Hidratação
-            'water_target_ml' => $waterTarget,
-            'water_consumed_ml' => $waterConsumed,
-
-            // Performance
-            'last_workout_name' => $lastWorkout?->trainingPlan?->name ?? 'Nenhum treino registrado recentemente',
-            'last_workout_date' => $lastWorkout?->created_at?->diffForHumans() ?? 'N/A',
-        ];
-
-        return $metrics;
+        return $this->studentContext->metrics(User::findOrFail($userId));
     }
 
     private function countUserMessagesToday(int $userId): int
@@ -270,18 +244,7 @@ class ChatController extends Controller
 
     private function conversationHistory(int $userId, int $limit = 16): array
     {
-        return AIChat::query()
-            ->where('user_id', $userId)
-            ->latest()
-            ->limit($limit)
-            ->get()
-            ->reverse()
-            ->map(fn (AIChat $chat) => [
-                'role' => $chat->role,
-                'content' => mb_substr($chat->message, 0, 1200),
-            ])
-            ->values()
-            ->all();
+        return $this->studentContext->conversationHistory($userId, $limit);
     }
 
     private function friendlyAiError(?string $error): string

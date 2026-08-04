@@ -92,7 +92,14 @@ class PrivacyController extends Controller
                 'nullable',
                 'string',
                 'max:50',
-                Rule::in(['privacy_policy', 'terms_of_use', 'cookies', 'privacy_policy_and_terms', 'ai_body_photo_analysis']),
+                Rule::in([
+                    'privacy_policy',
+                    'terms_of_use',
+                    'cookies',
+                    'privacy_policy_and_terms',
+                    'ai_body_photo_analysis',
+                    'ai_chat_health_data',
+                ]),
             ],
         ]);
 
